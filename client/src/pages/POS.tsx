@@ -26,8 +26,8 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { formatDOP, calculateITBIS, ITBIS_RATE } from "@/lib/dominican";
-import type { Product, Customer } from "@shared/schema";
+import { formatDOP, calculateITBIS, ITBIS_RATE, generateNCF } from "@/lib/dominican";
+import type { Product, Customer, POSPrintSettings } from "@shared/schema";
 
 interface CartItem {
   product: Product;

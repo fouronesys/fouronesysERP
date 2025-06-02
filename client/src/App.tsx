@@ -65,6 +65,14 @@ function ProtectedRoute({ component: Component, ...props }: { component: React.C
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
+  const [setupComplete, setSetupComplete] = useState(false);
+  
+  // Check if user has company configured
+  const { data: company, isLoading: companyLoading } = useQuery({
+    queryKey: ["/api/companies/current"],
+    enabled: isAuthenticated,
+    retry: false,
+  });
 
   // Show landing page for unauthenticated users or while loading
   if (isLoading || !isAuthenticated) {
@@ -74,6 +82,11 @@ function Router() {
         <Route component={Landing} />
       </Switch>
     );
+  }
+
+  // Show setup page if no company is configured
+  if (!companyLoading && (!company || company.name === "Mi Empresa") && !setupComplete) {
+    return <Setup onComplete={() => setSetupComplete(true)} />;
   }
 
   // Show authenticated routes
