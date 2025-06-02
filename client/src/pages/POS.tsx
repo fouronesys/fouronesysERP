@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Header } from "@/components/Header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -270,7 +270,16 @@ const PrintTemplate58mm = ({ sale, items, customer, settings, company }: PrintTe
 };
 
 export default function POS() {
-  const [cart, setCart] = useState<CartItem[]>([]);
+  // Cargar carrito del localStorage al inicializar
+  const [cart, setCart] = useState<CartItem[]>(() => {
+    try {
+      const savedCart = localStorage.getItem('pos-cart');
+      return savedCart ? JSON.parse(savedCart) : [];
+    } catch {
+      return [];
+    }
+  });
+  
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<"cash" | "card">("cash");
@@ -281,6 +290,15 @@ export default function POS() {
   const printRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Guardar carrito en localStorage cada vez que cambie
+  useEffect(() => {
+    try {
+      localStorage.setItem('pos-cart', JSON.stringify(cart));
+    } catch (error) {
+      console.error('Error saving cart to localStorage:', error);
+    }
+  }, [cart]);
 
   const { data: products } = useQuery<Product[]>({
     queryKey: ["/api/products"],
@@ -312,6 +330,8 @@ export default function POS() {
       setSelectedCustomer(null);
       setCashReceived("");
       setIsCheckoutOpen(false);
+      // Limpiar carrito del localStorage
+      localStorage.removeItem('pos-cart');
       queryClient.invalidateQueries({ queryKey: ["/api/pos/sales"] });
     },
     onError: () => {

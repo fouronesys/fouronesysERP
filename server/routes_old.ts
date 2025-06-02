@@ -14,6 +14,83 @@ import {
   insertPOSPrintSettingsSchema
 } from "@shared/schema";
 
+// Función para crear datos de ejemplo
+async function createSampleData(companyId: number) {
+  try {
+    // Crear productos de ejemplo
+    const sampleProducts = [
+      {
+        code: "CAFE001",
+        name: "Café Premium Dominicano",
+        description: "Café de alta calidad de las montañas dominicanas",
+        price: "250.00",
+        cost: "120.00",
+        stock: 100,
+        minStock: 10,
+        unit: "lb",
+        companyId
+      },
+      {
+        code: "AZUC001", 
+        name: "Azúcar Blanca",
+        description: "Azúcar refinada nacional",
+        price: "45.00",
+        cost: "25.00", 
+        stock: 200,
+        minStock: 20,
+        unit: "lb",
+        companyId
+      },
+      {
+        code: "LECH001",
+        name: "Leche Entera",
+        description: "Leche fresca pasteurizada",
+        price: "65.00",
+        cost: "40.00",
+        stock: 50,
+        minStock: 5,
+        unit: "lt",
+        companyId
+      }
+    ];
+
+    for (const product of sampleProducts) {
+      await storage.createProduct(product);
+    }
+
+    // Crear clientes de ejemplo
+    const sampleCustomers = [
+      {
+        name: "Juan Pérez",
+        type: "individual",
+        cedula: "00112345678",
+        phone: "(809) 555-1234",
+        email: "juan.perez@email.com",
+        address: "Calle Principal #123, Santo Domingo",
+        companyId
+      },
+      {
+        name: "Supermercado La Económica",
+        type: "company", 
+        rnc: "101234567",
+        phone: "(809) 555-5678",
+        email: "ventas@laeconomica.com",
+        address: "Av. Independencia #456, Santiago",
+        companyId
+      }
+    ];
+
+    for (const customer of sampleCustomers) {
+      await storage.createCustomer(customer);
+    }
+
+    console.log("Sample data created successfully");
+  } catch (error) {
+    console.error("Error creating sample data:", error);
+  }
+}
+import { z } from "zod";
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
   await setupAuth(app);
@@ -31,6 +108,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Company routes
+  app.post("/api/companies", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const companyData = insertCompanySchema.parse({ ...req.body, ownerId: userId });
+      const company = await storage.createCompany(companyData);
+      res.json(company);
+    } catch (error) {
+      console.error("Error creating company:", error);
+      res.status(500).json({ message: "Failed to create company" });
+    }
+  });
+
   app.get("/api/companies/current", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
@@ -47,6 +136,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           email: req.user.claims.email || "",
         };
         company = await storage.createCompany(defaultCompany);
+        
+        // Crear datos de ejemplo para demostración
+        await createSampleData(company.id);
       }
       
       res.json(company);
@@ -74,6 +166,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Company routes
   app.post("/api/companies", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
@@ -86,19 +179,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Dashboard routes
-  app.get("/api/dashboard/metrics", isAuthenticated, async (req: any, res) => {
+  app.get("/api/companies/current", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const company = await storage.getCompanyByUserId(userId);
-      if (!company) {
-        return res.status(404).json({ message: "Company not found" });
-      }
-      const metrics = await storage.getDashboardMetrics(company.id);
-      res.json(metrics);
+      res.json(company);
     } catch (error) {
-      console.error("Error fetching dashboard metrics:", error);
-      res.status(500).json({ message: "Failed to fetch dashboard metrics" });
+      console.error("Error fetching company:", error);
+      res.status(500).json({ message: "Failed to fetch company" });
     }
   });
 
@@ -141,9 +229,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!company) {
         return res.status(404).json({ message: "Company not found" });
       }
-      const id = parseInt(req.params.id);
-      const customerData = insertCustomerSchema.parse({ ...req.body, companyId: company.id });
-      const customer = await storage.updateCustomer(id, customerData, company.id);
+      const customerId = parseInt(req.params.id);
+      const customerData = insertCustomerSchema.partial().parse(req.body);
+      const customer = await storage.updateCustomer(customerId, customerData, company.id);
+      if (!customer) {
+        return res.status(404).json({ message: "Customer not found" });
+      }
       res.json(customer);
     } catch (error) {
       console.error("Error updating customer:", error);
@@ -158,8 +249,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!company) {
         return res.status(404).json({ message: "Company not found" });
       }
-      const id = parseInt(req.params.id);
-      await storage.deleteCustomer(id, company.id);
+      const customerId = parseInt(req.params.id);
+      await storage.deleteCustomer(customerId, company.id);
       res.json({ message: "Customer deleted successfully" });
     } catch (error) {
       console.error("Error deleting customer:", error);
@@ -206,9 +297,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!company) {
         return res.status(404).json({ message: "Company not found" });
       }
-      const id = parseInt(req.params.id);
-      const productData = insertProductSchema.parse({ ...req.body, companyId: company.id });
-      const product = await storage.updateProduct(id, productData, company.id);
+      const productId = parseInt(req.params.id);
+      const productData = insertProductSchema.partial().parse(req.body);
+      const product = await storage.updateProduct(productId, productData, company.id);
+      if (!product) {
+        return res.status(404).json({ message: "Product not found" });
+      }
       res.json(product);
     } catch (error) {
       console.error("Error updating product:", error);
@@ -223,8 +317,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!company) {
         return res.status(404).json({ message: "Company not found" });
       }
-      const id = parseInt(req.params.id);
-      await storage.deleteProduct(id, company.id);
+      const productId = parseInt(req.params.id);
+      await storage.deleteProduct(productId, company.id);
       res.json({ message: "Product deleted successfully" });
     } catch (error) {
       console.error("Error deleting product:", error);
@@ -264,7 +358,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Production order routes
+  // Production Order routes
   app.get("/api/production-orders", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
@@ -305,8 +399,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Company not found" });
       }
       const productId = parseInt(req.params.productId);
-      const bom = await storage.getBOMByProduct(productId, company.id);
-      res.json(bom);
+      const bomItems = await storage.getBOMByProduct(productId, company.id);
+      res.json(bomItems);
     } catch (error) {
       console.error("Error fetching BOM:", error);
       res.status(500).json({ message: "Failed to fetch BOM" });
@@ -326,6 +420,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error creating BOM item:", error);
       res.status(500).json({ message: "Failed to create BOM item" });
+    }
+  });
+
+  app.put("/api/bom/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+      const bomId = parseInt(req.params.id);
+      const bomData = insertBOMSchema.partial().parse(req.body);
+      const bomItem = await storage.updateBOMItem(bomId, bomData, company.id);
+      if (!bomItem) {
+        return res.status(404).json({ message: "BOM item not found" });
+      }
+      res.json(bomItem);
+    } catch (error) {
+      console.error("Error updating BOM item:", error);
+      res.status(500).json({ message: "Failed to update BOM item" });
+    }
+  });
+
+  app.delete("/api/bom/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+      const bomId = parseInt(req.params.id);
+      await storage.deleteBOMItem(bomId, company.id);
+      res.json({ message: "BOM item deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting BOM item:", error);
+      res.status(500).json({ message: "Failed to delete BOM item" });
     }
   });
 
@@ -382,6 +512,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/pos/sales/:id/items", isAuthenticated, async (req: any, res) => {
+    try {
+      const saleId = parseInt(req.params.id);
+      const items = await storage.getPOSSaleItems(saleId);
+      res.json(items);
+    } catch (error) {
+      console.error("Error fetching POS sale items:", error);
+      res.status(500).json({ message: "Failed to fetch POS sale items" });
+    }
+  });
+
   app.get("/api/pos/print-settings", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
@@ -410,6 +551,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error updating POS print settings:", error);
       res.status(500).json({ message: "Failed to update POS print settings" });
+    }
+  });
+
+  // Dashboard metrics
+  app.get("/api/dashboard/metrics", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+      const metrics = await storage.getDashboardMetrics(company.id);
+      res.json(metrics);
+    } catch (error) {
+      console.error("Error fetching dashboard metrics:", error);
+      res.status(500).json({ message: "Failed to fetch dashboard metrics" });
     }
   });
 
