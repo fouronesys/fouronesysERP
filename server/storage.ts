@@ -1,6 +1,7 @@
 import {
   users,
   companies,
+  warehouses,
   customers,
   suppliers,
   products,
@@ -16,6 +17,8 @@ import {
   type UpsertUser,
   type Company,
   type InsertCompany,
+  type Warehouse,
+  type InsertWarehouse,
   type Customer,
   type InsertCustomer,
   type Supplier,
@@ -48,6 +51,12 @@ export interface IStorage {
   createCompany(company: InsertCompany): Promise<Company>;
   getCompanyByUserId(userId: string): Promise<Company | undefined>;
   updateCompany(id: number, company: Partial<InsertCompany>): Promise<Company>;
+  
+  // Warehouse operations
+  getWarehouses(companyId: number): Promise<Warehouse[]>;
+  createWarehouse(warehouse: InsertWarehouse): Promise<Warehouse>;
+  updateWarehouse(id: number, warehouse: Partial<InsertWarehouse>, companyId: number): Promise<Warehouse | undefined>;
+  deleteWarehouse(id: number, companyId: number): Promise<void>;
   
   // Customer operations
   getCustomers(companyId: number): Promise<Customer[]>;
@@ -147,6 +156,34 @@ export class DatabaseStorage implements IStorage {
       .where(eq(companies.id, id))
       .returning();
     return company;
+  }
+
+  // Warehouse operations
+  async getWarehouses(companyId: number): Promise<Warehouse[]> {
+    return await db.select().from(warehouses).where(eq(warehouses.companyId, companyId));
+  }
+
+  async createWarehouse(warehouseData: InsertWarehouse): Promise<Warehouse> {
+    const [warehouse] = await db
+      .insert(warehouses)
+      .values(warehouseData)
+      .returning();
+    return warehouse;
+  }
+
+  async updateWarehouse(id: number, warehouseData: Partial<InsertWarehouse>, companyId: number): Promise<Warehouse | undefined> {
+    const [warehouse] = await db
+      .update(warehouses)
+      .set({ ...warehouseData, updatedAt: new Date() })
+      .where(and(eq(warehouses.id, id), eq(warehouses.companyId, companyId)))
+      .returning();
+    return warehouse;
+  }
+
+  async deleteWarehouse(id: number, companyId: number): Promise<void> {
+    await db
+      .delete(warehouses)
+      .where(and(eq(warehouses.id, id), eq(warehouses.companyId, companyId)));
   }
 
   // Customer operations
@@ -367,6 +404,35 @@ export class DatabaseStorage implements IStorage {
       .insert(posSaleItems)
       .values(itemData)
       .returning();
+    
+    // Reducir stock automáticamente
+    const quantity = parseInt(itemData.quantity);
+    const [currentProduct] = await db
+      .select()
+      .from(products)
+      .where(eq(products.id, itemData.productId));
+    
+    if (currentProduct) {
+      const newStock = currentProduct.stock - quantity;
+      await db
+        .update(products)
+        .set({ stock: newStock })
+        .where(eq(products.id, itemData.productId));
+      
+      // Registrar movimiento de inventario
+      await db
+        .insert(inventoryMovements)
+        .values({
+          productId: itemData.productId,
+          type: "out",
+          quantity: -quantity,
+          reference: "POS Sale",
+          referenceId: itemData.saleId,
+          notes: `Venta POS - Reducción automática de stock`,
+          companyId: currentProduct.companyId,
+        });
+    }
+    
     return item;
   }
 
