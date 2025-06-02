@@ -13,7 +13,8 @@ import {
   FlaskConical,
   Truck,
   ShoppingCart,
-  Star 
+  Star,
+  CreditCard
 } from "lucide-react";
 
 const navigation = [
@@ -25,6 +26,7 @@ const navigation = [
   {
     category: "Ventas",
     items: [
+      { name: "Punto de Venta (POS)", href: "/pos", icon: CreditCard },
       { name: "Facturación", href: "/billing", icon: FileText },
       { name: "Clientes", href: "/customers", icon: Users },
       { name: "Reportes de Ventas", href: "/sales-reports", icon: ChartBar },
