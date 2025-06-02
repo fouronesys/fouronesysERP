@@ -82,6 +82,18 @@ export const suppliers = pgTable("suppliers", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Warehouses
+export const warehouses = pgTable("warehouses", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  location: varchar("location", { length: 255 }),
+  manager: varchar("manager", { length: 255 }),
+  isActive: boolean("is_active").notNull().default(true),
+  companyId: integer("company_id").notNull().references(() => companies.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Product Categories
 export const productCategories = pgTable("product_categories", {
   id: serial("id").primaryKey(),
@@ -106,6 +118,9 @@ export const products = pgTable("products", {
   unit: varchar("unit", { length: 20 }).notNull().default("unit"),
   isActive: boolean("is_active").notNull().default(true),
   isManufactured: boolean("is_manufactured").notNull().default(false),
+  itbisIncluded: boolean("itbis_included").notNull().default(true),
+  itbisExempt: boolean("itbis_exempt").notNull().default(false),
+  warehouseId: integer("warehouse_id"),
   companyId: integer("company_id").notNull().references(() => companies.id),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -367,6 +382,12 @@ export const insertBOMSchema = createInsertSchema(bom).omit({
   createdAt: true,
 });
 
+export const insertWarehouseSchema = createInsertSchema(warehouses).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // POS Sales table
 export const posSales = pgTable("pos_sales", {
   id: serial("id").primaryKey(),
@@ -448,6 +469,8 @@ export type InsertProductionOrder = z.infer<typeof insertProductionOrderSchema>;
 export type BOM = typeof bom.$inferSelect;
 export type InsertBOM = z.infer<typeof insertBOMSchema>;
 export type InventoryMovement = typeof inventoryMovements.$inferSelect;
+export type Warehouse = typeof warehouses.$inferSelect;
+export type InsertWarehouse = z.infer<typeof insertWarehouseSchema>;
 export type POSSale = typeof posSales.$inferSelect;
 export type InsertPOSSale = z.infer<typeof insertPOSSaleSchema>;
 export type POSSaleItem = typeof posSaleItems.$inferSelect;
