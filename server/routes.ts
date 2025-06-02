@@ -47,6 +47,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/companies/current", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
+      let company = await storage.getCompanyByUserId(userId);
+      
+      // Si no existe empresa, crear una por defecto
+      if (!company) {
+        const defaultCompany = {
+          ownerId: userId,
+          name: "Mi Empresa",
+          rnc: "",
+          address: "",
+          phone: "",
+          email: req.user.claims.email || "",
+        };
+        company = await storage.createCompany(defaultCompany);
+      }
+      
+      res.json(company);
+    } catch (error) {
+      console.error("Error fetching company:", error);
+      res.status(500).json({ message: "Failed to fetch company" });
+    }
+  });
+
+  // Company routes
+  app.post("/api/companies", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const companyData = insertCompanySchema.parse({ ...req.body, ownerId: userId });
+      const company = await storage.createCompany(companyData);
+      res.json(company);
+    } catch (error) {
+      console.error("Error creating company:", error);
+      res.status(500).json({ message: "Failed to create company" });
+    }
+  });
+
+  app.get("/api/companies/current", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
       const company = await storage.getCompanyByUserId(userId);
       res.json(company);
     } catch (error) {

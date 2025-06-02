@@ -6,9 +6,10 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { Sidebar } from "@/components/Sidebar";
 import { useAuth } from "@/hooks/useAuth";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
+import { useQuery } from "@tanstack/react-query";
 
 // Pages
 import Landing from "@/pages/Landing";
@@ -19,6 +20,7 @@ import Products from "@/pages/Products";
 import Manufacturing from "@/pages/Manufacturing";
 import BOM from "@/pages/BOM";
 import POS from "@/pages/POS";
+import Setup from "@/pages/Setup";
 import NotFound from "@/pages/not-found";
 
 function ProtectedRoute({ component: Component, ...props }: { component: React.ComponentType }) {
