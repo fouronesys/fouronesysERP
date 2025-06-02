@@ -61,8 +61,8 @@ export default function Products() {
     mutationFn: async (data: ProductFormData) => {
       await apiRequest("POST", "/api/products", {
         ...data,
-        price: parseFloat(data.price),
-        cost: data.cost ? parseFloat(data.cost) : undefined,
+        price: data.price,
+        cost: data.cost || undefined,
         stock: parseInt(data.stock),
         minStock: parseInt(data.minStock),
       });
@@ -90,8 +90,8 @@ export default function Products() {
       if (!editingProduct) return;
       await apiRequest("PUT", `/api/products/${editingProduct.id}`, {
         ...data,
-        price: parseFloat(data.price),
-        cost: data.cost ? parseFloat(data.cost) : undefined,
+        price: data.price,
+        cost: data.cost || undefined,
         stock: parseInt(data.stock),
         minStock: parseInt(data.minStock),
       });

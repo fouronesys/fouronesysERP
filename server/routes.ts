@@ -69,6 +69,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.put("/api/companies/current", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const company = await storage.getCompanyByUserId(userId);
+      
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      const updateData = insertCompanySchema.parse({ ...req.body, ownerId: userId });
+      const updatedCompany = await storage.updateCompany(company.id, updateData);
+      res.json(updatedCompany);
+    } catch (error) {
+      console.error("Error updating company:", error);
+      res.status(500).json({ message: "Failed to update company" });
+    }
+  });
+
   // Company routes
   app.post("/api/companies", isAuthenticated, async (req: any, res) => {
     try {

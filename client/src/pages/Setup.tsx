@@ -43,7 +43,7 @@ export default function Setup({ onComplete }: SetupProps) {
 
   const createCompanyMutation = useMutation({
     mutationFn: async (data: SetupFormData) => {
-      return await apiRequest("POST", "/api/companies", data);
+      return await apiRequest("PUT", "/api/companies/current", data);
     },
     onSuccess: () => {
       toast({
