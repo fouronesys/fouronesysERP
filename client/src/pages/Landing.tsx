@@ -101,29 +101,30 @@ export default function Landing() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {/* Plan Básico */}
+            {/* Plan Mensual */}
             <Card className="border-2 border-gray-200 dark:border-gray-700">
               <CardContent className="p-8">
                 <div className="text-center mb-6">
-                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white">Plan Básico</h3>
-                  <p className="text-gray-600 dark:text-gray-400 mt-2">Para pequeñas empresas</p>
+                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white">Plan Mensual</h3>
+                  <p className="text-gray-600 dark:text-gray-400 mt-2">Flexibilidad mes a mes</p>
                   <div className="mt-4">
-                    <span className="text-4xl font-bold text-gray-900 dark:text-white">RD$ 12,980</span>
+                    <span className="text-4xl font-bold text-gray-900 dark:text-white">RD$ 15,000</span>
                     <span className="text-gray-600 dark:text-gray-400"> instalación</span>
                   </div>
                   <div className="mt-2">
-                    <span className="text-3xl font-bold text-blue-600">RD$ 1,480</span>
+                    <span className="text-3xl font-bold text-blue-600">RD$ 1,800</span>
                     <span className="text-gray-600 dark:text-gray-400">/mes</span>
                   </div>
                 </div>
                 
                 <ul className="space-y-3 mb-8">
                   {[
-                    "Facturación básica",
+                    "Facturación completa con NCF",
+                    "Punto de venta (POS)",
                     "Gestión de inventario",
                     "Clientes y proveedores",
                     "Reportes básicos",
-                    "Hasta 3 usuarios"
+                    "Hasta 5 usuarios"
                   ].map((feature, index) => (
                     <li key={index} className="flex items-center">
                       <Check className="h-5 w-5 text-green-500 mr-3" />
@@ -141,37 +142,43 @@ export default function Landing() {
               </CardContent>
             </Card>
 
-            {/* Plan Premium */}
-            <Card className="border-2 border-blue-500 relative">
+            {/* Plan Anual */}
+            <Card className="border-2 border-green-500 relative">
               <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                <div className="bg-blue-500 text-white px-4 py-1 rounded-full text-sm font-medium flex items-center">
+                <div className="bg-green-500 text-white px-4 py-1 rounded-full text-sm font-medium flex items-center">
                   <Star className="h-4 w-4 mr-1" />
-                  Recomendado
+                  Ahorra RD$ 6,600
                 </div>
               </div>
               <CardContent className="p-8">
                 <div className="text-center mb-6">
-                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white">Plan Premium</h3>
-                  <p className="text-gray-600 dark:text-gray-400 mt-2">Para medianas y grandes empresas</p>
+                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white">Plan Anual</h3>
+                  <p className="text-gray-600 dark:text-gray-400 mt-2">2 meses gratis al pagar anual</p>
                   <div className="mt-4">
-                    <span className="text-4xl font-bold text-gray-900 dark:text-white">RD$ 29,500</span>
+                    <span className="text-4xl font-bold text-gray-900 dark:text-white">RD$ 12,000</span>
                     <span className="text-gray-600 dark:text-gray-400"> instalación</span>
                   </div>
                   <div className="mt-2">
-                    <span className="text-3xl font-bold text-blue-600">RD$ 10,030</span>
+                    <span className="text-3xl font-bold text-green-600">RD$ 15,000</span>
                     <span className="text-gray-600 dark:text-gray-400">/año</span>
+                  </div>
+                  <div className="mt-1">
+                    <span className="text-sm text-gray-500 dark:text-gray-400 line-through">RD$ 21,600/año</span>
+                    <span className="text-sm text-green-600 ml-2 font-medium">¡Ahorra RD$ 6,600!</span>
                   </div>
                 </div>
                 
                 <ul className="space-y-3 mb-8">
                   {[
-                    "Todo del plan básico",
+                    "Todo del plan mensual incluido",
                     "Módulo de producción completo",
                     "Lista de materiales (BOM)",
                     "Gestión de recetas",
                     "Reportes avanzados",
                     "Usuarios ilimitados",
-                    "Soporte prioritario"
+                    "Soporte prioritario",
+                    "2 meses gratis",
+                    "Descuentos en hosting"
                   ].map((feature, index) => (
                     <li key={index} className="flex items-center">
                       <Check className="h-5 w-5 text-green-500 mr-3" />
