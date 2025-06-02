@@ -13,6 +13,82 @@ import {
   insertPOSSaleItemSchema,
   insertPOSPrintSettingsSchema
 } from "@shared/schema";
+
+// Función para crear datos de ejemplo
+async function createSampleData(companyId: number) {
+  try {
+    // Crear productos de ejemplo
+    const sampleProducts = [
+      {
+        code: "CAFE001",
+        name: "Café Premium Dominicano",
+        description: "Café de alta calidad de las montañas dominicanas",
+        price: "250.00",
+        cost: "120.00",
+        stock: 100,
+        minStock: 10,
+        unit: "lb",
+        companyId
+      },
+      {
+        code: "AZUC001", 
+        name: "Azúcar Blanca",
+        description: "Azúcar refinada nacional",
+        price: "45.00",
+        cost: "25.00", 
+        stock: 200,
+        minStock: 20,
+        unit: "lb",
+        companyId
+      },
+      {
+        code: "LECH001",
+        name: "Leche Entera",
+        description: "Leche fresca pasteurizada",
+        price: "65.00",
+        cost: "40.00",
+        stock: 50,
+        minStock: 5,
+        unit: "lt",
+        companyId
+      }
+    ];
+
+    for (const product of sampleProducts) {
+      await storage.createProduct(product);
+    }
+
+    // Crear clientes de ejemplo
+    const sampleCustomers = [
+      {
+        name: "Juan Pérez",
+        type: "individual",
+        cedula: "00112345678",
+        phone: "(809) 555-1234",
+        email: "juan.perez@email.com",
+        address: "Calle Principal #123, Santo Domingo",
+        companyId
+      },
+      {
+        name: "Supermercado La Económica",
+        type: "company", 
+        rnc: "101234567",
+        phone: "(809) 555-5678",
+        email: "ventas@laeconomica.com",
+        address: "Av. Independencia #456, Santiago",
+        companyId
+      }
+    ];
+
+    for (const customer of sampleCustomers) {
+      await storage.createCustomer(customer);
+    }
+
+    console.log("Sample data created successfully");
+  } catch (error) {
+    console.error("Error creating sample data:", error);
+  }
+}
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -60,6 +136,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           email: req.user.claims.email || "",
         };
         company = await storage.createCompany(defaultCompany);
+        
+        // Crear datos de ejemplo para demostración
+        await createSampleData(company.id);
       }
       
       res.json(company);
@@ -405,12 +484,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const { items, ...saleData } = req.body;
-      const saleToCreate = insertPOSSaleSchema.parse({ ...saleData, companyId: company.id });
       
       // Generate sale number
       const saleCount = await storage.getPOSSales(company.id);
       const saleNumber = `POS-${String(saleCount.length + 1).padStart(6, '0')}`;
-      saleToCreate.saleNumber = saleNumber;
+      
+      const saleToCreate = insertPOSSaleSchema.parse({ 
+        ...saleData, 
+        companyId: company.id,
+        saleNumber 
+      });
       
       const sale = await storage.createPOSSale(saleToCreate);
       
