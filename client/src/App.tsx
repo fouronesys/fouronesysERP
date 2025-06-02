@@ -18,6 +18,7 @@ import Customers from "@/pages/Customers";
 import Products from "@/pages/Products";
 import Manufacturing from "@/pages/Manufacturing";
 import BOM from "@/pages/BOM";
+import POS from "@/pages/POS";
 import NotFound from "@/pages/not-found";
 
 function ProtectedRoute({ component: Component, ...props }: { component: React.ComponentType }) {
@@ -81,6 +82,7 @@ function Router() {
       <Route path="/customers" component={() => <ProtectedRoute component={Customers} />} />
       <Route path="/products" component={() => <ProtectedRoute component={Products} />} />
       <Route path="/manufacturing" component={() => <ProtectedRoute component={Manufacturing} />} />
+      <Route path="/pos" component={() => <ProtectedRoute component={POS} />} />
       
       {/* Placeholder routes for future implementation */}
       <Route path="/sales-reports" component={() => <ProtectedRoute component={Dashboard} />} />

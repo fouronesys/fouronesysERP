@@ -26,8 +26,8 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { formatDOP, calculateITBIS, ITBIS_RATE, generateNCF } from "@/lib/dominican";
-import type { Product, Customer, POSPrintSettings } from "@shared/schema";
+import { formatDOP, calculateITBIS, ITBIS_RATE } from "@/lib/dominican";
+import type { Product, Customer } from "@shared/schema";
 
 interface CartItem {
   product: Product;
@@ -302,7 +302,7 @@ export default function POS() {
     mutationFn: async (saleData: any) => {
       return await apiRequest("POST", "/api/pos/sales", saleData);
     },
-    onSuccess: (sale) => {
+    onSuccess: (sale: any) => {
       toast({
         title: "Venta completada",
         description: `Venta ${sale.saleNumber} registrada exitosamente.`,
@@ -587,7 +587,7 @@ export default function POS() {
                       <label className="text-sm font-medium">Cliente (Opcional)</label>
                       <Select onValueChange={(value) => {
                         const customer = customers?.find(c => c.id.toString() === value);
-                        setSelectedCustomer(customer || null);
+                        setSelectedCustomer(customer || undefined);
                       }}>
                         <SelectTrigger>
                           <SelectValue placeholder="Seleccionar cliente..." />
