@@ -9,6 +9,9 @@ import {
   productionOrders,
   bom,
   inventoryMovements,
+  posSales,
+  posSaleItems,
+  posPrintSettings,
   type User,
   type UpsertUser,
   type Company,
@@ -25,6 +28,12 @@ import {
   type InsertProductionOrder,
   type BOM,
   type InsertBOM,
+  type POSSale,
+  type InsertPOSSale,
+  type POSSaleItem,
+  type InsertPOSSaleItem,
+  type POSPrintSettings,
+  type InsertPOSPrintSettings,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, sql } from "drizzle-orm";
@@ -72,6 +81,15 @@ export interface IStorage {
   createBOMItem(bomItem: InsertBOM): Promise<BOM>;
   updateBOMItem(id: number, bomItem: Partial<InsertBOM>, companyId: number): Promise<BOM | undefined>;
   deleteBOMItem(id: number, companyId: number): Promise<void>;
+  
+  // POS operations
+  getPOSSales(companyId: number): Promise<POSSale[]>;
+  getPOSSale(id: number, companyId: number): Promise<POSSale | undefined>;
+  createPOSSale(sale: InsertPOSSale): Promise<POSSale>;
+  getPOSSaleItems(saleId: number): Promise<POSSaleItem[]>;
+  createPOSSaleItem(item: InsertPOSSaleItem): Promise<POSSaleItem>;
+  getPOSPrintSettings(companyId: number): Promise<POSPrintSettings | undefined>;
+  upsertPOSPrintSettings(settings: InsertPOSPrintSettings): Promise<POSPrintSettings>;
   
   // Dashboard metrics
   getDashboardMetrics(companyId: number): Promise<{
@@ -299,6 +317,70 @@ export class DatabaseStorage implements IStorage {
     await db
       .delete(bom)
       .where(and(eq(bom.id, id), eq(bom.companyId, companyId)));
+  }
+
+  // POS operations
+  async getPOSSales(companyId: number): Promise<POSSale[]> {
+    return await db
+      .select()
+      .from(posSales)
+      .where(eq(posSales.companyId, companyId))
+      .orderBy(desc(posSales.createdAt));
+  }
+
+  async getPOSSale(id: number, companyId: number): Promise<POSSale | undefined> {
+    const [sale] = await db
+      .select()
+      .from(posSales)
+      .where(and(eq(posSales.id, id), eq(posSales.companyId, companyId)));
+    return sale;
+  }
+
+  async createPOSSale(saleData: InsertPOSSale): Promise<POSSale> {
+    const [sale] = await db
+      .insert(posSales)
+      .values(saleData)
+      .returning();
+    return sale;
+  }
+
+  async getPOSSaleItems(saleId: number): Promise<POSSaleItem[]> {
+    return await db
+      .select()
+      .from(posSaleItems)
+      .where(eq(posSaleItems.saleId, saleId))
+      .orderBy(posSaleItems.id);
+  }
+
+  async createPOSSaleItem(itemData: InsertPOSSaleItem): Promise<POSSaleItem> {
+    const [item] = await db
+      .insert(posSaleItems)
+      .values(itemData)
+      .returning();
+    return item;
+  }
+
+  async getPOSPrintSettings(companyId: number): Promise<POSPrintSettings | undefined> {
+    const [settings] = await db
+      .select()
+      .from(posPrintSettings)
+      .where(eq(posPrintSettings.companyId, companyId));
+    return settings;
+  }
+
+  async upsertPOSPrintSettings(settingsData: InsertPOSPrintSettings): Promise<POSPrintSettings> {
+    const [settings] = await db
+      .insert(posPrintSettings)
+      .values(settingsData)
+      .onConflictDoUpdate({
+        target: posPrintSettings.companyId,
+        set: {
+          ...settingsData,
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
+    return settings;
   }
 
   // Dashboard metrics

@@ -8,7 +8,10 @@ import {
   insertProductSchema,
   insertInvoiceSchema,
   insertProductionOrderSchema,
-  insertBOMSchema 
+  insertBOMSchema,
+  insertPOSSaleSchema,
+  insertPOSSaleItemSchema,
+  insertPOSPrintSettingsSchema
 } from "@shared/schema";
 import { z } from "zod";
 
@@ -318,6 +321,97 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting BOM item:", error);
       res.status(500).json({ message: "Failed to delete BOM item" });
+    }
+  });
+
+  // POS routes
+  app.get("/api/pos/sales", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+      const sales = await storage.getPOSSales(company.id);
+      res.json(sales);
+    } catch (error) {
+      console.error("Error fetching POS sales:", error);
+      res.status(500).json({ message: "Failed to fetch POS sales" });
+    }
+  });
+
+  app.post("/api/pos/sales", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+      
+      const { items, ...saleData } = req.body;
+      const saleToCreate = insertPOSSaleSchema.parse({ ...saleData, companyId: company.id });
+      
+      // Generate sale number
+      const saleCount = await storage.getPOSSales(company.id);
+      const saleNumber = `POS-${String(saleCount.length + 1).padStart(6, '0')}`;
+      saleToCreate.saleNumber = saleNumber;
+      
+      const sale = await storage.createPOSSale(saleToCreate);
+      
+      // Create sale items
+      if (items && Array.isArray(items)) {
+        for (const item of items) {
+          const itemData = insertPOSSaleItemSchema.parse({ ...item, saleId: sale.id });
+          await storage.createPOSSaleItem(itemData);
+        }
+      }
+      
+      res.json(sale);
+    } catch (error) {
+      console.error("Error creating POS sale:", error);
+      res.status(500).json({ message: "Failed to create POS sale" });
+    }
+  });
+
+  app.get("/api/pos/sales/:id/items", isAuthenticated, async (req: any, res) => {
+    try {
+      const saleId = parseInt(req.params.id);
+      const items = await storage.getPOSSaleItems(saleId);
+      res.json(items);
+    } catch (error) {
+      console.error("Error fetching POS sale items:", error);
+      res.status(500).json({ message: "Failed to fetch POS sale items" });
+    }
+  });
+
+  app.get("/api/pos/print-settings", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+      const settings = await storage.getPOSPrintSettings(company.id);
+      res.json(settings || { printerWidth: "80mm", showNCF: true, showCustomerInfo: true });
+    } catch (error) {
+      console.error("Error fetching POS print settings:", error);
+      res.status(500).json({ message: "Failed to fetch POS print settings" });
+    }
+  });
+
+  app.post("/api/pos/print-settings", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+      const settingsData = insertPOSPrintSettingsSchema.parse({ ...req.body, companyId: company.id });
+      const settings = await storage.upsertPOSPrintSettings(settingsData);
+      res.json(settings);
+    } catch (error) {
+      console.error("Error updating POS print settings:", error);
+      res.status(500).json({ message: "Failed to update POS print settings" });
     }
   });
 

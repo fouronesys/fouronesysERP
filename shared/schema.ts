@@ -364,6 +364,68 @@ export const insertBOMSchema = createInsertSchema(bom).omit({
   createdAt: true,
 });
 
+// POS Sales table
+export const posSales = pgTable("pos_sales", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").references(() => companies.id).notNull(),
+  customerId: integer("customer_id").references(() => customers.id),
+  saleNumber: varchar("sale_number", { length: 50 }).notNull(),
+  subtotal: varchar("subtotal").notNull(),
+  itbis: varchar("itbis").notNull(),
+  total: varchar("total").notNull(),
+  paymentMethod: varchar("payment_method", { length: 50 }).notNull(),
+  cashReceived: varchar("cash_received"),
+  cashChange: varchar("cash_change"),
+  ncf: varchar("ncf", { length: 20 }),
+  notes: text("notes"),
+  status: varchar("status", { length: 20 }).default("completed"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// POS Sale Items table
+export const posSaleItems = pgTable("pos_sale_items", {
+  id: serial("id").primaryKey(),
+  saleId: integer("sale_id").references(() => posSales.id).notNull(),
+  productId: integer("product_id").references(() => products.id).notNull(),
+  quantity: varchar("quantity").notNull(),
+  unitPrice: varchar("unit_price").notNull(),
+  subtotal: varchar("subtotal").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// POS Print Settings table
+export const posPrintSettings = pgTable("pos_print_settings", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").references(() => companies.id).notNull(),
+  printerWidth: varchar("printer_width", { length: 10 }).default("80mm"),
+  headerText: text("header_text"),
+  footerText: text("footer_text"),
+  showLogo: boolean("show_logo").default(false),
+  showNCF: boolean("show_ncf").default(true),
+  showCustomerInfo: boolean("show_customer_info").default(true),
+  fontSize: varchar("font_size", { length: 10 }).default("normal"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertPOSSaleSchema = createInsertSchema(posSales).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertPOSSaleItemSchema = createInsertSchema(posSaleItems).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertPOSPrintSettingsSchema = createInsertSchema(posPrintSettings).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
@@ -383,3 +445,9 @@ export type InsertProductionOrder = z.infer<typeof insertProductionOrderSchema>;
 export type BOM = typeof bom.$inferSelect;
 export type InsertBOM = z.infer<typeof insertBOMSchema>;
 export type InventoryMovement = typeof inventoryMovements.$inferSelect;
+export type POSSale = typeof posSales.$inferSelect;
+export type InsertPOSSale = z.infer<typeof insertPOSSaleSchema>;
+export type POSSaleItem = typeof posSaleItems.$inferSelect;
+export type InsertPOSSaleItem = z.infer<typeof insertPOSSaleItemSchema>;
+export type POSPrintSettings = typeof posPrintSettings.$inferSelect;
+export type InsertPOSPrintSettings = z.infer<typeof insertPOSPrintSettingsSchema>;
