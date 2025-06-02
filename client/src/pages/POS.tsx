@@ -468,7 +468,7 @@ export default function POS() {
                     <p className="text-lg font-bold text-blue-600 dark:text-blue-400">
                       {formatDOP(parseFloat(product.price))}
                     </p>
-                    <Badge variant={parseInt(product.stock) > 0 ? "default" : "destructive"} className="text-xs">
+                    <Badge variant={parseInt(product.stock.toString()) > 0 ? "default" : "destructive"} className="text-xs">
                       Stock: {product.stock}
                     </Badge>
                   </div>
@@ -587,7 +587,7 @@ export default function POS() {
                       <label className="text-sm font-medium">Cliente (Opcional)</label>
                       <Select onValueChange={(value) => {
                         const customer = customers?.find(c => c.id.toString() === value);
-                        setSelectedCustomer(customer || undefined);
+                        setSelectedCustomer(customer || null);
                       }}>
                         <SelectTrigger>
                           <SelectValue placeholder="Seleccionar cliente..." />
@@ -673,16 +673,40 @@ export default function POS() {
               <PrintTemplate58mm
                 sale={currentSale}
                 items={currentSale.items || cart}
-                customer={selectedCustomer}
-                settings={printSettings}
+                customer={selectedCustomer || undefined}
+                settings={printSettings || { 
+                  id: 0, 
+                  companyId: 0, 
+                  printerWidth: "58mm", 
+                  showNCF: true, 
+                  showCustomerInfo: true,
+                  showLogo: false,
+                  headerText: null,
+                  footerText: null,
+                  fontSize: "10px",
+                  createdAt: null,
+                  updatedAt: null
+                }}
                 company={company}
               />
             ) : (
               <PrintTemplate80mm
                 sale={currentSale}
                 items={currentSale.items || cart}
-                customer={selectedCustomer}
-                settings={printSettings || { printerWidth: "80mm", showNCF: true, showCustomerInfo: true }}
+                customer={selectedCustomer || undefined}
+                settings={printSettings || { 
+                  id: 0, 
+                  companyId: 0, 
+                  printerWidth: "80mm", 
+                  showNCF: true, 
+                  showCustomerInfo: true,
+                  showLogo: false,
+                  headerText: null,
+                  footerText: null,
+                  fontSize: "12px",
+                  createdAt: null,
+                  updatedAt: null
+                }}
                 company={company}
               />
             )}

@@ -85,7 +85,7 @@ function Router() {
   }
 
   // Show setup page if no company is configured
-  if (!companyLoading && (!company || company.name === "Mi Empresa") && !setupComplete) {
+  if (!companyLoading && company && company.name === "Mi Empresa" && !setupComplete) {
     return <Setup onComplete={() => setSetupComplete(true)} />;
   }
 
