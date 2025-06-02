@@ -108,11 +108,11 @@ export default function Landing() {
                   <h3 className="text-2xl font-bold text-gray-900 dark:text-white">Plan Básico</h3>
                   <p className="text-gray-600 dark:text-gray-400 mt-2">Para pequeñas empresas</p>
                   <div className="mt-4">
-                    <span className="text-4xl font-bold text-gray-900 dark:text-white">$220</span>
+                    <span className="text-4xl font-bold text-gray-900 dark:text-white">RD$ 12,980</span>
                     <span className="text-gray-600 dark:text-gray-400"> instalación</span>
                   </div>
                   <div className="mt-2">
-                    <span className="text-3xl font-bold text-blue-600">$25</span>
+                    <span className="text-3xl font-bold text-blue-600">RD$ 1,480</span>
                     <span className="text-gray-600 dark:text-gray-400">/mes</span>
                   </div>
                 </div>
@@ -154,11 +154,11 @@ export default function Landing() {
                   <h3 className="text-2xl font-bold text-gray-900 dark:text-white">Plan Premium</h3>
                   <p className="text-gray-600 dark:text-gray-400 mt-2">Para medianas y grandes empresas</p>
                   <div className="mt-4">
-                    <span className="text-4xl font-bold text-gray-900 dark:text-white">$500</span>
+                    <span className="text-4xl font-bold text-gray-900 dark:text-white">RD$ 29,500</span>
                     <span className="text-gray-600 dark:text-gray-400"> instalación</span>
                   </div>
                   <div className="mt-2">
-                    <span className="text-3xl font-bold text-blue-600">$170</span>
+                    <span className="text-3xl font-bold text-blue-600">RD$ 10,030</span>
                     <span className="text-gray-600 dark:text-gray-400">/año</span>
                   </div>
                 </div>
