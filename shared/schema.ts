@@ -139,15 +139,61 @@ export const invoiceItems = pgTable("invoice_items", {
   total: decimal("total", { precision: 10, scale: 2 }).notNull(),
 });
 
-// Bill of Materials (BOM)
+// Bill of Materials (BOM) - Lista de materiales para manufactura
 export const bom = pgTable("bom", {
   id: serial("id").primaryKey(),
   productId: integer("product_id").notNull().references(() => products.id),
   materialId: integer("material_id").notNull().references(() => products.id),
   quantity: decimal("quantity", { precision: 10, scale: 4 }).notNull(),
   unit: varchar("unit", { length: 20 }).notNull(),
+  cost: decimal("cost", { precision: 10, scale: 2 }), // Costo por unidad del material
+  notes: text("notes"), // Notas sobre el material (ej: "Agregar al final", "Calentar antes")
   companyId: integer("company_id").notNull().references(() => companies.id),
   createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Recetas - Para productos que requieren instrucciones detalladas
+export const recipes = pgTable("recipes", {
+  id: serial("id").primaryKey(),
+  productId: integer("product_id").notNull().references(() => products.id),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  instructions: text("instructions").notNull(), // Instrucciones paso a paso
+  preparationTime: integer("preparation_time"), // Tiempo en minutos
+  cookingTime: integer("cooking_time"), // Tiempo de cocción en minutos
+  servings: integer("servings"), // Porciones que produce
+  difficulty: varchar("difficulty", { length: 20 }).default("medium"), // easy, medium, hard
+  companyId: integer("company_id").notNull().references(() => companies.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Ingredientes/Materiales para recetas
+export const recipeIngredients = pgTable("recipe_ingredients", {
+  id: serial("id").primaryKey(),
+  recipeId: integer("recipe_id").notNull().references(() => recipes.id),
+  materialId: integer("material_id").notNull().references(() => products.id),
+  quantity: decimal("quantity", { precision: 10, scale: 4 }).notNull(),
+  unit: varchar("unit", { length: 20 }).notNull(),
+  step: integer("step").default(1), // En qué paso se usa
+  isOptional: boolean("is_optional").default(false),
+  notes: text("notes"), // Notas específicas del ingrediente
+});
+
+// Pasos de producción
+export const productionSteps = pgTable("production_steps", {
+  id: serial("id").primaryKey(),
+  productionOrderId: integer("production_order_id").notNull().references(() => productionOrders.id),
+  stepNumber: integer("step_number").notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  estimatedTime: integer("estimated_time"), // Tiempo estimado en minutos
+  actualTime: integer("actual_time"), // Tiempo real tomado
+  status: varchar("status", { length: 20 }).default("pending"), // pending, in_progress, completed, skipped
+  startedAt: timestamp("started_at"),
+  completedAt: timestamp("completed_at"),
+  notes: text("notes"),
 });
 
 // Production Orders
@@ -240,6 +286,40 @@ export const bomRelations = relations(bom, ({ one }) => ({
     references: [products.id],
     relationName: "material_bom",
   }),
+  company: one(companies, {
+    fields: [bom.companyId],
+    references: [companies.id],
+  }),
+}));
+
+export const recipesRelations = relations(recipes, ({ one, many }) => ({
+  product: one(products, {
+    fields: [recipes.productId],
+    references: [products.id],
+  }),
+  company: one(companies, {
+    fields: [recipes.companyId],
+    references: [companies.id],
+  }),
+  ingredients: many(recipeIngredients),
+}));
+
+export const recipeIngredientsRelations = relations(recipeIngredients, ({ one }) => ({
+  recipe: one(recipes, {
+    fields: [recipeIngredients.recipeId],
+    references: [recipes.id],
+  }),
+  material: one(products, {
+    fields: [recipeIngredients.materialId],
+    references: [products.id],
+  }),
+}));
+
+export const productionStepsRelations = relations(productionSteps, ({ one }) => ({
+  productionOrder: one(productionOrders, {
+    fields: [productionSteps.productionOrderId],
+    references: [productionOrders.id],
+  }),
 }));
 
 // Insert schemas
@@ -279,6 +359,11 @@ export const insertProductionOrderSchema = createInsertSchema(productionOrders).
   updatedAt: true,
 });
 
+export const insertBOMSchema = createInsertSchema(bom).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Types
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
@@ -296,4 +381,5 @@ export type InvoiceItem = typeof invoiceItems.$inferSelect;
 export type ProductionOrder = typeof productionOrders.$inferSelect;
 export type InsertProductionOrder = z.infer<typeof insertProductionOrderSchema>;
 export type BOM = typeof bom.$inferSelect;
+export type InsertBOM = z.infer<typeof insertBOMSchema>;
 export type InventoryMovement = typeof inventoryMovements.$inferSelect;

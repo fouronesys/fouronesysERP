@@ -23,6 +23,8 @@ import {
   type InsertInvoice,
   type ProductionOrder,
   type InsertProductionOrder,
+  type BOM,
+  type InsertBOM,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, sql } from "drizzle-orm";
@@ -64,6 +66,12 @@ export interface IStorage {
   // Production Order operations
   getProductionOrders(companyId: number): Promise<ProductionOrder[]>;
   createProductionOrder(order: InsertProductionOrder): Promise<ProductionOrder>;
+  
+  // BOM operations
+  getBOMByProduct(productId: number, companyId: number): Promise<BOM[]>;
+  createBOMItem(bomItem: InsertBOM): Promise<BOM>;
+  updateBOMItem(id: number, bomItem: Partial<InsertBOM>, companyId: number): Promise<BOM | undefined>;
+  deleteBOMItem(id: number, companyId: number): Promise<void>;
   
   // Dashboard metrics
   getDashboardMetrics(companyId: number): Promise<{
@@ -259,6 +267,38 @@ export class DatabaseStorage implements IStorage {
       .values(orderData)
       .returning();
     return order;
+  }
+
+  // BOM operations
+  async getBOMByProduct(productId: number, companyId: number): Promise<BOM[]> {
+    return await db
+      .select()
+      .from(bom)
+      .where(and(eq(bom.productId, productId), eq(bom.companyId, companyId)))
+      .orderBy(desc(bom.createdAt));
+  }
+
+  async createBOMItem(bomData: InsertBOM): Promise<BOM> {
+    const [bomItem] = await db
+      .insert(bom)
+      .values(bomData)
+      .returning();
+    return bomItem;
+  }
+
+  async updateBOMItem(id: number, bomData: Partial<InsertBOM>, companyId: number): Promise<BOM | undefined> {
+    const [bomItem] = await db
+      .update(bom)
+      .set(bomData)
+      .where(and(eq(bom.id, id), eq(bom.companyId, companyId)))
+      .returning();
+    return bomItem;
+  }
+
+  async deleteBOMItem(id: number, companyId: number): Promise<void> {
+    await db
+      .delete(bom)
+      .where(and(eq(bom.id, id), eq(bom.companyId, companyId)));
   }
 
   // Dashboard metrics

@@ -7,7 +7,8 @@ import {
   insertCustomerSchema, 
   insertProductSchema,
   insertInvoiceSchema,
-  insertProductionOrderSchema 
+  insertProductionOrderSchema,
+  insertBOMSchema 
 } from "@shared/schema";
 import { z } from "zod";
 
@@ -248,6 +249,75 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error creating production order:", error);
       res.status(500).json({ message: "Failed to create production order" });
+    }
+  });
+
+  // BOM routes
+  app.get("/api/bom/:productId", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+      const productId = parseInt(req.params.productId);
+      const bomItems = await storage.getBOMByProduct(productId, company.id);
+      res.json(bomItems);
+    } catch (error) {
+      console.error("Error fetching BOM:", error);
+      res.status(500).json({ message: "Failed to fetch BOM" });
+    }
+  });
+
+  app.post("/api/bom", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+      const bomData = insertBOMSchema.parse({ ...req.body, companyId: company.id });
+      const bomItem = await storage.createBOMItem(bomData);
+      res.json(bomItem);
+    } catch (error) {
+      console.error("Error creating BOM item:", error);
+      res.status(500).json({ message: "Failed to create BOM item" });
+    }
+  });
+
+  app.put("/api/bom/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+      const bomId = parseInt(req.params.id);
+      const bomData = insertBOMSchema.partial().parse(req.body);
+      const bomItem = await storage.updateBOMItem(bomId, bomData, company.id);
+      if (!bomItem) {
+        return res.status(404).json({ message: "BOM item not found" });
+      }
+      res.json(bomItem);
+    } catch (error) {
+      console.error("Error updating BOM item:", error);
+      res.status(500).json({ message: "Failed to update BOM item" });
+    }
+  });
+
+  app.delete("/api/bom/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+      const bomId = parseInt(req.params.id);
+      await storage.deleteBOMItem(bomId, company.id);
+      res.json({ message: "BOM item deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting BOM item:", error);
+      res.status(500).json({ message: "Failed to delete BOM item" });
     }
   });
 
