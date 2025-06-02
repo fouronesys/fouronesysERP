@@ -17,6 +17,7 @@ import Billing from "@/pages/Billing";
 import Customers from "@/pages/Customers";
 import Products from "@/pages/Products";
 import Manufacturing from "@/pages/Manufacturing";
+import BOM from "@/pages/BOM";
 import NotFound from "@/pages/not-found";
 
 function ProtectedRoute({ component: Component, ...props }: { component: React.ComponentType }) {
@@ -85,7 +86,7 @@ function Router() {
       <Route path="/sales-reports" component={() => <ProtectedRoute component={Dashboard} />} />
       <Route path="/warehouses" component={() => <ProtectedRoute component={Dashboard} />} />
       <Route path="/movements" component={() => <ProtectedRoute component={Dashboard} />} />
-      <Route path="/bom" component={() => <ProtectedRoute component={Manufacturing} />} />
+      <Route path="/bom" component={() => <ProtectedRoute component={BOM} />} />
       <Route path="/recipes" component={() => <ProtectedRoute component={Manufacturing} />} />
       <Route path="/suppliers" component={() => <ProtectedRoute component={Customers} />} />
       <Route path="/purchase-orders" component={() => <ProtectedRoute component={Dashboard} />} />
