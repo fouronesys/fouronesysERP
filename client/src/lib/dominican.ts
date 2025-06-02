@@ -105,13 +105,17 @@ export function formatDominicanPhone(phone: string): string {
 export function formatDOP(amount: number | string): string {
   const num = typeof amount === 'string' ? parseFloat(amount) : amount;
   
-  if (isNaN(num)) return 'DOP $0.00';
+  if (isNaN(num)) return 'RD$ 0.00';
+  
+  // Redondear hacia arriba usando Math.ceil para centavos
+  const roundedAmount = Math.ceil(num * 100) / 100;
   
   return new Intl.NumberFormat('es-DO', {
     style: 'currency',
     currency: 'DOP',
     minimumFractionDigits: 2,
-  }).format(num);
+    maximumFractionDigits: 2,
+  }).format(roundedAmount);
 }
 
 export function formatUSD(amount: number | string): string {
@@ -178,16 +182,22 @@ export function generateNCF(type: string, sequence: number): string {
 export const ITBIS_RATE = 0.18; // 18% ITBIS rate
 
 export function calculateITBIS(subtotal: number): number {
-  return subtotal * ITBIS_RATE;
+  const itbis = subtotal * ITBIS_RATE;
+  // Redondear hacia arriba para ITBIS
+  return Math.ceil(itbis * 100) / 100;
 }
 
 export function calculateSubtotalFromTotal(totalWithITBIS: number): number {
-  return totalWithITBIS / (1 + ITBIS_RATE);
+  const subtotal = totalWithITBIS / (1 + ITBIS_RATE);
+  // Redondear hacia arriba para subtotal
+  return Math.ceil(subtotal * 100) / 100;
 }
 
 export function calculateITBISFromTotal(totalWithITBIS: number): number {
   const subtotal = calculateSubtotalFromTotal(totalWithITBIS);
-  return totalWithITBIS - subtotal;
+  const itbis = totalWithITBIS - subtotal;
+  // Redondear hacia arriba para ITBIS
+  return Math.ceil(itbis * 100) / 100;
 }
 
 // Date utilities for Dominican locale
