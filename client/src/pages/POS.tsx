@@ -326,6 +326,47 @@ export default function POS() {
         description: `Venta ${sale.saleNumber} registrada exitosamente.`,
       });
       setCurrentSale({ ...sale, items: cart });
+      
+      // Imprimir recibo automáticamente
+      setTimeout(() => {
+        if (printRef.current) {
+          const printContent = printRef.current.innerHTML;
+          const printWindow = window.open('', '_blank');
+          if (printWindow) {
+            printWindow.document.write(`
+              <html>
+                <head>
+                  <title>Recibo - ${sale.saleNumber}</title>
+                  <style>
+                    body { 
+                      font-family: 'Courier New', monospace; 
+                      margin: 0; 
+                      padding: 10px;
+                      font-size: 12px;
+                      line-height: 1.2;
+                    }
+                    .receipt { max-width: 80mm; }
+                    .center { text-align: center; }
+                    .bold { font-weight: bold; }
+                    .line { border-top: 1px dashed #000; margin: 5px 0; }
+                    table { width: 100%; border-collapse: collapse; }
+                    td { padding: 1px 0; }
+                    .right { text-align: right; }
+                  </style>
+                </head>
+                <body>
+                  ${printContent}
+                </body>
+              </html>
+            `);
+            printWindow.document.close();
+            printWindow.focus();
+            printWindow.print();
+            printWindow.close();
+          }
+        }
+      }, 500);
+      
       setCart([]);
       setSelectedCustomer(null);
       setCashReceived("");
