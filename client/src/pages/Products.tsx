@@ -1,0 +1,531 @@
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Header } from "@/components/Header";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Plus, Search, Package, Edit, Trash2, AlertTriangle } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import type { Product } from "@shared/schema";
+
+const productSchema = z.object({
+  code: z.string().min(1, "El código es requerido"),
+  name: z.string().min(1, "El nombre es requerido"),
+  description: z.string().optional(),
+  price: z.string().min(1, "El precio es requerido"),
+  cost: z.string().optional(),
+  stock: z.string().default("0"),
+  minStock: z.string().default("0"),
+  unit: z.string().default("unit"),
+  isManufactured: z.boolean().default(false),
+});
+
+type ProductFormData = z.infer<typeof productSchema>;
+
+export default function Products() {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const { data: products, isLoading } = useQuery<Product[]>({
+    queryKey: ["/api/products"],
+  });
+
+  const form = useForm<ProductFormData>({
+    resolver: zodResolver(productSchema),
+    defaultValues: {
+      code: "",
+      name: "",
+      description: "",
+      price: "",
+      cost: "",
+      stock: "0",
+      minStock: "0",
+      unit: "unit",
+      isManufactured: false,
+    },
+  });
+
+  const createProductMutation = useMutation({
+    mutationFn: async (data: ProductFormData) => {
+      await apiRequest("POST", "/api/products", {
+        ...data,
+        price: parseFloat(data.price),
+        cost: data.cost ? parseFloat(data.cost) : undefined,
+        stock: parseInt(data.stock),
+        minStock: parseInt(data.minStock),
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Producto creado",
+        description: "El producto ha sido creado exitosamente.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+      setIsDialogOpen(false);
+      form.reset();
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "No se pudo crear el producto.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateProductMutation = useMutation({
+    mutationFn: async (data: ProductFormData) => {
+      if (!editingProduct) return;
+      await apiRequest("PUT", `/api/products/${editingProduct.id}`, {
+        ...data,
+        price: parseFloat(data.price),
+        cost: data.cost ? parseFloat(data.cost) : undefined,
+        stock: parseInt(data.stock),
+        minStock: parseInt(data.minStock),
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Producto actualizado",
+        description: "El producto ha sido actualizado exitosamente.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+      setIsDialogOpen(false);
+      setEditingProduct(null);
+      form.reset();
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "No se pudo actualizar el producto.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteProductMutation = useMutation({
+    mutationFn: async (id: number) => {
+      await apiRequest("DELETE", `/api/products/${id}`);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Producto eliminado",
+        description: "El producto ha sido eliminado exitosamente.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "No se pudo eliminar el producto.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const filteredProducts = products?.filter(product =>
+    product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    product.code.toLowerCase().includes(searchTerm.toLowerCase())
+  ) || [];
+
+  const onSubmit = (data: ProductFormData) => {
+    if (editingProduct) {
+      updateProductMutation.mutate(data);
+    } else {
+      createProductMutation.mutate(data);
+    }
+  };
+
+  const handleEdit = (product: Product) => {
+    setEditingProduct(product);
+    form.reset({
+      code: product.code,
+      name: product.name,
+      description: product.description || "",
+      price: product.price,
+      cost: product.cost || "",
+      stock: product.stock.toString(),
+      minStock: product.minStock?.toString() || "0",
+      unit: product.unit,
+      isManufactured: product.isManufactured,
+    });
+    setIsDialogOpen(true);
+  };
+
+  const handleNewProduct = () => {
+    setEditingProduct(null);
+    form.reset();
+    setIsDialogOpen(true);
+  };
+
+  const formatCurrency = (value: string) => {
+    const num = parseFloat(value);
+    return new Intl.NumberFormat("es-DO", {
+      style: "currency",
+      currency: "DOP",
+    }).format(num);
+  };
+
+  const getStockStatus = (product: Product) => {
+    if (product.stock === 0) {
+      return { label: "Sin stock", color: "bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300" };
+    }
+    if (product.minStock && product.stock <= product.minStock) {
+      return { label: "Stock bajo", color: "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300" };
+    }
+    return { label: "En stock", color: "bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300" };
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900">
+        <Header title="Productos" subtitle="Gestiona tu catálogo de productos e inventario" />
+        <div className="p-6">
+          <div className="text-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-2 text-gray-500 dark:text-gray-400">Cargando productos...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900">
+      <Header title="Productos" subtitle="Gestiona tu catálogo de productos e inventario" />
+      
+      <div className="p-6">
+        {/* Actions and Search */}
+        <div className="flex flex-col sm:flex-row gap-4 mb-6">
+          <div className="flex-1">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Buscar productos por nombre o código..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+          </div>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={handleNewProduct} className="bg-blue-600 hover:bg-blue-700 text-white">
+                <Plus className="mr-2 h-4 w-4" />
+                Nuevo Producto
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>
+                  {editingProduct ? "Editar Producto" : "Nuevo Producto"}
+                </DialogTitle>
+              </DialogHeader>
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="code"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Código</FormLabel>
+                          <FormControl>
+                            <Input placeholder="PRD-001" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="unit"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Unidad</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Seleccionar unidad" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="unit">Unidad</SelectItem>
+                              <SelectItem value="kg">Kilogramo</SelectItem>
+                              <SelectItem value="lb">Libra</SelectItem>
+                              <SelectItem value="l">Litro</SelectItem>
+                              <SelectItem value="ml">Mililitro</SelectItem>
+                              <SelectItem value="m">Metro</SelectItem>
+                              <SelectItem value="cm">Centímetro</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Nombre</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Nombre del producto" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="description"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Descripción</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Descripción del producto" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="price"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Precio de Venta</FormLabel>
+                          <FormControl>
+                            <Input type="number" step="0.01" placeholder="0.00" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="cost"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Costo</FormLabel>
+                          <FormControl>
+                            <Input type="number" step="0.01" placeholder="0.00" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="stock"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Stock Actual</FormLabel>
+                          <FormControl>
+                            <Input type="number" placeholder="0" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="minStock"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Stock Mínimo</FormLabel>
+                          <FormControl>
+                            <Input type="number" placeholder="0" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <FormField
+                    control={form.control}
+                    name="isManufactured"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                        <div className="space-y-0.5">
+                          <FormLabel className="text-base">
+                            Producto Manufacturado
+                          </FormLabel>
+                          <div className="text-sm text-muted-foreground">
+                            Este producto se fabrica usando otros materiales
+                          </div>
+                        </div>
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="flex justify-end space-x-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setIsDialogOpen(false)}
+                    >
+                      Cancelar
+                    </Button>
+                    <Button
+                      type="submit"
+                      disabled={createProductMutation.isPending || updateProductMutation.isPending}
+                      className="bg-blue-600 hover:bg-blue-700 text-white"
+                    >
+                      {editingProduct ? "Actualizar" : "Crear"} Producto
+                    </Button>
+                  </div>
+                </form>
+              </Form>
+            </DialogContent>
+          </Dialog>
+        </div>
+
+        {/* Products List */}
+        <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+          <CardHeader>
+            <CardTitle className="flex items-center text-gray-900 dark:text-white">
+              <Package className="mr-2 h-5 w-5" />
+              Productos ({filteredProducts.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {filteredProducts.length === 0 ? (
+              <div className="text-center py-12">
+                <Package className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" />
+                <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">
+                  No hay productos
+                </h3>
+                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                  {searchTerm ? "No se encontraron productos que coincidan con tu búsqueda." : "Comienza agregando tu primer producto."}
+                </p>
+                {!searchTerm && (
+                  <div className="mt-6">
+                    <Button onClick={handleNewProduct} className="bg-blue-600 hover:bg-blue-700 text-white">
+                      <Plus className="mr-2 h-4 w-4" />
+                      Nuevo Producto
+                    </Button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50 dark:bg-gray-700">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Producto
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Precio
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Stock
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Estado
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Tipo
+                      </th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Acciones
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                    {filteredProducts.map((product) => {
+                      const stockStatus = getStockStatus(product);
+                      return (
+                        <tr key={product.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm font-medium text-gray-900 dark:text-white">
+                              {product.name}
+                            </div>
+                            <div className="text-sm text-gray-500 dark:text-gray-400">
+                              {product.code} • {product.unit}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                            {formatCurrency(product.price)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-900 dark:text-white">
+                              {product.stock} {product.unit}
+                            </div>
+                            {product.minStock && product.stock <= product.minStock && (
+                              <div className="flex items-center text-xs text-yellow-600 dark:text-yellow-400">
+                                <AlertTriangle className="h-3 w-3 mr-1" />
+                                Min: {product.minStock}
+                              </div>
+                            )}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <Badge className={stockStatus.color}>
+                              {stockStatus.label}
+                            </Badge>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <Badge variant={product.isManufactured ? "secondary" : "outline"}>
+                              {product.isManufactured ? "Manufacturado" : "Comprado"}
+                            </Badge>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <div className="flex items-center justify-end space-x-2">
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                onClick={() => handleEdit(product)}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                onClick={() => deleteProductMutation.mutate(product.id)}
+                                disabled={deleteProductMutation.isPending}
+                              >
+                                <Trash2 className="h-4 w-4 text-red-500" />
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
