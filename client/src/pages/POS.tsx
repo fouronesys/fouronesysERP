@@ -165,7 +165,8 @@ export default function POS() {
         ncf: printSettings?.showNCF ? generateNCF('consumer', Date.now()) : null,
       };
 
-      const sale = await apiRequest("POST", "/api/pos/sales", saleData);
+      const saleResponse = await apiRequest("POST", "/api/pos/sales", saleData);
+      const sale = saleResponse as any;
 
       // Add sale items
       for (const item of cart) {

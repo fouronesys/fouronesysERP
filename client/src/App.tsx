@@ -28,6 +28,9 @@ import SalesReports from "@/pages/SalesReports";
 import POSSales from "@/pages/POSSales";
 import Warehouses from "@/pages/Warehouses";
 import Movements from "@/pages/Movements";
+import Profile from "@/pages/Profile";
+import Notifications from "@/pages/Notifications";
+import Settings from "@/pages/Settings";
 import NotFound from "@/pages/not-found";
 
 function ProtectedRoute({ component: Component, ...props }: { component: React.ComponentType }) {
@@ -124,6 +127,11 @@ function Router() {
       <Route path="/recipes" component={() => <ProtectedRoute component={Manufacturing} />} />
       <Route path="/suppliers" component={() => <ProtectedRoute component={Customers} />} />
       <Route path="/purchase-orders" component={() => <ProtectedRoute component={Dashboard} />} />
+      
+      {/* Profile menu routes */}
+      <Route path="/profile" component={() => <ProtectedRoute component={Profile} />} />
+      <Route path="/notifications" component={() => <ProtectedRoute component={Notifications} />} />
+      <Route path="/settings" component={() => <ProtectedRoute component={Settings} />} />
       
       {/* Fallback to 404 */}
       <Route component={NotFound} />
