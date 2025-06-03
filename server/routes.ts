@@ -24,10 +24,123 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user.claims.sub;
       const user = await storage.getUser(userId);
-      res.json(user);
+      
+      // Incluir información de rol y empresas
+      if (user) {
+        const userRole = await storage.getUserRole(userId);
+        const userCompanies = await storage.getUserCompanies(userId);
+        
+        res.json({
+          ...user,
+          role: userRole,
+          companies: userCompanies,
+          isSuperAdmin: userRole === 'super_admin'
+        });
+      } else {
+        res.json(user);
+      }
     } catch (error) {
       console.error("Error fetching user:", error);
       res.status(500).json({ message: "Failed to fetch user" });
+    }
+  });
+
+  // Super Admin routes
+  app.get("/api/admin/companies", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const isSuperAdmin = await storage.isUserSuperAdmin(userId);
+      
+      if (!isSuperAdmin) {
+        return res.status(403).json({ message: "Access denied. Super admin required." });
+      }
+      
+      const companies = await storage.getAllCompanies();
+      res.json(companies);
+    } catch (error) {
+      console.error("Error fetching all companies:", error);
+      res.status(500).json({ message: "Failed to fetch companies" });
+    }
+  });
+
+  app.post("/api/admin/companies", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const isSuperAdmin = await storage.isUserSuperAdmin(userId);
+      
+      if (!isSuperAdmin) {
+        return res.status(403).json({ message: "Access denied. Super admin required." });
+      }
+      
+      const companyData = insertCompanySchema.parse(req.body);
+      const company = await storage.createCompanyForUser(companyData, companyData.ownerId || userId);
+      res.json(company);
+    } catch (error) {
+      console.error("Error creating company:", error);
+      res.status(500).json({ message: "Failed to create company" });
+    }
+  });
+
+  app.put("/api/admin/companies/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const isSuperAdmin = await storage.isUserSuperAdmin(userId);
+      
+      if (!isSuperAdmin) {
+        return res.status(403).json({ message: "Access denied. Super admin required." });
+      }
+      
+      const id = parseInt(req.params.id);
+      const companyData = insertCompanySchema.parse(req.body);
+      const company = await storage.updateCompany(id, companyData);
+      res.json(company);
+    } catch (error) {
+      console.error("Error updating company:", error);
+      res.status(500).json({ message: "Failed to update company" });
+    }
+  });
+
+  app.patch("/api/admin/companies/:id/status", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const isSuperAdmin = await storage.isUserSuperAdmin(userId);
+      
+      if (!isSuperAdmin) {
+        return res.status(403).json({ message: "Access denied. Super admin required." });
+      }
+      
+      const id = parseInt(req.params.id);
+      const { isActive } = req.body;
+      const company = await storage.updateCompanyStatus(id, isActive);
+      res.json(company);
+    } catch (error) {
+      console.error("Error updating company status:", error);
+      res.status(500).json({ message: "Failed to update company status" });
+    }
+  });
+
+  app.get("/api/admin/stats", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const isSuperAdmin = await storage.isUserSuperAdmin(userId);
+      
+      if (!isSuperAdmin) {
+        return res.status(403).json({ message: "Access denied. Super admin required." });
+      }
+      
+      // Calcular estadísticas básicas
+      const companies = await storage.getAllCompanies();
+      const stats = {
+        totalCompanies: companies.length,
+        activeCompanies: companies.filter(c => c.isActive).length,
+        trialCompanies: companies.filter(c => c.subscriptionPlan === 'trial').length,
+        paidCompanies: companies.filter(c => c.subscriptionPlan !== 'trial').length,
+      };
+      
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching admin stats:", error);
+      res.status(500).json({ message: "Failed to fetch stats" });
     }
   });
 

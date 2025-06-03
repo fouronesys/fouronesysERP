@@ -1,6 +1,7 @@
 import {
   users,
   companies,
+  companyUsers,
   warehouses,
   customers,
   suppliers,
@@ -17,6 +18,8 @@ import {
   type UpsertUser,
   type Company,
   type InsertCompany,
+  type CompanyUser,
+  type InsertCompanyUser,
   type Warehouse,
   type InsertWarehouse,
   type Customer,
@@ -168,6 +171,92 @@ export class DatabaseStorage implements IStorage {
       .where(eq(companies.id, id))
       .returning();
     return company;
+  }
+
+  // Super Admin operations
+  async getAllCompanies(): Promise<Company[]> {
+    return await db.select().from(companies).orderBy(desc(companies.createdAt));
+  }
+
+  async getCompany(id: number): Promise<Company | undefined> {
+    const [company] = await db.select().from(companies).where(eq(companies.id, id));
+    return company;
+  }
+
+  async updateCompanyStatus(id: number, isActive: boolean): Promise<Company> {
+    const [company] = await db
+      .update(companies)
+      .set({ isActive, updatedAt: new Date() })
+      .where(eq(companies.id, id))
+      .returning();
+    return company;
+  }
+
+  async createCompanyForUser(companyData: InsertCompany, userId: string): Promise<Company> {
+    const [company] = await db
+      .insert(companies)
+      .values({ ...companyData, ownerId: userId })
+      .returning();
+    
+    // Agregar al usuario como admin de la empresa
+    await db.insert(companyUsers).values({
+      userId,
+      companyId: company.id,
+      role: "company_admin",
+      permissions: ["manage_company", "manage_users", "view_reports"],
+    });
+    
+    return company;
+  }
+
+  async getUserCompanies(userId: string): Promise<Company[]> {
+    const userCompanies = await db
+      .select({ company: companies })
+      .from(companyUsers)
+      .innerJoin(companies, eq(companyUsers.companyId, companies.id))
+      .where(and(eq(companyUsers.userId, userId), eq(companyUsers.isActive, true)));
+    
+    return userCompanies.map(uc => uc.company);
+  }
+
+  async addUserToCompany(userId: string, companyId: number, role: string): Promise<CompanyUser> {
+    const [companyUser] = await db
+      .insert(companyUsers)
+      .values({
+        userId,
+        companyId,
+        role,
+        permissions: role === "company_admin" ? ["manage_company", "manage_users"] : ["basic_access"],
+      })
+      .returning();
+    return companyUser;
+  }
+
+  async getUserRole(userId: string, companyId?: number): Promise<string | null> {
+    // Verificar si es super admin
+    const [user] = await db.select().from(users).where(eq(users.id, userId));
+    if (user?.role === "super_admin") {
+      return "super_admin";
+    }
+
+    if (companyId) {
+      const [companyUser] = await db
+        .select()
+        .from(companyUsers)
+        .where(and(
+          eq(companyUsers.userId, userId),
+          eq(companyUsers.companyId, companyId),
+          eq(companyUsers.isActive, true)
+        ));
+      return companyUser?.role || null;
+    }
+
+    return user?.role || null;
+  }
+
+  async isUserSuperAdmin(userId: string): Promise<boolean> {
+    const [user] = await db.select().from(users).where(eq(users.id, userId));
+    return user?.role === "super_admin";
   }
 
   // Warehouse operations
