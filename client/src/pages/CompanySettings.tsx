@@ -315,6 +315,22 @@ export default function CompanySettings() {
                     {...form.register("industry")}
                   />
                 </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="businessType">Tipo de Negocio</Label>
+                  <Select
+                    value={form.watch("businessType")}
+                    onValueChange={(value) => form.setValue("businessType", value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccionar tipo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="general">General</SelectItem>
+                      <SelectItem value="restaurant">Restaurante</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
               <div className="space-y-2">

@@ -65,6 +65,7 @@ export const companies = pgTable("companies", {
   website: varchar("website", { length: 255 }),
   logoUrl: text("logo_url"), // URL del logo personalizado
   industry: varchar("industry", { length: 100 }), // Sector/industria
+  businessType: varchar("business_type", { length: 50 }).default("general"), // general, restaurant
   taxRegime: varchar("tax_regime", { length: 50 }).default("general"), // régimen tributario
   currency: varchar("currency", { length: 3 }).default("DOP"),
   timezone: varchar("timezone", { length: 50 }).default("America/Santo_Domingo"),
@@ -429,9 +430,16 @@ export const posSales = pgTable("pos_sales", {
   paymentMethod: varchar("payment_method", { length: 50 }).notNull(),
   cashReceived: varchar("cash_received"),
   cashChange: varchar("cash_change"),
+  customerName: varchar("customer_name", { length: 255 }),
+  customerPhone: varchar("customer_phone", { length: 20 }),
   ncf: varchar("ncf", { length: 20 }),
   notes: text("notes"),
   status: varchar("status", { length: 20 }).default("completed"),
+  // Restaurant-specific fields
+  orderType: varchar("order_type", { length: 20 }).default("dine_in"), // dine_in, takeout, delivery
+  tableNumber: varchar("table_number", { length: 10 }),
+  kitchenStatus: varchar("kitchen_status", { length: 20 }).default("pending"), // pending, preparing, ready, served
+  preparationNotes: text("preparation_notes"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -441,6 +449,7 @@ export const posSaleItems = pgTable("pos_sale_items", {
   id: serial("id").primaryKey(),
   saleId: integer("sale_id").references(() => posSales.id).notNull(),
   productId: integer("product_id").references(() => products.id).notNull(),
+  productName: varchar("product_name", { length: 255 }).notNull(),
   quantity: varchar("quantity").notNull(),
   unitPrice: varchar("unit_price").notNull(),
   subtotal: varchar("subtotal").notNull(),
