@@ -51,41 +51,10 @@ export default function Notifications() {
   
   const [activeTab, setActiveTab] = useState<"notifications" | "settings">("notifications");
 
-  // Mock data for notifications
-  const notifications: Notification[] = [
-    {
-      id: 1,
-      title: "Venta completada",
-      message: "Se ha registrado una nueva venta por DOP $1,500.00",
-      type: "success",
-      read: false,
-      createdAt: new Date(Date.now() - 1000 * 60 * 30).toISOString(), // 30 minutes ago
-    },
-    {
-      id: 2,
-      title: "Stock bajo",
-      message: "El producto 'Café Premium' tiene stock bajo (5 unidades restantes)",
-      type: "warning",
-      read: false,
-      createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(), // 2 hours ago
-    },
-    {
-      id: 3,
-      title: "Factura vencida",
-      message: "La factura #INV-001 venció hace 3 días",
-      type: "error",
-      read: true,
-      createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(), // 1 day ago
-    },
-    {
-      id: 4,
-      title: "Actualización disponible",
-      message: "Hay una nueva versión del sistema disponible",
-      type: "info",
-      read: true,
-      createdAt: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(), // 2 days ago
-    },
-  ];
+  // Fetch notifications from server
+  const { data: notifications = [], isLoading } = useQuery({
+    queryKey: ["/api/notifications"],
+  });
 
   const [settings, setSettings] = useState<NotificationSettings>({
     emailNotifications: true,

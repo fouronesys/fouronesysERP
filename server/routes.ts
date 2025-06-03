@@ -711,11 +711,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Notifications routes
-  app.get("/api/notifications", isAuthenticated, async (req: any, res) => {
-    try {
-      // Return mock notifications for demo
-      const notifications = [
+  // In-memory storage for notifications per user
+  const userNotifications = new Map<string, any[]>();
+
+  // Initialize notifications for user if not exists
+  const initUserNotifications = (userId: string) => {
+    if (!userNotifications.has(userId)) {
+      userNotifications.set(userId, [
         {
           id: 1,
           title: "Venta completada",
@@ -732,7 +734,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           read: false,
           createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
         }
-      ];
+      ]);
+    }
+  };
+
+  // Notifications routes
+  app.get("/api/notifications", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      initUserNotifications(userId);
+      const notifications = userNotifications.get(userId) || [];
       res.json(notifications);
     } catch (error) {
       console.error("Error fetching notifications:", error);
@@ -742,7 +753,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/notifications/:id/read", isAuthenticated, async (req: any, res) => {
     try {
-      const notificationId = req.params.id;
+      const userId = req.user.claims.sub;
+      const notificationId = parseInt(req.params.id);
+      initUserNotifications(userId);
+      
+      const notifications = userNotifications.get(userId) || [];
+      const notification = notifications.find(n => n.id === notificationId);
+      if (notification) {
+        notification.read = true;
+        userNotifications.set(userId, notifications);
+      }
+      
       res.json({ success: true, id: notificationId });
     } catch (error) {
       console.error("Error marking notification as read:", error);
@@ -752,7 +773,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/notifications/:id", isAuthenticated, async (req: any, res) => {
     try {
-      const notificationId = req.params.id;
+      const userId = req.user.claims.sub;
+      const notificationId = parseInt(req.params.id);
+      initUserNotifications(userId);
+      
+      const notifications = userNotifications.get(userId) || [];
+      const filteredNotifications = notifications.filter(n => n.id !== notificationId);
+      userNotifications.set(userId, filteredNotifications);
+      
       res.json({ success: true, id: notificationId });
     } catch (error) {
       console.error("Error deleting notification:", error);
@@ -776,8 +804,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch("/api/notifications/mark-all-read", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
+      initUserNotifications(userId);
       
-      // Mark all notifications as read
+      const notifications = userNotifications.get(userId) || [];
+      notifications.forEach(notification => {
+        notification.read = true;
+      });
+      userNotifications.set(userId, notifications);
+      
       res.json({ success: true, message: "All notifications marked as read" });
     } catch (error) {
       console.error("Error marking all notifications as read:", error);
@@ -789,7 +823,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user.claims.sub;
       
-      // Clear all notifications
+      // Clear all notifications for this user
+      userNotifications.set(userId, []);
+      
       res.json({ success: true, message: "All notifications cleared" });
     } catch (error) {
       console.error("Error clearing all notifications:", error);
