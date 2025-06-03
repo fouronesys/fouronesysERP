@@ -84,7 +84,7 @@ export default function Manufacturing() {
     },
   });
 
-  const manufacturedProducts = products?.filter(p => p.isManufactured) || [];
+  const manufacturedProducts = products || [];
   
   const filteredOrders = productionOrders?.filter(order => {
     const product = products?.find(p => p.id === order.productId);
