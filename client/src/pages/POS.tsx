@@ -671,9 +671,21 @@ export default function POS() {
                     <Card key={product.id} className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => addToCart(product)}>
                       <CardContent className="p-4">
                         <div className="flex justify-between items-start mb-3">
-                          <div className="min-w-0 flex-1">
-                            <h3 className="font-medium text-sm truncate">{product.name}</h3>
-                            <p className="text-xs text-gray-500 dark:text-gray-400">{product.code}</p>
+                          <div className="flex items-center min-w-0 flex-1">
+                            <div className="flex-shrink-0 h-10 w-10 mr-3">
+                              <img
+                                className="h-10 w-10 rounded object-cover border border-gray-200 dark:border-gray-600"
+                                src={product.imageUrl || "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=400&fit=crop"}
+                                alt={product.name}
+                                onError={(e) => {
+                                  e.currentTarget.src = "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=400&fit=crop";
+                                }}
+                              />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <h3 className="font-medium text-sm truncate">{product.name}</h3>
+                              <p className="text-xs text-gray-500 dark:text-gray-400">{product.code}</p>
+                            </div>
                           </div>
                           <Badge variant={parseInt(product.stock.toString()) > 10 ? "default" : "destructive"} className="ml-2 text-xs">
                             {product.stock}

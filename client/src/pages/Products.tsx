@@ -59,12 +59,15 @@ export default function Products() {
 
   const createProductMutation = useMutation({
     mutationFn: async (data: ProductFormData) => {
-      await apiRequest("POST", "/api/products", {
-        ...data,
-        price: data.price,
-        cost: data.cost || undefined,
-        stock: parseInt(data.stock),
-        minStock: parseInt(data.minStock),
+      await apiRequest("/api/products", {
+        method: "POST",
+        body: {
+          ...data,
+          price: data.price,
+          cost: data.cost || undefined,
+          stock: parseInt(data.stock),
+          minStock: parseInt(data.minStock),
+        }
       });
     },
     onSuccess: () => {
@@ -88,12 +91,15 @@ export default function Products() {
   const updateProductMutation = useMutation({
     mutationFn: async (data: ProductFormData) => {
       if (!editingProduct) return;
-      await apiRequest("PUT", `/api/products/${editingProduct.id}`, {
-        ...data,
-        price: data.price,
-        cost: data.cost || undefined,
-        stock: parseInt(data.stock),
-        minStock: parseInt(data.minStock),
+      await apiRequest(`/api/products/${editingProduct.id}`, {
+        method: "PUT",
+        body: {
+          ...data,
+          price: data.price,
+          cost: data.cost || undefined,
+          stock: parseInt(data.stock),
+          minStock: parseInt(data.minStock),
+        }
       });
     },
     onSuccess: () => {
@@ -117,7 +123,9 @@ export default function Products() {
 
   const deleteProductMutation = useMutation({
     mutationFn: async (id: number) => {
-      await apiRequest("DELETE", `/api/products/${id}`);
+      await apiRequest(`/api/products/${id}`, {
+        method: "DELETE"
+      });
     },
     onSuccess: () => {
       toast({
