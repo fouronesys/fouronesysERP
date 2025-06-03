@@ -24,6 +24,9 @@ import POS from "@/pages/POS";
 import Setup from "@/pages/Setup";
 import SuperAdmin from "@/pages/SuperAdmin";
 import CompanySettings from "@/pages/CompanySettings";
+import SalesReports from "@/pages/SalesReports";
+import POSSales from "@/pages/POSSales";
+import Warehouses from "@/pages/Warehouses";
 import NotFound from "@/pages/not-found";
 
 function ProtectedRoute({ component: Component, ...props }: { component: React.ComponentType }) {
@@ -107,11 +110,16 @@ function Router() {
       <Route path="/manufacturing" component={() => <ProtectedRoute component={Manufacturing} />} />
       <Route path="/pos" component={() => <ProtectedRoute component={POS} />} />
       
-      {/* Placeholder routes for future implementation */}
-      <Route path="/sales-reports" component={() => <ProtectedRoute component={Dashboard} />} />
-      <Route path="/warehouses" component={() => <ProtectedRoute component={Dashboard} />} />
-      <Route path="/movements" component={() => <ProtectedRoute component={Dashboard} />} />
+      {/* Active functional routes */}
+      <Route path="/sales-reports" component={() => <ProtectedRoute component={SalesReports} />} />
+      <Route path="/pos-sales" component={() => <ProtectedRoute component={POSSales} />} />
+      <Route path="/warehouses" component={() => <ProtectedRoute component={Warehouses} />} />
       <Route path="/bom" component={() => <ProtectedRoute component={BOM} />} />
+      <Route path="/admin" component={() => <ProtectedRoute component={SuperAdmin} />} />
+      <Route path="/companies" component={() => <ProtectedRoute component={CompanySettings} />} />
+      
+      {/* Placeholder routes for future implementation */}
+      <Route path="/movements" component={() => <ProtectedRoute component={Dashboard} />} />
       <Route path="/recipes" component={() => <ProtectedRoute component={Manufacturing} />} />
       <Route path="/suppliers" component={() => <ProtectedRoute component={Customers} />} />
       <Route path="/purchase-orders" component={() => <ProtectedRoute component={Dashboard} />} />
