@@ -123,6 +123,7 @@ function Router() {
       <Route path="/bom" component={() => <ProtectedRoute component={BOM} />} />
       <Route path="/admin" component={() => <ProtectedRoute component={SuperAdmin} />} />
       <Route path="/companies" component={() => <ProtectedRoute component={CompanySettings} />} />
+      <Route path="/company-settings" component={() => <ProtectedRoute component={CompanySettings} />} />
       
       {/* Active functional routes continued */}
       <Route path="/movements" component={() => <ProtectedRoute component={Movements} />} />
