@@ -470,6 +470,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/products/generate-image", isAuthenticated, async (req: any, res) => {
+    try {
+      const { productName } = req.body;
+      if (!productName) {
+        return res.status(400).json({ message: "Product name is required" });
+      }
+      
+      // Generate image URL using the same logic as in storage
+      const imageUrl = storage.generateProductImageUrl(productName);
+      res.json({ imageUrl });
+    } catch (error) {
+      console.error("Error generating product image:", error);
+      res.status(500).json({ message: "Failed to generate product image" });
+    }
+  });
+
   // Invoice routes
   app.get("/api/invoices", isAuthenticated, async (req: any, res) => {
     try {

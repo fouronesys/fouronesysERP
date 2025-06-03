@@ -27,6 +27,7 @@ const productSchema = z.object({
   minStock: z.string().default("0"),
   unit: z.string().default("unit"),
   isManufactured: z.boolean().default(false),
+  imageUrl: z.string().optional(),
 });
 
 type ProductFormData = z.infer<typeof productSchema>;
@@ -54,6 +55,7 @@ export default function Products() {
       minStock: "0",
       unit: "unit",
       isManufactured: false,
+      imageUrl: "",
     },
   });
 
@@ -143,6 +145,30 @@ export default function Products() {
     },
   });
 
+  const generateImageMutation = useMutation({
+    mutationFn: async (productName: string) => {
+      const response = await apiRequest("/api/products/generate-image", {
+        method: "POST",
+        body: { productName }
+      });
+      return response.json();
+    },
+    onSuccess: (data) => {
+      form.setValue("imageUrl", data.imageUrl);
+      toast({
+        title: "Imagen generada",
+        description: "Nueva imagen generada automáticamente.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "No se pudo generar la imagen automáticamente.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const filteredProducts = products?.filter(product =>
     product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     product.code.toLowerCase().includes(searchTerm.toLowerCase())
@@ -168,6 +194,7 @@ export default function Products() {
       minStock: product.minStock?.toString() || "0",
       unit: product.unit,
       isManufactured: product.isManufactured,
+      imageUrl: product.imageUrl || "",
     });
     setIsDialogOpen(true);
   };
@@ -369,6 +396,65 @@ export default function Products() {
                         </FormItem>
                       )}
                     />
+                  </div>
+
+                  {/* Image Management Section */}
+                  <div className="space-y-4">
+                    <FormLabel className="text-base font-medium">Imagen del Producto</FormLabel>
+                    
+                    {/* Image Preview */}
+                    {form.watch("imageUrl") && (
+                      <div className="flex justify-center">
+                        <img
+                          src={form.watch("imageUrl") || ""}
+                          alt="Vista previa del producto"
+                          className="h-32 w-32 object-cover rounded-lg border border-gray-300 dark:border-gray-600"
+                          onError={(e) => {
+                            e.currentTarget.src = "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=400&fit=crop";
+                          }}
+                        />
+                      </div>
+                    )}
+                    
+                    {/* Manual Image URL Input */}
+                    <FormField
+                      control={form.control}
+                      name="imageUrl"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>URL de la Imagen</FormLabel>
+                          <FormControl>
+                            <Input 
+                              placeholder="https://ejemplo.com/imagen.jpg"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    {/* Auto Generate Image Button */}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        const productName = form.getValues("name");
+                        if (productName) {
+                          generateImageMutation.mutate(productName);
+                        } else {
+                          toast({
+                            title: "Error",
+                            description: "Ingrese el nombre del producto primero.",
+                            variant: "destructive",
+                          });
+                        }
+                      }}
+                      disabled={generateImageMutation.isPending}
+                      className="w-full"
+                    >
+                      {generateImageMutation.isPending ? "Generando..." : "Generar Imagen Automáticamente"}
+                    </Button>
                   </div>
 
                   <FormField
