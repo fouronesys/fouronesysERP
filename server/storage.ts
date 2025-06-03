@@ -14,6 +14,7 @@ import {
   posSales,
   posSaleItems,
   posPrintSettings,
+  aiChatMessages,
   notifications,
   employees,
   payrollPeriods,

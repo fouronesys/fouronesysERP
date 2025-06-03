@@ -1606,23 +1606,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/ai/chat", isAuthenticated, async (req: any, res) => {
     try {
       const { message } = req.body;
-      const userCompany = await storage.getCompanyByUserId(req.user.claims.sub);
+      const userId = req.user.claims.sub;
+      const userCompany = await storage.getCompanyByUserId(userId);
       
       if (!process.env.ANTHROPIC_API_KEY) {
         return res.status(503).json({ message: "AI service not configured" });
       }
 
+      if (!userCompany) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
       const context = {
-        companyName: userCompany?.name,
-        userId: req.user.claims.sub
+        companyName: userCompany.name,
+        userId: userId
       };
       
       const response = await AIChatService.processQuery(message, context);
+      
+      // Save chat message to database
+      try {
+        await storage.saveAIChatMessage({
+          companyId: userCompany.id,
+          userId,
+          message,
+          response,
+          context
+        });
+      } catch (saveError) {
+        console.error("Error saving chat message:", saveError);
+        // Continue even if saving fails
+      }
       
       res.json({ response });
     } catch (error) {
       console.error("Error processing chat:", error);
       res.status(500).json({ message: error.message || "Failed to process message" });
+    }
+  });
+
+  // Get AI Chat history
+  app.get("/api/ai/chat/history", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const userCompany = await storage.getCompanyByUserId(userId);
+      
+      if (!userCompany) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      const limit = parseInt(req.query.limit as string) || 50;
+      const messages = await storage.getAIChatMessages(userCompany.id, userId, limit);
+      
+      res.json(messages);
+    } catch (error) {
+      console.error("Error fetching chat history:", error);
+      res.status(500).json({ message: "Failed to fetch chat history" });
     }
   });
 
