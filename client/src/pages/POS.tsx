@@ -210,6 +210,10 @@ export default function POS() {
         cashReceived: paymentMethod === "cash" ? cashReceived : null,
         cashChange: paymentMethod === "cash" ? cashChange.toString() : "0",
         ncf: printSettings?.showNCF ? generateNCF('consumer', Date.now()) : null,
+        // Restaurant-specific fields
+        orderType: company?.businessType === "restaurant" ? orderType : "dine_in",
+        tableNumber: company?.businessType === "restaurant" && orderType === "dine_in" ? tableNumber : null,
+        preparationNotes: company?.businessType === "restaurant" ? preparationNotes : null,
       };
 
       const saleResponse = await apiRequest("POST", "/api/pos/sales", saleData);
@@ -735,10 +739,54 @@ export default function POS() {
                   )}
                 </div>
 
+                {/* Restaurant-specific fields */}
+                {company?.businessType === "restaurant" && (
+                  <div className="space-y-3 p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg border">
+                    <h4 className="font-medium text-orange-800 dark:text-orange-200 flex items-center gap-2">
+                      <FileText className="h-4 w-4" />
+                      Opciones de Restaurante
+                    </h4>
+                    
+                    <div>
+                      <label className="text-sm font-medium mb-2 block">Tipo de Orden</label>
+                      <Select value={orderType} onValueChange={(value: "dine_in" | "takeout" | "delivery") => setOrderType(value)}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="dine_in">Para Comer Aquí</SelectItem>
+                          <SelectItem value="takeout">Para Llevar</SelectItem>
+                          <SelectItem value="delivery">Delivery</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {orderType === "dine_in" && (
+                      <div>
+                        <label className="text-sm font-medium mb-2 block">Número de Mesa</label>
+                        <Input
+                          placeholder="Ej: Mesa 5"
+                          value={tableNumber}
+                          onChange={(e) => setTableNumber(e.target.value)}
+                        />
+                      </div>
+                    )}
+
+                    <div>
+                      <label className="text-sm font-medium mb-2 block">Notas de Preparación</label>
+                      <Input
+                        placeholder="Instrucciones especiales..."
+                        value={preparationNotes}
+                        onChange={(e) => setPreparationNotes(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                )}
+
                 {/* Action Buttons */}
                 <div className="space-y-2">
                   {/* Preview and Print Options */}
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className={`grid gap-2 ${company?.businessType === "restaurant" ? "grid-cols-2" : "grid-cols-1"}`}>
                     <Button
                       onClick={previewCurrentInvoice}
                       disabled={cart.length === 0}
@@ -748,15 +796,17 @@ export default function POS() {
                       <Eye className="h-4 w-4 mr-1" />
                       Vista Previa
                     </Button>
-                    <Button
-                      onClick={previewAsKitchenCommand}
-                      disabled={cart.length === 0}
-                      variant="outline"
-                      size="sm"
-                    >
-                      <FileText className="h-4 w-4 mr-1" />
-                      Comanda
-                    </Button>
+                    {company?.businessType === "restaurant" && (
+                      <Button
+                        onClick={previewAsKitchenCommand}
+                        disabled={cart.length === 0}
+                        variant="outline"
+                        size="sm"
+                      >
+                        <FileText className="h-4 w-4 mr-1" />
+                        Comanda
+                      </Button>
+                    )}
                   </div>
 
                   {/* Reprint Last Sale */}
