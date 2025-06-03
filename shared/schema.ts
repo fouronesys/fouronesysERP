@@ -498,6 +498,129 @@ export const insertNotificationSchema = createInsertSchema(notifications).omit({
   updatedAt: true,
 });
 
+// HR and Payroll Tables
+export const employees = pgTable("employees", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull().references(() => companies.id, { onDelete: "cascade" }),
+  employeeId: varchar("employee_id", { length: 50 }).notNull(),
+  firstName: varchar("first_name", { length: 100 }).notNull(),
+  lastName: varchar("last_name", { length: 100 }).notNull(),
+  email: varchar("email", { length: 255 }),
+  phone: varchar("phone", { length: 20 }),
+  address: text("address"),
+  position: varchar("position", { length: 100 }).notNull(),
+  department: varchar("department", { length: 100 }),
+  hireDate: timestamp("hire_date").notNull(),
+  salary: decimal("salary", { precision: 10, scale: 2 }).notNull(),
+  salaryType: varchar("salary_type", { length: 20 }).notNull().default("monthly"), // monthly, hourly, weekly
+  status: varchar("status", { length: 20 }).notNull().default("active"), // active, inactive, terminated
+  cedula: varchar("cedula", { length: 20 }), // Dominican ID
+  tss: varchar("tss", { length: 20 }), // Social Security Number
+  bankAccount: varchar("bank_account", { length: 50 }),
+  bankName: varchar("bank_name", { length: 100 }),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const payrollPeriods = pgTable("payroll_periods", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull().references(() => companies.id, { onDelete: "cascade" }),
+  periodName: varchar("period_name", { length: 100 }).notNull(),
+  startDate: timestamp("start_date").notNull(),
+  endDate: timestamp("end_date").notNull(),
+  payDate: timestamp("pay_date").notNull(),
+  status: varchar("status", { length: 20 }).notNull().default("draft"), // draft, processing, paid, closed
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const payrollEntries = pgTable("payroll_entries", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull().references(() => companies.id, { onDelete: "cascade" }),
+  periodId: integer("period_id").notNull().references(() => payrollPeriods.id, { onDelete: "cascade" }),
+  employeeId: integer("employee_id").notNull().references(() => employees.id, { onDelete: "cascade" }),
+  baseSalary: decimal("base_salary", { precision: 10, scale: 2 }).notNull(),
+  hoursWorked: decimal("hours_worked", { precision: 8, scale: 2 }).default("0"),
+  overtimeHours: decimal("overtime_hours", { precision: 8, scale: 2 }).default("0"),
+  bonuses: decimal("bonuses", { precision: 10, scale: 2 }).default("0"),
+  commissions: decimal("commissions", { precision: 10, scale: 2 }).default("0"),
+  allowances: decimal("allowances", { precision: 10, scale: 2 }).default("0"),
+  grossPay: decimal("gross_pay", { precision: 10, scale: 2 }).notNull(),
+  tssDeduction: decimal("tss_deduction", { precision: 10, scale: 2 }).default("0"),
+  sfsDeduction: decimal("sfs_deduction", { precision: 10, scale: 2 }).default("0"),
+  infotepDeduction: decimal("infotep_deduction", { precision: 10, scale: 2 }).default("0"),
+  incomeTaxDeduction: decimal("income_tax_deduction", { precision: 10, scale: 2 }).default("0"),
+  otherDeductions: decimal("other_deductions", { precision: 10, scale: 2 }).default("0"),
+  totalDeductions: decimal("total_deductions", { precision: 10, scale: 2 }).notNull(),
+  netPay: decimal("net_pay", { precision: 10, scale: 2 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const timeTracking = pgTable("time_tracking", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull().references(() => companies.id, { onDelete: "cascade" }),
+  employeeId: integer("employee_id").notNull().references(() => employees.id, { onDelete: "cascade" }),
+  date: timestamp("date").notNull(),
+  clockIn: timestamp("clock_in"),
+  clockOut: timestamp("clock_out"),
+  breakStart: timestamp("break_start"),
+  breakEnd: timestamp("break_end"),
+  hoursWorked: decimal("hours_worked", { precision: 8, scale: 2 }).default("0"),
+  overtimeHours: decimal("overtime_hours", { precision: 8, scale: 2 }).default("0"),
+  notes: text("notes"),
+  status: varchar("status", { length: 20 }).notNull().default("pending"), // pending, approved, rejected
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const leaves = pgTable("leaves", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull().references(() => companies.id, { onDelete: "cascade" }),
+  employeeId: integer("employee_id").notNull().references(() => employees.id, { onDelete: "cascade" }),
+  leaveType: varchar("leave_type", { length: 50 }).notNull(), // vacation, sick, personal, maternity, etc.
+  startDate: timestamp("start_date").notNull(),
+  endDate: timestamp("end_date").notNull(),
+  days: integer("days").notNull(),
+  reason: text("reason"),
+  status: varchar("status", { length: 20 }).notNull().default("pending"), // pending, approved, rejected
+  approvedBy: varchar("approved_by", { length: 255 }),
+  approvedAt: timestamp("approved_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// HR and Payroll Insert Schemas
+export const insertEmployeeSchema = createInsertSchema(employees).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertPayrollPeriodSchema = createInsertSchema(payrollPeriods).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertPayrollEntrySchema = createInsertSchema(payrollEntries).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertTimeTrackingSchema = createInsertSchema(timeTracking).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertLeaveSchema = createInsertSchema(leaves).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
@@ -529,3 +652,13 @@ export type POSPrintSettings = typeof posPrintSettings.$inferSelect;
 export type InsertPOSPrintSettings = z.infer<typeof insertPOSPrintSettingsSchema>;
 export type Notification = typeof notifications.$inferSelect;
 export type InsertNotification = z.infer<typeof insertNotificationSchema>;
+export type Employee = typeof employees.$inferSelect;
+export type InsertEmployee = z.infer<typeof insertEmployeeSchema>;
+export type PayrollPeriod = typeof payrollPeriods.$inferSelect;
+export type InsertPayrollPeriod = z.infer<typeof insertPayrollPeriodSchema>;
+export type PayrollEntry = typeof payrollEntries.$inferSelect;
+export type InsertPayrollEntry = z.infer<typeof insertPayrollEntrySchema>;
+export type TimeTracking = typeof timeTracking.$inferSelect;
+export type InsertTimeTracking = z.infer<typeof insertTimeTrackingSchema>;
+export type Leave = typeof leaves.$inferSelect;
+export type InsertLeave = z.infer<typeof insertLeaveSchema>;

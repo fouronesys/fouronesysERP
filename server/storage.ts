@@ -15,12 +15,27 @@ import {
   posSaleItems,
   posPrintSettings,
   notifications,
+  employees,
+  payrollPeriods,
+  payrollEntries,
+  timeTracking,
+  leaves,
   type User,
   type UpsertUser,
   type Company,
   type InsertCompany,
   type Notification,
   type InsertNotification,
+  type Employee,
+  type InsertEmployee,
+  type PayrollPeriod,
+  type InsertPayrollPeriod,
+  type PayrollEntry,
+  type InsertPayrollEntry,
+  type TimeTracking,
+  type InsertTimeTracking,
+  type Leave,
+  type InsertLeave,
   type CompanyUser,
   type InsertCompanyUser,
   type Warehouse,
@@ -134,6 +149,41 @@ export interface IStorage {
   deleteNotification(id: number, userId: string): Promise<void>;
   markAllNotificationsAsRead(userId: string, companyId: number): Promise<void>;
   clearAllNotifications(userId: string, companyId: number): Promise<void>;
+  
+  // Employee operations
+  getEmployees(companyId: number): Promise<Employee[]>;
+  getEmployee(id: number, companyId: number): Promise<Employee | undefined>;
+  createEmployee(employee: InsertEmployee): Promise<Employee>;
+  updateEmployee(id: number, employee: Partial<InsertEmployee>, companyId: number): Promise<Employee | undefined>;
+  deleteEmployee(id: number, companyId: number): Promise<void>;
+  
+  // Payroll Period operations
+  getPayrollPeriods(companyId: number): Promise<PayrollPeriod[]>;
+  getPayrollPeriod(id: number, companyId: number): Promise<PayrollPeriod | undefined>;
+  createPayrollPeriod(period: InsertPayrollPeriod): Promise<PayrollPeriod>;
+  updatePayrollPeriod(id: number, period: Partial<InsertPayrollPeriod>, companyId: number): Promise<PayrollPeriod | undefined>;
+  deletePayrollPeriod(id: number, companyId: number): Promise<void>;
+  
+  // Payroll Entry operations
+  getPayrollEntries(companyId: number, periodId?: number): Promise<PayrollEntry[]>;
+  getPayrollEntry(id: number, companyId: number): Promise<PayrollEntry | undefined>;
+  createPayrollEntry(entry: InsertPayrollEntry): Promise<PayrollEntry>;
+  updatePayrollEntry(id: number, entry: Partial<InsertPayrollEntry>, companyId: number): Promise<PayrollEntry | undefined>;
+  deletePayrollEntry(id: number, companyId: number): Promise<void>;
+  
+  // Time Tracking operations
+  getTimeTracking(companyId: number, employeeId?: number): Promise<TimeTracking[]>;
+  getTimeTrackingEntry(id: number, companyId: number): Promise<TimeTracking | undefined>;
+  createTimeTracking(timeEntry: InsertTimeTracking): Promise<TimeTracking>;
+  updateTimeTracking(id: number, timeEntry: Partial<InsertTimeTracking>, companyId: number): Promise<TimeTracking | undefined>;
+  deleteTimeTracking(id: number, companyId: number): Promise<void>;
+  
+  // Leave operations
+  getLeaves(companyId: number, employeeId?: number): Promise<Leave[]>;
+  getLeave(id: number, companyId: number): Promise<Leave | undefined>;
+  createLeave(leave: InsertLeave): Promise<Leave>;
+  updateLeave(id: number, leave: Partial<InsertLeave>, companyId: number): Promise<Leave | undefined>;
+  deleteLeave(id: number, companyId: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -635,7 +685,7 @@ export class DatabaseStorage implements IStorage {
 
   // Notification operations
   async getNotifications(userId: string, companyId: number): Promise<Notification[]> {
-    const notifications = await db
+    const notificationsList = await db
       .select()
       .from(notifications)
       .where(
@@ -645,7 +695,7 @@ export class DatabaseStorage implements IStorage {
         )
       )
       .orderBy(desc(notifications.createdAt));
-    return notifications;
+    return notificationsList;
   }
 
   async createNotification(notificationData: InsertNotification): Promise<Notification> {
@@ -700,6 +750,226 @@ export class DatabaseStorage implements IStorage {
           eq(notifications.companyId, companyId)
         )
       );
+  }
+
+  // Employee operations
+  async getEmployees(companyId: number): Promise<Employee[]> {
+    const employeeList = await db
+      .select()
+      .from(employees)
+      .where(eq(employees.companyId, companyId))
+      .orderBy(employees.firstName, employees.lastName);
+    return employeeList;
+  }
+
+  async getEmployee(id: number, companyId: number): Promise<Employee | undefined> {
+    const [employee] = await db
+      .select()
+      .from(employees)
+      .where(and(eq(employees.id, id), eq(employees.companyId, companyId)));
+    return employee;
+  }
+
+  async createEmployee(employeeData: InsertEmployee): Promise<Employee> {
+    const [employee] = await db
+      .insert(employees)
+      .values(employeeData)
+      .returning();
+    return employee;
+  }
+
+  async updateEmployee(id: number, employeeData: Partial<InsertEmployee>, companyId: number): Promise<Employee | undefined> {
+    const [employee] = await db
+      .update(employees)
+      .set({ ...employeeData, updatedAt: new Date() })
+      .where(and(eq(employees.id, id), eq(employees.companyId, companyId)))
+      .returning();
+    return employee;
+  }
+
+  async deleteEmployee(id: number, companyId: number): Promise<void> {
+    await db
+      .delete(employees)
+      .where(and(eq(employees.id, id), eq(employees.companyId, companyId)));
+  }
+
+  // Payroll Period operations
+  async getPayrollPeriods(companyId: number): Promise<PayrollPeriod[]> {
+    const periods = await db
+      .select()
+      .from(payrollPeriods)
+      .where(eq(payrollPeriods.companyId, companyId))
+      .orderBy(desc(payrollPeriods.startDate));
+    return periods;
+  }
+
+  async getPayrollPeriod(id: number, companyId: number): Promise<PayrollPeriod | undefined> {
+    const [period] = await db
+      .select()
+      .from(payrollPeriods)
+      .where(and(eq(payrollPeriods.id, id), eq(payrollPeriods.companyId, companyId)));
+    return period;
+  }
+
+  async createPayrollPeriod(periodData: InsertPayrollPeriod): Promise<PayrollPeriod> {
+    const [period] = await db
+      .insert(payrollPeriods)
+      .values(periodData)
+      .returning();
+    return period;
+  }
+
+  async updatePayrollPeriod(id: number, periodData: Partial<InsertPayrollPeriod>, companyId: number): Promise<PayrollPeriod | undefined> {
+    const [period] = await db
+      .update(payrollPeriods)
+      .set({ ...periodData, updatedAt: new Date() })
+      .where(and(eq(payrollPeriods.id, id), eq(payrollPeriods.companyId, companyId)))
+      .returning();
+    return period;
+  }
+
+  async deletePayrollPeriod(id: number, companyId: number): Promise<void> {
+    await db
+      .delete(payrollPeriods)
+      .where(and(eq(payrollPeriods.id, id), eq(payrollPeriods.companyId, companyId)));
+  }
+
+  // Payroll Entry operations
+  async getPayrollEntries(companyId: number, periodId?: number): Promise<PayrollEntry[]> {
+    let query = db
+      .select()
+      .from(payrollEntries)
+      .where(eq(payrollEntries.companyId, companyId));
+    
+    if (periodId) {
+      query = query.where(and(eq(payrollEntries.companyId, companyId), eq(payrollEntries.periodId, periodId)));
+    }
+    
+    const entries = await query.orderBy(payrollEntries.id);
+    return entries;
+  }
+
+  async getPayrollEntry(id: number, companyId: number): Promise<PayrollEntry | undefined> {
+    const [entry] = await db
+      .select()
+      .from(payrollEntries)
+      .where(and(eq(payrollEntries.id, id), eq(payrollEntries.companyId, companyId)));
+    return entry;
+  }
+
+  async createPayrollEntry(entryData: InsertPayrollEntry): Promise<PayrollEntry> {
+    const [entry] = await db
+      .insert(payrollEntries)
+      .values(entryData)
+      .returning();
+    return entry;
+  }
+
+  async updatePayrollEntry(id: number, entryData: Partial<InsertPayrollEntry>, companyId: number): Promise<PayrollEntry | undefined> {
+    const [entry] = await db
+      .update(payrollEntries)
+      .set({ ...entryData, updatedAt: new Date() })
+      .where(and(eq(payrollEntries.id, id), eq(payrollEntries.companyId, companyId)))
+      .returning();
+    return entry;
+  }
+
+  async deletePayrollEntry(id: number, companyId: number): Promise<void> {
+    await db
+      .delete(payrollEntries)
+      .where(and(eq(payrollEntries.id, id), eq(payrollEntries.companyId, companyId)));
+  }
+
+  // Time Tracking operations
+  async getTimeTracking(companyId: number, employeeId?: number): Promise<TimeTracking[]> {
+    let query = db
+      .select()
+      .from(timeTracking)
+      .where(eq(timeTracking.companyId, companyId));
+    
+    if (employeeId) {
+      query = query.where(and(eq(timeTracking.companyId, companyId), eq(timeTracking.employeeId, employeeId)));
+    }
+    
+    const entries = await query.orderBy(desc(timeTracking.date));
+    return entries;
+  }
+
+  async getTimeTrackingEntry(id: number, companyId: number): Promise<TimeTracking | undefined> {
+    const [entry] = await db
+      .select()
+      .from(timeTracking)
+      .where(and(eq(timeTracking.id, id), eq(timeTracking.companyId, companyId)));
+    return entry;
+  }
+
+  async createTimeTracking(timeEntryData: InsertTimeTracking): Promise<TimeTracking> {
+    const [entry] = await db
+      .insert(timeTracking)
+      .values(timeEntryData)
+      .returning();
+    return entry;
+  }
+
+  async updateTimeTracking(id: number, timeEntryData: Partial<InsertTimeTracking>, companyId: number): Promise<TimeTracking | undefined> {
+    const [entry] = await db
+      .update(timeTracking)
+      .set({ ...timeEntryData, updatedAt: new Date() })
+      .where(and(eq(timeTracking.id, id), eq(timeTracking.companyId, companyId)))
+      .returning();
+    return entry;
+  }
+
+  async deleteTimeTracking(id: number, companyId: number): Promise<void> {
+    await db
+      .delete(timeTracking)
+      .where(and(eq(timeTracking.id, id), eq(timeTracking.companyId, companyId)));
+  }
+
+  // Leave operations
+  async getLeaves(companyId: number, employeeId?: number): Promise<Leave[]> {
+    let query = db
+      .select()
+      .from(leaves)
+      .where(eq(leaves.companyId, companyId));
+    
+    if (employeeId) {
+      query = query.where(and(eq(leaves.companyId, companyId), eq(leaves.employeeId, employeeId)));
+    }
+    
+    const leaveList = await query.orderBy(desc(leaves.startDate));
+    return leaveList;
+  }
+
+  async getLeave(id: number, companyId: number): Promise<Leave | undefined> {
+    const [leave] = await db
+      .select()
+      .from(leaves)
+      .where(and(eq(leaves.id, id), eq(leaves.companyId, companyId)));
+    return leave;
+  }
+
+  async createLeave(leaveData: InsertLeave): Promise<Leave> {
+    const [leave] = await db
+      .insert(leaves)
+      .values(leaveData)
+      .returning();
+    return leave;
+  }
+
+  async updateLeave(id: number, leaveData: Partial<InsertLeave>, companyId: number): Promise<Leave | undefined> {
+    const [leave] = await db
+      .update(leaves)
+      .set({ ...leaveData, updatedAt: new Date() })
+      .where(and(eq(leaves.id, id), eq(leaves.companyId, companyId)))
+      .returning();
+    return leave;
+  }
+
+  async deleteLeave(id: number, companyId: number): Promise<void> {
+    await db
+      .delete(leaves)
+      .where(and(eq(leaves.id, id), eq(leaves.companyId, companyId)));
   }
 }
 
