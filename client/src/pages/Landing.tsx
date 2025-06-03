@@ -136,38 +136,47 @@ export default function Landing() {
                   ))}
                 </ul>
                 
-                <Button 
-                  onClick={() => window.location.href = "/api/login"}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-                >
-                  Comenzar Prueba Gratuita
-                </Button>
+                <div className="space-y-3">
+                  <Button 
+                    onClick={() => window.location.href = "/api/login"}
+                    className="w-full bg-gradient-to-r from-gray-900 to-black hover:from-black hover:to-gray-900 text-white border-none"
+                  >
+                    Comenzar Prueba Gratuita
+                  </Button>
+                  <Button 
+                    variant="outline"
+                    onClick={() => window.location.href = "/register"}
+                    className="w-full border-gray-500 text-gray-300 hover:bg-gray-700 hover:text-white"
+                  >
+                    Registrar Nueva Empresa
+                  </Button>
+                </div>
               </CardContent>
             </Card>
 
             {/* Plan Anual */}
-            <Card className="border-2 border-green-500 relative">
+            <Card className="border-2 border-green-600 bg-gray-800/70 backdrop-blur-sm relative">
               <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                <div className="bg-green-500 text-white px-4 py-1 rounded-full text-sm font-medium flex items-center">
+                <div className="bg-gradient-to-r from-green-600 to-emerald-600 text-white px-4 py-1 rounded-full text-sm font-medium flex items-center">
                   <Star className="h-4 w-4 mr-1" />
                   Ahorra RD$ 6,000
                 </div>
               </div>
               <CardContent className="p-8">
                 <div className="text-center mb-6">
-                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white">Plan Anual</h3>
-                  <p className="text-gray-600 dark:text-gray-400 mt-2">2 meses gratis al pagar anual</p>
+                  <h3 className="text-2xl font-bold text-white">Plan Anual</h3>
+                  <p className="text-gray-300 mt-2">2 meses gratis al pagar anual</p>
                   <div className="mt-4">
-                    <span className="text-4xl font-bold text-gray-900 dark:text-white">RD$ 35,000</span>
-                    <span className="text-gray-600 dark:text-gray-400"> instalación</span>
+                    <span className="text-4xl font-bold text-white">RD$ 35,000</span>
+                    <span className="text-gray-300"> instalación</span>
                   </div>
                   <div className="mt-2">
-                    <span className="text-3xl font-bold text-green-600">RD$ 24,000</span>
-                    <span className="text-gray-600 dark:text-gray-400">/año</span>
+                    <span className="text-3xl font-bold bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">RD$ 24,000</span>
+                    <span className="text-gray-300">/año</span>
                   </div>
                   <div className="mt-1">
-                    <span className="text-sm text-gray-500 dark:text-gray-400 line-through">RD$ 30,000/año</span>
-                    <span className="text-sm text-green-600 ml-2 font-medium">¡Ahorra RD$ 6,000!</span>
+                    <span className="text-sm text-gray-400 line-through">RD$ 30,000/año</span>
+                    <span className="text-sm bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent ml-2 font-medium">¡Ahorra RD$ 6,000!</span>
                   </div>
                 </div>
                 
@@ -184,18 +193,27 @@ export default function Landing() {
                     "Descuentos en hosting"
                   ].map((feature, index) => (
                     <li key={index} className="flex items-center">
-                      <Check className="h-5 w-5 text-green-500 mr-3" />
-                      <span className="text-gray-700 dark:text-gray-300">{feature}</span>
+                      <Check className="h-5 w-5 text-green-400 mr-3" />
+                      <span className="text-gray-300">{feature}</span>
                     </li>
                   ))}
                 </ul>
                 
-                <Button 
-                  onClick={() => window.location.href = "/api/login"}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-                >
-                  Comenzar Prueba Gratuita
-                </Button>
+                <div className="space-y-3">
+                  <Button 
+                    onClick={() => window.location.href = "/api/login"}
+                    className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white border-none"
+                  >
+                    Comenzar Prueba Gratuita
+                  </Button>
+                  <Button 
+                    variant="outline"
+                    onClick={() => window.location.href = "/register"}
+                    className="w-full border-green-500 text-green-400 hover:bg-green-600 hover:text-white"
+                  >
+                    Registrar Nueva Empresa
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           </div>
