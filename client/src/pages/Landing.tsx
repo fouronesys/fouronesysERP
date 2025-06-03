@@ -111,11 +111,11 @@ export default function Landing() {
                   <h3 className="text-2xl font-bold text-gray-900 dark:text-white">Plan Mensual</h3>
                   <p className="text-gray-600 dark:text-gray-400 mt-2">Flexibilidad mes a mes</p>
                   <div className="mt-4">
-                    <span className="text-4xl font-bold text-gray-900 dark:text-white">RD$ 15,000</span>
+                    <span className="text-4xl font-bold text-gray-900 dark:text-white">RD$ 25,000</span>
                     <span className="text-gray-600 dark:text-gray-400"> instalación</span>
                   </div>
                   <div className="mt-2">
-                    <span className="text-3xl font-bold text-blue-600">RD$ 1,800</span>
+                    <span className="text-3xl font-bold text-blue-600">RD$ 2,500</span>
                     <span className="text-gray-600 dark:text-gray-400">/mes</span>
                   </div>
                 </div>
@@ -150,7 +150,7 @@ export default function Landing() {
               <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
                 <div className="bg-green-500 text-white px-4 py-1 rounded-full text-sm font-medium flex items-center">
                   <Star className="h-4 w-4 mr-1" />
-                  Ahorra RD$ 6,600
+                  Ahorra RD$ 6,000
                 </div>
               </div>
               <CardContent className="p-8">
@@ -158,16 +158,16 @@ export default function Landing() {
                   <h3 className="text-2xl font-bold text-gray-900 dark:text-white">Plan Anual</h3>
                   <p className="text-gray-600 dark:text-gray-400 mt-2">2 meses gratis al pagar anual</p>
                   <div className="mt-4">
-                    <span className="text-4xl font-bold text-gray-900 dark:text-white">RD$ 12,000</span>
+                    <span className="text-4xl font-bold text-gray-900 dark:text-white">RD$ 35,000</span>
                     <span className="text-gray-600 dark:text-gray-400"> instalación</span>
                   </div>
                   <div className="mt-2">
-                    <span className="text-3xl font-bold text-green-600">RD$ 15,000</span>
+                    <span className="text-3xl font-bold text-green-600">RD$ 24,000</span>
                     <span className="text-gray-600 dark:text-gray-400">/año</span>
                   </div>
                   <div className="mt-1">
-                    <span className="text-sm text-gray-500 dark:text-gray-400 line-through">RD$ 21,600/año</span>
-                    <span className="text-sm text-green-600 ml-2 font-medium">¡Ahorra RD$ 6,600!</span>
+                    <span className="text-sm text-gray-500 dark:text-gray-400 line-through">RD$ 30,000/año</span>
+                    <span className="text-sm text-green-600 ml-2 font-medium">¡Ahorra RD$ 6,000!</span>
                   </div>
                 </div>
                 
