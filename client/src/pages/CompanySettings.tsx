@@ -89,10 +89,20 @@ export default function CompanySettings() {
 
   const updateMutation = useMutation({
     mutationFn: async (data: CompanySettingsFormData & { logoUrl?: string }) => {
-      await apiRequest(`/api/companies/current`, {
-        method: "PUT",
+      const response = await fetch('/api/companies/current', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify(data),
       });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to update company');
+      }
+      
+      return response.json();
     },
     onSuccess: () => {
       toast({
@@ -101,10 +111,11 @@ export default function CompanySettings() {
       });
       queryClient.invalidateQueries({ queryKey: ["/api/companies/current"] });
     },
-    onError: () => {
+    onError: (error: any) => {
+      console.error("Update error:", error);
       toast({
         title: "Error",
-        description: "No se pudo actualizar la configuración de la empresa.",
+        description: error.message || "No se pudo actualizar la configuración de la empresa.",
         variant: "destructive",
       });
     },
