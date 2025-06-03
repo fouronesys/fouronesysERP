@@ -71,6 +71,8 @@ import {
   type InsertComprobante606,
   type RNCRegistry,
   type InsertRNCRegistry,
+  type AIChatMessage,
+  type InsertAIChatMessage,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, sql, gte, lte } from "drizzle-orm";
