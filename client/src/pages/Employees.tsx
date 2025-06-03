@@ -103,6 +103,7 @@ export default function Employees() {
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
+    const hireDateValue = formData.get("hireDate") as string;
     const data = {
       employeeId: formData.get("employeeId"),
       firstName: formData.get("firstName"),
@@ -112,7 +113,7 @@ export default function Employees() {
       address: formData.get("address"),
       position: formData.get("position"),
       department: formData.get("department"),
-      hireDate: formData.get("hireDate"),
+      hireDate: hireDateValue ? new Date(hireDateValue).toISOString() : null,
       salary: parseFloat(formData.get("salary") as string),
       salaryType: formData.get("salaryType"),
       status: formData.get("status"),
