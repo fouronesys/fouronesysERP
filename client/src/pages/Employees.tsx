@@ -113,7 +113,7 @@ export default function Employees() {
       address: formData.get("address"),
       position: formData.get("position"),
       department: formData.get("department"),
-      hireDate: hireDateValue ? new Date(hireDateValue).toISOString() : null,
+      hireDate: hireDateValue,
       salary: parseFloat(formData.get("salary") as string),
       salaryType: formData.get("salaryType"),
       status: formData.get("status"),
