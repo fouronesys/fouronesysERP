@@ -159,7 +159,7 @@ export function validateNCF(ncf: string): boolean {
   return Object.values(patterns).some(pattern => pattern.test(ncf));
 }
 
-export function generateNCF(type: string, sequence: number): string {
+export function generateNCF(type: string, sequence?: number): string {
   const types = {
     'credit_fiscal': 'B01',
     'consumer': 'B02',
@@ -173,7 +173,8 @@ export function generateNCF(type: string, sequence: number): string {
   };
   
   const prefix = types[type as keyof typeof types] || 'B02';
-  const sequenceStr = sequence.toString().padStart(8, '0');
+  const safeSequence = sequence || Math.floor(Math.random() * 99999999) + 1;
+  const sequenceStr = safeSequence.toString().padStart(8, '0');
   
   return `${prefix}${sequenceStr}`;
 }
