@@ -1050,36 +1050,104 @@ export class DatabaseStorage implements IStorage {
         }
       }
 
-      // Enhanced Spanish-to-English translation mapping
+      // Enhanced Spanish-to-English translation mapping with brand-specific searches
       const translationMap: { [key: string]: string } = {
-        // Beverages
-        "ron": "rum bottle", "barceló": "barcelo rum", "brugal": "brugal rum",
-        "cerveza": "beer bottle", "presidente": "presidente beer",
-        "whisky": "whiskey bottle", "vodka": "vodka bottle",
-        "vino": "wine bottle", "champagne": "champagne bottle",
+        // Dominican rum brands - specific searches for better results
+        "ron": "dominican rum bottle",
+        "barceló": "Barcelo Dominican rum bottle",
+        "brugal": "Brugal Dominican rum bottle", 
+        "bermúdez": "Bermudez Dominican rum bottle",
+        "mama": "Mama Juana Dominican rum",
         
-        // Fruits
-        "manzana": "apple", "banana": "banana", "plátano": "banana",
-        "naranja": "orange", "limón": "lemon", "pera": "pear",
-        "aguacate": "avocado", "mango": "mango", "piña": "pineapple",
+        // Beer brands
+        "cerveza": "beer bottle",
+        "presidente": "Presidente Dominican beer bottle",
+        "brahma": "Brahma beer bottle",
+        "corona": "Corona beer bottle",
         
-        // Food items
-        "arroz": "rice", "pollo": "chicken", "pan": "bread",
-        "pizza": "pizza", "pasta": "pasta", "queso": "cheese",
-        "leche": "milk", "huevos": "eggs", "carne": "meat",
-        "pescado": "fish", "café": "coffee", "azúcar": "sugar",
+        // Spirits
+        "whisky": "whiskey bottle",
+        "vodka": "vodka bottle",
+        "brandy": "brandy bottle",
+        "gin": "gin bottle",
+        
+        // Wine and champagne
+        "vino": "wine bottle",
+        "champagne": "champagne bottle",
+        "prosecco": "prosecco bottle",
+        
+        // Fruits - specific varieties when possible
+        "manzana": "red apple fruit",
+        "banana": "fresh banana",
+        "plátano": "plantain banana",
+        "naranja": "orange fruit",
+        "limón": "lime lemon",
+        "pera": "pear fruit",
+        "aguacate": "avocado fruit",
+        "mango": "tropical mango",
+        "piña": "pineapple fruit",
+        "papaya": "papaya fruit",
+        "chinola": "passion fruit",
+        
+        // Meat and protein
+        "pollo": "chicken meat",
+        "carne": "beef meat",
+        "cerdo": "pork meat",
+        "pescado": "fresh fish",
+        "camarones": "shrimp seafood",
+        "langosta": "lobster seafood",
+        
+        // Dairy and eggs
+        "leche": "milk carton",
+        "queso": "cheese block",
+        "huevos": "eggs carton",
+        "yogurt": "yogurt container",
+        
+        // Grains and staples
+        "arroz": "rice bag",
+        "frijoles": "beans bag",
+        "habichuelas": "red beans",
+        "pan": "bread loaf",
+        "pasta": "pasta package",
+        "espaguetis": "spaghetti pasta",
+        
+        // Beverages non-alcoholic
+        "café": "coffee beans",
+        "té": "tea bag",
+        "agua": "water bottle",
+        "jugo": "fruit juice bottle",
+        "refresco": "soda bottle",
+        "cola": "cola soda",
+        
+        // Snacks and sweets
+        "chocolate": "chocolate bar",
+        "galletas": "cookies package",
+        "dulces": "candy sweets",
+        "helado": "ice cream",
         
         // Electronics
-        "teléfono": "smartphone", "laptop": "laptop", "tablet": "tablet",
-        "auriculares": "headphones", "televisor": "television",
+        "teléfono": "smartphone device",
+        "laptop": "laptop computer",
+        "tablet": "tablet device",
+        "auriculares": "headphones audio",
+        "televisor": "television screen",
+        "radio": "radio device",
         
         // Personal care
-        "champú": "shampoo", "jabón": "soap", "crema": "cream",
-        "perfume": "perfume", "desodorante": "deodorant",
+        "champú": "shampoo bottle",
+        "jabón": "soap bar",
+        "pastadental": "toothpaste tube",
+        "crema": "face cream jar",
+        "perfume": "perfume bottle",
+        "desodorante": "deodorant stick",
+        "cepillo": "toothbrush",
         
-        // Household
-        "detergente": "detergent", "limpiador": "cleaner",
-        "papel": "paper", "toalla": "towel"
+        // Household items
+        "detergente": "laundry detergent",
+        "limpiador": "cleaning product",
+        "papel": "toilet paper",
+        "toalla": "towel fabric",
+        "servilletas": "napkins package"
       };
 
       // Translate terms and prioritize brand-specific searches
@@ -1088,25 +1156,56 @@ export class DatabaseStorage implements IStorage {
         return translated || term;
       });
 
-      // Create search query - prioritize specific brands and products
-      const searchQuery = translatedTerms.slice(0, 3).join(' '); // Max 3 terms
+      // Create multiple search queries with different priorities
+      const searchQueries = [];
       
-      // Use Unsplash API to search for images
-      if (process.env.UNSPLASH_ACCESS_KEY && searchQuery.trim()) {
-        const response = await fetch(
-          `https://api.unsplash.com/search/photos?query=${encodeURIComponent(searchQuery)}&per_page=1&orientation=squarish`,
-          {
-            headers: {
-              'Authorization': `Client-ID ${process.env.UNSPLASH_ACCESS_KEY}`
-            }
-          }
-        );
+      // Primary query: Most specific with brand if available
+      if (translatedTerms.length > 0) {
+        searchQueries.push(translatedTerms.slice(0, 2).join(' ')); // Top 2 most relevant terms
+      }
+      
+      // Secondary query: Just the main product name translated
+      if (productName) {
+        const mainTerm = productName.toLowerCase().split(' ')[0];
+        const mainTranslated = translationMap[mainTerm] || mainTerm;
+        if (mainTranslated && !searchQueries.includes(mainTranslated)) {
+          searchQueries.push(mainTranslated);
+        }
+      }
+      
+      // Tertiary query: Generic fallback
+      if (translatedTerms.length > 0) {
+        const fallback = translatedTerms[0];
+        if (fallback && !searchQueries.includes(fallback)) {
+          searchQueries.push(fallback);
+        }
+      }
+      
+      // Try multiple search queries until we get a good result
+      if (process.env.UNSPLASH_ACCESS_KEY) {
+        for (const query of searchQueries) {
+          if (query && query.trim()) {
+            try {
+              const response = await fetch(
+                `https://api.unsplash.com/search/photos?query=${encodeURIComponent(query)}&per_page=3&orientation=squarish`,
+                {
+                  headers: {
+                    'Authorization': `Client-ID ${process.env.UNSPLASH_ACCESS_KEY}`
+                  }
+                }
+              );
 
-        if (response.ok) {
-          const data = await response.json();
-          if (data.results && data.results.length > 0) {
-            // Return a regular sized image URL
-            return data.results[0].urls.regular;
+              if (response.ok) {
+                const data = await response.json();
+                if (data.results && data.results.length > 0) {
+                  // Return the first good result (highest relevance score)
+                  return data.results[0].urls.regular;
+                }
+              }
+            } catch (error) {
+              console.error(`Error with search query "${query}":`, error);
+              continue; // Try next query
+            }
           }
         }
       }
@@ -1124,26 +1223,39 @@ export class DatabaseStorage implements IStorage {
   private extractBrandFromCode(productCode: string): string | null {
     const code = productCode.toLowerCase();
     
-    // Common brand patterns in Dominican Republic
+    // Enhanced brand patterns for Dominican Republic
     const brandPatterns: { [key: string]: string } = {
-      // Rum brands
-      "barc": "barcelo rum",
-      "brug": "brugal rum", 
-      "berm": "bermudez rum",
+      // Rum brands - more specific patterns
+      "barc": "Barcelo Dominican rum bottle",
+      "brug": "Brugal Dominican rum bottle", 
+      "berm": "Bermudez Dominican rum bottle",
+      "maca": "Macorix Dominican rum bottle",
       
       // Beer brands
-      "pres": "presidente beer",
-      "brah": "brahma beer",
+      "pres": "Presidente Dominican beer bottle",
+      "brah": "Brahma beer bottle",
+      "coro": "Corona beer bottle",
+      "hein": "Heineken beer bottle",
       
-      // Food brands
-      "goya": "goya",
-      "maggi": "maggi",
-      "nestle": "nestle",
+      // Food and consumer brands
+      "goya": "Goya food product",
+      "maggi": "Maggi seasoning",
+      "nest": "Nestle product",
+      "coca": "Coca Cola bottle",
+      "peps": "Pepsi bottle",
+      "fant": "Fanta orange soda",
       
-      // Common product categories from codes
-      "750": "bottle", // 750ml bottles
-      "355": "can",   // 355ml cans
-      "500": "bottle" // 500ml bottles
+      // Local Dominican brands
+      "rica": "Rica product Dominican",
+      "cibao": "Cibao product Dominican",
+      "yuca": "Yuca product Dominican",
+      
+      // Volume indicators for better context
+      "750ml": "750ml bottle",
+      "355ml": "355ml can",
+      "500ml": "500ml bottle",
+      "1lt": "1 liter bottle",
+      "2lt": "2 liter bottle"
     };
 
     for (const [pattern, brand] of Object.entries(brandPatterns)) {
