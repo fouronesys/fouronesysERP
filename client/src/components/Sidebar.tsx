@@ -19,7 +19,8 @@ import {
   Menu,
   X,
   Settings,
-  ShieldCheck
+  ShieldCheck,
+  Calculator
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsMobile } from "@/hooks/use-mobile";
