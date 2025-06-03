@@ -14,10 +14,13 @@ import {
   posSales,
   posSaleItems,
   posPrintSettings,
+  notifications,
   type User,
   type UpsertUser,
   type Company,
   type InsertCompany,
+  type Notification,
+  type InsertNotification,
   type CompanyUser,
   type InsertCompanyUser,
   type Warehouse,
@@ -126,7 +129,7 @@ export interface IStorage {
   
   // Notification operations
   getNotifications(userId: string, companyId: number): Promise<Notification[]>;
-  createNotification(notification: InsertNotification): Promise<Notification>;
+  createNotification(notification: typeof notifications.$inferInsert): Promise<Notification>;
   markNotificationAsRead(id: number, userId: string): Promise<void>;
   deleteNotification(id: number, userId: string): Promise<void>;
   markAllNotificationsAsRead(userId: string, companyId: number): Promise<void>;
