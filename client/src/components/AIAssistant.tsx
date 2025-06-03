@@ -29,10 +29,11 @@ export function AIAssistant() {
 
   const chatMutation = useMutation({
     mutationFn: async (message: string) => {
-      return await apiRequest(`/api/ai/chat`, {
+      const response = await apiRequest(`/api/ai/chat`, {
         method: "POST",
         body: { message }
       });
+      return await response.json();
     },
     onSuccess: (data: any) => {
       console.log('AI Response received:', data);
