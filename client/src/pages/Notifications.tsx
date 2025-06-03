@@ -139,10 +139,58 @@ export default function Notifications() {
     },
   });
 
+  const markAllAsReadMutation = useMutation({
+    mutationFn: async () => {
+      await apiRequest("PATCH", "/api/notifications/mark-all-read");
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/notifications"] });
+      toast({
+        title: "Notificaciones marcadas",
+        description: "Todas las notificaciones han sido marcadas como leídas.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "No se pudieron marcar las notificaciones como leídas.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const clearAllNotificationsMutation = useMutation({
+    mutationFn: async () => {
+      await apiRequest("DELETE", "/api/notifications/clear-all");
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/notifications"] });
+      toast({
+        title: "Notificaciones limpiadas",
+        description: "Todas las notificaciones han sido eliminadas.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "No se pudieron eliminar las notificaciones.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleSettingChange = (key: keyof NotificationSettings, value: boolean) => {
     const newSettings = { ...settings, [key]: value };
     setSettings(newSettings);
     updateSettingsMutation.mutate(newSettings);
+  };
+
+  const handleMarkAllAsRead = () => {
+    markAllAsReadMutation.mutate();
+  };
+
+  const handleClearAll = () => {
+    clearAllNotificationsMutation.mutate();
   };
 
   const getNotificationIcon = (type: Notification["type"]) => {
@@ -224,10 +272,20 @@ export default function Notifications() {
 
           {activeTab === "notifications" && (
             <div className="flex gap-2">
-              <Button variant="outline" size="sm">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={handleMarkAllAsRead}
+                disabled={markAllAsReadMutation.isPending}
+              >
                 Marcar todas como leídas
               </Button>
-              <Button variant="outline" size="sm">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={handleClearAll}
+                disabled={clearAllNotificationsMutation.isPending}
+              >
                 <Trash2 className="h-4 w-4 mr-2" />
                 Limpiar todo
               </Button>

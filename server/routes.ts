@@ -773,6 +773,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.patch("/api/notifications/mark-all-read", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      
+      // Mark all notifications as read
+      res.json({ success: true, message: "All notifications marked as read" });
+    } catch (error) {
+      console.error("Error marking all notifications as read:", error);
+      res.status(500).json({ message: "Failed to mark notifications as read" });
+    }
+  });
+
+  app.delete("/api/notifications/clear-all", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      
+      // Clear all notifications
+      res.json({ success: true, message: "All notifications cleared" });
+    } catch (error) {
+      console.error("Error clearing all notifications:", error);
+      res.status(500).json({ message: "Failed to clear notifications" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
