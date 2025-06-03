@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertTriangle, TrendingUp, Package, BarChart3, Brain, Lightbulb, Target } from "lucide-react";
-import { AIAssistant } from "@/components/AIAssistant";
+import { AIAssistant } from "@/components/AIAssistant-responsive";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
