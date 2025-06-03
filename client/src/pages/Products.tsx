@@ -467,8 +467,9 @@ export default function Products() {
                       onClick={() => {
                         const productName = form.getValues("name");
                         if (productName) {
-                          // Show immediate preview while generating
-                          const tempUrl = `https://picsum.photos/300/300?random=${Date.now()}`;
+                          // Show immediate preview with a relevant placeholder
+                          const searchTerm = productName.toLowerCase().split(' ')[0];
+                          const tempUrl = `https://source.unsplash.com/300x300/?${searchTerm}`;
                           setCurrentImageUrl(tempUrl);
                           generateImageMutation.mutate(productName);
                         } else {

@@ -1016,47 +1016,50 @@ export class DatabaseStorage implements IStorage {
   
   // Function to generate product image URL based on product name
   generateProductImageUrl(productName: string): string {
-    const imageMapping: { [key: string]: string } = {
-      // Fruits
-      "manzana": "https://picsum.photos/300/300?random=1",
-      "banana": "https://picsum.photos/300/300?random=2",
-      "naranja": "https://picsum.photos/300/300?random=3",
-      "plátano": "https://picsum.photos/300/300?random=4",
-      "limón": "https://picsum.photos/300/300?random=5",
-      "pera": "https://picsum.photos/300/300?random=6",
-      "aguacate": "https://picsum.photos/300/300?random=7",
-      "mango": "https://picsum.photos/300/300?random=8",
-      
-      // Beverages
-      "agua": "https://picsum.photos/300/300?random=9",
-      "coca cola": "https://picsum.photos/300/300?random=10",
-      "café": "https://picsum.photos/300/300?random=11",
-      "jugo": "https://picsum.photos/300/300?random=12",
-      
-      // Food items
-      "arroz": "https://picsum.photos/300/300?random=13",
-      "pollo": "https://picsum.photos/300/300?random=14",
-      "pan": "https://picsum.photos/300/300?random=15",
-      "pizza": "https://picsum.photos/300/300?random=16",
-      
-      // Electronics
-      "teléfono": "https://picsum.photos/300/300?random=17",
-      "laptop": "https://picsum.photos/300/300?random=18",
-      "auriculares": "https://picsum.photos/300/300?random=19",
+    // Create a search query from the product name for Unsplash Source API
+    const searchQuery = productName.toLowerCase()
+      .replace(/[^a-záéíóúñü\s]/g, '') // Keep Spanish characters and spaces
+      .trim()
+      .split(' ')[0]; // Take the first word
+
+    // Use Unsplash Source API with search terms - shorter URLs
+    const baseUrl = "https://source.unsplash.com/300x300/";
+    
+    // Map common Spanish product terms to English for better results
+    const translationMap: { [key: string]: string } = {
+      "manzana": "apple",
+      "banana": "banana", 
+      "plátano": "banana",
+      "naranja": "orange",
+      "limón": "lemon",
+      "pera": "pear",
+      "aguacate": "avocado",
+      "mango": "mango",
+      "agua": "water",
+      "café": "coffee",
+      "jugo": "juice",
+      "arroz": "rice",
+      "pollo": "chicken",
+      "pan": "bread",
+      "pizza": "pizza",
+      "teléfono": "phone",
+      "laptop": "laptop",
+      "auriculares": "headphones",
+      "carne": "meat",
+      "pescado": "fish",
+      "leche": "milk",
+      "queso": "cheese",
+      "huevos": "eggs",
+      "pasta": "pasta",
+      "cerveza": "beer",
+      "vino": "wine"
     };
 
-    // Try to find a matching image based on product name
-    const lowerName = productName.toLowerCase();
-    for (const [key, url] of Object.entries(imageMapping)) {
-      if (lowerName.includes(key)) {
-        return url;
-      }
-    }
-
-    // Generate a unique random image based on product name hash
-    const hash = productName.split('').reduce((a, b) => a + b.charCodeAt(0), 0);
-    const randomId = (hash % 100) + 20; // Generate number between 20-119
-    return `https://picsum.photos/300/300?random=${randomId}`;
+    // Find translation or use original term
+    const searchTerm = translationMap[searchQuery] || searchQuery;
+    
+    // Return Unsplash Source URL with search term
+    return `${baseUrl}?${searchTerm}`;
   }
 
   async createSampleProducts(companyId: number) {
