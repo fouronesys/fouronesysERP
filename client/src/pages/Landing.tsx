@@ -1,32 +1,49 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Check, Shield, Star } from "lucide-react";
-import logoImage from "@assets/Four One Solutions Logo_20250130_143401_0000.png";
+import logoImage from "@assets/Four One Solutions Logo_20250603_002341_0000.png";
 
 export default function Landing() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-800">
-      <div className="container mx-auto px-4 py-16">
-        {/* Header */}
-        <div className="text-center mb-16">
-          <div className="flex items-center justify-center mb-6">
+      {/* Navigation Bar */}
+      <nav className="border-b border-gray-800 bg-black/20 backdrop-blur-sm">
+        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+          <div className="flex items-center">
             <img 
               src={logoImage} 
               alt="Four One Solutions Logo" 
-              className="w-20 h-20 object-contain"
+              className="w-12 h-12 object-contain mr-3"
             />
-            <div className="ml-6">
-              <h1 className="text-4xl font-bold text-white">
-                Four One Solutions
-              </h1>
-              <p className="text-lg text-gray-300">
-                Sistema integral de gestión empresarial para República Dominicana
-              </p>
-            </div>
+            <span className="text-2xl font-bold text-white">Four One Solutions</span>
           </div>
           
-          <div className="max-w-3xl mx-auto mb-8">
-            <p className="text-xl text-gray-300 mb-6">
+          <div className="flex space-x-4">
+            <Button 
+              variant="outline"
+              onClick={() => window.location.href = "/api/login"}
+              className="border-gray-400 text-gray-300 bg-transparent hover:bg-gray-700 hover:text-white"
+            >
+              Iniciar Sesión
+            </Button>
+            <Button 
+              onClick={() => window.location.href = "/register"}
+              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white border-none"
+            >
+              Registrarse
+            </Button>
+          </div>
+        </div>
+      </nav>
+
+      <div className="container mx-auto px-4 py-16">
+        {/* Hero Section */}
+        <div className="text-center mb-16">
+          <div className="max-w-4xl mx-auto mb-8">
+            <h1 className="text-5xl font-bold text-white mb-6">
+              Sistema integral de gestión empresarial
+            </h1>
+            <p className="text-xl text-gray-300 mb-8">
               Gestiona tu empresa con todas las herramientas que necesitas: facturación, inventario, 
               producción y más. Adaptado específicamente para las normativas dominicanas.
             </p>
@@ -34,7 +51,7 @@ export default function Landing() {
             <Button 
               onClick={() => window.location.href = "/api/login"}
               size="lg"
-              className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 text-lg"
+              className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-8 py-3 text-lg border-none"
             >
               Comenzar Prueba Gratuita de 7 Días
             </Button>
