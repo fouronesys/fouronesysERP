@@ -908,10 +908,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!company) {
         return res.status(404).json({ message: "Company not found" });
       }
-      const employee = await storage.createEmployee({
-        ...req.body,
-        companyId: company.id,
-      });
+      
+      // Process the request body to handle date fields properly
+      const createData = { ...req.body, companyId: company.id };
+      if (createData.hireDate && typeof createData.hireDate === 'string') {
+        createData.hireDate = new Date(createData.hireDate);
+      }
+      
+      const employee = await storage.createEmployee(createData);
       res.status(201).json(employee);
     } catch (error) {
       console.error("Error creating employee:", error);
@@ -926,7 +930,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!company) {
         return res.status(404).json({ message: "Company not found" });
       }
-      const employee = await storage.updateEmployee(parseInt(req.params.id), req.body, company.id);
+      
+      // Process the request body to handle date fields properly
+      const updateData = { ...req.body };
+      if (updateData.hireDate && typeof updateData.hireDate === 'string') {
+        updateData.hireDate = new Date(updateData.hireDate);
+      }
+      
+      const employee = await storage.updateEmployee(parseInt(req.params.id), updateData, company.id);
       if (!employee) {
         return res.status(404).json({ message: "Employee not found" });
       }
