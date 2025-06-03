@@ -26,10 +26,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   await setupAuth(app);
 
   // Auth routes
-  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
+  app.get('/api/user', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
-      const user = await storage.getUser(userId);
+      const user = req.user;
+      const userId = user.id;
       
       // Incluir información de rol y empresas
       if (user) {
@@ -45,8 +45,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         }
         
+        // Remove password from response for security
+        const { password, ...userWithoutPassword } = user;
+        
         res.json({
-          ...user,
+          ...userWithoutPassword,
           role: userRole,
           companies: userCompanies,
           isSuperAdmin: userRole === 'super_admin'
