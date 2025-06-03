@@ -995,6 +995,130 @@ export class DatabaseStorage implements IStorage {
       .delete(leaves)
       .where(and(eq(leaves.id, id), eq(leaves.companyId, companyId)));
   }
+  
+  // Function to generate product image URL based on product name
+  generateProductImageUrl(productName: string): string {
+    const imageMapping: { [key: string]: string } = {
+      // Fruits
+      "manzana": "https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=400&h=400&fit=crop",
+      "banana": "https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=400&h=400&fit=crop",
+      "naranja": "https://images.unsplash.com/photo-1547036967-23d11aacaee0?w=400&h=400&fit=crop",
+      "plátano": "https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=400&h=400&fit=crop",
+      "limón": "https://images.unsplash.com/photo-1565493231593-77ae94c73489?w=400&h=400&fit=crop",
+      "aguacate": "https://images.unsplash.com/photo-1523049673857-eb18f1d7b578?w=400&h=400&fit=crop",
+      "mango": "https://images.unsplash.com/photo-1553279998-a3fd90dd6295?w=400&h=400&fit=crop",
+      
+      // Beverages
+      "agua": "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400&h=400&fit=crop",
+      "coca cola": "https://images.unsplash.com/photo-1629203851122-3726ecdf080e?w=400&h=400&fit=crop",
+      "café": "https://images.unsplash.com/photo-1497515114629-f71d768fd07c?w=400&h=400&fit=crop",
+      "jugo": "https://images.unsplash.com/photo-1613478223719-2ab802602423?w=400&h=400&fit=crop",
+      
+      // Food items
+      "arroz": "https://images.unsplash.com/photo-1586201375761-83865001e31c?w=400&h=400&fit=crop",
+      "pollo": "https://images.unsplash.com/photo-1598103442097-8b74394b95c6?w=400&h=400&fit=crop",
+      "pan": "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=400&h=400&fit=crop",
+      "pizza": "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=400&h=400&fit=crop",
+      
+      // Electronics
+      "teléfono": "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=400&h=400&fit=crop",
+      "laptop": "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=400&h=400&fit=crop",
+      "auriculares": "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&h=400&fit=crop",
+    };
+
+    // Try to find a matching image based on product name
+    const lowerName = productName.toLowerCase();
+    for (const [key, url] of Object.entries(imageMapping)) {
+      if (lowerName.includes(key)) {
+        return url;
+      }
+    }
+
+    // Default image for unknown products
+    return "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=400&fit=crop";
+  }
+
+  async createSampleProducts(companyId: number) {
+    try {
+      // Create sample product categories first
+      const categories = [
+        { name: "Alimentos", description: "Productos alimenticios" },
+        { name: "Bebidas", description: "Bebidas y refrescos" },
+        { name: "Electrónicos", description: "Dispositivos electrónicos" },
+      ];
+
+      const createdCategories = [];
+      for (const category of categories) {
+        const [existing] = await db
+          .select()
+          .from(productCategories)
+          .where(
+            and(
+              eq(productCategories.name, category.name),
+              eq(productCategories.companyId, companyId)
+            )
+          );
+
+        if (!existing) {
+          const [created] = await db
+            .insert(productCategories)
+            .values({ ...category, companyId })
+            .returning();
+          createdCategories.push(created);
+        } else {
+          createdCategories.push(existing);
+        }
+      }
+
+      // Create sample products with automatic image generation
+      const sampleProducts = [
+        { name: "Manzana Roja", description: "Manzanas rojas frescas", price: "45.00", cost: "30.00", stock: 10, categoryId: createdCategories[0].id },
+        { name: "Banana Premium", description: "Bananas maduras premium", price: "25.00", cost: "15.00", stock: 10, categoryId: createdCategories[0].id },
+        { name: "Arroz Blanco 5lb", description: "Arroz blanco de alta calidad", price: "180.00", cost: "120.00", stock: 10, categoryId: createdCategories[0].id },
+        { name: "Pollo Entero", description: "Pollo fresco entero", price: "350.00", cost: "250.00", stock: 10, categoryId: createdCategories[0].id },
+        { name: "Pan Tostado", description: "Pan tostado integral", price: "85.00", cost: "50.00", stock: 10, categoryId: createdCategories[0].id },
+        { name: "Pizza Margherita", description: "Pizza clásica margherita", price: "450.00", cost: "280.00", stock: 10, categoryId: createdCategories[0].id },
+        
+        { name: "Agua Purificada 1L", description: "Agua purificada embotellada", price: "35.00", cost: "20.00", stock: 10, categoryId: createdCategories[1].id },
+        { name: "Coca Cola 2L", description: "Refresco Coca Cola 2 litros", price: "120.00", cost: "80.00", stock: 10, categoryId: createdCategories[1].id },
+        { name: "Café Molido", description: "Café molido premium", price: "280.00", cost: "180.00", stock: 10, categoryId: createdCategories[1].id },
+        { name: "Jugo de Naranja", description: "Jugo natural de naranja", price: "95.00", cost: "60.00", stock: 10, categoryId: createdCategories[1].id },
+        
+        { name: "Teléfono Samsung", description: "Smartphone Samsung Galaxy", price: "15000.00", cost: "12000.00", stock: 10, categoryId: createdCategories[2].id },
+        { name: "Laptop Dell", description: "Laptop Dell Inspiron", price: "45000.00", cost: "35000.00", stock: 10, categoryId: createdCategories[2].id },
+        { name: "Auriculares Bluetooth", description: "Auriculares inalámbricos", price: "2500.00", cost: "1800.00", stock: 10, categoryId: createdCategories[2].id },
+      ];
+
+      for (const product of sampleProducts) {
+        // Check if product already exists
+        const [existing] = await db
+          .select()
+          .from(products)
+          .where(
+            and(
+              eq(products.name, product.name),
+              eq(products.companyId, companyId)
+            )
+          );
+
+        if (!existing) {
+          const code = `P${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
+          const imageUrl = this.generateProductImageUrl(product.name);
+          
+          await this.createProduct({
+            ...product,
+            code,
+            imageUrl,
+            companyId,
+          });
+        }
+      }
+
+      console.log("Sample products created successfully for company", companyId);
+    } catch (error) {
+      console.error("Error creating sample products:", error);
+    }
+  }
 }
 
 export const storage = new DatabaseStorage();
