@@ -1069,6 +1069,110 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Create sample products endpoint
+  app.post("/api/products/create-samples", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      // Sample products with automatic image generation
+      const sampleProducts = [
+        {
+          name: "Manzana Red Delicious",
+          description: "Manzanas frescas y crujientes",
+          code: "MANZ001",
+          price: "45.00",
+          cost: "25.00",
+          stock: 50,
+          imageUrl: "https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=400&h=400&fit=crop"
+        },
+        {
+          name: "Plátano Maduro",
+          description: "Plátanos dulces y maduros",
+          code: "PLAT001", 
+          price: "35.00",
+          cost: "20.00",
+          stock: 40,
+          imageUrl: "https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=400&h=400&fit=crop"
+        },
+        {
+          name: "Arroz Blanco Premium",
+          description: "Arroz de grano largo de alta calidad",
+          code: "ARRO001",
+          price: "120.00",
+          cost: "80.00",
+          stock: 25,
+          imageUrl: "https://images.unsplash.com/photo-1586201375761-83865001e31c?w=400&h=400&fit=crop"
+        },
+        {
+          name: "Pollo Fresco Entero",
+          description: "Pollo fresco de granja local",
+          code: "POLL001",
+          price: "280.00",
+          cost: "200.00",
+          stock: 15,
+          imageUrl: "https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=400&h=400&fit=crop"
+        },
+        {
+          name: "Leche Entera 1L",
+          description: "Leche fresca pasteurizada",
+          code: "LECH001",
+          price: "65.00",
+          cost: "45.00",
+          stock: 30,
+          imageUrl: "https://images.unsplash.com/photo-1563636619-e9143da7973b?w=400&h=400&fit=crop"
+        },
+        {
+          name: "Pan de Molde Integral",
+          description: "Pan integral rico en fibra",
+          code: "PAN001",
+          price: "85.00",
+          cost: "55.00",
+          stock: 20,
+          imageUrl: "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=400&h=400&fit=crop"
+        },
+        {
+          name: "Huevos Frescos Docena",
+          description: "Huevos de gallina criolla",
+          code: "HUEV001",
+          price: "150.00",
+          cost: "100.00",
+          stock: 35,
+          imageUrl: "https://images.unsplash.com/photo-1582722872445-44dc5f7e3c8f?w=400&h=400&fit=crop"
+        },
+        {
+          name: "Café Dominicano 500g",
+          description: "Café tostado de las montañas dominicanas",
+          code: "CAFE001",
+          price: "320.00",
+          cost: "220.00",
+          stock: 18,
+          imageUrl: "https://images.unsplash.com/photo-1559056199-641a0ac8b55e?w=400&h=400&fit=crop"
+        }
+      ];
+
+      const createdProducts = [];
+      for (const productData of sampleProducts) {
+        const product = await storage.createProduct({
+          companyId: company.id,
+          ...productData
+        });
+        createdProducts.push(product);
+      }
+
+      res.json({ 
+        message: "Sample products created successfully", 
+        products: createdProducts 
+      });
+    } catch (error) {
+      console.error("Error creating sample products:", error);
+      res.status(500).json({ message: "Failed to create sample products" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

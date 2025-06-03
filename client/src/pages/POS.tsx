@@ -43,7 +43,15 @@ interface CartItem {
 }
 
 export default function POS() {
-  const [cart, setCart] = useState<CartItem[]>([]);
+  // Cart state with localStorage persistence and cross-window sync
+  const [cart, setCart] = useState<CartItem[]>(() => {
+    if (typeof window !== "undefined") {
+      const savedCart = localStorage.getItem("pos_cart");
+      return savedCart ? JSON.parse(savedCart) : [];
+    }
+    return [];
+  });
+  
   const [searchTerm, setSearchTerm] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [customerName, setCustomerName] = useState("");
@@ -87,6 +95,37 @@ export default function POS() {
     queryKey: ["/api/pos/sales/last"],
     enabled: false,
   });
+
+  // Sync cart with localStorage whenever it changes
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("pos_cart", JSON.stringify(cart));
+      // Dispatch storage event for cross-window sync
+      window.dispatchEvent(new StorageEvent("storage", {
+        key: "pos_cart",
+        newValue: JSON.stringify(cart)
+      }));
+    }
+  }, [cart]);
+
+  // Listen for cart changes from other windows
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === "pos_cart" && e.newValue) {
+        try {
+          const newCart = JSON.parse(e.newValue);
+          setCart(newCart);
+        } catch (error) {
+          console.error("Error parsing cart from localStorage:", error);
+        }
+      }
+    };
+
+    if (typeof window !== "undefined") {
+      window.addEventListener("storage", handleStorageChange);
+      return () => window.removeEventListener("storage", handleStorageChange);
+    }
+  }, []);
 
   const filteredProducts = products?.filter(product =>
     product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -407,45 +446,100 @@ export default function POS() {
                 </TabsList>
                 
                 <TabsContent value="products" className="mt-4">
-                  {/* Search */}
-                  <div className="relative mb-4">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                    <Input
-                      placeholder="Buscar productos..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10"
-                    />
+                  {/* Search and Actions */}
+                  <div className="space-y-3 mb-4">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                      <Input
+                        placeholder="Buscar productos..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-10"
+                      />
+                    </div>
+                    
+                    {/* Sample Products Button */}
+                    {(!products || products.length === 0) && (
+                      <Button
+                        onClick={async () => {
+                          try {
+                            await apiRequest("/api/products/create-samples", {
+                              method: "POST"
+                            });
+                            queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+                            toast({
+                              title: "Productos creados",
+                              description: "Se han creado productos de muestra para testing"
+                            });
+                          } catch (error) {
+                            toast({
+                              title: "Error",
+                              description: "Error al crear productos de muestra",
+                              variant: "destructive"
+                            });
+                          }
+                        }}
+                        className="w-full bg-green-600 hover:bg-green-700"
+                      >
+                        <Package className="h-4 w-4 mr-2" />
+                        Crear Productos de Muestra
+                      </Button>
+                    )}
                   </div>
 
-                  {/* Products Grid - Responsive Layout */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                  {/* Products Grid - Enhanced Layout */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {filteredProducts.map((product) => (
-                      <Card key={product.id} className="hover:shadow-md transition-shadow border border-gray-200 dark:border-gray-700">
-                        <CardContent className="p-3">
-                          <div className="space-y-3">
-                            {/* Product Header */}
-                            <div className="space-y-1">
-                              <h3 className="font-medium text-sm leading-tight text-gray-900 dark:text-gray-100 min-h-[2.5rem] flex items-center">
+                      <Card key={product.id} className="overflow-hidden hover:shadow-lg transition-all duration-300 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+                        <CardContent className="p-0">
+                          {/* Product Image */}
+                          <div className="aspect-square bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-700 dark:to-gray-800 relative overflow-hidden">
+                            {product.imageUrl ? (
+                              <img 
+                                src={product.imageUrl} 
+                                alt={product.name}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  e.currentTarget.src = "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=400&fit=crop";
+                                }}
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center">
+                                <Package className="h-12 w-12 text-gray-400" />
+                              </div>
+                            )}
+                            
+                            {/* Stock Badge */}
+                            <div className="absolute top-2 right-2">
+                              <Badge 
+                                variant={parseInt(product.stock.toString()) > 10 ? "default" : parseInt(product.stock.toString()) > 0 ? "secondary" : "destructive"}
+                                className="text-xs font-medium shadow-sm"
+                              >
+                                Stock: {product.stock}
+                              </Badge>
+                            </div>
+                          </div>
+
+                          {/* Product Info */}
+                          <div className="p-4 space-y-3">
+                            <div className="space-y-2">
+                              <h3 className="font-semibold text-base leading-tight text-gray-900 dark:text-gray-100">
                                 {product.name}
                               </h3>
-                              <div className="flex justify-between items-center">
-                                <p className="text-xs text-gray-500 dark:text-gray-400 font-mono">
-                                  {product.code}
+                              <p className="text-xs text-gray-500 dark:text-gray-400 font-mono tracking-wide">
+                                {product.code}
+                              </p>
+                              {product.description && (
+                                <p className="text-xs text-gray-600 dark:text-gray-300 line-clamp-2">
+                                  {product.description}
                                 </p>
-                                <Badge 
-                                  variant={parseInt(product.stock.toString()) > 10 ? "default" : "destructive"} 
-                                  className="text-xs px-2 py-0.5"
-                                >
-                                  {product.stock}
-                                </Badge>
-                              </div>
+                              )}
                             </div>
                             
-                            {/* Price and Add Button */}
-                            <div className="flex justify-between items-center pt-2 border-t border-gray-100 dark:border-gray-700">
+                            {/* Price and Actions */}
+                            <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-gray-700">
                               <div className="flex flex-col">
-                                <span className="font-bold text-base text-green-600 dark:text-green-400">
+                                <span className="font-bold text-lg text-green-600 dark:text-green-400">
                                   {formatDOP(parseFloat(product.price))}
                                 </span>
                                 <span className="text-xs text-gray-500 dark:text-gray-400">
@@ -453,13 +547,13 @@ export default function POS() {
                                 </span>
                               </div>
                               <Button
-                                size="sm"
                                 onClick={() => addToCart(product)}
-                                disabled={parseInt(product.stock.toString()) <= 0}
-                                className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 h-8 flex items-center gap-1.5"
+                                size="sm"
+                                className="h-10 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium shadow-sm"
+                                disabled={parseInt(product.stock.toString()) === 0}
                               >
-                                <Plus className="h-3 w-3" />
-                                <span className="hidden sm:inline text-xs">Agregar</span>
+                                <Plus className="h-4 w-4 mr-2" />
+                                Agregar
                               </Button>
                             </div>
                           </div>
