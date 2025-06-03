@@ -1014,52 +1014,75 @@ export class DatabaseStorage implements IStorage {
       .where(and(eq(leaves.id, id), eq(leaves.companyId, companyId)));
   }
   
-  // Function to generate product image URL based on product name
-  generateProductImageUrl(productName: string): string {
-    // Create a search query from the product name for Unsplash Source API
-    const searchQuery = productName.toLowerCase()
-      .replace(/[^a-záéíóúñü\s]/g, '') // Keep Spanish characters and spaces
-      .trim()
-      .split(' ')[0]; // Take the first word
+  // Function to generate product image URL using Unsplash API
+  async generateProductImageUrl(productName: string): Promise<string> {
+    try {
+      // Create a search query from the product name
+      const searchQuery = productName.toLowerCase()
+        .replace(/[^a-záéíóúñü\s]/g, '') // Keep Spanish characters and spaces
+        .trim()
+        .split(' ')[0]; // Take the first word
 
-    // Use Unsplash Source API with search terms - shorter URLs
-    const baseUrl = "https://source.unsplash.com/300x300/";
-    
-    // Map common Spanish product terms to English for better results
-    const translationMap: { [key: string]: string } = {
-      "manzana": "apple",
-      "banana": "banana", 
-      "plátano": "banana",
-      "naranja": "orange",
-      "limón": "lemon",
-      "pera": "pear",
-      "aguacate": "avocado",
-      "mango": "mango",
-      "agua": "water",
-      "café": "coffee",
-      "jugo": "juice",
-      "arroz": "rice",
-      "pollo": "chicken",
-      "pan": "bread",
-      "pizza": "pizza",
-      "teléfono": "phone",
-      "laptop": "laptop",
-      "auriculares": "headphones",
-      "carne": "meat",
-      "pescado": "fish",
-      "leche": "milk",
-      "queso": "cheese",
-      "huevos": "eggs",
-      "pasta": "pasta",
-      "cerveza": "beer",
-      "vino": "wine"
-    };
+      // Map common Spanish product terms to English for better results
+      const translationMap: { [key: string]: string } = {
+        "manzana": "apple",
+        "banana": "banana", 
+        "plátano": "banana",
+        "naranja": "orange",
+        "limón": "lemon",
+        "pera": "pear",
+        "aguacate": "avocado",
+        "mango": "mango",
+        "agua": "water bottle",
+        "café": "coffee",
+        "jugo": "juice",
+        "arroz": "rice",
+        "pollo": "chicken",
+        "pan": "bread",
+        "pizza": "pizza",
+        "teléfono": "smartphone",
+        "laptop": "laptop",
+        "auriculares": "headphones",
+        "carne": "meat",
+        "pescado": "fish",
+        "leche": "milk",
+        "queso": "cheese",
+        "huevos": "eggs",
+        "pasta": "pasta",
+        "cerveza": "beer",
+        "vino": "wine"
+      };
 
-    // Find translation or use original term
-    const searchTerm = translationMap[searchQuery] || searchQuery;
-    
-    // Return Unsplash Source URL with search term
-    return `${baseUrl}?${searchTerm}`;
+      // Find translation or use original term
+      const searchTerm = translationMap[searchQuery] || searchQuery;
+      
+      // Use Unsplash API to search for images
+      if (process.env.UNSPLASH_ACCESS_KEY) {
+        const response = await fetch(
+          `https://api.unsplash.com/search/photos?query=${encodeURIComponent(searchTerm)}&per_page=1&orientation=squarish`,
+          {
+            headers: {
+              'Authorization': `Client-ID ${process.env.UNSPLASH_ACCESS_KEY}`
+            }
+          }
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.results && data.results.length > 0) {
+            // Return a regular sized image URL
+            return data.results[0].urls.regular;
+          }
+        }
+      }
+
+      // Fallback to a placeholder service if Unsplash fails
+      return `https://via.placeholder.com/400x400/f3f4f6/9ca3af?text=${encodeURIComponent(productName)}`;
+    } catch (error) {
+      console.error('Error generating product image:', error);
+      // Return placeholder on error
+      return `https://via.placeholder.com/400x400/f3f4f6/9ca3af?text=${encodeURIComponent(productName)}`;
+    }
   }
 
   async createSampleProducts(companyId: number) {

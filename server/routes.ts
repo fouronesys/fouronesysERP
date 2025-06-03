@@ -477,8 +477,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Product name is required" });
       }
       
-      // Generate image URL using the same logic as in storage
-      const imageUrl = storage.generateProductImageUrl(productName);
+      // Generate image URL using the async function
+      const imageUrl = await storage.generateProductImageUrl(productName);
       res.json({ imageUrl });
     } catch (error) {
       console.error("Error generating product image:", error);
