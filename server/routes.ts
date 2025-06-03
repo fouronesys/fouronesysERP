@@ -28,7 +28,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Incluir información de rol y empresas
       if (user) {
         const userRole = await storage.getUserRole(userId);
-        const userCompanies = await storage.getUserCompanies(userId);
+        // Simplificar para super admin - no verificar empresas si es super admin
+        let userCompanies = [];
+        if (userRole !== 'super_admin') {
+          try {
+            userCompanies = await storage.getUserCompanies(userId);
+          } catch (error) {
+            console.log('Error getting user companies, proceeding without them:', error);
+            userCompanies = [];
+          }
+        }
         
         res.json({
           ...user,
