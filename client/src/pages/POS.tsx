@@ -94,6 +94,20 @@ export default function POS() {
     Math.max(0, parseFloat(cashReceived) - total) : 0;
 
   const addToCart = (product: Product) => {
+    // Check stock availability
+    const existingItem = cart.find(item => item.product.id === product.id);
+    const currentQuantityInCart = existingItem ? existingItem.quantity : 0;
+    const newTotalQuantity = currentQuantityInCart + 1;
+    
+    if (newTotalQuantity > parseInt(product.stock.toString())) {
+      toast({
+        title: "Stock insuficiente",
+        description: `No hay suficiente stock para esta orden. Stock disponible: ${product.stock}`,
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setCart(prev => {
       const existingItem = prev.find(item => item.product.id === product.id);
       
@@ -120,6 +134,17 @@ export default function POS() {
   const updateQuantity = (productId: number, newQuantity: number) => {
     if (newQuantity <= 0) {
       removeFromCart(productId);
+      return;
+    }
+    
+    // Find the product to check stock
+    const cartItem = cart.find(item => item.product.id === productId);
+    if (cartItem && newQuantity > parseInt(cartItem.product.stock.toString())) {
+      toast({
+        title: "Stock insuficiente",
+        description: `No hay suficiente stock para esta orden. Stock disponible: ${cartItem.product.stock}`,
+        variant: "destructive",
+      });
       return;
     }
     
