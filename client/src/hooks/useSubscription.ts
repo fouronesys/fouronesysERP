@@ -11,13 +11,13 @@ export interface SubscriptionPlan {
 export const SUBSCRIPTION_PLANS: Record<string, SubscriptionPlan> = {
   trial: {
     name: "Prueba Gratuita",
-    features: ["dashboard", "pos", "customers", "products", "invoices"],
+    features: ["dashboard", "pos", "customers", "products", "invoices", "companies", "company-settings"],
     maxUsers: 1,
     maxCompanies: 1,
   },
   monthly: {
     name: "Plan Mensual",
-    features: ["dashboard", "pos", "customers", "products", "invoices", "reports", "warehouses"],
+    features: ["dashboard", "pos", "customers", "products", "invoices", "reports", "warehouses", "companies", "company-settings"],
     maxUsers: 5,
     maxCompanies: 1,
   },
@@ -26,7 +26,7 @@ export const SUBSCRIPTION_PLANS: Record<string, SubscriptionPlan> = {
     features: [
       "dashboard", "pos", "customers", "products", "invoices", "reports", 
       "warehouses", "manufacturing", "bom", "movements", "suppliers", 
-      "purchase-orders", "admin", "companies"
+      "purchase-orders", "admin", "companies", "company-settings", "super-admin"
     ],
     maxUsers: 50,
     maxCompanies: 10,

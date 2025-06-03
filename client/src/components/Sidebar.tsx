@@ -77,6 +77,12 @@ const navigation = [
       { name: "Empresa", href: "/company-settings", icon: Settings },
     ],
   },
+  {
+    category: "Administración",
+    items: [
+      { name: "Panel de Admin", href: "/super-admin", icon: ShieldCheck },
+    ],
+  },
 ];
 
 export function Sidebar() {

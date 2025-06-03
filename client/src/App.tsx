@@ -134,6 +134,9 @@ function Router() {
       <Route path="/employees" component={() => <ProtectedRoute component={Employees} />} />
       <Route path="/payroll" component={() => <ProtectedRoute component={Payroll} />} />
       
+      {/* Admin routes */}
+      <Route path="/super-admin" component={() => <ProtectedRoute component={SuperAdmin} />} />
+      
       {/* Profile menu routes */}
       <Route path="/profile" component={() => <ProtectedRoute component={Profile} />} />
       <Route path="/notifications" component={() => <ProtectedRoute component={Notifications} />} />
