@@ -95,10 +95,29 @@ export default function CompanySettings() {
       });
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (updatedCompany) => {
+      const savedFields = [];
+      if (updatedCompany.name) savedFields.push("Nombre comercial");
+      if (updatedCompany.businessName) savedFields.push("Razón social");
+      if (updatedCompany.rnc) savedFields.push("RNC");
+      if (updatedCompany.address) savedFields.push("Dirección");
+      if (updatedCompany.phone) savedFields.push("Teléfono");
+      if (updatedCompany.email) savedFields.push("Email");
+      if (updatedCompany.website) savedFields.push("Sitio web");
+      if (updatedCompany.industry) savedFields.push("Industria");
+      if (updatedCompany.taxRegime) savedFields.push("Régimen tributario");
+      if (updatedCompany.currency) savedFields.push("Moneda");
+      if (updatedCompany.timezone) savedFields.push("Zona horaria");
+      if (updatedCompany.logoUrl) savedFields.push("Logo");
+
+      const description = savedFields.length > 0 
+        ? `Se guardaron: ${savedFields.join(", ")}`
+        : "Se actualizó la configuración de la empresa";
+
       toast({
-        title: "Configuración actualizada",
-        description: "La información de tu empresa ha sido actualizada exitosamente.",
+        title: "✅ Configuración guardada exitosamente",
+        description: description,
+        duration: 5000,
       });
       queryClient.invalidateQueries({ queryKey: ["/api/companies/current"] });
     },
