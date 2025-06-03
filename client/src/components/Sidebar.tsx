@@ -20,7 +20,8 @@ import {
   X,
   Settings,
   ShieldCheck,
-  Calculator
+  Calculator,
+  Brain
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -76,6 +77,12 @@ const navigation = [
     category: "Cumplimiento Fiscal",
     items: [
       { name: "Comprobantes Fiscales", href: "/fiscal-documents", icon: FileText },
+    ],
+  },
+  {
+    category: "Inteligencia Artificial",
+    items: [
+      { name: "Insights con IA", href: "/ai-insights", icon: Brain },
     ],
   },
   {

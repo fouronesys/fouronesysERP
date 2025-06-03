@@ -34,6 +34,7 @@ import Settings from "@/pages/Settings";
 import Employees from "@/pages/Employees";
 import Payroll from "@/pages/Payroll";
 import FiscalDocuments from "@/pages/FiscalDocuments";
+import AIInsights from "@/pages/AIInsights";
 import NotFound from "@/pages/not-found";
 
 function ProtectedRoute({ component: Component, ...props }: { component: React.ComponentType }) {
@@ -138,6 +139,9 @@ function Router() {
       
       {/* Fiscal Documents route */}
       <Route path="/fiscal-documents" component={() => <ProtectedRoute component={FiscalDocuments} />} />
+      
+      {/* AI Integration route */}
+      <Route path="/ai-insights" component={() => <ProtectedRoute component={AIInsights} />} />
       
       {/* Admin routes */}
       <Route path="/super-admin" component={() => <ProtectedRoute component={SuperAdmin} />} />

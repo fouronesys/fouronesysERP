@@ -34,7 +34,7 @@ export function AIAssistant() {
         body: { message }
       });
     },
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       setMessages(prev => [...prev, {
         id: Date.now().toString() + "_ai",
         content: data.response,
