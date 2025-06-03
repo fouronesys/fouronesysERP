@@ -46,107 +46,197 @@ export function PrintReceipt({
         <html>
           <head>
             <title>${documentTitle}</title>
+            <meta charset="utf-8">
             <style>
-              @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+              @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
 
+              /* Modern Thermal Receipt Styles */
               @media print {
                 body { 
-                  font-family: 'Roboto', sans-serif; 
+                  font-family: 'JetBrains Mono', 'Courier New', monospace; 
                   margin: 0; 
-                  padding: 8px; 
-                  font-size: ${printSettings?.printerWidth === "58mm" ? "10px" : "11px"};
-                  line-height: 1.3;
-                  color: #333;
+                  padding: 6px; 
+                  font-size: ${printSettings?.printerWidth === "58mm" ? "9px" : "10px"};
+                  line-height: 1.2;
+                  color: #000; 
                   background: white;
+                  width: ${printerWidth};
+                  max-width: ${printerWidth};
+                }
+                
+                @page { 
+                  margin: 0; 
+                  size: ${printSettings?.printerWidth === "58mm" ? "58mm" : "80mm"} auto;
                 }
               }
+              
+              /* Enhanced Screen Preview */
               body { 
-                font-family: 'Roboto', sans-serif; 
+                font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; 
                 margin: 0; 
-                padding: 10px; 
-                font-size: ${printSettings?.printerWidth === "58mm" ? "11px" : "12px"};
-                line-height: 1.4;
-                color: #333;
-                background: white;
+                padding: 20px; 
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                min-height: 100vh;
               }
+              /* Modern Receipt Container */
               .receipt { 
-                width: ${printerWidth}; 
-                max-width: 100%;
+                width: 100%;
+                max-width: ${printerWidth};
                 margin: 0 auto;
                 background: white;
-                color: #333;
+                color: #000;
+                padding: 16px;
+                border-radius: 12px;
+                box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+                border: 2px solid #e2e8f0;
+                position: relative;
               }
+              
+              .receipt::before {
+                content: '';
+                position: absolute;
+                top: -2px;
+                left: -2px;
+                right: -2px;
+                bottom: -2px;
+                background: linear-gradient(45deg, #667eea, #764ba2, #f093fb, #f5576c);
+                border-radius: 14px;
+                z-index: -1;
+              }
+              
+              /* Typography and Layout */
               .center { text-align: center; }
               .right { text-align: right; }
               .left { text-align: left; }
-              .bold { font-weight: 500; }
+              .bold { font-weight: 600; }
+              
+              /* Modern Dividers */
               .line { 
-                border-bottom: 1px dashed #e0e0e0; 
-                margin: 8px 0; 
-                height: 1px;
+                border-bottom: 2px dotted #cbd5e0; 
+                margin: 10px 0; 
+                height: 2px;
               }
               .double-line {
-                border-bottom: 2px solid #4a6cf7;
-                margin: 10px 0;
+                border-bottom: 3px double #4299e1;
+                margin: 12px 0;
               }
+              
+              /* Enhanced Table Styling */
               table { 
                 width: 100%; 
                 border-collapse: collapse; 
-                margin: 6px 0;
+                margin: 8px 0;
+                font-family: 'JetBrains Mono', monospace;
               }
+              
               td { 
-                padding: 3px 1px; 
+                padding: 4px 2px; 
                 vertical-align: top;
                 border: none;
+                font-size: 11px;
               }
+              
               .item-row td {
-                padding: 4px 1px;
-                border-bottom: 1px solid #f0f0f0;
+                padding: 6px 2px;
+                border-bottom: 1px solid #e2e8f0;
+                background: rgba(66, 153, 225, 0.05);
               }
+              
+              .item-row:nth-child(even) td {
+                background: rgba(66, 153, 225, 0.1);
+              }
+              
               .item-row:last-child td {
-                border-bottom: none;
+                border-bottom: 2px solid #4299e1;
               }
+              
+              /* Modern Total Section */
               .total-section {
-                margin-top: 12px;
-                border-top: 2px solid #4a6cf7;
-                padding-top: 8px;
-              }
-              .total-section td {
-                padding: 3px 0;
-                font-weight: 500;
-              }
-              .company-info {
-                margin-bottom: 12px;
-                padding-bottom: 8px;
-              }
-              .document-header {
-                margin: 12px 0;
-                padding: 8px 0;
-                background: #4a6cf7;
-                color: white;
-                border-radius: 4px;
-              }
-              .customer-section {
-                margin: 8px 0;
-                padding: 8px;
-                background: #f8faff;
-                border-radius: 4px;
-                border: 1px solid #e0e9ff;
-              }
-              .payment-section {
-                margin: 8px 0;
-                padding: 8px;
-                border-top: 1px solid #e0e9ff;
-                background: #f8faff;
-                border-radius: 4px;
-              }
-              .footer {
                 margin-top: 16px;
+                border: 2px solid #4299e1;
+                padding: 12px;
+                background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+                border-radius: 8px;
+              }
+              
+              .total-section td {
+                padding: 4px 0;
+                font-weight: 600;
+                font-size: 12px;
+              }
+              
+              /* Company Info Section */
+              .company-info {
+                margin-bottom: 16px;
+                padding: 12px;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                border-radius: 8px;
                 text-align: center;
-                font-size: ${printSettings?.printerWidth === "58mm" ? "9px" : "10px"};
-                border-top: 1px dashed #e0e0e0;
-                padding-top: 8px;
-                color: #666;
+              }
+              
+              /* Document Header */
+              .document-header {
+                margin: 16px 0;
+                padding: 12px;
+                background: linear-gradient(45deg, #4299e1, #3182ce);
+                color: white;
+                border-radius: 8px;
+                text-align: center;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+              }
+              
+              /* Customer Section */
+              .customer-section {
+                margin: 12px 0;
+                padding: 12px;
+                background: linear-gradient(135deg, #f0fff4 0%, #e6fffa 100%);
+                border-radius: 8px;
+                border: 2px solid #68d391;
+              }
+              
+              /* Payment Section */
+              .payment-section {
+                margin: 12px 0;
+                padding: 12px;
+                background: linear-gradient(135deg, #fef5e7 0%, #fed7aa 100%);
+                border-radius: 8px;
+                border: 2px solid #f6ad55;
+              }
+              
+              /* Enhanced Footer */
+              .footer {
+                margin-top: 20px;
+                text-align: center;
+                font-size: ${printSettings?.printerWidth === "58mm" ? "10px" : "11px"};
+                border-top: 3px double #4299e1;
+                padding-top: 12px;
+                color: #4a5568;
+                background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+                border-radius: 8px;
+                padding: 12px;
+              }
+              
+              /* QR Code Section */
+              .qr-section {
+                text-align: center;
+                margin: 12px 0;
+                padding: 12px;
+                border: 2px dashed #4299e1;
+                border-radius: 8px;
+                background: #f7fafc;
+              }
+              
+              /* Thank You Message */
+              .thank-you {
+                font-size: 14px;
+                font-weight: 700;
+                color: #2d3748;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+                margin: 8px 0;
               }
               .ncf-section {
                 margin: 10px 0;
@@ -494,30 +584,54 @@ export function PrintReceipt({
 
           <div className="line"></div>
 
-          {/* Footer */}
-          <div className="footer">
-            <div
-              style={{
-                marginBottom: "8px",
-                fontSize: "11px",
-                fontWeight: "bold",
-                color: "#4a6cf7",
-              }}
-            >
-              ¡Gracias por su compra!
+          {/* QR Code Section */}
+          <div className="qr-section">
+            <div className="thank-you">¡Gracias por su compra!</div>
+            <div style={{ margin: "8px 0" }}>
+              <img 
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(
+                  `Recibo: ${sale?.id || invoice?.number}\nEmpresa: ${company.name}\nTotal: ${formatDOP(totals.total)}\nFecha: ${new Date().toLocaleDateString('es-DO')}`
+                )}`}
+                alt="QR Code"
+                style={{ maxWidth: "60px", height: "auto" }}
+              />
             </div>
-            {printSettings?.receiptFooter && (
+            <div style={{ fontSize: "8px", color: "#666" }}>
+              Escanea para verificar
+            </div>
+          </div>
+
+          {/* Enhanced Footer */}
+          <div className="footer">
+            {printSettings?.footerText && (
               <div style={{ marginBottom: "6px", fontSize: "10px" }}>
-                {printSettings.receiptFooter}
+                {printSettings.footerText}
               </div>
             )}
-            <div style={{ fontSize: "9px", marginTop: "8px" }}>
-              Powered by{" "}
-              <span style={{ fontWeight: "500", color: "#4a6cf7" }}>
-                Four One Solutions
-              </span>
+            
+            <div style={{ fontSize: "8px", marginBottom: "4px" }}>
+              📧 Soporte: soporte@1111.com.do
             </div>
-            <div style={{ fontSize: "8px" }}>www.1111.com.do</div>
+            <div style={{ fontSize: "8px", marginBottom: "4px" }}>
+              📱 WhatsApp: +1 (829) 123-4567
+            </div>
+            <div style={{ fontSize: "8px", marginBottom: "6px" }}>
+              🌐 www.1111.com.do
+            </div>
+            
+            <div className="line"></div>
+            
+            <div style={{ fontSize: "7px", color: "#666", marginTop: "4px" }}>
+              Sistema desarrollado por Four One Solutions
+            </div>
+            <div style={{ fontSize: "7px", color: "#666" }}>
+              Recibo generado: {new Date().toLocaleString('es-DO')}
+            </div>
+            
+            {/* Environmental Message */}
+            <div style={{ fontSize: "7px", color: "#666", marginTop: "4px", fontStyle: "italic" }}>
+              🌱 Contribuye al medio ambiente - Conserva este recibo digital
+            </div>
           </div>
         </div>
       </div>
