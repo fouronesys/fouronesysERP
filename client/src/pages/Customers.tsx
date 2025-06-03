@@ -9,13 +9,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Search, Users, Edit, Trash2, Building2, User } from "lucide-react";
+import { Plus, Search, Users, Edit, Trash2, Building2, User, Mail, Phone, MapPin } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { validateRNC, validateCedula, formatRNC, formatCedula } from "@/lib/dominican";
+import { useIsMobile } from "@/hooks/use-mobile";
 import type { Customer } from "@shared/schema";
 
 const customerSchema = z.object({
@@ -47,6 +48,7 @@ export default function Customers() {
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const isMobile = useIsMobile();
 
   const { data: customers, isLoading } = useQuery<Customer[]>({
     queryKey: ["/api/customers"],
@@ -64,8 +66,6 @@ export default function Customers() {
       cedula: "",
     },
   });
-
-  const watchType = form.watch("type");
 
   const createCustomerMutation = useMutation({
     mutationFn: async (data: CustomerFormData) => {
@@ -181,9 +181,9 @@ export default function Customers() {
 
   if (isLoading) {
     return (
-      <div className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900">
+      <div className="w-full">
         <Header title="Clientes" subtitle="Gestiona tu base de datos de clientes" />
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
             <p className="mt-2 text-gray-500 dark:text-gray-400">Cargando clientes...</p>
@@ -194,289 +194,302 @@ export default function Customers() {
   }
 
   return (
-    <div className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900">
+    <div className="w-full">
       <Header title="Clientes" subtitle="Gestiona tu base de datos de clientes" />
       
-      <div className="p-6">
-        {/* Actions and Search */}
-        <div className="flex flex-col sm:flex-row gap-4 mb-6">
-          <div className="flex-1">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Buscar clientes por nombre, RNC o cédula..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
+      <div className="p-3 sm:p-6 space-y-4 sm:space-y-6">
+        {/* Stats and Actions */}
+        <div className="flex flex-col sm:flex-row gap-4 sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
+              <Users className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+            </div>
+            <div>
+              <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white">
+                {customers?.length || 0} Clientes
+              </h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                {filteredCustomers.length} mostrados
+              </p>
             </div>
           </div>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button onClick={handleNewCustomer} className="bg-blue-600 hover:bg-blue-700 text-white">
-                <Plus className="mr-2 h-4 w-4" />
-                Nuevo Cliente
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
-                <DialogTitle>
-                  {editingCustomer ? "Editar Cliente" : "Nuevo Cliente"}
-                </DialogTitle>
-              </DialogHeader>
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name="type"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Tipo de Cliente</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Seleccionar tipo" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="individual">Persona Física</SelectItem>
-                            <SelectItem value="company">Empresa</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>
-                          {watchType === "company" ? "Razón Social" : "Nombre Completo"}
-                        </FormLabel>
-                        <FormControl>
-                          <Input placeholder="Nombre del cliente" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="email"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Email</FormLabel>
-                          <FormControl>
-                            <Input type="email" placeholder="email@ejemplo.com" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="phone"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Teléfono</FormLabel>
-                          <FormControl>
-                            <Input placeholder="(809) 123-4567" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  {watchType === "company" ? (
-                    <FormField
-                      control={form.control}
-                      name="rnc"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>RNC</FormLabel>
-                          <FormControl>
-                            <Input placeholder="101-12345-6" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  ) : (
-                    <FormField
-                      control={form.control}
-                      name="cedula"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Cédula</FormLabel>
-                          <FormControl>
-                            <Input placeholder="001-1234567-8" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  )}
-
-                  <FormField
-                    control={form.control}
-                    name="address"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Dirección</FormLabel>
-                        <FormControl>
-                          <Textarea placeholder="Dirección completa" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <div className="flex justify-end space-x-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => setIsDialogOpen(false)}
-                    >
-                      Cancelar
-                    </Button>
-                    <Button
-                      type="submit"
-                      disabled={createCustomerMutation.isPending || updateCustomerMutation.isPending}
-                      className="bg-blue-600 hover:bg-blue-700 text-white"
-                    >
-                      {editingCustomer ? "Actualizar" : "Crear"} Cliente
-                    </Button>
-                  </div>
-                </form>
-              </Form>
-            </DialogContent>
-          </Dialog>
+          
+          <Button 
+            onClick={handleNewCustomer} 
+            className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700"
+            size={isMobile ? "default" : "default"}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Nuevo Cliente
+          </Button>
         </div>
 
-        {/* Customers List */}
-        <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-          <CardHeader>
-            <CardTitle className="flex items-center text-gray-900 dark:text-white">
-              <Users className="mr-2 h-5 w-5" />
-              Clientes ({filteredCustomers.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {filteredCustomers.length === 0 ? (
-              <div className="text-center py-12">
-                <Users className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" />
-                <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">
-                  No hay clientes
-                </h3>
-                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                  {searchTerm ? "No se encontraron clientes que coincidan con tu búsqueda." : "Comienza agregando tu primer cliente."}
-                </p>
-                {!searchTerm && (
-                  <div className="mt-6">
-                    <Button onClick={handleNewCustomer} className="bg-blue-600 hover:bg-blue-700 text-white">
-                      <Plus className="mr-2 h-4 w-4" />
-                      Nuevo Cliente
-                    </Button>
+        {/* Search */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <Input
+            placeholder="Buscar clientes por nombre, RNC o cédula..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+
+        {/* Customers Grid/List */}
+        {filteredCustomers.length === 0 ? (
+          <Card>
+            <CardContent className="p-8 sm:p-12 text-center">
+              <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                No hay clientes
+              </h3>
+              <p className="text-gray-500 dark:text-gray-400 mb-4">
+                Comienza agregando tu primer cliente
+              </p>
+              <Button onClick={handleNewCustomer} className="bg-blue-600 hover:bg-blue-700">
+                <Plus className="h-4 w-4 mr-2" />
+                Agregar Cliente
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
+            {filteredCustomers.map((customer) => (
+              <Card key={customer.id} className="hover:shadow-lg transition-shadow">
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className={`p-2 rounded-lg ${
+                        customer.type === "company" 
+                          ? "bg-purple-100 dark:bg-purple-900/20" 
+                          : "bg-green-100 dark:bg-green-900/20"
+                      }`}>
+                        {customer.type === "company" ? (
+                          <Building2 className={`h-4 w-4 ${
+                            customer.type === "company" 
+                              ? "text-purple-600 dark:text-purple-400" 
+                              : "text-green-600 dark:text-green-400"
+                          }`} />
+                        ) : (
+                          <User className="h-4 w-4 text-green-600 dark:text-green-400" />
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <CardTitle className="text-sm sm:text-base truncate">{customer.name}</CardTitle>
+                        <Badge 
+                          variant="outline" 
+                          className="text-xs mt-1"
+                        >
+                          {customer.type === "company" ? "Empresa" : "Individual"}
+                        </Badge>
+                      </div>
+                    </div>
+                    
+                    <div className="flex gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleEdit(customer)}
+                        className="h-8 w-8 p-0"
+                      >
+                        <Edit className="h-3 w-3" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => deleteCustomerMutation.mutate(customer.id)}
+                        className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </div>
                   </div>
+                </CardHeader>
+                
+                <CardContent className="pt-0 space-y-2">
+                  {customer.email && (
+                    <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+                      <Mail className="h-3 w-3 flex-shrink-0" />
+                      <span className="truncate">{customer.email}</span>
+                    </div>
+                  )}
+                  
+                  {customer.phone && (
+                    <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+                      <Phone className="h-3 w-3 flex-shrink-0" />
+                      <span>{customer.phone}</span>
+                    </div>
+                  )}
+                  
+                  {customer.address && (
+                    <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+                      <MapPin className="h-3 w-3 flex-shrink-0" />
+                      <span className="truncate">{customer.address}</span>
+                    </div>
+                  )}
+                  
+                  {(customer.rnc || customer.cedula) && (
+                    <div className="pt-2 border-t border-gray-100 dark:border-gray-700">
+                      <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                        {customer.type === "company" ? "RNC:" : "Cédula:"} {customer.rnc || customer.cedula}
+                      </span>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+
+        {/* Customer Form Dialog */}
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogContent className="w-[95vw] max-w-md sm:max-w-lg max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>
+                {editingCustomer ? "Editar Cliente" : "Nuevo Cliente"}
+              </DialogTitle>
+            </DialogHeader>
+            
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Nombre *</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Nombre del cliente" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="type"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Tipo *</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecciona el tipo" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="individual">Individual</SelectItem>
+                          <SelectItem value="company">Empresa</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {form.watch("type") === "company" && (
+                  <FormField
+                    control={form.control}
+                    name="rnc"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>RNC</FormLabel>
+                        <FormControl>
+                          <Input placeholder="000-00000-0" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 )}
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-gray-50 dark:bg-gray-700">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        Cliente
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        Contacto
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        Identificación
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        Tipo
-                      </th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        Acciones
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                    {filteredCustomers.map((customer) => (
-                      <tr key={customer.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
-                              {customer.type === "company" ? (
-                                <Building2 className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                              ) : (
-                                <User className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                              )}
-                            </div>
-                            <div className="ml-3">
-                              <div className="text-sm font-medium text-gray-900 dark:text-white">
-                                {customer.name}
-                              </div>
-                              {customer.address && (
-                                <div className="text-sm text-gray-500 dark:text-gray-400 truncate max-w-xs">
-                                  {customer.address}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900 dark:text-white">
-                            {customer.email || "Sin email"}
-                          </div>
-                          <div className="text-sm text-gray-500 dark:text-gray-400">
-                            {customer.phone || "Sin teléfono"}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900 dark:text-white">
-                            {customer.type === "company" ? customer.rnc || "Sin RNC" : customer.cedula || "Sin cédula"}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <Badge variant={customer.type === "company" ? "default" : "secondary"}>
-                            {customer.type === "company" ? "Empresa" : "Individual"}
-                          </Badge>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <div className="flex items-center justify-end space-x-2">
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
-                              onClick={() => handleEdit(customer)}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
-                              onClick={() => deleteCustomerMutation.mutate(customer.id)}
-                              disabled={deleteCustomerMutation.isPending}
-                            >
-                              <Trash2 className="h-4 w-4 text-red-500" />
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+
+                {form.watch("type") === "individual" && (
+                  <FormField
+                    control={form.control}
+                    name="cedula"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Cédula</FormLabel>
+                        <FormControl>
+                          <Input placeholder="000-0000000-0" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email</FormLabel>
+                        <FormControl>
+                          <Input type="email" placeholder="email@ejemplo.com" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="phone"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Teléfono</FormLabel>
+                        <FormControl>
+                          <Input placeholder="(000) 000-0000" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <FormField
+                  control={form.control}
+                  name="address"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Dirección</FormLabel>
+                      <FormControl>
+                        <Textarea 
+                          placeholder="Dirección completa" 
+                          className="resize-none" 
+                          rows={2}
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="flex flex-col-reverse sm:flex-row gap-3 pt-4">
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={() => setIsDialogOpen(false)}
+                    className="w-full sm:w-auto"
+                  >
+                    Cancelar
+                  </Button>
+                  <Button 
+                    type="submit" 
+                    disabled={createCustomerMutation.isPending || updateCustomerMutation.isPending}
+                    className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700"
+                  >
+                    {editingCustomer ? "Actualizar" : "Crear"} Cliente
+                  </Button>
+                </div>
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

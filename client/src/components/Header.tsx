@@ -27,6 +27,13 @@ export function Header({ title, subtitle }: HeaderProps) {
     return `${firstName?.[0] || ""}${lastName?.[0] || ""}`.toUpperCase();
   };
 
+  const getUserName = () => {
+    if (user && typeof user === 'object' && 'email' in user) {
+      return (user as any).email || "Usuario";
+    }
+    return "Usuario";
+  };
+
   const handleLogout = () => {
     window.location.href = "/api/logout";
   };
@@ -108,14 +115,12 @@ export function Header({ title, subtitle }: HeaderProps) {
                   className="flex items-center space-x-2 hover:bg-gray-100 dark:hover:bg-gray-700 theme-blue:hover:bg-white/10 px-2 sm:px-3"
                 >
                   <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-xs sm:text-sm font-bold">
-                    {getInitials(user?.firstName, user?.lastName)}
+                    {getInitials()}
                   </div>
                   {!isMobile && (
                     <>
                       <span className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 theme-blue:text-white truncate max-w-24 lg:max-w-32">
-                        {user?.firstName && user?.lastName 
-                          ? `${user.firstName} ${user.lastName}` 
-                          : user?.email || "Usuario"}
+                        {getUserName()}
                       </span>
                       <ChevronDown className="h-3 w-3 lg:h-4 lg:w-4 text-gray-400" />
                     </>
@@ -126,12 +131,10 @@ export function Header({ title, subtitle }: HeaderProps) {
                 <DropdownMenuLabel className="text-sm">
                   <div className="flex flex-col space-y-1">
                     <p className="font-medium">
-                      {user?.firstName && user?.lastName 
-                        ? `${user.firstName} ${user.lastName}` 
-                        : "Usuario"}
+                      {getUserName()}
                     </p>
                     <p className="text-xs text-gray-500 truncate">
-                      {user?.email}
+                      {user && typeof user === 'object' && 'email' in user ? (user as any).email : ""}
                     </p>
                   </div>
                 </DropdownMenuLabel>
