@@ -79,8 +79,18 @@ import { eq, and, desc, sql, gte, lte } from "drizzle-orm";
 
 // Interface for storage operations
 export interface IStorage {
-  // User operations (mandatory for Replit Auth)
+  // User operations
   getUser(id: string): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
+  createUser(user: {
+    email: string;
+    password: string;
+    firstName: string;
+    lastName: string;
+    isActive?: boolean;
+  }): Promise<User>;
+  updateUserLastLogin(id: string): Promise<void>;
+  updateUserPassword(id: string, password: string): Promise<void>;
   upsertUser(user: UpsertUser): Promise<User>;
   
   // Company operations
@@ -1881,6 +1891,101 @@ export class DatabaseStorage implements IStorage {
         updatedAt: new Date()
       })
       .where(eq(users.id, userId));
+  }
+
+  // Email/Password Authentication Methods
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user;
+  }
+
+  async createUser(userData: {
+    email: string;
+    password: string;
+    firstName: string;
+    lastName: string;
+    isActive?: boolean;
+  }): Promise<User> {
+    const [user] = await db
+      .insert(users)
+      .values({
+        id: Math.random().toString(36).substr(2, 9), // Generate random ID
+        email: userData.email,
+        password: userData.password,
+        firstName: userData.firstName,
+        lastName: userData.lastName,
+        isActive: userData.isActive ?? true,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      })
+      .returning();
+    return user;
+  }
+
+  async updateUserLastLogin(id: string): Promise<void> {
+    await db
+      .update(users)
+      .set({
+        lastLoginAt: new Date(),
+        updatedAt: new Date()
+      })
+      .where(eq(users.id, id));
+  }
+
+  async updateUserPassword(id: string, password: string): Promise<void> {
+    await db
+      .update(users)
+      .set({
+        password,
+        updatedAt: new Date()
+      })
+      .where(eq(users.id, id));
+  }
+
+  async createCompanyUser(data: {
+    userId: string;
+    companyId: number;
+    role: string;
+    permissions: string[];
+    isActive: boolean;
+  }): Promise<CompanyUser> {
+    const [companyUser] = await db
+      .insert(companyUsers)
+      .values({
+        userId: data.userId,
+        companyId: data.companyId,
+        role: data.role,
+        permissions: data.permissions,
+        isActive: data.isActive,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      })
+      .returning();
+    return companyUser;
+  }
+
+  async getCompanyUserCount(companyId: number): Promise<number> {
+    const result = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(companyUsers)
+      .where(and(eq(companyUsers.companyId, companyId), eq(companyUsers.isActive, true)));
+    return result[0]?.count || 0;
+  }
+
+  async canAddUserToCompany(companyId: number): Promise<boolean> {
+    const company = await this.getCompany(companyId);
+    if (!company) return false;
+
+    const currentUserCount = await this.getCompanyUserCount(companyId);
+    
+    // Monthly plan allows 5 users, annual allows unlimited
+    if (company.plan === "monthly") {
+      return currentUserCount < 5;
+    } else if (company.plan === "annual") {
+      return true; // Unlimited users
+    }
+    
+    return false; // Default: no more users allowed
   }
 }
 
