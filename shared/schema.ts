@@ -76,7 +76,6 @@ export const companies = pgTable("companies", {
   currency: varchar("currency", { length: 3 }).default("DOP"),
   timezone: varchar("timezone", { length: 50 }).default("America/Santo_Domingo"),
   subscriptionPlan: varchar("subscription_plan", { length: 20 }).default("trial"), // trial, monthly, annual
-  plan: varchar("plan", { length: 20 }).default("monthly"), // monthly, annual - for user limits
   subscriptionExpiry: timestamp("subscription_expiry"),
   isActive: boolean("is_active").notNull().default(true),
   ownerId: varchar("owner_id").notNull().references(() => users.id),
