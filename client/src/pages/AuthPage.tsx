@@ -73,10 +73,16 @@ export default function AuthPage() {
     },
     onSuccess: (user) => {
       queryClient.setQueryData(["/api/user"], user);
+      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/companies/current"] });
       toast({
         title: "Welcome back!",
         description: "You have successfully logged in.",
       });
+      // Force page reload to ensure proper session state
+      setTimeout(() => {
+        window.location.href = "/";
+      }, 1000);
     },
     onError: (error: any) => {
       toast({
