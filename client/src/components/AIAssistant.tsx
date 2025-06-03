@@ -35,12 +35,22 @@ export function AIAssistant() {
       });
     },
     onSuccess: (data: any) => {
-      setMessages(prev => [...prev, {
-        id: Date.now().toString() + "_ai",
-        content: data.response,
-        isUser: false,
-        timestamp: new Date()
-      }]);
+      console.log('AI Response received:', data);
+      if (data && data.response) {
+        setMessages(prev => [...prev, {
+          id: Date.now().toString() + "_ai",
+          content: data.response,
+          isUser: false,
+          timestamp: new Date()
+        }]);
+      } else {
+        console.error('Invalid response format:', data);
+        toast({
+          title: "Error",
+          description: "Respuesta de IA inválida",
+          variant: "destructive",
+        });
+      }
     },
     onError: (error: any) => {
       if (error.message.includes("AI service not configured")) {
