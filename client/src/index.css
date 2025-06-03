@@ -99,15 +99,41 @@
 .theme-blue aside .text-gray-700,
 .theme-blue aside .text-gray-500,
 .theme-blue aside .text-gray-400 {
+  color: rgba(255, 255, 255, 0.95) !important;
+}
+
+.theme-blue aside .hover\:bg-gray-100:hover,
+.theme-blue aside .theme-blue\:hover\:bg-white\/10:hover {
+  background-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+.theme-blue aside .bg-blue-50,
+.theme-blue aside .theme-blue\:bg-white\/20 {
+  background-color: rgba(255, 255, 255, 0.25) !important;
+}
+
+/* Fix sidebar button text colors specifically */
+.theme-blue aside .theme-blue\:text-blue-100 {
+  color: rgba(255, 255, 255, 0.95) !important;
+}
+
+.theme-blue aside .theme-blue\:text-white {
+  color: white !important;
+}
+
+.theme-blue aside .theme-blue\:text-blue-200 {
   color: rgba(255, 255, 255, 0.9) !important;
 }
 
-.theme-blue aside .hover\:bg-gray-100:hover {
-  background-color: rgba(255, 255, 255, 0.1) !important;
+/* Fix active state for sidebar items */
+.theme-blue aside a[class*="text-blue-600"] {
+  color: white !important;
+  background-color: rgba(255, 255, 255, 0.25) !important;
 }
 
-.theme-blue aside .bg-blue-50 {
-  background-color: rgba(255, 255, 255, 0.2) !important;
+/* Fix border colors in sidebar */
+.theme-blue aside .theme-blue\:border-blue-500 {
+  border-color: rgba(255, 255, 255, 0.3) !important;
 }
 
 /* Blue theme header gradient */
