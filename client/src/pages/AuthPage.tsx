@@ -41,6 +41,7 @@ export default function AuthPage() {
   const [activeTab, setActiveTab] = useState("login");
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { t } = useTranslation();
 
   const loginForm = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
@@ -127,11 +128,11 @@ export default function AuthPage() {
             <Card className="w-full max-w-md">
               <CardHeader className="text-center">
                 <div className="flex justify-center mb-4">
-                  <img src={logoImage} alt="Four One Solutions" className="h-16 w-auto" />
+                  <img src={fourOneLogo} alt="Four One Solutions" className="h-16 w-auto" />
                 </div>
                 <CardTitle className="text-2xl font-bold">Four One Solutions</CardTitle>
                 <CardDescription>
-                  Complete enterprise management system for Dominican businesses
+                  {t('auth.welcome')}
                 </CardDescription>
               </CardHeader>
               <CardContent>

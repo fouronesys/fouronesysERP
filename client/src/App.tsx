@@ -35,6 +35,7 @@ import Employees from "@/pages/Employees";
 import Payroll from "@/pages/Payroll";
 import FiscalDocuments from "@/pages/FiscalDocuments";
 import AIInsights from "@/pages/AIInsights";
+import SubscriptionPlans from "@/pages/SubscriptionPlans";
 import NotFound from "@/pages/not-found";
 
 function ProtectedRoute({ component: Component, ...props }: { component: React.ComponentType }) {
@@ -154,6 +155,9 @@ function Router() {
       
       {/* AI Integration route */}
       <Route path="/ai-insights" component={() => <ProtectedRoute component={AIInsights} />} />
+      
+      {/* Subscription Plans route */}
+      <Route path="/plans" component={SubscriptionPlans} />
       
       {/* Communication routes */}
       <Route path="/chat" component={() => <ProtectedRoute component={Chat} />} />
