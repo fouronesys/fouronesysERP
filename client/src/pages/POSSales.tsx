@@ -246,14 +246,26 @@ export default function POSSales() {
                       </Badge>
                     </div>
                     
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleViewDetails(sale)}
-                      className="h-8 w-8 p-0"
-                    >
-                      <Eye className="h-3 w-3" />
-                    </Button>
+                    <div className="flex gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleReprintInvoice(sale)}
+                        className="h-8 w-8 p-0"
+                        title="Reimprimir factura"
+                      >
+                        <Printer className="h-3 w-3" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleViewDetails(sale)}
+                        className="h-8 w-8 p-0"
+                        title="Ver detalles"
+                      >
+                        <Eye className="h-3 w-3" />
+                      </Button>
+                    </div>
                   </div>
                 </CardHeader>
                 
@@ -391,6 +403,61 @@ export default function POSSales() {
                 </Card>
               </div>
             )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Print Preview Dialog */}
+        <Dialog open={showPrintPreview} onOpenChange={setShowPrintPreview}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Vista Previa - Factura #{printingSale?.id}</DialogTitle>
+            </DialogHeader>
+            <div className="max-h-96 overflow-y-auto">
+              {printingSale && company && printingItems && (
+                <PrintReceipt
+                  sale={{
+                    id: printingSale.id.toString(),
+                    saleNumber: printingSale.saleNumber,
+                    date: printingSale.date,
+                    subtotal: printingSale.subtotal,
+                    itbis: printingSale.itbis,
+                    total: printingSale.total,
+                    paymentMethod: printingSale.paymentMethod,
+                    cashReceived: printingSale.cashReceived,
+                    cashChange: printingSale.cashChange,
+                    ncf: printingSale.ncf,
+                    customerName: printingSale.customerName || "Cliente General",
+                    customerPhone: printingSale.customerPhone,
+                  }}
+                  items={printingItems.map(item => ({
+                    id: item.id,
+                    saleId: item.saleId,
+                    productId: item.productId,
+                    productName: item.productName,
+                    quantity: item.quantity,
+                    unitPrice: item.unitPrice,
+                    subtotal: item.subtotal,
+                  }))}
+                  company={company}
+                  printSettings={printSettings}
+                />
+              )}
+            </div>
+            <div className="flex gap-2 mt-4">
+              <Button onClick={handlePrint} className="flex-1">
+                <Printer className="h-4 w-4 mr-2" />
+                Imprimir
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setShowPrintPreview(false);
+                  setPrintingSale(null);
+                }}
+              >
+                Cerrar
+              </Button>
+            </div>
           </DialogContent>
         </Dialog>
       </div>
