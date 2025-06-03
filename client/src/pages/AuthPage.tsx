@@ -14,6 +14,7 @@ import { Eye, EyeOff, Building, Lock, Mail, User } from "lucide-react";
 import { useTranslation } from "@/lib/i18n";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import fourOneLogo from "@assets/Four One Solutions Logo.png";
+import { useLocation } from "wouter";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -42,6 +43,7 @@ export default function AuthPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { t } = useTranslation();
+  const [, setLocation] = useLocation();
 
   const loginForm = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
@@ -79,7 +81,8 @@ export default function AuthPage() {
         title: "Welcome back!",
         description: "You have successfully logged in.",
       });
-      // Immediate navigation without timeout to prevent 404 flash
+      // Navigate to dashboard after successful login
+      setLocation("/");
     },
     onError: (error: any) => {
       toast({
