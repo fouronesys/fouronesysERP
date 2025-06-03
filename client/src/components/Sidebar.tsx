@@ -145,18 +145,18 @@ export function Sidebar() {
             const isActive = location === item.href;
             const Icon = item.icon;
             return (
-              <Link key={item.name} to={item.href}>
-                <a
-                  className={cn(
-                    "group flex items-center px-2 sm:px-3 py-2 text-xs sm:text-sm font-medium rounded-lg transition-colors",
-                    isActive
-                      ? "text-blue-600 bg-blue-50 dark:bg-blue-900/20 theme-blue:bg-white/20 theme-blue:text-white"
-                      : "text-gray-700 dark:text-gray-300 theme-blue:text-blue-100 hover:bg-gray-100 dark:hover:bg-gray-800 theme-blue:hover:bg-white/10"
-                  )}
-                >
-                  <Icon className="mr-2 sm:mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
-                  <span className="truncate">{item.name}</span>
-                </a>
+              <Link 
+                key={item.name} 
+                href={item.href || "#"}
+                className={cn(
+                  "group flex items-center px-2 sm:px-3 py-2 text-xs sm:text-sm font-medium rounded-lg transition-colors",
+                  isActive
+                    ? "text-blue-600 bg-blue-50 dark:bg-blue-900/20 theme-blue:bg-white/20 theme-blue:text-white"
+                    : "text-gray-700 dark:text-gray-300 theme-blue:text-blue-100 hover:bg-gray-100 dark:hover:bg-gray-800 theme-blue:hover:bg-white/10"
+                )}
+              >
+                {Icon && <Icon className="mr-2 sm:mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />}
+                <span className="truncate">{item.name}</span>
               </Link>
             );
           }
@@ -171,18 +171,18 @@ export function Sidebar() {
                   const isActive = location === subItem.href;
                   const Icon = subItem.icon;
                   return (
-                    <Link key={subItem.name} to={subItem.href}>
-                      <a
-                        className={cn(
-                          "group flex items-center px-2 sm:px-3 py-2 text-xs sm:text-sm font-medium rounded-lg transition-colors",
-                          isActive
-                            ? "text-blue-600 bg-blue-50 dark:bg-blue-900/20 theme-blue:bg-white/20 theme-blue:text-white"
-                            : "text-gray-700 dark:text-gray-300 theme-blue:text-blue-100 hover:bg-gray-100 dark:hover:bg-gray-800 theme-blue:hover:bg-white/10"
-                        )}
-                      >
-                        <Icon className="mr-2 sm:mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
-                        <span className="truncate">{subItem.name}</span>
-                      </a>
+                    <Link 
+                      key={subItem.name} 
+                      href={subItem.href || "#"}
+                      className={cn(
+                        "group flex items-center px-2 sm:px-3 py-2 text-xs sm:text-sm font-medium rounded-lg transition-colors",
+                        isActive
+                          ? "text-blue-600 bg-blue-50 dark:bg-blue-900/20 theme-blue:bg-white/20 theme-blue:text-white"
+                          : "text-gray-700 dark:text-gray-300 theme-blue:text-blue-100 hover:bg-gray-100 dark:hover:bg-gray-800 theme-blue:hover:bg-white/10"
+                      )}
+                    >
+                      {Icon && <Icon className="mr-2 sm:mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />}
+                      <span className="truncate">{subItem.name}</span>
                     </Link>
                   );
                 })}
@@ -192,7 +192,7 @@ export function Sidebar() {
         })}
 
         {/* Super Admin Access */}
-        {user?.isSuperAdmin && (
+        {user?.role === 'super_admin' && (
           <div className="pt-3 sm:pt-4 border-t border-gray-200 dark:border-gray-700 theme-blue:border-blue-500">
             <h3 className="px-2 sm:px-3 text-xs font-semibold text-gray-500 dark:text-gray-400 theme-blue:text-blue-200 uppercase tracking-wider">
               Administración
