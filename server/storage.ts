@@ -123,6 +123,14 @@ export interface IStorage {
     productsInStock: number;
     productionOrders: number;
   }>;
+  
+  // Notification operations
+  getNotifications(userId: string, companyId: number): Promise<Notification[]>;
+  createNotification(notification: InsertNotification): Promise<Notification>;
+  markNotificationAsRead(id: number, userId: string): Promise<void>;
+  deleteNotification(id: number, userId: string): Promise<void>;
+  markAllNotificationsAsRead(userId: string, companyId: number): Promise<void>;
+  clearAllNotifications(userId: string, companyId: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -620,6 +628,75 @@ export class DatabaseStorage implements IStorage {
       productsInStock: stockResult?.count || 0,
       productionOrders: productionResult?.count || 0,
     };
+  }
+
+  // Notification operations
+  async getNotifications(userId: string, companyId: number): Promise<Notification[]> {
+    const notifications = await db
+      .select()
+      .from(notifications)
+      .where(
+        and(
+          eq(notifications.userId, userId),
+          eq(notifications.companyId, companyId)
+        )
+      )
+      .orderBy(desc(notifications.createdAt));
+    return notifications;
+  }
+
+  async createNotification(notificationData: InsertNotification): Promise<Notification> {
+    const [notification] = await db
+      .insert(notifications)
+      .values(notificationData)
+      .returning();
+    return notification;
+  }
+
+  async markNotificationAsRead(id: number, userId: string): Promise<void> {
+    await db
+      .update(notifications)
+      .set({ read: true, updatedAt: new Date() })
+      .where(
+        and(
+          eq(notifications.id, id),
+          eq(notifications.userId, userId)
+        )
+      );
+  }
+
+  async deleteNotification(id: number, userId: string): Promise<void> {
+    await db
+      .delete(notifications)
+      .where(
+        and(
+          eq(notifications.id, id),
+          eq(notifications.userId, userId)
+        )
+      );
+  }
+
+  async markAllNotificationsAsRead(userId: string, companyId: number): Promise<void> {
+    await db
+      .update(notifications)
+      .set({ read: true, updatedAt: new Date() })
+      .where(
+        and(
+          eq(notifications.userId, userId),
+          eq(notifications.companyId, companyId)
+        )
+      );
+  }
+
+  async clearAllNotifications(userId: string, companyId: number): Promise<void> {
+    await db
+      .delete(notifications)
+      .where(
+        and(
+          eq(notifications.userId, userId),
+          eq(notifications.companyId, companyId)
+        )
+      );
   }
 }
 

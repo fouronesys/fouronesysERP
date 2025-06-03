@@ -462,6 +462,19 @@ export const posPrintSettings = pgTable("pos_print_settings", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Notifications table
+export const notifications = pgTable("notifications", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").references(() => companies.id, { onDelete: "cascade" }).notNull(),
+  userId: varchar("user_id").notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  message: text("message").notNull(),
+  type: varchar("type", { length: 50 }).notNull().default("info"), // info, success, warning, error
+  read: boolean("read").notNull().default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 export const insertPOSSaleSchema = createInsertSchema(posSales).omit({
   id: true,
   createdAt: true,
@@ -474,6 +487,12 @@ export const insertPOSSaleItemSchema = createInsertSchema(posSaleItems).omit({
 });
 
 export const insertPOSPrintSettingsSchema = createInsertSchema(posPrintSettings).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertNotificationSchema = createInsertSchema(notifications).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
@@ -508,3 +527,5 @@ export type POSSaleItem = typeof posSaleItems.$inferSelect;
 export type InsertPOSSaleItem = z.infer<typeof insertPOSSaleItemSchema>;
 export type POSPrintSettings = typeof posPrintSettings.$inferSelect;
 export type InsertPOSPrintSettings = z.infer<typeof insertPOSPrintSettingsSchema>;
+export type Notification = typeof notifications.$inferSelect;
+export type InsertNotification = z.infer<typeof insertNotificationSchema>;
