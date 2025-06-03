@@ -1251,9 +1251,8 @@ export default function POS() {
                     customerPhone: customerPhone,
                   }}
                   items={cart.map(item => ({
-                    id: item.product.id,
-                    createdAt: null,
                     id: 0,
+                    createdAt: null,
                     saleId: 0,
                     productId: item.product.id,
                     productName: item.product.name,
