@@ -5,7 +5,7 @@ import logoImage from "@assets/Four One Solutions Logo_20250130_143401_0000.png"
 
 export default function Landing() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-800">
       <div className="container mx-auto px-4 py-16">
         {/* Header */}
         <div className="text-center mb-16">
@@ -16,17 +16,17 @@ export default function Landing() {
               className="w-20 h-20 object-contain"
             />
             <div className="ml-6">
-              <h1 className="text-4xl font-bold text-gray-900 dark:text-white">
+              <h1 className="text-4xl font-bold text-white">
                 Four One Solutions
               </h1>
-              <p className="text-lg text-gray-600 dark:text-gray-400">
+              <p className="text-lg text-gray-300">
                 Sistema integral de gestión empresarial para República Dominicana
               </p>
             </div>
           </div>
           
           <div className="max-w-3xl mx-auto mb-8">
-            <p className="text-xl text-gray-700 dark:text-gray-300 mb-6">
+            <p className="text-xl text-gray-300 mb-6">
               Gestiona tu empresa con todas las herramientas que necesitas: facturación, inventario, 
               producción y más. Adaptado específicamente para las normativas dominicanas.
             </p>
