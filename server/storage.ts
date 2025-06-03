@@ -20,6 +20,10 @@ import {
   payrollEntries,
   timeTracking,
   leaves,
+  ncfSequences,
+  comprobantes605,
+  comprobantes606,
+  rncRegistry,
   type User,
   type UpsertUser,
   type Company,
@@ -58,9 +62,17 @@ import {
   type InsertPOSSaleItem,
   type POSPrintSettings,
   type InsertPOSPrintSettings,
+  type NCFSequence,
+  type InsertNCFSequence,
+  type Comprobante605,
+  type InsertComprobante605,
+  type Comprobante606,
+  type InsertComprobante606,
+  type RNCRegistry,
+  type InsertRNCRegistry,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, desc, sql } from "drizzle-orm";
+import { eq, and, desc, sql, gte, lte } from "drizzle-orm";
 
 // Interface for storage operations
 export interface IStorage {
@@ -1208,7 +1220,7 @@ export class DatabaseStorage implements IStorage {
         comprobantes.push({
           companyId,
           period,
-          rncCedula: supplier.rnc || supplier.cedula || "00000000000",
+          rncCedula: supplier.rnc || "00000000000",
           tipoIdentificacion: supplier.rnc ? "1" : "2",
           tipoComprobante: "01", // Factura
           ncf: invoice.ncf,

@@ -135,6 +135,9 @@ function Router() {
       <Route path="/employees" component={() => <ProtectedRoute component={Employees} />} />
       <Route path="/payroll" component={() => <ProtectedRoute component={Payroll} />} />
       
+      {/* Fiscal Documents route */}
+      <Route path="/fiscal-documents" component={() => <ProtectedRoute component={FiscalDocuments} />} />
+      
       {/* Admin routes */}
       <Route path="/super-admin" component={() => <ProtectedRoute component={SuperAdmin} />} />
       
