@@ -59,9 +59,13 @@ function ProtectedRoute({ component: Component, ...props }: { component: React.C
   }
 
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div className="flex h-screen overflow-hidden bg-gray-50 dark:bg-gray-900">
       <Sidebar />
-      <Component {...props} />
+      <main className="flex-1 overflow-auto">
+        <div className="p-4 sm:p-6 lg:p-8 pt-16 lg:pt-6">
+          <Component {...props} />
+        </div>
+      </main>
     </div>
   );
 }
@@ -89,7 +93,7 @@ function Router() {
   }
 
   // Show setup page if no company is configured
-  if (!companyLoading && company && company.name === "Mi Empresa" && !setupComplete) {
+  if (!companyLoading && company && (!company.name || company.name === "Mi Empresa") && !setupComplete) {
     return <Setup onComplete={() => setSetupComplete(true)} />;
   }
 
