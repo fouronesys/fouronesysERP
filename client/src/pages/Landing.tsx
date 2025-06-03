@@ -131,7 +131,7 @@ export default function Landing() {
                   ].map((feature, index) => (
                     <li key={index} className="flex items-center">
                       <Check className="h-5 w-5 text-green-500 mr-3" />
-                      <span className="text-gray-700 dark:text-gray-300">{feature}</span>
+                      <span className="text-white">{feature}</span>
                     </li>
                   ))}
                 </ul>
