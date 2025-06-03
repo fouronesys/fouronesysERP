@@ -652,6 +652,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get last sale for reprint functionality
+  app.get("/api/pos/sales/last", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+      const sales = await storage.getPOSSales(company.id);
+      const lastSale = sales[0]; // Assuming sales are ordered by date desc
+      res.json(lastSale || null);
+    } catch (error) {
+      console.error("Error fetching last sale:", error);
+      res.status(500).json({ message: "Failed to fetch last sale" });
+    }
+  });
+
+  // Get sale items for a specific sale
+  app.get("/api/pos/sales/:id/items", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+      const saleId = parseInt(req.params.id);
+      const items = await storage.getPOSSaleItems(saleId);
+      res.json(items);
+    } catch (error) {
+      console.error("Error fetching sale items:", error);
+      res.status(500).json({ message: "Failed to fetch sale items" });
+    }
+  });
+
   // Profile routes
   app.patch("/api/auth/profile", isAuthenticated, async (req: any, res) => {
     try {

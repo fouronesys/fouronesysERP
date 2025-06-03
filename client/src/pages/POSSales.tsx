@@ -6,16 +6,19 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Search, ShoppingCart, Calendar, DollarSign, Eye, Receipt, Plus } from "lucide-react";
+import { Search, ShoppingCart, Calendar, DollarSign, Eye, Receipt, Plus, Printer, RotateCcw } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
-import type { POSSale, POSSaleItem, Product } from "@shared/schema";
+import { PrintReceipt } from "@/components/PrintReceipt";
+import type { POSSale, POSSaleItem, Product, Company, POSPrintSettings } from "@shared/schema";
 
 export default function POSSales() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedSale, setSelectedSale] = useState<POSSale | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [showPrintPreview, setShowPrintPreview] = useState(false);
+  const [printingSale, setPrintingSale] = useState<POSSale | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
@@ -29,8 +32,21 @@ export default function POSSales() {
   });
 
   const { data: saleItems } = useQuery<POSSaleItem[]>({
-    queryKey: ["/api/pos/sale-items", selectedSale?.id],
+    queryKey: ["/api/pos/sales", selectedSale?.id, "items"],
     enabled: !!selectedSale,
+  });
+
+  const { data: company } = useQuery<Company>({
+    queryKey: ["/api/companies/current"],
+  });
+
+  const { data: printSettings } = useQuery<POSPrintSettings>({
+    queryKey: ["/api/pos/print-settings"],
+  });
+
+  const { data: printingItems } = useQuery<POSSaleItem[]>({
+    queryKey: ["/api/pos/sales", printingSale?.id, "items"],
+    enabled: !!printingSale,
   });
 
   const filteredSales = sales?.filter(sale =>
@@ -46,14 +62,34 @@ export default function POSSales() {
   };
 
   const getTotalSales = () => {
-    return sales?.reduce((sum, sale) => sum + sale.total, 0) || 0;
+    return sales?.reduce((sum, sale) => sum + parseFloat(sale.total), 0) || 0;
+  };
+
+  const handleViewDetails = (sale: POSSale) => {
+    setSelectedSale(sale);
+    setIsDetailOpen(true);
+  };
+
+  const handleReprintInvoice = (sale: POSSale) => {
+    setPrintingSale(sale);
+    setShowPrintPreview(true);
+  };
+
+  const handlePrint = () => {
+    window.print();
+    setShowPrintPreview(false);
+    setPrintingSale(null);
+    toast({
+      title: "Éxito",
+      description: "Factura enviada a la impresora",
+    });
   };
 
   const getTodaySales = () => {
     const today = new Date().toDateString();
     return sales?.filter(sale => 
-      new Date(sale.createdAt).toDateString() === today
-    ).reduce((sum, sale) => sum + sale.total, 0) || 0;
+      new Date(sale.createdAt || sale.date).toDateString() === today
+    ).reduce((sum, sale) => sum + parseFloat(sale.total), 0) || 0;
   };
 
   const getTodayTransactions = () => {
@@ -66,11 +102,6 @@ export default function POSSales() {
   const getAverageTicket = () => {
     if (!sales || sales.length === 0) return 0;
     return getTotalSales() / sales.length;
-  };
-
-  const handleViewDetails = (sale: POSSale) => {
-    setSelectedSale(sale);
-    setIsDetailOpen(true);
   };
 
   const getProductName = (productId: number) => {
