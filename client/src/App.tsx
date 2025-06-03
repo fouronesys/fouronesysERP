@@ -33,6 +33,7 @@ import Notifications from "@/pages/Notifications";
 import Settings from "@/pages/Settings";
 import Employees from "@/pages/Employees";
 import Payroll from "@/pages/Payroll";
+import FiscalDocuments from "@/pages/FiscalDocuments";
 import NotFound from "@/pages/not-found";
 
 function ProtectedRoute({ component: Component, ...props }: { component: React.ComponentType }) {
