@@ -11,7 +11,9 @@ import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { Eye, EyeOff, Building, Lock, Mail, User } from "lucide-react";
-import logoImage from "@assets/Four One Solutions Logo_20250130_143401_0000.png";
+import { useTranslation } from "@/lib/i18n";
+import { LanguageSelector } from "@/components/LanguageSelector";
+import fourOneLogo from "@assets/Four One Solutions Logo.png";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
