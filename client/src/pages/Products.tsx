@@ -172,6 +172,24 @@ export default function Products() {
     },
   });
 
+  // Sync currentImageUrl with form values when dialog opens or form changes
+  useEffect(() => {
+    if (isDialogOpen) {
+      const imageUrl = form.getValues("imageUrl");
+      setCurrentImageUrl(imageUrl || "");
+    }
+  }, [isDialogOpen, form]);
+
+  // Watch for imageUrl changes and update currentImageUrl
+  useEffect(() => {
+    const subscription = form.watch((value, { name }) => {
+      if (name === "imageUrl") {
+        setCurrentImageUrl(value.imageUrl || "");
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [form]);
+
   const filteredProducts = products?.filter(product =>
     product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     product.code.toLowerCase().includes(searchTerm.toLowerCase())
