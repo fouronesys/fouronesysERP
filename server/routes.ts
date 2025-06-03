@@ -796,6 +796,230 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Employee routes
+  app.get("/api/employees", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+      const employees = await storage.getEmployees(company.id);
+      res.json(employees);
+    } catch (error) {
+      console.error("Error fetching employees:", error);
+      res.status(500).json({ message: "Failed to fetch employees" });
+    }
+  });
+
+  app.get("/api/employees/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+      const employee = await storage.getEmployee(parseInt(req.params.id), company.id);
+      if (!employee) {
+        return res.status(404).json({ message: "Employee not found" });
+      }
+      res.json(employee);
+    } catch (error) {
+      console.error("Error fetching employee:", error);
+      res.status(500).json({ message: "Failed to fetch employee" });
+    }
+  });
+
+  app.post("/api/employees", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+      const employee = await storage.createEmployee({
+        ...req.body,
+        companyId: company.id,
+      });
+      res.status(201).json(employee);
+    } catch (error) {
+      console.error("Error creating employee:", error);
+      res.status(500).json({ message: "Failed to create employee" });
+    }
+  });
+
+  app.put("/api/employees/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+      const employee = await storage.updateEmployee(parseInt(req.params.id), req.body, company.id);
+      if (!employee) {
+        return res.status(404).json({ message: "Employee not found" });
+      }
+      res.json(employee);
+    } catch (error) {
+      console.error("Error updating employee:", error);
+      res.status(500).json({ message: "Failed to update employee" });
+    }
+  });
+
+  app.delete("/api/employees/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+      await storage.deleteEmployee(parseInt(req.params.id), company.id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting employee:", error);
+      res.status(500).json({ message: "Failed to delete employee" });
+    }
+  });
+
+  // Payroll Period routes
+  app.get("/api/payroll/periods", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+      const periods = await storage.getPayrollPeriods(company.id);
+      res.json(periods);
+    } catch (error) {
+      console.error("Error fetching payroll periods:", error);
+      res.status(500).json({ message: "Failed to fetch payroll periods" });
+    }
+  });
+
+  app.post("/api/payroll/periods", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+      const period = await storage.createPayrollPeriod({
+        ...req.body,
+        companyId: company.id,
+      });
+      res.status(201).json(period);
+    } catch (error) {
+      console.error("Error creating payroll period:", error);
+      res.status(500).json({ message: "Failed to create payroll period" });
+    }
+  });
+
+  app.put("/api/payroll/periods/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+      const period = await storage.updatePayrollPeriod(parseInt(req.params.id), req.body, company.id);
+      if (!period) {
+        return res.status(404).json({ message: "Payroll period not found" });
+      }
+      res.json(period);
+    } catch (error) {
+      console.error("Error updating payroll period:", error);
+      res.status(500).json({ message: "Failed to update payroll period" });
+    }
+  });
+
+  // Payroll Entry routes
+  app.get("/api/payroll/entries", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+      const periodId = req.query.periodId ? parseInt(req.query.periodId as string) : undefined;
+      const entries = await storage.getPayrollEntries(company.id, periodId);
+      res.json(entries);
+    } catch (error) {
+      console.error("Error fetching payroll entries:", error);
+      res.status(500).json({ message: "Failed to fetch payroll entries" });
+    }
+  });
+
+  app.post("/api/payroll/generate/:periodId", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+      
+      const periodId = parseInt(req.params.periodId);
+      const period = await storage.getPayrollPeriod(periodId, company.id);
+      if (!period) {
+        return res.status(404).json({ message: "Payroll period not found" });
+      }
+
+      const employees = await storage.getEmployees(company.id);
+      const entries = [];
+
+      for (const employee of employees) {
+        if (employee.status === "active") {
+          const baseSalary = parseFloat(employee.salary);
+          const hoursWorked = employee.salaryType === "hourly" ? 160 : 0;
+          const overtimeHours = 0;
+          const bonuses = 0;
+          const commissions = 0;
+          const allowances = 0;
+          
+          const grossPay = employee.salaryType === "hourly" 
+            ? baseSalary * hoursWorked 
+            : baseSalary;
+
+          // Dominican Republic deductions (approximate percentages)
+          const tssDeduction = grossPay * 0.0287; // 2.87% TSS
+          const sfsDeduction = grossPay * 0.0304; // 3.04% SFS
+          const infotepDeduction = grossPay * 0.01; // 1% INFOTEP
+          const incomeTaxDeduction = grossPay > 34685 ? (grossPay - 34685) * 0.15 : 0; // Progressive tax
+          const otherDeductions = 0;
+
+          const totalDeductions = tssDeduction + sfsDeduction + infotepDeduction + incomeTaxDeduction + otherDeductions;
+          const netPay = grossPay - totalDeductions;
+
+          const entry = await storage.createPayrollEntry({
+            companyId: company.id,
+            periodId,
+            employeeId: employee.id,
+            baseSalary: baseSalary.toString(),
+            hoursWorked: hoursWorked.toString(),
+            overtimeHours: overtimeHours.toString(),
+            bonuses: bonuses.toString(),
+            commissions: commissions.toString(),
+            allowances: allowances.toString(),
+            grossPay: grossPay.toString(),
+            tssDeduction: tssDeduction.toString(),
+            sfsDeduction: sfsDeduction.toString(),
+            infotepDeduction: infotepDeduction.toString(),
+            incomeTaxDeduction: incomeTaxDeduction.toString(),
+            otherDeductions: otherDeductions.toString(),
+            totalDeductions: totalDeductions.toString(),
+            netPay: netPay.toString(),
+          });
+          entries.push(entry);
+        }
+      }
+
+      res.json({ message: "Payroll generated successfully", entries });
+    } catch (error) {
+      console.error("Error generating payroll:", error);
+      res.status(500).json({ message: "Failed to generate payroll" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

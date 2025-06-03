@@ -64,6 +64,13 @@ const navigation = [
     ],
   },
   {
+    category: "Recursos Humanos",
+    items: [
+      { name: "Empleados", href: "/employees", icon: Users },
+      { name: "Nómina", href: "/payroll", icon: Calculator },
+    ],
+  },
+  {
     category: "Configuración",
     items: [
       { name: "Empresa", href: "/company-settings", icon: Settings },
