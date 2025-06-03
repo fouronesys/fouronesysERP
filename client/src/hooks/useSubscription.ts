@@ -79,7 +79,19 @@ export function useSubscription() {
   };
 
   const daysUntilExpiry = (): number => {
-    if (!company?.subscriptionExpiry) return 0;
+    if (!company?.subscriptionExpiry) {
+      // For trial companies without expiry date, assume 15 days from creation
+      if (currentPlan === "trial" && company?.createdAt) {
+        const createdDate = new Date(company.createdAt);
+        const trialExpiryDate = new Date(createdDate.getTime() + (15 * 24 * 60 * 60 * 1000));
+        const today = new Date();
+        const diffTime = trialExpiryDate.getTime() - today.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        return Math.max(0, diffDays);
+      }
+      return 0;
+    }
+    
     const expiryDate = new Date(company.subscriptionExpiry);
     const today = new Date();
     const diffTime = expiryDate.getTime() - today.getTime();

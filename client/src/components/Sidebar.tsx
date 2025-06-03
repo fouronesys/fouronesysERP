@@ -23,6 +23,7 @@ import {
   Calculator
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { useSubscription } from "@/hooks/useSubscription";
 import { useIsMobile } from "@/hooks/use-mobile";
 import logoImage from "@assets/Four One Solutions Logo_20250130_143401_0000.png";
 
@@ -83,6 +84,7 @@ const navigation = [
 export function Sidebar() {
   const [location] = useLocation();
   const { user } = useAuth();
+  const { currentPlan, daysUntilExpiry } = useSubscription();
   const isMobile = useIsMobile();
   const [isOpen, setIsOpen] = useState(false);
 

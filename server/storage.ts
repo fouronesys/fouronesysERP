@@ -210,9 +210,17 @@ export class DatabaseStorage implements IStorage {
 
   // Company operations
   async createCompany(companyData: InsertCompany): Promise<Company> {
+    // Set trial expiry date for trial companies
+    const dataToInsert = { ...companyData };
+    if (companyData.subscriptionPlan === 'trial' && !companyData.subscriptionExpiry) {
+      const now = new Date();
+      const trialExpiry = new Date(now.getTime() + (15 * 24 * 60 * 60 * 1000)); // 15 days from now
+      dataToInsert.subscriptionExpiry = trialExpiry;
+    }
+    
     const [company] = await db
       .insert(companies)
-      .values(companyData)
+      .values(dataToInsert)
       .returning();
     return company;
   }
