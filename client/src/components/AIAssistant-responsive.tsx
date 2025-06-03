@@ -157,7 +157,7 @@ export function AIAssistant() {
                   className={`rounded-2xl px-4 py-3 shadow-sm ${
                     message.isUser
                       ? "bg-blue-600 text-white rounded-br-md"
-                      : "bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700 rounded-bl-md"
+                      : "bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-50 border border-gray-200 dark:border-gray-700 rounded-bl-md"
                   }`}
                 >
                   <div className="prose prose-sm max-w-none">
