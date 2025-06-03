@@ -29,7 +29,7 @@ export default function Employees() {
   const createEmployeeMutation = useMutation({
     mutationFn: (data: any) => apiRequest("/api/employees", {
       method: "POST",
-      body: JSON.stringify(data),
+      body: data,
     }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/employees"] });
@@ -53,7 +53,7 @@ export default function Employees() {
     mutationFn: ({ id, data }: { id: number; data: any }) => 
       apiRequest(`/api/employees/${id}`, {
         method: "PUT",
-        body: JSON.stringify(data),
+        body: data,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/employees"] });
