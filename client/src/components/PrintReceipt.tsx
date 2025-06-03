@@ -344,7 +344,7 @@ export function PrintReceipt({
           {/* Company Header */}
           <div className="company-info center">
             {/* Company Logo - Modern Design */}
-            {company.logoUrl && printSettings?.showCompanyLogo !== false && (
+            {company.logoUrl && printSettings?.showLogo !== false && (
               <div className="logo-container">
                 <img src={company.logoUrl} alt="Logo" className="logo" />
               </div>
