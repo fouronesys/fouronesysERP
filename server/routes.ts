@@ -165,7 +165,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Company routes
   app.get("/api/companies/current", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const company = await storage.getCompanyByUserId(userId);
       
       if (!company) {
