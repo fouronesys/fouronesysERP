@@ -35,6 +35,20 @@ export const users = pgTable("users", {
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),
+  role: varchar("role", { length: 20 }).default("user"), // super_admin, company_admin, user
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Company Users - Junction table for user-company relationships
+export const companyUsers = pgTable("company_users", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  companyId: integer("company_id").notNull().references(() => companies.id),
+  role: varchar("role", { length: 20 }).default("user"), // company_admin, user
+  permissions: text("permissions").array(), // array of permission strings
+  isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -43,11 +57,20 @@ export const users = pgTable("users", {
 export const companies = pgTable("companies", {
   id: serial("id").primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),
+  businessName: varchar("business_name", { length: 255 }), // Razón social
   rnc: varchar("rnc", { length: 20 }),
   address: text("address"),
   phone: varchar("phone", { length: 20 }),
   email: varchar("email", { length: 255 }),
-  logo: text("logo"),
+  website: varchar("website", { length: 255 }),
+  logoUrl: text("logo_url"), // URL del logo personalizado
+  industry: varchar("industry", { length: 100 }), // Sector/industria
+  taxRegime: varchar("tax_regime", { length: 50 }).default("general"), // régimen tributario
+  currency: varchar("currency", { length: 3 }).default("DOP"),
+  timezone: varchar("timezone", { length: 50 }).default("America/Santo_Domingo"),
+  subscriptionPlan: varchar("subscription_plan", { length: 20 }).default("trial"), // trial, monthly, annual
+  subscriptionExpiry: timestamp("subscription_expiry"),
+  isActive: boolean("is_active").notNull().default(true),
   ownerId: varchar("owner_id").notNull().references(() => users.id),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -388,6 +411,12 @@ export const insertWarehouseSchema = createInsertSchema(warehouses).omit({
   updatedAt: true,
 });
 
+export const insertCompanyUserSchema = createInsertSchema(companyUsers).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // POS Sales table
 export const posSales = pgTable("pos_sales", {
   id: serial("id").primaryKey(),
@@ -471,6 +500,8 @@ export type InsertBOM = z.infer<typeof insertBOMSchema>;
 export type InventoryMovement = typeof inventoryMovements.$inferSelect;
 export type Warehouse = typeof warehouses.$inferSelect;
 export type InsertWarehouse = z.infer<typeof insertWarehouseSchema>;
+export type CompanyUser = typeof companyUsers.$inferSelect;
+export type InsertCompanyUser = z.infer<typeof insertCompanyUserSchema>;
 export type POSSale = typeof posSales.$inferSelect;
 export type InsertPOSSale = z.infer<typeof insertPOSSaleSchema>;
 export type POSSaleItem = typeof posSaleItems.$inferSelect;

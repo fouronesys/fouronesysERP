@@ -52,6 +52,18 @@ export interface IStorage {
   getCompanyByUserId(userId: string): Promise<Company | undefined>;
   updateCompany(id: number, company: Partial<InsertCompany>): Promise<Company>;
   
+  // Super Admin operations
+  getAllCompanies(): Promise<Company[]>;
+  getCompany(id: number): Promise<Company | undefined>;
+  updateCompanyStatus(id: number, isActive: boolean): Promise<Company>;
+  createCompanyForUser(company: InsertCompany, userId: string): Promise<Company>;
+  getUserCompanies(userId: string): Promise<Company[]>;
+  
+  // Company User operations
+  addUserToCompany(userId: string, companyId: number, role: string): Promise<CompanyUser>;
+  getUserRole(userId: string, companyId?: number): Promise<string | null>;
+  isUserSuperAdmin(userId: string): Promise<boolean>;
+  
   // Warehouse operations
   getWarehouses(companyId: number): Promise<Warehouse[]>;
   createWarehouse(warehouse: InsertWarehouse): Promise<Warehouse>;
