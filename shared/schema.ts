@@ -140,6 +140,7 @@ export const products = pgTable("products", {
   minStock: integer("min_stock").default(0),
   maxStock: integer("max_stock"),
   unit: varchar("unit", { length: 20 }).notNull().default("unit"),
+  imageUrl: varchar("image_url", { length: 500 }),
   isActive: boolean("is_active").notNull().default(true),
   isManufactured: boolean("is_manufactured").notNull().default(false),
   itbisIncluded: boolean("itbis_included").notNull().default(true),

@@ -587,28 +587,36 @@ export class DatabaseStorage implements IStorage {
       .values(itemWithName)
       .returning();
     
-    // Reducir stock automáticamente
+    // Stock deduction with improved validation
     const quantity = parseInt(itemData.quantity);
     
-    if (currentProduct) {
-      const newStock = currentProduct.stock - quantity;
-      await db
-        .update(products)
-        .set({ stock: newStock })
-        .where(eq(products.id, itemData.productId));
-      
-      // Registrar movimiento de inventario
-      await db
-        .insert(inventoryMovements)
-        .values({
-          productId: itemData.productId,
-          type: "out",
-          quantity: -quantity,
-          reference: "POS Sale",
-          referenceId: itemData.saleId,
-          notes: `Venta POS - Reducción automática de stock`,
-          companyId: currentProduct.companyId,
-        });
+    if (currentProduct && quantity > 0) {
+      // Check if there's enough stock
+      if (currentProduct.stock >= quantity) {
+        const newStock = currentProduct.stock - quantity;
+        await db
+          .update(products)
+          .set({ 
+            stock: newStock,
+            updatedAt: new Date() 
+          })
+          .where(eq(products.id, itemData.productId));
+        
+        // Register inventory movement
+        await db
+          .insert(inventoryMovements)
+          .values({
+            productId: itemData.productId,
+            type: "out",
+            quantity: -quantity,
+            reference: "POS Sale",
+            referenceId: itemData.saleId,
+            notes: `Venta POS #${itemData.saleId} - Stock reducido automáticamente`,
+            companyId: currentProduct.companyId,
+          });
+      } else {
+        console.warn(`Insufficient stock for product ${itemData.productId}. Available: ${currentProduct.stock}, Requested: ${quantity}`);
+      }
     }
     
     return item;
