@@ -21,7 +21,9 @@ import {
   Settings,
   ShieldCheck,
   Calculator,
-  Brain
+  Brain,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -100,6 +102,7 @@ export function Sidebar() {
   const { currentPlan, daysUntilExpiry } = useSubscription();
   const isMobile = useIsMobile();
   const [isOpen, setIsOpen] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   // Cerrar menú móvil al cambiar de ruta
   useEffect(() => {
@@ -131,14 +134,16 @@ export function Sidebar() {
               alt="Four One Solutions" 
               className="w-8 h-8 sm:w-10 sm:h-10 object-contain flex-shrink-0"
             />
-            <div className="ml-2 sm:ml-3 min-w-0">
-              <h1 className="text-sm sm:text-lg lg:text-xl font-bold text-gray-900 dark:text-white theme-blue:text-white truncate">
-                Four One Solutions
-              </h1>
-              <p className="text-xs text-gray-500 dark:text-gray-400 theme-blue:text-blue-100 hidden sm:block">
-                Sistema ERP
-              </p>
-            </div>
+            {!isCollapsed && (
+              <div className="ml-2 sm:ml-3 min-w-0">
+                <h1 className="text-sm sm:text-lg lg:text-xl font-bold text-gray-900 dark:text-white theme-blue:text-white truncate">
+                  Four One Solutions
+                </h1>
+                <p className="text-xs text-gray-500 dark:text-gray-400 theme-blue:text-blue-100 hidden sm:block">
+                  Sistema ERP
+                </p>
+              </div>
+            )}
           </div>
           {isMobile && (
             <button
@@ -167,9 +172,10 @@ export function Sidebar() {
                     ? "text-blue-600 bg-blue-50 dark:bg-blue-900/20 theme-blue:bg-white/20 theme-blue:text-white"
                     : "text-gray-700 dark:text-gray-300 theme-blue:text-blue-100 hover:bg-gray-100 dark:hover:bg-gray-800 theme-blue:hover:bg-white/10"
                 )}
+                title={isCollapsed ? item.name : undefined}
               >
-                {Icon && <Icon className="mr-2 sm:mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />}
-                <span className="truncate">{item.name}</span>
+                {Icon && <Icon className={cn("h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0", isCollapsed ? "mr-0" : "mr-2 sm:mr-3")} />}
+                {!isCollapsed && <span className="truncate">{item.name}</span>}
               </Link>
             );
           }
