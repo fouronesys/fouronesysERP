@@ -202,6 +202,9 @@ export default function CompanySettings() {
 
   const onSubmit = async (data: CompanySettingsFormData) => {
     console.log("Form submitted with data:", data);
+    console.log("Form errors:", form.formState.errors);
+    console.log("Form is valid:", form.formState.isValid);
+    
     try {
       let logoUrl = company?.logoUrl;
 
@@ -222,6 +225,13 @@ export default function CompanySettings() {
         variant: "destructive",
       });
     }
+  };
+
+  // Debug function to check button click
+  const handleButtonClick = (e: React.MouseEvent) => {
+    console.log("Button clicked!");
+    console.log("Button type:", e.currentTarget.getAttribute('type'));
+    console.log("Form state:", form.formState);
   };
 
   if (isLoading) {
@@ -478,6 +488,7 @@ export default function CompanySettings() {
               type="submit"
               disabled={updateMutation.isPending}
               size="lg"
+              onClick={handleButtonClick}
             >
               <Save className="mr-2 h-4 w-4" />
               {updateMutation.isPending ? "Guardando..." : "Guardar Configuración"}
