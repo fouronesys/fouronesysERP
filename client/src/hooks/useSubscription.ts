@@ -11,22 +11,36 @@ export interface SubscriptionPlan {
 export const SUBSCRIPTION_PLANS: Record<string, SubscriptionPlan> = {
   trial: {
     name: "Prueba Gratuita",
-    features: ["dashboard", "pos", "customers", "products", "invoices", "companies", "company-settings"],
-    maxUsers: 1,
-    maxCompanies: 1,
+    features: [
+      "dashboard", "pos", "customers", "products", "invoices", "reports", 
+      "warehouses", "manufacturing", "bom", "movements", "suppliers", 
+      "purchase-orders", "admin", "companies", "company-settings", "super-admin",
+      "employees", "payroll", "time-tracking", "leaves", "notifications",
+      "settings", "profile", "billing", "pos-sales"
+    ],
+    maxUsers: 50,
+    maxCompanies: 10,
   },
   monthly: {
     name: "Plan Mensual",
-    features: ["dashboard", "pos", "customers", "products", "invoices", "reports", "warehouses", "companies", "company-settings"],
-    maxUsers: 5,
-    maxCompanies: 1,
+    features: [
+      "dashboard", "pos", "customers", "products", "invoices", "reports", 
+      "warehouses", "manufacturing", "bom", "movements", "suppliers", 
+      "purchase-orders", "admin", "companies", "company-settings", "super-admin",
+      "employees", "payroll", "time-tracking", "leaves", "notifications",
+      "settings", "profile", "billing", "pos-sales"
+    ],
+    maxUsers: 50,
+    maxCompanies: 10,
   },
   annual: {
     name: "Plan Anual",
     features: [
       "dashboard", "pos", "customers", "products", "invoices", "reports", 
       "warehouses", "manufacturing", "bom", "movements", "suppliers", 
-      "purchase-orders", "admin", "companies", "company-settings", "super-admin"
+      "purchase-orders", "admin", "companies", "company-settings", "super-admin",
+      "employees", "payroll", "time-tracking", "leaves", "notifications",
+      "settings", "profile", "billing", "pos-sales"
     ],
     maxUsers: 50,
     maxCompanies: 10,
