@@ -665,48 +665,54 @@ export default function POS() {
                   />
                 </div>
 
-                {/* Products Grid */}
-                <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {/* Products Grid - Improved Responsiveness */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 lg:gap-4">
                   {filteredProducts.map((product) => (
-                    <Card key={product.id} className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => addToCart(product)}>
-                      <CardContent className="p-4">
-                        <div className="flex justify-between items-start mb-3">
-                          <div className="flex items-center min-w-0 flex-1">
-                            <div className="flex-shrink-0 h-10 w-10 mr-3">
-                              <img
-                                className="h-10 w-10 rounded object-cover border border-gray-200 dark:border-gray-600"
-                                src={product.imageUrl || "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=400&fit=crop"}
-                                alt={product.name}
-                                onError={(e) => {
-                                  e.currentTarget.src = "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=400&fit=crop";
-                                }}
-                              />
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <h3 className="font-medium text-sm truncate">{product.name}</h3>
-                              <p className="text-xs text-gray-500 dark:text-gray-400">{product.code}</p>
-                            </div>
-                          </div>
-                          <Badge variant={parseInt(product.stock.toString()) > 10 ? "default" : "destructive"} className="ml-2 text-xs">
-                            {product.stock}
-                          </Badge>
+                    <Card key={product.id} className="hover:shadow-md transition-all duration-200 cursor-pointer group hover:scale-105" onClick={() => addToCart(product)}>
+                      <CardContent className="p-3 lg:p-4">
+                        {/* Product Image */}
+                        <div className="aspect-square mb-3 overflow-hidden rounded-lg bg-gray-100 dark:bg-gray-800">
+                          <img
+                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-200"
+                            src={product.imageUrl || "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=400&fit=crop"}
+                            alt={product.name}
+                            onError={(e) => {
+                              e.currentTarget.src = "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=400&fit=crop";
+                            }}
+                          />
                         </div>
                         
-                        <div className="flex justify-between items-center">
-                          <span className="font-bold text-green-600 dark:text-green-400">
-                            {formatDOP(parseFloat(product.price))}
-                          </span>
-                          <Button
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              addToCart(product);
-                            }}
-                            disabled={parseInt(product.stock.toString()) <= 0}
-                            className="bg-blue-600 hover:bg-blue-700"
-                          >
-                            <Plus className="h-3 w-3" />
-                          </Button>
+                        {/* Product Info */}
+                        <div className="space-y-2">
+                          <div className="flex justify-between items-start">
+                            <div className="min-w-0 flex-1">
+                              <h3 className="font-medium text-sm lg:text-base line-clamp-2 leading-tight">{product.name}</h3>
+                              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{product.code}</p>
+                            </div>
+                            <Badge 
+                              variant={parseInt(product.stock.toString()) > 10 ? "default" : "destructive"} 
+                              className="ml-2 text-xs shrink-0"
+                            >
+                              {product.stock}
+                            </Badge>
+                          </div>
+                          
+                          <div className="flex justify-between items-center mt-2">
+                            <span className="font-bold text-green-600 dark:text-green-400 text-sm lg:text-base">
+                              {formatDOP(parseFloat(product.price))}
+                            </span>
+                            <Button
+                              size="sm"
+                              className="h-8 px-3 text-xs"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                addToCart(product);
+                              }}
+                            >
+                              <Plus className="h-3 w-3 mr-1" />
+                              Agregar
+                            </Button>
+                          </div>
                         </div>
                       </CardContent>
                     </Card>
@@ -1240,11 +1246,13 @@ export default function POS() {
                     paymentMethod: paymentMethod,
                     cashReceived: cashReceived,
                     cashChange: cashChange.toString(),
-                    ncf: generateNCF(),
+                    ncf: generateNCF("consumer", Date.now()),
                     customerName: customerName || "Cliente General",
                     customerPhone: customerPhone,
                   }}
                   items={cart.map(item => ({
+                    id: item.product.id,
+                    createdAt: null,
                     id: 0,
                     saleId: 0,
                     productId: item.product.id,
