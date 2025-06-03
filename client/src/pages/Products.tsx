@@ -36,7 +36,7 @@ export default function Products() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-  const [imagePreviewKey, setImagePreviewKey] = useState(0);
+  const [currentImageUrl, setCurrentImageUrl] = useState("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -155,8 +155,9 @@ export default function Products() {
       return response.json();
     },
     onSuccess: (data) => {
-      form.setValue("imageUrl", data.imageUrl);
-      setImagePreviewKey(prev => prev + 1); // Force image preview refresh
+      // Update both form and state to ensure immediate visual update
+      form.setValue("imageUrl", data.imageUrl, { shouldDirty: true, shouldTouch: true, shouldValidate: true });
+      setCurrentImageUrl(data.imageUrl);
       toast({
         title: "Imagen generada",
         description: "Nueva imagen generada automáticamente.",
@@ -405,11 +406,11 @@ export default function Products() {
                     <FormLabel className="text-base font-medium">Imagen del Producto</FormLabel>
                     
                     {/* Image Preview */}
-                    {form.watch("imageUrl") && (
+                    {(currentImageUrl || form.watch("imageUrl")) && (
                       <div className="flex justify-center">
                         <img
-                          key={`${form.watch("imageUrl")}-${imagePreviewKey}`} // Force re-render when URL changes or key updates
-                          src={form.watch("imageUrl") || ""}
+                          key={currentImageUrl || form.watch("imageUrl")} // Force re-render when URL changes
+                          src={currentImageUrl || form.watch("imageUrl") || ""}
                           alt="Vista previa del producto"
                           className="h-32 w-32 object-cover rounded-lg border border-gray-300 dark:border-gray-600"
                           onError={(e) => {
@@ -430,6 +431,10 @@ export default function Products() {
                             <Input 
                               placeholder="https://ejemplo.com/imagen.jpg"
                               {...field}
+                              onChange={(e) => {
+                                field.onChange(e);
+                                setCurrentImageUrl(e.target.value);
+                              }}
                             />
                           </FormControl>
                           <FormMessage />
