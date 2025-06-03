@@ -345,9 +345,9 @@ export default function POS() {
       <Header title="Punto de Venta" subtitle="Sistema POS integrado" />
       
       <div className="p-3 sm:p-6">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-          {/* Products and Cart Section */}
-          <div className="lg:col-span-2 space-y-4">
+        <div className="grid grid-cols-1 xl:grid-cols-4 gap-4 sm:gap-6">
+          {/* Products Section */}
+          <div className="xl:col-span-2 space-y-4">
             {/* Mobile Tabs for Products/Cart */}
             {isMobile && (
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -758,6 +758,163 @@ export default function POS() {
               </CardContent>
             </Card>
           </div>
+
+          {/* Live Receipt Preview Panel - Desktop Only */}
+          {!isMobile && (
+            <div className="space-y-4">
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Receipt className="h-4 w-4" />
+                    Vista Previa en Vivo
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-4 max-h-[600px] overflow-y-auto">
+                    {cart.length === 0 ? (
+                      <div className="text-center text-gray-500 dark:text-gray-400 py-8">
+                        <Receipt className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                        <p className="text-sm">
+                          Agrega productos para ver la vista previa del recibo
+                        </p>
+                      </div>
+                    ) : (
+                      company && printSettings && (
+                        <div className="receipt-preview font-mono text-xs leading-tight">
+                          {/* Header */}
+                          <div className="text-center mb-3">
+                            {printSettings.showLogo && company.logoUrl && (
+                              <div className="mb-2">
+                                <img 
+                                  src={company.logoUrl} 
+                                  alt="Logo" 
+                                  className="h-12 w-auto mx-auto"
+                                />
+                              </div>
+                            )}
+                            <div className="font-bold text-sm">{company.businessName || company.name}</div>
+                            {company.address && <div>{company.address}</div>}
+                            {company.phone && <div>Tel: {company.phone}</div>}
+                            {company.rnc && <div>RNC: {company.rnc}</div>}
+                            <div className="border-b border-dashed border-gray-400 my-2"></div>
+                          </div>
+
+                          {/* Sale Info */}
+                          <div className="mb-3">
+                            <div className="flex justify-between">
+                              <span>Fecha:</span>
+                              <span>{new Date().toLocaleDateString('es-DO')}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>Hora:</span>
+                              <span>{new Date().toLocaleTimeString('es-DO')}</span>
+                            </div>
+                            {printSettings.showNCF && (
+                              <div className="flex justify-between">
+                                <span>NCF:</span>
+                                <span>{generateNCF()}</span>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Customer Info */}
+                          {printSettings.showCustomerInfo && (customerName || customerPhone) && (
+                            <div className="mb-3">
+                              <div className="border-b border-dashed border-gray-400 mb-2"></div>
+                              {customerName && (
+                                <div className="flex justify-between">
+                                  <span>Cliente:</span>
+                                  <span>{customerName}</span>
+                                </div>
+                              )}
+                              {customerPhone && (
+                                <div className="flex justify-between">
+                                  <span>Teléfono:</span>
+                                  <span>{customerPhone}</span>
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          <div className="border-b border-dashed border-gray-400 my-2"></div>
+
+                          {/* Items */}
+                          <div className="mb-3">
+                            {cart.map((item, index) => (
+                              <div key={index} className="mb-2">
+                                <div className="flex justify-between">
+                                  <span className="truncate pr-2">{item.product.name}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span>{item.quantity} x {formatDOP(parseFloat(item.product.price))}</span>
+                                  <span>{formatDOP(item.subtotal)}</span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+
+                          <div className="border-b border-dashed border-gray-400 my-2"></div>
+
+                          {/* Totals */}
+                          <div className="mb-3">
+                            <div className="flex justify-between">
+                              <span>Subtotal:</span>
+                              <span>{formatDOP(subtotal)}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>ITBIS ({ITBIS_RATE}%):</span>
+                              <span>{formatDOP(itbis)}</span>
+                            </div>
+                            <div className="flex justify-between font-bold">
+                              <span>TOTAL:</span>
+                              <span>{formatDOP(total)}</span>
+                            </div>
+                          </div>
+
+                          {/* Payment Info */}
+                          <div className="mb-3">
+                            <div className="border-b border-dashed border-gray-400 mb-2"></div>
+                            <div className="flex justify-between">
+                              <span>Método de Pago:</span>
+                              <span>{paymentMethod === "cash" ? "Efectivo" : "Tarjeta"}</span>
+                            </div>
+                            {paymentMethod === "cash" && cashReceived && (
+                              <>
+                                <div className="flex justify-between">
+                                  <span>Efectivo Recibido:</span>
+                                  <span>{formatDOP(parseFloat(cashReceived))}</span>
+                                </div>
+                                {cashChange > 0 && (
+                                  <div className="flex justify-between">
+                                    <span>Cambio:</span>
+                                    <span>{formatDOP(cashChange)}</span>
+                                  </div>
+                                )}
+                              </>
+                            )}
+                          </div>
+
+                          {/* Footer */}
+                          {printSettings.footerText && (
+                            <>
+                              <div className="border-b border-dashed border-gray-400 my-2"></div>
+                              <div className="text-center text-xs">
+                                {printSettings.footerText}
+                              </div>
+                            </>
+                          )}
+
+                          <div className="text-center mt-3 text-xs">
+                            ¡Gracias por su compra!
+                          </div>
+                        </div>
+                      )
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
         </div>
 
         {/* Mobile Checkout Button */}
