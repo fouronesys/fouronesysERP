@@ -126,18 +126,18 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-800 flex items-center justify-center p-4">
       <div className="w-full max-w-6xl flex items-center justify-center">
         <div className="grid lg:grid-cols-2 gap-8 w-full max-w-5xl">
           {/* Left Column - Auth Form */}
           <div className="flex items-center justify-center">
-            <Card className="w-full max-w-md">
+            <Card className="w-full max-w-md bg-gray-800/50 border-gray-700 backdrop-blur-sm">
               <CardHeader className="text-center">
                 <div className="flex justify-center mb-4">
                   <img src={fourOneLogo} alt="Four One Solutions" className="h-16 w-auto" />
                 </div>
-                <CardTitle className="text-2xl font-bold">Four One Solutions</CardTitle>
-                <CardDescription>
+                <CardTitle className="text-2xl font-bold text-white">Four One Solutions</CardTitle>
+                <CardDescription className="text-gray-300">
                   {t('auth.welcome')}
                 </CardDescription>
               </CardHeader>
