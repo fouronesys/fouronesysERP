@@ -89,19 +89,10 @@ export default function CompanySettings() {
 
   const updateMutation = useMutation({
     mutationFn: async (data: CompanySettingsFormData & { logoUrl?: string }) => {
-      const response = await fetch('/api/companies/current', {
+      const response = await apiRequest('/api/companies/current', {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
+        body: data,
       });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to update company');
-      }
-      
       return response.json();
     },
     onSuccess: () => {
