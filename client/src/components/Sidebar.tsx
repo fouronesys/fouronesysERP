@@ -217,20 +217,24 @@ export function Sidebar() {
       </nav>
 
       {/* Trial Info - Hidden on mobile to save space */}
-      <div className="hidden sm:block p-3 sm:p-4 border-t border-gray-200 dark:border-gray-700 theme-blue:border-blue-500">
-        <div className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg p-3 text-white">
-          <div className="flex items-center justify-between">
-            <div className="min-w-0">
-              <p className="text-sm font-medium">Prueba Gratuita</p>
-              <p className="text-xs opacity-90 truncate">5 días restantes</p>
+      {currentPlan === "trial" && (
+        <div className="hidden sm:block p-3 sm:p-4 border-t border-gray-200 dark:border-gray-700 theme-blue:border-blue-500">
+          <div className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg p-3 text-white">
+            <div className="flex items-center justify-between">
+              <div className="min-w-0">
+                <p className="text-sm font-medium">Prueba Gratuita</p>
+                <p className="text-xs opacity-90 truncate">
+                  {daysUntilExpiry > 0 ? `${daysUntilExpiry} días restantes` : "Expirado"}
+                </p>
+              </div>
+              <Star className="h-5 w-5 text-yellow-300 flex-shrink-0" />
             </div>
-            <Star className="h-5 w-5 text-yellow-300 flex-shrink-0" />
+            <button className="w-full mt-2 bg-white/20 hover:bg-white/30 rounded px-3 py-1 text-xs font-medium transition-colors">
+              Ver Planes
+            </button>
           </div>
-          <button className="w-full mt-2 bg-white/20 hover:bg-white/30 rounded px-3 py-1 text-xs font-medium transition-colors">
-            Ver Planes
-          </button>
         </div>
-      </div>
+      )}
     </div>
   );
 
