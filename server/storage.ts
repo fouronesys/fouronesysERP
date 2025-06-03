@@ -1656,6 +1656,27 @@ export class DatabaseStorage implements IStorage {
       await db.insert(rncRegistry).values(batch).onConflictDoNothing();
     }
   }
+
+  // AI Chat Messages
+  async saveAIChatMessage(data: InsertAIChatMessage): Promise<AIChatMessage> {
+    const [message] = await db
+      .insert(aiChatMessages)
+      .values(data)
+      .returning();
+    return message;
+  }
+
+  async getAIChatMessages(companyId: number, userId: string, limit: number = 50): Promise<AIChatMessage[]> {
+    return await db
+      .select()
+      .from(aiChatMessages)
+      .where(and(
+        eq(aiChatMessages.companyId, companyId),
+        eq(aiChatMessages.userId, userId)
+      ))
+      .orderBy(desc(aiChatMessages.createdAt))
+      .limit(limit);
+  }
 }
 
 export const storage = new DatabaseStorage();

@@ -472,6 +472,17 @@ export const posPrintSettings = pgTable("pos_print_settings", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// AI Chat Messages table
+export const aiChatMessages = pgTable("ai_chat_messages", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").references(() => companies.id).notNull(),
+  userId: varchar("user_id", { length: 255 }).notNull(),
+  message: text("message").notNull(),
+  response: text("response").notNull(),
+  context: jsonb("context"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Notifications table
 export const notifications = pgTable("notifications", {
   id: serial("id").primaryKey(),
@@ -732,6 +743,10 @@ export const insertRNCRegistrySchema = createInsertSchema(rncRegistry).omit({
 // Types
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
+
+// AI Chat Messages types
+export type AIChatMessage = typeof aiChatMessages.$inferSelect;
+export type InsertAIChatMessage = typeof aiChatMessages.$inferInsert;
 export type Company = typeof companies.$inferSelect;
 export type InsertCompany = z.infer<typeof insertCompanySchema>;
 export type Customer = typeof customers.$inferSelect;
