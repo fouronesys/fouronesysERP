@@ -91,11 +91,20 @@ export default function CompanySettings() {
 
   const updateMutation = useMutation({
     mutationFn: async (data: CompanySettingsFormData & { logoUrl?: string }) => {
-      const response = await apiRequest('/api/companies/current', {
-        method: 'PUT',
-        body: data,
-      });
-      return response.json();
+      console.log("Mutation starting with data:", data);
+      try {
+        const response = await apiRequest('/api/companies/current', {
+          method: 'PUT',
+          body: data,
+        });
+        console.log("API response received:", response);
+        const result = await response.json();
+        console.log("API response parsed:", result);
+        return result;
+      } catch (error) {
+        console.error("Mutation error:", error);
+        throw error;
+      }
     },
     onSuccess: (updatedCompany) => {
       const savedFields = [];
@@ -192,6 +201,7 @@ export default function CompanySettings() {
   };
 
   const onSubmit = async (data: CompanySettingsFormData) => {
+    console.log("Form submitted with data:", data);
     try {
       let logoUrl = company?.logoUrl;
 
@@ -202,8 +212,10 @@ export default function CompanySettings() {
         }
       }
 
+      console.log("Calling mutation with data:", { ...data, logoUrl });
       updateMutation.mutate({ ...data, logoUrl });
     } catch (error) {
+      console.error("Form submission error:", error);
       toast({
         title: "Error",
         description: "Ocurrió un error al guardar la configuración.",
