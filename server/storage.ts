@@ -1119,6 +1119,208 @@ export class DatabaseStorage implements IStorage {
       console.error("Error creating sample products:", error);
     }
   }
+
+  // NCF Management
+  async getNCFSequences(companyId: number): Promise<NCFSequence[]> {
+    return await db.select().from(ncfSequences).where(eq(ncfSequences.companyId, companyId));
+  }
+
+  async createNCFSequence(data: InsertNCFSequence): Promise<NCFSequence> {
+    const [sequence] = await db
+      .insert(ncfSequences)
+      .values(data)
+      .returning();
+    return sequence;
+  }
+
+  async getNextNCF(companyId: number, ncfType: string): Promise<string | null> {
+    const [sequence] = await db
+      .select()
+      .from(ncfSequences)
+      .where(and(
+        eq(ncfSequences.companyId, companyId),
+        eq(ncfSequences.ncfType, ncfType),
+        eq(ncfSequences.isActive, true)
+      ))
+      .limit(1);
+
+    if (!sequence) return null;
+
+    // Check if sequence is not expired
+    if (new Date(sequence.expirationDate) < new Date()) {
+      return null;
+    }
+
+    const nextSequence = sequence.currentSequence + 1;
+    const sequenceStr = nextSequence.toString().padStart(8, '0');
+    const ncf = `${ncfType}${sequenceStr}`;
+
+    // Update current sequence
+    await db
+      .update(ncfSequences)
+      .set({ currentSequence: nextSequence })
+      .where(eq(ncfSequences.id, sequence.id));
+
+    return ncf;
+  }
+
+  // Comprobantes 605 (Compras)
+  async getComprobantes605(companyId: number, period: string): Promise<Comprobante605[]> {
+    return await db
+      .select()
+      .from(comprobantes605)
+      .where(and(
+        eq(comprobantes605.companyId, companyId),
+        eq(comprobantes605.period, period)
+      ));
+  }
+
+  async createComprobante605(data: InsertComprobante605): Promise<Comprobante605> {
+    const [comprobante] = await db
+      .insert(comprobantes605)
+      .values(data)
+      .returning();
+    return comprobante;
+  }
+
+  async generateComprobantes605(companyId: number, period: string): Promise<Comprobante605[]> {
+    // Generate 605 from invoices (purchases) for the period
+    const startDate = new Date(`${period}-01`);
+    const endDate = new Date(startDate.getFullYear(), startDate.getMonth() + 1, 0);
+
+    const invoicesData = await db
+      .select({
+        invoice: invoices,
+        supplier: suppliers
+      })
+      .from(invoices)
+      .leftJoin(suppliers, eq(invoices.customerId, suppliers.id))
+      .where(and(
+        eq(invoices.companyId, companyId),
+        gte(invoices.createdAt, startDate),
+        lte(invoices.createdAt, endDate)
+      ));
+
+    const comprobantes: InsertComprobante605[] = [];
+
+    for (const { invoice, supplier } of invoicesData) {
+      if (supplier) {
+        comprobantes.push({
+          companyId,
+          period,
+          rncCedula: supplier.rnc || supplier.cedula || "00000000000",
+          tipoIdentificacion: supplier.rnc ? "1" : "2",
+          tipoComprobante: "01", // Factura
+          ncf: invoice.ncf,
+          fechaComprobante: invoice.createdAt || new Date(),
+          montoFacturado: invoice.subtotal,
+          itbisFacturado: invoice.itbis,
+          montoTotal: invoice.total,
+        });
+      }
+    }
+
+    // Insert all comprobantes
+    const results: Comprobante605[] = [];
+    for (const comprobante of comprobantes) {
+      const result = await this.createComprobante605(comprobante);
+      results.push(result);
+    }
+
+    return results;
+  }
+
+  // Comprobantes 606 (Ventas)
+  async getComprobantes606(companyId: number, period: string): Promise<Comprobante606[]> {
+    return await db
+      .select()
+      .from(comprobantes606)
+      .where(and(
+        eq(comprobantes606.companyId, companyId),
+        eq(comprobantes606.period, period)
+      ));
+  }
+
+  async createComprobante606(data: InsertComprobante606): Promise<Comprobante606> {
+    const [comprobante] = await db
+      .insert(comprobantes606)
+      .values(data)
+      .returning();
+    return comprobante;
+  }
+
+  async generateComprobantes606(companyId: number, period: string): Promise<Comprobante606[]> {
+    // Generate 606 from POS sales for the period
+    const startDate = new Date(`${period}-01`);
+    const endDate = new Date(startDate.getFullYear(), startDate.getMonth() + 1, 0);
+
+    const salesData = await db
+      .select()
+      .from(posSales)
+      .where(and(
+        eq(posSales.companyId, companyId),
+        gte(posSales.createdAt, startDate),
+        lte(posSales.createdAt, endDate)
+      ));
+
+    const comprobantes: InsertComprobante606[] = [];
+
+    for (const sale of salesData) {
+      // For POS sales, use customer data if available, otherwise use "00000000000"
+      const rncCedula = sale.customerPhone || "00000000000";
+      
+      comprobantes.push({
+        companyId,
+        period,
+        rncCedula,
+        tipoIdentificacion: "2", // Assume cedula for POS sales
+        tipoComprobante: "02", // Consumidor final
+        ncf: sale.ncf,
+        fechaComprobante: sale.createdAt || new Date(),
+        montoFacturado: sale.subtotal,
+        itbisFacturado: sale.itbis,
+        montoTotal: sale.total,
+      });
+    }
+
+    // Insert all comprobantes
+    const results: Comprobante606[] = [];
+    for (const comprobante of comprobantes) {
+      const result = await this.createComprobante606(comprobante);
+      results.push(result);
+    }
+
+    return results;
+  }
+
+  // RNC Registry
+  async searchRNC(rnc: string): Promise<RNCRegistry | undefined> {
+    const [result] = await db
+      .select()
+      .from(rncRegistry)
+      .where(eq(rncRegistry.rnc, rnc))
+      .limit(1);
+    return result;
+  }
+
+  async createRNCRegistry(data: InsertRNCRegistry): Promise<RNCRegistry> {
+    const [registry] = await db
+      .insert(rncRegistry)
+      .values(data)
+      .returning();
+    return registry;
+  }
+
+  async bulkInsertRNCRegistry(data: InsertRNCRegistry[]): Promise<void> {
+    if (data.length === 0) return;
+    
+    // Insert in batches to avoid memory issues
+    const batchSize = 1000;
+    for (let i = 0; i < data.length; i += batchSize) {
+      const batch = data.slice(i, i + batchSize);
+      await db.insert(rncRegistry).values(batch).onConflictDoNothing();
+    }
+  }
 }
 
 export const storage = new DatabaseStorage();

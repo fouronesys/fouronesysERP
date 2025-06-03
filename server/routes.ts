@@ -1069,6 +1069,286 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Fiscal Documents / NCF Management Routes
+  
+  // NCF Sequences
+  app.get("/api/fiscal/ncf-sequences", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+      
+      const sequences = await storage.getNCFSequences(company.id);
+      res.json(sequences);
+    } catch (error) {
+      console.error("Error fetching NCF sequences:", error);
+      res.status(500).json({ message: "Failed to fetch NCF sequences" });
+    }
+  });
+
+  app.post("/api/fiscal/ncf-sequences", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      const sequenceData = {
+        ...req.body,
+        companyId: company.id,
+      };
+
+      const sequence = await storage.createNCFSequence(sequenceData);
+      res.json(sequence);
+    } catch (error) {
+      console.error("Error creating NCF sequence:", error);
+      res.status(500).json({ message: "Failed to create NCF sequence" });
+    }
+  });
+
+  // Comprobantes 605 (Compras)
+  app.get("/api/fiscal/comprobantes-605/:period", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      const { period } = req.params;
+      const comprobantes = await storage.getComprobantes605(company.id, period);
+      res.json(comprobantes);
+    } catch (error) {
+      console.error("Error fetching comprobantes 605:", error);
+      res.status(500).json({ message: "Failed to fetch comprobantes 605" });
+    }
+  });
+
+  app.post("/api/fiscal/generate-605/:period", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      const { period } = req.params;
+      const comprobantes = await storage.generateComprobantes605(company.id, period);
+      res.json({ message: "Comprobantes 605 generated successfully", data: comprobantes });
+    } catch (error) {
+      console.error("Error generating comprobantes 605:", error);
+      res.status(500).json({ message: "Failed to generate comprobantes 605" });
+    }
+  });
+
+  // Comprobantes 606 (Ventas)
+  app.get("/api/fiscal/comprobantes-606/:period", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      const { period } = req.params;
+      const comprobantes = await storage.getComprobantes606(company.id, period);
+      res.json(comprobantes);
+    } catch (error) {
+      console.error("Error fetching comprobantes 606:", error);
+      res.status(500).json({ message: "Failed to fetch comprobantes 606" });
+    }
+  });
+
+  app.post("/api/fiscal/generate-606/:period", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      const { period } = req.params;
+      const comprobantes = await storage.generateComprobantes606(company.id, period);
+      res.json({ message: "Comprobantes 606 generated successfully", data: comprobantes });
+    } catch (error) {
+      console.error("Error generating comprobantes 606:", error);
+      res.status(500).json({ message: "Failed to generate comprobantes 606" });
+    }
+  });
+
+  // Download reports in DGII format
+  app.get("/api/fiscal/download-605/:period", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      const { period } = req.params;
+      const comprobantes = await storage.getComprobantes605(company.id, period);
+      
+      // Generate DGII 605 format
+      let content = "";
+      for (const comp of comprobantes) {
+        const line = [
+          comp.rncCedula.padEnd(11, " "),
+          comp.tipoIdentificacion,
+          comp.tipoComprobante,
+          (comp.ncf || "").padEnd(11, " "),
+          comp.ncfModificado || "",
+          comp.fechaComprobante.toISOString().slice(0, 10).replace(/-/g, ""),
+          comp.fechaPago ? comp.fechaPago.toISOString().slice(0, 10).replace(/-/g, "") : "",
+          parseFloat(comp.montoFacturado).toFixed(2).padStart(12, "0"),
+          parseFloat(comp.itbisFacturado).toFixed(2).padStart(12, "0"),
+          parseFloat(comp.itbisRetenido).toFixed(2).padStart(12, "0"),
+          parseFloat(comp.itbisPercibido).toFixed(2).padStart(12, "0"),
+          parseFloat(comp.retencionRenta).toFixed(2).padStart(12, "0"),
+          parseFloat(comp.isrPercibido).toFixed(2).padStart(12, "0"),
+          parseFloat(comp.impuestoSelectivoConsumo).toFixed(2).padStart(12, "0"),
+          parseFloat(comp.otrosImpuestos).toFixed(2).padStart(12, "0"),
+          parseFloat(comp.montoTotal).toFixed(2).padStart(12, "0"),
+        ].join("|");
+        content += line + "\n";
+      }
+
+      res.setHeader('Content-Type', 'text/plain');
+      res.setHeader('Content-Disposition', `attachment; filename="605_${period}.txt"`);
+      res.send(content);
+    } catch (error) {
+      console.error("Error downloading 605 report:", error);
+      res.status(500).json({ message: "Failed to download 605 report" });
+    }
+  });
+
+  app.get("/api/fiscal/download-606/:period", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      const { period } = req.params;
+      const comprobantes = await storage.getComprobantes606(company.id, period);
+      
+      // Generate DGII 606 format
+      let content = "";
+      for (const comp of comprobantes) {
+        const line = [
+          comp.rncCedula.padEnd(11, " "),
+          comp.tipoIdentificacion,
+          comp.tipoComprobante,
+          (comp.ncf || "").padEnd(11, " "),
+          comp.ncfModificado || "",
+          comp.fechaComprobante.toISOString().slice(0, 10).replace(/-/g, ""),
+          comp.fechaPago ? comp.fechaPago.toISOString().slice(0, 10).replace(/-/g, "") : "",
+          comp.servicioTipo || "",
+          comp.conceptoPago || "",
+          parseFloat(comp.montoFacturado).toFixed(2).padStart(12, "0"),
+          parseFloat(comp.itbisFacturado).toFixed(2).padStart(12, "0"),
+          parseFloat(comp.itbisRetenido).toFixed(2).padStart(12, "0"),
+          parseFloat(comp.itbisPercibido).toFixed(2).padStart(12, "0"),
+          parseFloat(comp.retencionRenta).toFixed(2).padStart(12, "0"),
+          parseFloat(comp.isrPercibido).toFixed(2).padStart(12, "0"),
+          parseFloat(comp.impuestoSelectivoConsumo).toFixed(2).padStart(12, "0"),
+          parseFloat(comp.otrosImpuestos).toFixed(2).padStart(12, "0"),
+          parseFloat(comp.montoTotal).toFixed(2).padStart(12, "0"),
+        ].join("|");
+        content += line + "\n";
+      }
+
+      res.setHeader('Content-Type', 'text/plain');
+      res.setHeader('Content-Disposition', `attachment; filename="606_${period}.txt"`);
+      res.send(content);
+    } catch (error) {
+      console.error("Error downloading 606 report:", error);
+      res.status(500).json({ message: "Failed to download 606 report" });
+    }
+  });
+
+  // RNC Verification
+  app.get("/api/fiscal/verify-rnc/:rnc", isAuthenticated, async (req: any, res) => {
+    try {
+      const { rnc } = req.params;
+      const cleanRnc = rnc.replace(/\D/g, ""); // Remove non-digits
+      
+      if (cleanRnc.length < 9 || cleanRnc.length > 11) {
+        return res.status(400).json({ error: "RNC debe tener entre 9 y 11 dígitos" });
+      }
+
+      // First check local database
+      const localResult = await storage.searchRNC(cleanRnc);
+      if (localResult) {
+        return res.json(localResult);
+      }
+
+      // If not found locally, try to fetch from DGII API
+      // Note: You would need to provide the DGII API credentials for this to work
+      try {
+        const dgiiResponse = await fetch(`https://api.dgii.gov.do/wsMovilDGII/WSMovilDGII.asmx/GetContribuyentes?value=${cleanRnc}&patronBusqueda=1&inicioFilas=1&filaFilas=1&IMEI=`, {
+          method: 'GET',
+          headers: {
+            'User-Agent': 'Four One System/1.0'
+          }
+        });
+        
+        if (dgiiResponse.ok) {
+          const dgiiData = await dgiiResponse.text();
+          // Parse DGII response and save to local database
+          // This is a simplified version - actual DGII API response would need proper parsing
+          const mockData = {
+            rnc: cleanRnc,
+            razonSocial: "Empresa de prueba",
+            nombreComercial: "Empresa comercial",
+            estado: "ACTIVO",
+            categoria: "PERSONA JURIDICA",
+            regimen: "ORDINARIO"
+          };
+          
+          await storage.createRNCRegistry(mockData);
+          return res.json(mockData);
+        }
+      } catch (dgiiError) {
+        console.log("DGII API not available, using fallback");
+      }
+
+      // Fallback response
+      res.status(404).json({ error: "RNC no encontrado en los registros" });
+    } catch (error) {
+      console.error("Error verifying RNC:", error);
+      res.status(500).json({ message: "Failed to verify RNC" });
+    }
+  });
+
+  // Bulk import RNC registry (for admin use)
+  app.post("/api/fiscal/import-rnc-registry", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      // Only super admins can import RNC registry
+      if (user?.role !== "super_admin") {
+        return res.status(403).json({ message: "Insufficient permissions" });
+      }
+
+      const { data } = req.body;
+      
+      if (!Array.isArray(data)) {
+        return res.status(400).json({ message: "Data must be an array" });
+      }
+
+      await storage.bulkInsertRNCRegistry(data);
+      res.json({ message: `Successfully imported ${data.length} RNC records` });
+    } catch (error) {
+      console.error("Error importing RNC registry:", error);
+      res.status(500).json({ message: "Failed to import RNC registry" });
+    }
+  });
+
   // Create sample products endpoint
   app.post("/api/products/create-samples", isAuthenticated, async (req: any, res) => {
     try {

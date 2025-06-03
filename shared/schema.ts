@@ -631,6 +631,104 @@ export const insertLeaveSchema = createInsertSchema(leaves).omit({
   updatedAt: true,
 });
 
+// NCF Management Tables
+export const ncfSequences = pgTable("ncf_sequences", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull().references(() => companies.id),
+  ncfType: varchar("ncf_type", { length: 3 }).notNull(), // B01, B02, etc.
+  authorizedFrom: varchar("authorized_from", { length: 11 }).notNull(),
+  authorizedTo: varchar("authorized_to", { length: 11 }).notNull(),
+  currentSequence: integer("current_sequence").notNull().default(0),
+  expirationDate: timestamp("expiration_date").notNull(),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const comprobantes605 = pgTable("comprobantes_605", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull().references(() => companies.id),
+  period: varchar("period", { length: 7 }).notNull(), // YYYY-MM
+  rncCedula: varchar("rnc_cedula", { length: 11 }).notNull(),
+  tipoIdentificacion: varchar("tipo_identificacion", { length: 1 }).notNull(), // 1=RNC, 2=Cedula
+  tipoComprobante: varchar("tipo_comprobante", { length: 2 }).notNull(), // 01, 02, etc.
+  ncf: varchar("ncf", { length: 11 }),
+  ncfModificado: varchar("ncf_modificado", { length: 11 }),
+  fechaComprobante: timestamp("fecha_comprobante").notNull(),
+  fechaPago: timestamp("fecha_pago"),
+  montoFacturado: decimal("monto_facturado", { precision: 12, scale: 2 }).notNull(),
+  itbisFacturado: decimal("itbis_facturado", { precision: 12, scale: 2 }).notNull(),
+  itbisRetenido: decimal("itbis_retenido", { precision: 12, scale: 2 }).default("0"),
+  itbisPercibido: decimal("itbis_percibido", { precision: 12, scale: 2 }).default("0"),
+  retencionRenta: decimal("retencion_renta", { precision: 12, scale: 2 }).default("0"),
+  isrPercibido: decimal("isr_percibido", { precision: 12, scale: 2 }).default("0"),
+  impuestoSelectivoConsumo: decimal("impuesto_selectivo_consumo", { precision: 12, scale: 2 }).default("0"),
+  otrosImpuestos: decimal("otros_impuestos", { precision: 12, scale: 2 }).default("0"),
+  montoTotal: decimal("monto_total", { precision: 12, scale: 2 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const comprobantes606 = pgTable("comprobantes_606", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull().references(() => companies.id),
+  period: varchar("period", { length: 7 }).notNull(), // YYYY-MM
+  rncCedula: varchar("rnc_cedula", { length: 11 }).notNull(),
+  tipoIdentificacion: varchar("tipo_identificacion", { length: 1 }).notNull(), // 1=RNC, 2=Cedula
+  tipoComprobante: varchar("tipo_comprobante", { length: 2 }).notNull(),
+  ncf: varchar("ncf", { length: 11 }),
+  ncfModificado: varchar("ncf_modificado", { length: 11 }),
+  fechaComprobante: timestamp("fecha_comprobante").notNull(),
+  fechaPago: timestamp("fecha_pago"),
+  servicioTipo: varchar("servicio_tipo", { length: 2 }),
+  conceptoPago: text("concepto_pago"),
+  montoFacturado: decimal("monto_facturado", { precision: 12, scale: 2 }).notNull(),
+  itbisFacturado: decimal("itbis_facturado", { precision: 12, scale: 2 }).notNull(),
+  itbisRetenido: decimal("itbis_retenido", { precision: 12, scale: 2 }).default("0"),
+  itbisPercibido: decimal("itbis_percibido", { precision: 12, scale: 2 }).default("0"),
+  retencionRenta: decimal("retencion_renta", { precision: 12, scale: 2 }).default("0"),
+  isrPercibido: decimal("isr_percibido", { precision: 12, scale: 2 }).default("0"),
+  impuestoSelectivoConsumo: decimal("impuesto_selectivo_consumo", { precision: 12, scale: 2 }).default("0"),
+  otrosImpuestos: decimal("otros_impuestos", { precision: 12, scale: 2 }).default("0"),
+  montoTotal: decimal("monto_total", { precision: 12, scale: 2 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const rncRegistry = pgTable("rnc_registry", {
+  id: serial("id").primaryKey(),
+  rnc: varchar("rnc", { length: 11 }).notNull().unique(),
+  razonSocial: text("razon_social").notNull(),
+  nombreComercial: text("nombre_comercial"),
+  categoria: varchar("categoria", { length: 50 }),
+  regimen: varchar("regimen", { length: 50 }),
+  estado: varchar("estado", { length: 20 }),
+  lastUpdated: timestamp("last_updated").defaultNow(),
+});
+
+export const insertNCFSequenceSchema = createInsertSchema(ncfSequences).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertComprobante605Schema = createInsertSchema(comprobantes605).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertComprobante606Schema = createInsertSchema(comprobantes606).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertRNCRegistrySchema = createInsertSchema(rncRegistry).omit({
+  id: true,
+  lastUpdated: true,
+});
+
 // Types
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
@@ -672,3 +770,13 @@ export type TimeTracking = typeof timeTracking.$inferSelect;
 export type InsertTimeTracking = z.infer<typeof insertTimeTrackingSchema>;
 export type Leave = typeof leaves.$inferSelect;
 export type InsertLeave = z.infer<typeof insertLeaveSchema>;
+
+// NCF Types
+export type NCFSequence = typeof ncfSequences.$inferSelect;
+export type InsertNCFSequence = z.infer<typeof insertNCFSequenceSchema>;
+export type Comprobante605 = typeof comprobantes605.$inferSelect;
+export type InsertComprobante605 = z.infer<typeof insertComprobante605Schema>;
+export type Comprobante606 = typeof comprobantes606.$inferSelect;
+export type InsertComprobante606 = z.infer<typeof insertComprobante606Schema>;
+export type RNCRegistry = typeof rncRegistry.$inferSelect;
+export type InsertRNCRegistry = z.infer<typeof insertRNCRegistrySchema>;
