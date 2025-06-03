@@ -428,26 +428,38 @@ function NCFSequenceForm({ onSubmit }: { onSubmit: (data: any) => void }) {
               </Select>
             </div>
             
-            <div>
-              <Label htmlFor="authorizedFrom">NCF Desde</Label>
-              <Input
-                id="authorizedFrom"
-                value={formData.authorizedFrom}
-                onChange={(e) => setFormData({ ...formData, authorizedFrom: e.target.value })}
-                placeholder="B0100000001"
-                required
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="fromNumber">Desde (Número)</Label>
+                <Input
+                  id="fromNumber"
+                  type="number"
+                  value={formData.fromNumber}
+                  onChange={(e) => setFormData({ ...formData, fromNumber: e.target.value })}
+                  placeholder="1"
+                  min="1"
+                  required
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="toNumber">Hasta (Número)</Label>
+                <Input
+                  id="toNumber"
+                  type="number"
+                  value={formData.toNumber}
+                  onChange={(e) => setFormData({ ...formData, toNumber: e.target.value })}
+                  placeholder="1000"
+                  min="1"
+                  required
+                />
+              </div>
             </div>
             
-            <div>
-              <Label htmlFor="authorizedTo">NCF Hasta</Label>
-              <Input
-                id="authorizedTo"
-                value={formData.authorizedTo}
-                onChange={(e) => setFormData({ ...formData, authorizedTo: e.target.value })}
-                placeholder="B0100001000"
-                required
-              />
+            <div className="text-sm text-gray-600 bg-blue-50 p-3 rounded">
+              <p><strong>Vista previa:</strong></p>
+              <p>Del: {formData.ncfType}{String(formData.fromNumber || 1).padStart(8, '0')}</p>
+              <p>Al: {formData.ncfType}{String(formData.toNumber || 1000).padStart(8, '0')}</p>
             </div>
             
             <div>

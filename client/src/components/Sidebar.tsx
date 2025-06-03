@@ -73,6 +73,12 @@ const navigation = [
     ],
   },
   {
+    category: "Cumplimiento Fiscal",
+    items: [
+      { name: "Comprobantes Fiscales", href: "/fiscal-documents", icon: FileText },
+    ],
+  },
+  {
     category: "Configuración",
     items: [
       { name: "Empresa", href: "/company-settings", icon: Settings },
