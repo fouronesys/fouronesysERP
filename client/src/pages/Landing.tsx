@@ -7,28 +7,31 @@ export default function Landing() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-800">
       {/* Navigation Bar */}
-      <nav className="border-b border-gray-800 bg-black/20 backdrop-blur-sm">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center">
+      <nav className="border-b border-gray-800 bg-black/30 backdrop-blur-sm">
+        <div className="container mx-auto px-6 py-6 flex items-center justify-between">
+          <div className="flex items-center space-x-4">
             <img 
               src={logoImage} 
               alt="Four One Solutions Logo" 
-              className="w-12 h-12 object-contain mr-3"
+              className="w-16 h-16 object-contain"
             />
-            <span className="text-2xl font-bold text-white">Four One Solutions</span>
+            <div>
+              <span className="text-3xl font-bold text-white block">Four One Solutions</span>
+              <span className="text-sm text-gray-400">Sistema de Gestión Empresarial</span>
+            </div>
           </div>
           
-          <div className="flex space-x-4">
+          <div className="flex items-center space-x-3">
             <Button 
               variant="outline"
               onClick={() => window.location.href = "/api/login"}
-              className="border-gray-400 text-gray-300 bg-transparent hover:bg-gray-700 hover:text-white"
+              className="px-6 py-2 border-gray-500 text-gray-300 bg-transparent hover:bg-gray-700 hover:text-white hover:border-gray-400 transition-all"
             >
               Iniciar Sesión
             </Button>
             <Button 
               onClick={() => window.location.href = "/register"}
-              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white border-none"
+              className="px-6 py-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white border-none shadow-lg transition-all"
             >
               Registrarse
             </Button>
