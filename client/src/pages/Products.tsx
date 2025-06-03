@@ -147,7 +147,7 @@ export default function Products() {
   });
 
   const generateImageMutation = useMutation({
-    mutationFn: async (data: { productName: string; productCode?: string; description?: string }) => {
+    mutationFn: async (data: { productName: string; productCode?: string; description?: string; source?: string }) => {
       const response = await apiRequest("/api/products/generate-image", {
         method: "POST",
         body: data
@@ -460,47 +460,80 @@ export default function Products() {
                       )}
                     />
                     
-                    {/* Auto Generate Image Button */}
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => {
-                        const productName = form.getValues("name");
-                        const productCode = form.getValues("code");
-                        const description = form.getValues("description");
-                        
-                        if (productName) {
-                          // Show immediate preview with a relevant placeholder
-                          const searchTerm = productName.toLowerCase().split(' ')[0];
-                          const tempUrl = `https://source.unsplash.com/300x300/?${searchTerm}`;
-                          setCurrentImageUrl(tempUrl);
+                    {/* Image Generation Buttons */}
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          const productName = form.getValues("name");
+                          const productCode = form.getValues("code");
+                          const description = form.getValues("description");
                           
-                          // Pass all available context for better image generation
-                          generateImageMutation.mutate({
-                            productName,
-                            productCode: productCode || undefined,
-                            description: description || undefined
-                          });
-                        } else {
-                          toast({
-                            title: "Error",
-                            description: "Ingrese el nombre del producto primero.",
-                            variant: "destructive",
-                          });
-                        }
-                      }}
-                      disabled={generateImageMutation.isPending}
-                      className="w-full"
-                    >
-                      {generateImageMutation.isPending ? (
-                        <div className="flex items-center gap-2">
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
-                          Generando...
-                        </div>
-                      ) : (
-                        "Generar Imagen Automáticamente"
-                      )}
-                    </Button>
+                          if (productName) {
+                            generateImageMutation.mutate({
+                              productName,
+                              productCode: productCode || undefined,
+                              description: description || undefined,
+                              source: 'google'
+                            });
+                          } else {
+                            toast({
+                              title: "Error",
+                              description: "Ingrese el nombre del producto primero.",
+                              variant: "destructive",
+                            });
+                          }
+                        }}
+                        disabled={generateImageMutation.isPending}
+                        className="w-full"
+                      >
+                        {generateImageMutation.isPending ? (
+                          <div className="flex items-center gap-2">
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                            Buscando...
+                          </div>
+                        ) : (
+                          "Google Search"
+                        )}
+                      </Button>
+                      
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          const productName = form.getValues("name");
+                          const productCode = form.getValues("code");
+                          const description = form.getValues("description");
+                          
+                          if (productName) {
+                            generateImageMutation.mutate({
+                              productName,
+                              productCode: productCode || undefined,
+                              description: description || undefined,
+                              source: 'unsplash'
+                            });
+                          } else {
+                            toast({
+                              title: "Error",
+                              description: "Ingrese el nombre del producto primero.",
+                              variant: "destructive",
+                            });
+                          }
+                        }}
+                        disabled={generateImageMutation.isPending}
+                        className="w-full"
+                      >
+                        {generateImageMutation.isPending ? (
+                          <div className="flex items-center gap-2">
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                            Buscando...
+                          </div>
+                        ) : (
+                          "Unsplash"
+                        )}
+                      </Button>
+                    </div>
                   </div>
 
                   <FormField

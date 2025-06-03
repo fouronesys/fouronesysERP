@@ -1014,8 +1014,8 @@ export class DatabaseStorage implements IStorage {
       .where(and(eq(leaves.id, id), eq(leaves.companyId, companyId)));
   }
   
-  // Function to generate product image URL using Unsplash API with enhanced context
-  async generateProductImageUrl(productName: string, productCode?: string, description?: string): Promise<string> {
+  // Function to generate product image URL using specified API source
+  async generateProductImageUrl(productName: string, productCode?: string, description?: string, source?: string): Promise<string> {
     try {
       // Build comprehensive search query using all available context
       let searchTerms: string[] = [];
@@ -1181,8 +1181,32 @@ export class DatabaseStorage implements IStorage {
         }
       }
       
-      // Try Unsplash API first
-      if (process.env.UNSPLASH_ACCESS_KEY) {
+      // Use specific API based on source parameter
+      if (source === 'google' && process.env.GOOGLE_API_KEY && process.env.GOOGLE_SEARCH_ENGINE_ID) {
+        // Try Google Custom Search API only
+        for (const query of searchQueries) {
+          if (query && query.trim()) {
+            try {
+              const googleQuery = `${query} product image`;
+              const response = await fetch(
+                `https://www.googleapis.com/customsearch/v1?key=${process.env.GOOGLE_API_KEY}&cx=${process.env.GOOGLE_SEARCH_ENGINE_ID}&q=${encodeURIComponent(googleQuery)}&searchType=image&num=3&imgSize=medium&safe=active`,
+              );
+
+              if (response.ok) {
+                const data = await response.json();
+                if (data.items && data.items.length > 0) {
+                  // Return the first image result
+                  return data.items[0].link;
+                }
+              }
+            } catch (error) {
+              console.error(`Error with Google search query "${query}":`, error);
+              continue; // Try next query
+            }
+          }
+        }
+      } else if (source === 'unsplash' && process.env.UNSPLASH_ACCESS_KEY) {
+        // Try Unsplash API only
         for (const query of searchQueries) {
           if (query && query.trim()) {
             try {
@@ -1208,28 +1232,55 @@ export class DatabaseStorage implements IStorage {
             }
           }
         }
-      }
+      } else {
+        // Default behavior - try Google first, then Unsplash
+        if (process.env.GOOGLE_API_KEY && process.env.GOOGLE_SEARCH_ENGINE_ID) {
+          for (const query of searchQueries) {
+            if (query && query.trim()) {
+              try {
+                const googleQuery = `${query} product image`;
+                const response = await fetch(
+                  `https://www.googleapis.com/customsearch/v1?key=${process.env.GOOGLE_API_KEY}&cx=${process.env.GOOGLE_SEARCH_ENGINE_ID}&q=${encodeURIComponent(googleQuery)}&searchType=image&num=3&imgSize=medium&safe=active`,
+                );
 
-      // If Unsplash doesn't find good results, try Google Custom Search API
-      if (process.env.GOOGLE_API_KEY && process.env.GOOGLE_SEARCH_ENGINE_ID) {
-        for (const query of searchQueries) {
-          if (query && query.trim()) {
-            try {
-              const googleQuery = `${query} product image`;
-              const response = await fetch(
-                `https://www.googleapis.com/customsearch/v1?key=${process.env.GOOGLE_API_KEY}&cx=${process.env.GOOGLE_SEARCH_ENGINE_ID}&q=${encodeURIComponent(googleQuery)}&searchType=image&num=3&imgSize=medium&safe=active`,
-              );
-
-              if (response.ok) {
-                const data = await response.json();
-                if (data.items && data.items.length > 0) {
-                  // Return the first image result
-                  return data.items[0].link;
+                if (response.ok) {
+                  const data = await response.json();
+                  if (data.items && data.items.length > 0) {
+                    return data.items[0].link;
+                  }
                 }
+              } catch (error) {
+                console.error(`Error with Google search query "${query}":`, error);
+                continue;
               }
-            } catch (error) {
-              console.error(`Error with Google search query "${query}":`, error);
-              continue; // Try next query
+            }
+          }
+        }
+
+        // Fallback to Unsplash if Google fails
+        if (process.env.UNSPLASH_ACCESS_KEY) {
+          for (const query of searchQueries) {
+            if (query && query.trim()) {
+              try {
+                const response = await fetch(
+                  `https://api.unsplash.com/search/photos?query=${encodeURIComponent(query)}&per_page=3&orientation=squarish`,
+                  {
+                    headers: {
+                      'Authorization': `Client-ID ${process.env.UNSPLASH_ACCESS_KEY}`
+                    }
+                  }
+                );
+
+                if (response.ok) {
+                  const data = await response.json();
+                  if (data.results && data.results.length > 0) {
+                    return data.results[0].urls.regular;
+                  }
+                }
+              } catch (error) {
+                console.error(`Error with Unsplash query "${query}":`, error);
+                continue;
+              }
             }
           }
         }

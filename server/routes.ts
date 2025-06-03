@@ -472,13 +472,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/products/generate-image", isAuthenticated, async (req: any, res) => {
     try {
-      const { productName, productCode, description } = req.body;
+      const { productName, productCode, description, source } = req.body;
       if (!productName) {
         return res.status(400).json({ message: "Product name is required" });
       }
       
-      // Generate image URL using enhanced context
-      const imageUrl = await storage.generateProductImageUrl(productName, productCode, description);
+      // Generate image URL using specific source
+      const imageUrl = await storage.generateProductImageUrl(productName, productCode, description, source);
       res.json({ imageUrl });
     } catch (error) {
       console.error("Error generating product image:", error);
