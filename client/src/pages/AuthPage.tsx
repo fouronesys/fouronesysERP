@@ -67,7 +67,7 @@ export default function AuthPage() {
     mutationFn: async (data: LoginForm) => {
       const response = await apiRequest("/api/login", {
         method: "POST",
-        body: JSON.stringify(data),
+        body: data,
       });
       return response.json();
     },
@@ -91,7 +91,7 @@ export default function AuthPage() {
     mutationFn: async (data: RegisterForm) => {
       const response = await apiRequest("/api/register", {
         method: "POST",
-        body: JSON.stringify(data),
+        body: data,
       });
       return response.json();
     },

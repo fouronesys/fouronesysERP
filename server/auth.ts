@@ -109,9 +109,10 @@ export function setupAuth(app: Express) {
       if (companyName) {
         const company = await storage.createCompany({
           name: companyName,
+          ownerId: user.id,
           businessType: "general",
-          plan: "monthly", // Default plan
-          planExpiry: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
+          plan: "monthly",
+          subscriptionExpiry: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
         });
 
         // Associate user with company as admin
