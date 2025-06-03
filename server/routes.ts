@@ -1,5 +1,6 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
+import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import { AIProductService, AIBusinessService, AIChatService, AIDocumentService } from "./ai-services-fixed";
@@ -13,7 +14,11 @@ import {
   insertBOMSchema,
   insertPOSSaleSchema,
   insertPOSSaleItemSchema,
-  insertPOSPrintSettingsSchema
+  insertPOSPrintSettingsSchema,
+  insertChatChannelSchema,
+  insertChatMessageSchema,
+  insertUserRoleSchema,
+  insertUserPermissionSchema
 } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -1683,6 +1688,308 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Chat System Routes
+  
+  // Get chat channels for company
+  app.get("/api/chat/channels", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const userCompany = await storage.getCompanyByUserId(userId);
+      
+      if (!userCompany) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      const channels = await storage.getChatChannels(userCompany.id, userId);
+      res.json(channels);
+    } catch (error) {
+      console.error("Error fetching chat channels:", error);
+      res.status(500).json({ message: "Failed to fetch channels" });
+    }
+  });
+
+  // Create new chat channel
+  app.post("/api/chat/channels", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const userCompany = await storage.getCompanyByUserId(userId);
+      
+      if (!userCompany) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      const channelData = insertChatChannelSchema.parse({
+        ...req.body,
+        companyId: userCompany.id,
+        createdBy: userId
+      });
+
+      const channel = await storage.createChatChannel(channelData);
+      res.json(channel);
+    } catch (error) {
+      console.error("Error creating chat channel:", error);
+      res.status(500).json({ message: "Failed to create channel" });
+    }
+  });
+
+  // Get messages for a channel
+  app.get("/api/chat/channels/:channelId/messages", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { channelId } = req.params;
+      const limit = parseInt(req.query.limit as string) || 50;
+      const offset = parseInt(req.query.offset as string) || 0;
+
+      // Verify user has access to channel
+      const hasAccess = await storage.userHasChannelAccess(userId, parseInt(channelId));
+      if (!hasAccess) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      const messages = await storage.getChatMessages(parseInt(channelId), limit, offset);
+      res.json(messages);
+    } catch (error) {
+      console.error("Error fetching chat messages:", error);
+      res.status(500).json({ message: "Failed to fetch messages" });
+    }
+  });
+
+  // Send message to channel
+  app.post("/api/chat/channels/:channelId/messages", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { channelId } = req.params;
+
+      // Verify user has access to channel
+      const hasAccess = await storage.userHasChannelAccess(userId, parseInt(channelId));
+      if (!hasAccess) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      const messageData = insertChatMessageSchema.parse({
+        ...req.body,
+        channelId: parseInt(channelId),
+        senderId: userId
+      });
+
+      const message = await storage.createChatMessage(messageData);
+      
+      // Broadcast message via WebSocket
+      broadcastToChannel(parseInt(channelId), {
+        type: 'new_message',
+        data: message
+      });
+
+      res.json(message);
+    } catch (error) {
+      console.error("Error sending message:", error);
+      res.status(500).json({ message: "Failed to send message" });
+    }
+  });
+
+  // User Management Routes
+
+  // Get company users
+  app.get("/api/users/company", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const userCompany = await storage.getCompanyByUserId(userId);
+      
+      if (!userCompany) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      const users = await storage.getCompanyUsers(userCompany.id);
+      res.json(users);
+    } catch (error) {
+      console.error("Error fetching company users:", error);
+      res.status(500).json({ message: "Failed to fetch users" });
+    }
+  });
+
+  // Create user role
+  app.post("/api/users/roles", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const userCompany = await storage.getCompanyByUserId(userId);
+      
+      if (!userCompany) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      const roleData = insertUserRoleSchema.parse({
+        ...req.body,
+        companyId: userCompany.id
+      });
+
+      const role = await storage.createUserRole(roleData);
+      res.json(role);
+    } catch (error) {
+      console.error("Error creating user role:", error);
+      res.status(500).json({ message: "Failed to create role" });
+    }
+  });
+
+  // Get user permissions
+  app.get("/api/users/:targetUserId/permissions", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { targetUserId } = req.params;
+      const userCompany = await storage.getCompanyByUserId(userId);
+      
+      if (!userCompany) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      const permissions = await storage.getUserPermissions(targetUserId, userCompany.id);
+      res.json(permissions);
+    } catch (error) {
+      console.error("Error fetching user permissions:", error);
+      res.status(500).json({ message: "Failed to fetch permissions" });
+    }
+  });
+
+  // Update user permissions
+  app.put("/api/users/:targetUserId/permissions", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { targetUserId } = req.params;
+      const userCompany = await storage.getCompanyByUserId(userId);
+      
+      if (!userCompany) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      const permissionData = insertUserPermissionSchema.parse({
+        ...req.body,
+        userId: targetUserId,
+        companyId: userCompany.id
+      });
+
+      const permissions = await storage.updateUserPermissions(permissionData);
+      res.json(permissions);
+    } catch (error) {
+      console.error("Error updating user permissions:", error);
+      res.status(500).json({ message: "Failed to update permissions" });
+    }
+  });
+
   const httpServer = createServer(app);
+
+  // WebSocket server for real-time chat
+  const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
+  
+  // Store active connections
+  const activeConnections = new Map<string, Set<WebSocket>>();
+
+  // Function to broadcast messages to channel members
+  function broadcastToChannel(channelId: number, message: any) {
+    const channelKey = `channel_${channelId}`;
+    const connections = activeConnections.get(channelKey);
+    
+    if (connections) {
+      const messageStr = JSON.stringify(message);
+      connections.forEach(ws => {
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.send(messageStr);
+        }
+      });
+    }
+  }
+
+  wss.on('connection', (ws, request) => {
+    console.log('New WebSocket connection');
+    
+    let userId: string | null = null;
+    let userChannels: Set<string> = new Set();
+
+    ws.on('message', async (data) => {
+      try {
+        const message = JSON.parse(data.toString());
+        
+        switch (message.type) {
+          case 'authenticate':
+            // In a real implementation, verify the token
+            userId = message.userId;
+            
+            // Get user's channels and subscribe to them
+            if (userId) {
+              try {
+                const userCompany = await storage.getCompanyByUserId(userId);
+                if (userCompany) {
+                  const channels = await storage.getChatChannels(userCompany.id, userId);
+                  
+                  channels.forEach((channel: any) => {
+                    const channelKey = `channel_${channel.id}`;
+                    userChannels.add(channelKey);
+                    
+                    if (!activeConnections.has(channelKey)) {
+                      activeConnections.set(channelKey, new Set());
+                    }
+                    activeConnections.get(channelKey)?.add(ws);
+                  });
+                }
+              } catch (error) {
+                console.error('Error subscribing to channels:', error);
+              }
+            }
+            
+            ws.send(JSON.stringify({
+              type: 'authenticated',
+              success: true
+            }));
+            break;
+
+          case 'typing':
+            // Broadcast typing indicator to channel
+            if (message.channelId) {
+              broadcastToChannel(message.channelId, {
+                type: 'user_typing',
+                userId: userId,
+                channelId: message.channelId
+              });
+            }
+            break;
+
+          case 'join_channel':
+            // Add user to channel subscription
+            if (message.channelId) {
+              const channelKey = `channel_${message.channelId}`;
+              userChannels.add(channelKey);
+              
+              if (!activeConnections.has(channelKey)) {
+                activeConnections.set(channelKey, new Set());
+              }
+              activeConnections.get(channelKey)?.add(ws);
+            }
+            break;
+
+          case 'leave_channel':
+            // Remove user from channel subscription
+            if (message.channelId) {
+              const channelKey = `channel_${message.channelId}`;
+              userChannels.delete(channelKey);
+              activeConnections.get(channelKey)?.delete(ws);
+            }
+            break;
+        }
+      } catch (error) {
+        console.error('Error processing WebSocket message:', error);
+      }
+    });
+
+    ws.on('close', () => {
+      // Clean up connections
+      userChannels.forEach(channelKey => {
+        activeConnections.get(channelKey)?.delete(ws);
+      });
+      console.log('WebSocket connection closed');
+    });
+
+    ws.on('error', (error) => {
+      console.error('WebSocket error:', error);
+    });
+  });
+
   return httpServer;
 }

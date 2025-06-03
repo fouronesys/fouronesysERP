@@ -37,6 +37,11 @@ export const users = pgTable("users", {
   profileImageUrl: varchar("profile_image_url"),
   role: varchar("role", { length: 20 }).default("user"), // super_admin, company_admin, user
   isActive: boolean("is_active").default(true),
+  isOnline: boolean("is_online").default(false),
+  lastSeen: timestamp("last_seen"),
+  jobTitle: varchar("job_title", { length: 100 }),
+  department: varchar("department", { length: 100 }),
+  phoneNumber: varchar("phone_number", { length: 20 }),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -795,3 +800,229 @@ export type Comprobante606 = typeof comprobantes606.$inferSelect;
 export type InsertComprobante606 = z.infer<typeof insertComprobante606Schema>;
 export type RNCRegistry = typeof rncRegistry.$inferSelect;
 export type InsertRNCRegistry = z.infer<typeof insertRNCRegistrySchema>;
+
+// Chat Channels
+export const chatChannels = pgTable("chat_channels", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 100 }).notNull(),
+  description: text("description"),
+  type: varchar("type", { length: 20 }).notNull().default("public"), // public, private, direct
+  companyId: integer("company_id").notNull().references(() => companies.id),
+  createdBy: varchar("created_by").notNull().references(() => users.id),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Chat Channel Members
+export const chatChannelMembers = pgTable("chat_channel_members", {
+  id: serial("id").primaryKey(),
+  channelId: integer("channel_id").notNull().references(() => chatChannels.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  role: varchar("role", { length: 20 }).default("member"), // admin, member
+  joinedAt: timestamp("joined_at").defaultNow(),
+  lastReadAt: timestamp("last_read_at"),
+});
+
+// Chat Messages
+export const chatMessages = pgTable("chat_messages", {
+  id: serial("id").primaryKey(),
+  channelId: integer("channel_id").notNull().references(() => chatChannels.id),
+  senderId: varchar("sender_id").notNull().references(() => users.id),
+  content: text("content").notNull(),
+  messageType: varchar("message_type", { length: 20 }).default("text"), // text, file, image, system
+  fileUrl: text("file_url"),
+  fileName: varchar("file_name", { length: 255 }),
+  replyToId: integer("reply_to_id").references(() => chatMessages.id),
+  isEdited: boolean("is_edited").default(false),
+  editedAt: timestamp("edited_at"),
+  isDeleted: boolean("is_deleted").default(false),
+  deletedAt: timestamp("deleted_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Message Reactions
+export const messageReactions = pgTable("message_reactions", {
+  id: serial("id").primaryKey(),
+  messageId: integer("message_id").notNull().references(() => chatMessages.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  emoji: varchar("emoji", { length: 10 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// User Permissions
+export const userPermissions = pgTable("user_permissions", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  companyId: integer("company_id").notNull().references(() => companies.id),
+  module: varchar("module", { length: 50 }).notNull(), // sales, inventory, manufacturing, etc.
+  permissions: text("permissions").array().notNull(), // [read, write, delete, admin]
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Activity Logs
+export const activityLogs = pgTable("activity_logs", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  companyId: integer("company_id").notNull().references(() => companies.id),
+  action: varchar("action", { length: 100 }).notNull(),
+  module: varchar("module", { length: 50 }).notNull(),
+  resourceType: varchar("resource_type", { length: 50 }),
+  resourceId: varchar("resource_id", { length: 50 }),
+  details: jsonb("details"),
+  ipAddress: varchar("ip_address", { length: 45 }),
+  userAgent: text("user_agent"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// User Roles
+export const userRoles = pgTable("user_roles", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 50 }).notNull(),
+  description: text("description"),
+  companyId: integer("company_id").notNull().references(() => companies.id),
+  permissions: jsonb("permissions").notNull(), // JSON object with module permissions
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// User Role Assignments
+export const userRoleAssignments = pgTable("user_role_assignments", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  roleId: integer("role_id").notNull().references(() => userRoles.id),
+  companyId: integer("company_id").notNull().references(() => companies.id),
+  assignedBy: varchar("assigned_by").notNull().references(() => users.id),
+  assignedAt: timestamp("assigned_at").defaultNow(),
+});
+
+// Chat Channel Relations
+export const chatChannelRelations = relations(chatChannels, ({ one, many }) => ({
+  company: one(companies, {
+    fields: [chatChannels.companyId],
+    references: [companies.id],
+  }),
+  createdBy: one(users, {
+    fields: [chatChannels.createdBy],
+    references: [users.id],
+  }),
+  members: many(chatChannelMembers),
+  messages: many(chatMessages),
+}));
+
+export const chatChannelMemberRelations = relations(chatChannelMembers, ({ one }) => ({
+  channel: one(chatChannels, {
+    fields: [chatChannelMembers.channelId],
+    references: [chatChannels.id],
+  }),
+  user: one(users, {
+    fields: [chatChannelMembers.userId],
+    references: [users.id],
+  }),
+}));
+
+export const chatMessageRelations = relations(chatMessages, ({ one, many }) => ({
+  channel: one(chatChannels, {
+    fields: [chatMessages.channelId],
+    references: [chatChannels.id],
+  }),
+  sender: one(users, {
+    fields: [chatMessages.senderId],
+    references: [users.id],
+  }),
+  replyTo: one(chatMessages, {
+    fields: [chatMessages.replyToId],
+    references: [chatMessages.id],
+  }),
+  reactions: many(messageReactions),
+}));
+
+export const messageReactionRelations = relations(messageReactions, ({ one }) => ({
+  message: one(chatMessages, {
+    fields: [messageReactions.messageId],
+    references: [chatMessages.id],
+  }),
+  user: one(users, {
+    fields: [messageReactions.userId],
+    references: [users.id],
+  }),
+}));
+
+export const userPermissionRelations = relations(userPermissions, ({ one }) => ({
+  user: one(users, {
+    fields: [userPermissions.userId],
+    references: [users.id],
+  }),
+  company: one(companies, {
+    fields: [userPermissions.companyId],
+    references: [companies.id],
+  }),
+}));
+
+export const activityLogRelations = relations(activityLogs, ({ one }) => ({
+  user: one(users, {
+    fields: [activityLogs.userId],
+    references: [users.id],
+  }),
+  company: one(companies, {
+    fields: [activityLogs.companyId],
+    references: [companies.id],
+  }),
+}));
+
+export const userRoleRelations = relations(userRoles, ({ one, many }) => ({
+  company: one(companies, {
+    fields: [userRoles.companyId],
+    references: [companies.id],
+  }),
+  assignments: many(userRoleAssignments),
+}));
+
+export const userRoleAssignmentRelations = relations(userRoleAssignments, ({ one }) => ({
+  user: one(users, {
+    fields: [userRoleAssignments.userId],
+    references: [users.id],
+  }),
+  role: one(userRoles, {
+    fields: [userRoleAssignments.roleId],
+    references: [userRoles.id],
+  }),
+  company: one(companies, {
+    fields: [userRoleAssignments.companyId],
+    references: [companies.id],
+  }),
+  assignedBy: one(users, {
+    fields: [userRoleAssignments.assignedBy],
+    references: [users.id],
+  }),
+}));
+
+// Schema exports for chat system
+export const insertChatChannelSchema = createInsertSchema(chatChannels);
+export const insertChatChannelMemberSchema = createInsertSchema(chatChannelMembers);
+export const insertChatMessageSchema = createInsertSchema(chatMessages);
+export const insertMessageReactionSchema = createInsertSchema(messageReactions);
+export const insertUserPermissionSchema = createInsertSchema(userPermissions);
+export const insertActivityLogSchema = createInsertSchema(activityLogs);
+export const insertUserRoleSchema = createInsertSchema(userRoles);
+export const insertUserRoleAssignmentSchema = createInsertSchema(userRoleAssignments);
+
+export type ChatChannel = typeof chatChannels.$inferSelect;
+export type InsertChatChannel = z.infer<typeof insertChatChannelSchema>;
+export type ChatChannelMember = typeof chatChannelMembers.$inferSelect;
+export type InsertChatChannelMember = z.infer<typeof insertChatChannelMemberSchema>;
+export type ChatMessage = typeof chatMessages.$inferSelect;
+export type InsertChatMessage = z.infer<typeof insertChatMessageSchema>;
+export type MessageReaction = typeof messageReactions.$inferSelect;
+export type InsertMessageReaction = z.infer<typeof insertMessageReactionSchema>;
+export type UserPermission = typeof userPermissions.$inferSelect;
+export type InsertUserPermission = z.infer<typeof insertUserPermissionSchema>;
+export type ActivityLog = typeof activityLogs.$inferSelect;
+export type InsertActivityLog = z.infer<typeof insertActivityLogSchema>;
+export type UserRole = typeof userRoles.$inferSelect;
+export type InsertUserRole = z.infer<typeof insertUserRoleSchema>;
+export type UserRoleAssignment = typeof userRoleAssignments.$inferSelect;
+export type InsertUserRoleAssignment = z.infer<typeof insertUserRoleAssignmentSchema>;

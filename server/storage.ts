@@ -1680,6 +1680,208 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(aiChatMessages.createdAt))
       .limit(limit);
   }
+
+  // Chat System Methods
+  
+  async getChatChannels(companyId: number, userId: string): Promise<ChatChannel[]> {
+    return await db
+      .select({
+        id: chatChannels.id,
+        name: chatChannels.name,
+        description: chatChannels.description,
+        type: chatChannels.type,
+        companyId: chatChannels.companyId,
+        createdBy: chatChannels.createdBy,
+        isActive: chatChannels.isActive,
+        createdAt: chatChannels.createdAt,
+        updatedAt: chatChannels.updatedAt
+      })
+      .from(chatChannels)
+      .innerJoin(chatChannelMembers, eq(chatChannels.id, chatChannelMembers.channelId))
+      .where(and(
+        eq(chatChannels.companyId, companyId),
+        eq(chatChannelMembers.userId, userId),
+        eq(chatChannels.isActive, true)
+      ))
+      .orderBy(desc(chatChannels.createdAt));
+  }
+
+  async createChatChannel(data: InsertChatChannel): Promise<ChatChannel> {
+    const [channel] = await db
+      .insert(chatChannels)
+      .values(data)
+      .returning();
+    
+    // Add creator as admin member
+    await db
+      .insert(chatChannelMembers)
+      .values({
+        channelId: channel.id,
+        userId: data.createdBy,
+        role: 'admin'
+      });
+
+    return channel;
+  }
+
+  async getChatMessages(channelId: number, limit: number = 50, offset: number = 0): Promise<ChatMessage[]> {
+    return await db
+      .select({
+        id: chatMessages.id,
+        channelId: chatMessages.channelId,
+        senderId: chatMessages.senderId,
+        content: chatMessages.content,
+        messageType: chatMessages.messageType,
+        fileUrl: chatMessages.fileUrl,
+        fileName: chatMessages.fileName,
+        replyToId: chatMessages.replyToId,
+        isEdited: chatMessages.isEdited,
+        editedAt: chatMessages.editedAt,
+        isDeleted: chatMessages.isDeleted,
+        deletedAt: chatMessages.deletedAt,
+        createdAt: chatMessages.createdAt,
+        updatedAt: chatMessages.updatedAt,
+        senderName: users.firstName,
+        senderLastName: users.lastName,
+        senderProfileImage: users.profileImageUrl
+      })
+      .from(chatMessages)
+      .innerJoin(users, eq(chatMessages.senderId, users.id))
+      .where(and(
+        eq(chatMessages.channelId, channelId),
+        eq(chatMessages.isDeleted, false)
+      ))
+      .orderBy(desc(chatMessages.createdAt))
+      .limit(limit)
+      .offset(offset);
+  }
+
+  async createChatMessage(data: InsertChatMessage): Promise<ChatMessage> {
+    const [message] = await db
+      .insert(chatMessages)
+      .values(data)
+      .returning();
+    return message;
+  }
+
+  async userHasChannelAccess(userId: string, channelId: number): Promise<boolean> {
+    const [member] = await db
+      .select()
+      .from(chatChannelMembers)
+      .where(and(
+        eq(chatChannelMembers.userId, userId),
+        eq(chatChannelMembers.channelId, channelId)
+      ))
+      .limit(1);
+    
+    return !!member;
+  }
+
+  // User Management Methods
+
+  async getCompanyUsers(companyId: number): Promise<any[]> {
+    return await db
+      .select({
+        id: users.id,
+        email: users.email,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        profileImageUrl: users.profileImageUrl,
+        isActive: users.isActive,
+        isOnline: users.isOnline,
+        lastSeen: users.lastSeen,
+        jobTitle: users.jobTitle,
+        department: users.department,
+        phoneNumber: users.phoneNumber,
+        role: companyUsers.role,
+        permissions: companyUsers.permissions,
+        createdAt: users.createdAt
+      })
+      .from(users)
+      .innerJoin(companyUsers, eq(users.id, companyUsers.userId))
+      .where(and(
+        eq(companyUsers.companyId, companyId),
+        eq(users.isActive, true)
+      ))
+      .orderBy(users.firstName);
+  }
+
+  async createUserRole(data: InsertUserRole): Promise<UserRole> {
+    const [role] = await db
+      .insert(userRoles)
+      .values(data)
+      .returning();
+    return role;
+  }
+
+  async getUserPermissions(userId: string, companyId: number): Promise<UserPermission[]> {
+    return await db
+      .select()
+      .from(userPermissions)
+      .where(and(
+        eq(userPermissions.userId, userId),
+        eq(userPermissions.companyId, companyId)
+      ));
+  }
+
+  async updateUserPermissions(data: InsertUserPermission): Promise<UserPermission> {
+    // First try to update existing permission
+    const existing = await db
+      .select()
+      .from(userPermissions)
+      .where(and(
+        eq(userPermissions.userId, data.userId),
+        eq(userPermissions.companyId, data.companyId),
+        eq(userPermissions.module, data.module)
+      ))
+      .limit(1);
+
+    if (existing.length > 0) {
+      const [updated] = await db
+        .update(userPermissions)
+        .set({
+          permissions: data.permissions,
+          updatedAt: new Date()
+        })
+        .where(eq(userPermissions.id, existing[0].id))
+        .returning();
+      return updated;
+    } else {
+      const [created] = await db
+        .insert(userPermissions)
+        .values(data)
+        .returning();
+      return created;
+    }
+  }
+
+  async logActivity(data: InsertActivityLog): Promise<ActivityLog> {
+    const [log] = await db
+      .insert(activityLogs)
+      .values(data)
+      .returning();
+    return log;
+  }
+
+  async getActivityLogs(companyId: number, limit: number = 50): Promise<ActivityLog[]> {
+    return await db
+      .select()
+      .from(activityLogs)
+      .where(eq(activityLogs.companyId, companyId))
+      .orderBy(desc(activityLogs.createdAt))
+      .limit(limit);
+  }
+
+  async updateUserOnlineStatus(userId: string, isOnline: boolean): Promise<void> {
+    await db
+      .update(users)
+      .set({
+        isOnline,
+        lastSeen: new Date(),
+        updatedAt: new Date()
+      })
+      .where(eq(users.id, userId));
+  }
 }
 
 export const storage = new DatabaseStorage();
