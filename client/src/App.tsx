@@ -145,6 +145,10 @@ function Router() {
       {/* AI Integration route */}
       <Route path="/ai-insights" component={() => <ProtectedRoute component={AIInsights} />} />
       
+      {/* Communication routes */}
+      <Route path="/chat" component={() => <ProtectedRoute component={Chat} />} />
+      <Route path="/user-management" component={() => <ProtectedRoute component={UserManagement} />} />
+      
       {/* Admin routes */}
       <Route path="/super-admin" component={() => <ProtectedRoute component={SuperAdmin} />} />
       
