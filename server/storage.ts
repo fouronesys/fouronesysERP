@@ -443,9 +443,15 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createProduct(productData: InsertProduct): Promise<Product> {
+    // Generate automatic image URL if not provided
+    const productWithImage = {
+      ...productData,
+      imageUrl: productData.imageUrl || this.generateProductImageUrl(productData.name)
+    };
+    
     const [product] = await db
       .insert(products)
-      .values(productData)
+      .values(productWithImage)
       .returning();
     return product;
   }
