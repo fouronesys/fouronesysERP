@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { useThemeContext } from "./ThemeProvider";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useLocation } from "wouter";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,6 +22,7 @@ export function Header({ title, subtitle }: HeaderProps) {
   const { theme, setTheme } = useThemeContext();
   const { user } = useAuth();
   const isMobile = useIsMobile();
+  const [, setLocation] = useLocation();
 
   const getInitials = (firstName?: string, lastName?: string) => {
     if (!firstName && !lastName) return "U";
@@ -101,6 +103,7 @@ export function Header({ title, subtitle }: HeaderProps) {
               <Button 
                 variant="ghost" 
                 size="icon" 
+                onClick={() => setLocation("/notifications")}
                 className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 theme-blue:text-blue-100 theme-blue:hover:text-white"
               >
                 <Bell className="h-4 w-4 lg:h-5 lg:w-5" />
@@ -168,16 +171,16 @@ export function Header({ title, subtitle }: HeaderProps) {
                   </>
                 )}
 
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setLocation("/profile")}>
                   <User className="mr-2 h-4 w-4" />
                   <span>Perfil</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setLocation("/settings")}>
                   <Settings className="mr-2 h-4 w-4" />
                   <span>Configuración</span>
                 </DropdownMenuItem>
                 {isMobile && (
-                  <DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setLocation("/notifications")}>
                     <Bell className="mr-2 h-4 w-4" />
                     <span>Notificaciones</span>
                   </DropdownMenuItem>
