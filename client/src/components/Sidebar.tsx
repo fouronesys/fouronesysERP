@@ -23,7 +23,9 @@ import {
   Calculator,
   Brain,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  MessageCircle,
+  UserCog
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -85,6 +87,13 @@ const navigation = [
     category: "Inteligencia Artificial",
     items: [
       { name: "Insights con IA", href: "/ai-insights", icon: Brain },
+    ],
+  },
+  {
+    category: "Comunicación",
+    items: [
+      { name: "Chat Interno", href: "/chat", icon: MessageCircle },
+      { name: "Gestión de Usuarios", href: "/user-management", icon: UserCog },
     ],
   },
   {

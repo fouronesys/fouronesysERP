@@ -18,6 +18,8 @@ import Dashboard from "@/pages/Dashboard";
 import Billing from "@/pages/Billing";
 import Customers from "@/pages/Customers";
 import Products from "@/pages/Products";
+import Chat from "@/pages/Chat";
+import UserManagement from "@/pages/UserManagement";
 import Manufacturing from "@/pages/Manufacturing";
 import BOM from "@/pages/BOM";
 import POS from "@/pages/POS";
