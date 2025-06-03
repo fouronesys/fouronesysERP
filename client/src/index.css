@@ -95,6 +95,26 @@
   color: white !important;
 }
 
+/* Force blue theme sidebar background - override any white backgrounds */
+.theme-blue aside,
+.theme-blue aside .bg-white,
+.theme-blue aside .dark\:bg-gray-900,
+.theme-blue aside .theme-blue\:bg-gradient-to-b,
+.theme-blue aside .theme-blue\:from-blue-600,
+.theme-blue aside .theme-blue\:to-blue-700,
+.theme-blue aside > div {
+  background: linear-gradient(180deg, hsl(207 90% 54%) 0%, hsl(207 90% 44%) 100%) !important;
+}
+
+/* Force all text in sidebar to be white/light colors */
+.theme-blue aside,
+.theme-blue aside *,
+.theme-blue aside .text-gray-900,
+.theme-blue aside .dark\:text-white,
+.theme-blue aside .theme-blue\:text-white {
+  color: rgba(255, 255, 255, 0.95) !important;
+}
+
 .theme-blue aside .text-gray-900,
 .theme-blue aside .text-gray-700,
 .theme-blue aside .text-gray-500,
