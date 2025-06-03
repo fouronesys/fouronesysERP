@@ -21,6 +21,7 @@ import type { Invoice, Customer } from "@shared/schema";
 const invoiceSchema = z.object({
   customerId: z.string().min(1, "El cliente es requerido"),
   number: z.string().min(1, "El número es requerido"),
+  ncfType: z.string().optional(),
   ncf: z.string().optional(),
   date: z.string().min(1, "La fecha es requerida"),
   dueDate: z.string().min(1, "La fecha de vencimiento es requerida"),
@@ -477,19 +478,51 @@ export default function Billing() {
                   />
                 </div>
 
-                <FormField
-                  control={form.control}
-                  name="ncf"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>NCF (Comprobante Fiscal)</FormLabel>
-                      <FormControl>
-                        <Input placeholder="B0100000001" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="ncfType"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Tipo de Comprobante</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Seleccionar tipo NCF" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="B01">B01 - Crédito Fiscal</SelectItem>
+                            <SelectItem value="B02">B02 - Consumidor Final</SelectItem>
+                            <SelectItem value="B14">B14 - Régimen Especial</SelectItem>
+                            <SelectItem value="B15">B15 - Gubernamental</SelectItem>
+                            <SelectItem value="B16">B16 - Exportaciones</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="ncf"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>NCF (Se asigna automáticamente)</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="Se asignará automáticamente" 
+                            {...field} 
+                            disabled
+                            className="bg-gray-50 dark:bg-gray-800"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <FormField

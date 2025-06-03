@@ -493,7 +493,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!company) {
         return res.status(404).json({ message: "Company not found" });
       }
-      const invoiceData = insertInvoiceSchema.parse({ ...req.body, companyId: company.id });
+
+      // Convert string values to appropriate types for validation
+      const processedData = {
+        ...req.body,
+        customerId: parseInt(req.body.customerId),
+        subtotal: req.body.subtotal.toString(),
+        itbis: req.body.tax ? req.body.tax.toString() : "0",
+        total: req.body.total.toString(),
+        companyId: company.id
+      };
+
+      // Auto-assign NCF if ncfType is provided
+      if (req.body.ncfType && !req.body.ncf) {
+        const nextNCF = await storage.getNextNCF(company.id, req.body.ncfType);
+        if (!nextNCF) {
+          return res.status(400).json({ 
+            message: `No hay comprobantes disponibles del tipo ${req.body.ncfType}. Configure las secuencias NCF.` 
+          });
+        }
+        processedData.ncf = nextNCF;
+      }
+
+      const invoiceData = insertInvoiceSchema.parse(processedData);
       const invoice = await storage.createInvoice(invoiceData);
       res.json(invoice);
     } catch (error) {
