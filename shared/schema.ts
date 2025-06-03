@@ -27,11 +27,11 @@ export const sessions = pgTable(
   (table) => [index("IDX_session_expire").on(table.expire)],
 );
 
-// User storage table.
-// (IMPORTANT) This table is mandatory for Replit Auth, don't drop it.
+// User storage table - Updated for email/password authentication
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().notNull(),
-  email: varchar("email").unique(),
+  email: varchar("email").unique().notNull(),
+  password: text("password").notNull(), // Encrypted password
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),
@@ -39,6 +39,7 @@ export const users = pgTable("users", {
   isActive: boolean("is_active").default(true),
   isOnline: boolean("is_online").default(false),
   lastSeen: timestamp("last_seen"),
+  lastLoginAt: timestamp("last_login_at"), // Track last login
   jobTitle: varchar("job_title", { length: 100 }),
   department: varchar("department", { length: 100 }),
   phoneNumber: varchar("phone_number", { length: 20 }),
@@ -75,6 +76,7 @@ export const companies = pgTable("companies", {
   currency: varchar("currency", { length: 3 }).default("DOP"),
   timezone: varchar("timezone", { length: 50 }).default("America/Santo_Domingo"),
   subscriptionPlan: varchar("subscription_plan", { length: 20 }).default("trial"), // trial, monthly, annual
+  plan: varchar("plan", { length: 20 }).default("monthly"), // monthly, annual - for user limits
   subscriptionExpiry: timestamp("subscription_expiry"),
   isActive: boolean("is_active").notNull().default(true),
   ownerId: varchar("owner_id").notNull().references(() => users.id),

@@ -5,15 +5,13 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { Sidebar } from "@/components/Sidebar";
-import { useAuth } from "@/hooks/useAuth";
 import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { isUnauthorizedError } from "@/lib/authUtils";
 import { useQuery } from "@tanstack/react-query";
 
 // Pages
 import Landing from "@/pages/Landing";
-import Register from "@/pages/Register";
+import AuthPage from "@/pages/AuthPage";
 import Dashboard from "@/pages/Dashboard";
 import Billing from "@/pages/Billing";
 import Customers from "@/pages/Customers";
@@ -40,8 +38,14 @@ import AIInsights from "@/pages/AIInsights";
 import NotFound from "@/pages/not-found";
 
 function ProtectedRoute({ component: Component, ...props }: { component: React.ComponentType }) {
-  const { isAuthenticated, isLoading } = useAuth();
+  // Check user authentication status
+  const { data: user, isLoading } = useQuery({
+    queryKey: ["/api/user"],
+    retry: false,
+  });
+
   const { toast } = useToast();
+  const isAuthenticated = !!user;
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -51,7 +55,7 @@ function ProtectedRoute({ component: Component, ...props }: { component: React.C
         variant: "destructive",
       });
       setTimeout(() => {
-        window.location.href = "/api/login";
+        window.location.href = "/auth";
       }, 1000);
     }
   }, [isAuthenticated, isLoading, toast]);
@@ -84,8 +88,14 @@ function ProtectedRoute({ component: Component, ...props }: { component: React.C
 }
 
 function Router() {
-  const { isAuthenticated, isLoading } = useAuth();
+  // Check user authentication status
+  const { data: user, isLoading } = useQuery({
+    queryKey: ["/api/user"],
+    retry: false,
+  });
+
   const [setupComplete, setSetupComplete] = useState(false);
+  const isAuthenticated = !!user;
   
   // Check if user has company configured
   const { data: company, isLoading: companyLoading } = useQuery({
@@ -94,13 +104,13 @@ function Router() {
     retry: false,
   });
 
-  // Show landing page for unauthenticated users or while loading
+  // Show auth page for unauthenticated users or while loading
   if (isLoading || !isAuthenticated) {
     return (
       <Switch>
+        <Route path="/auth" component={AuthPage} />
         <Route path="/" component={Landing} />
-        <Route path="/register" component={Register} />
-        <Route component={Landing} />
+        <Route component={AuthPage} />
       </Switch>
     );
   }
