@@ -21,7 +21,7 @@ export default function Landing() {
           <div className="flex items-center space-x-3">
             <Button 
               variant="outline"
-              onClick={() => window.location.href = "/api/login"}
+              onClick={() => window.location.href = "/auth"}
               className="px-4 py-2 text-sm border-gray-500 text-gray-300 bg-transparent hover:bg-gray-700 hover:text-white transition-all"
             >
               Iniciar Sesión
