@@ -147,10 +147,10 @@ export default function Products() {
   });
 
   const generateImageMutation = useMutation({
-    mutationFn: async (productName: string) => {
+    mutationFn: async (data: { productName: string; productCode?: string; description?: string }) => {
       const response = await apiRequest("/api/products/generate-image", {
         method: "POST",
-        body: { productName }
+        body: data
       });
       return response.json();
     },
@@ -466,12 +466,21 @@ export default function Products() {
                       variant="outline"
                       onClick={() => {
                         const productName = form.getValues("name");
+                        const productCode = form.getValues("code");
+                        const description = form.getValues("description");
+                        
                         if (productName) {
                           // Show immediate preview with a relevant placeholder
                           const searchTerm = productName.toLowerCase().split(' ')[0];
                           const tempUrl = `https://source.unsplash.com/300x300/?${searchTerm}`;
                           setCurrentImageUrl(tempUrl);
-                          generateImageMutation.mutate(productName);
+                          
+                          // Pass all available context for better image generation
+                          generateImageMutation.mutate({
+                            productName,
+                            productCode: productCode || undefined,
+                            description: description || undefined
+                          });
                         } else {
                           toast({
                             title: "Error",

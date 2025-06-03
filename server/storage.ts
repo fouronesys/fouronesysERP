@@ -1014,52 +1014,87 @@ export class DatabaseStorage implements IStorage {
       .where(and(eq(leaves.id, id), eq(leaves.companyId, companyId)));
   }
   
-  // Function to generate product image URL using Unsplash API
-  async generateProductImageUrl(productName: string): Promise<string> {
+  // Function to generate product image URL using Unsplash API with enhanced context
+  async generateProductImageUrl(productName: string, productCode?: string, description?: string): Promise<string> {
     try {
-      // Create a search query from the product name
-      const searchQuery = productName.toLowerCase()
-        .replace(/[^a-záéíóúñü\s]/g, '') // Keep Spanish characters and spaces
-        .trim()
-        .split(' ')[0]; // Take the first word
+      // Build comprehensive search query using all available context
+      let searchTerms: string[] = [];
+      
+      // Add product name terms
+      if (productName) {
+        const nameTerms = productName.toLowerCase()
+          .replace(/[^a-záéíóúñü\s]/g, '') // Keep Spanish characters and spaces
+          .trim()
+          .split(' ')
+          .filter(term => term.length > 2); // Filter out short words
+        searchTerms.push(...nameTerms);
+      }
 
-      // Map common Spanish product terms to English for better results
+      // Add description terms if available
+      if (description) {
+        const descTerms = description.toLowerCase()
+          .replace(/[^a-záéíóúñü\s]/g, '')
+          .trim()
+          .split(' ')
+          .filter(term => term.length > 3) // Only meaningful words from description
+          .slice(0, 2); // Max 2 terms from description
+        searchTerms.push(...descTerms);
+      }
+
+      // Add barcode-derived context if available
+      if (productCode) {
+        // Try to extract brand or category hints from product codes
+        const codeHints = this.extractBrandFromCode(productCode);
+        if (codeHints) {
+          searchTerms.unshift(codeHints); // Prioritize brand hints
+        }
+      }
+
+      // Enhanced Spanish-to-English translation mapping
       const translationMap: { [key: string]: string } = {
-        "manzana": "apple",
-        "banana": "banana", 
-        "plátano": "banana",
-        "naranja": "orange",
-        "limón": "lemon",
-        "pera": "pear",
-        "aguacate": "avocado",
-        "mango": "mango",
-        "agua": "water bottle",
-        "café": "coffee",
-        "jugo": "juice",
-        "arroz": "rice",
-        "pollo": "chicken",
-        "pan": "bread",
-        "pizza": "pizza",
-        "teléfono": "smartphone",
-        "laptop": "laptop",
-        "auriculares": "headphones",
-        "carne": "meat",
-        "pescado": "fish",
-        "leche": "milk",
-        "queso": "cheese",
-        "huevos": "eggs",
-        "pasta": "pasta",
-        "cerveza": "beer",
-        "vino": "wine"
+        // Beverages
+        "ron": "rum bottle", "barceló": "barcelo rum", "brugal": "brugal rum",
+        "cerveza": "beer bottle", "presidente": "presidente beer",
+        "whisky": "whiskey bottle", "vodka": "vodka bottle",
+        "vino": "wine bottle", "champagne": "champagne bottle",
+        
+        // Fruits
+        "manzana": "apple", "banana": "banana", "plátano": "banana",
+        "naranja": "orange", "limón": "lemon", "pera": "pear",
+        "aguacate": "avocado", "mango": "mango", "piña": "pineapple",
+        
+        // Food items
+        "arroz": "rice", "pollo": "chicken", "pan": "bread",
+        "pizza": "pizza", "pasta": "pasta", "queso": "cheese",
+        "leche": "milk", "huevos": "eggs", "carne": "meat",
+        "pescado": "fish", "café": "coffee", "azúcar": "sugar",
+        
+        // Electronics
+        "teléfono": "smartphone", "laptop": "laptop", "tablet": "tablet",
+        "auriculares": "headphones", "televisor": "television",
+        
+        // Personal care
+        "champú": "shampoo", "jabón": "soap", "crema": "cream",
+        "perfume": "perfume", "desodorante": "deodorant",
+        
+        // Household
+        "detergente": "detergent", "limpiador": "cleaner",
+        "papel": "paper", "toalla": "towel"
       };
 
-      // Find translation or use original term
-      const searchTerm = translationMap[searchQuery] || searchQuery;
+      // Translate terms and prioritize brand-specific searches
+      const translatedTerms = searchTerms.map(term => {
+        const translated = translationMap[term];
+        return translated || term;
+      });
+
+      // Create search query - prioritize specific brands and products
+      const searchQuery = translatedTerms.slice(0, 3).join(' '); // Max 3 terms
       
       // Use Unsplash API to search for images
-      if (process.env.UNSPLASH_ACCESS_KEY) {
+      if (process.env.UNSPLASH_ACCESS_KEY && searchQuery.trim()) {
         const response = await fetch(
-          `https://api.unsplash.com/search/photos?query=${encodeURIComponent(searchTerm)}&per_page=1&orientation=squarish`,
+          `https://api.unsplash.com/search/photos?query=${encodeURIComponent(searchQuery)}&per_page=1&orientation=squarish`,
           {
             headers: {
               'Authorization': `Client-ID ${process.env.UNSPLASH_ACCESS_KEY}`
@@ -1083,6 +1118,41 @@ export class DatabaseStorage implements IStorage {
       // Return placeholder on error
       return `https://via.placeholder.com/400x400/f3f4f6/9ca3af?text=${encodeURIComponent(productName)}`;
     }
+  }
+
+  // Helper function to extract brand hints from product codes
+  private extractBrandFromCode(productCode: string): string | null {
+    const code = productCode.toLowerCase();
+    
+    // Common brand patterns in Dominican Republic
+    const brandPatterns: { [key: string]: string } = {
+      // Rum brands
+      "barc": "barcelo rum",
+      "brug": "brugal rum", 
+      "berm": "bermudez rum",
+      
+      // Beer brands
+      "pres": "presidente beer",
+      "brah": "brahma beer",
+      
+      // Food brands
+      "goya": "goya",
+      "maggi": "maggi",
+      "nestle": "nestle",
+      
+      // Common product categories from codes
+      "750": "bottle", // 750ml bottles
+      "355": "can",   // 355ml cans
+      "500": "bottle" // 500ml bottles
+    };
+
+    for (const [pattern, brand] of Object.entries(brandPatterns)) {
+      if (code.includes(pattern)) {
+        return brand;
+      }
+    }
+
+    return null;
   }
 
   async createSampleProducts(companyId: number) {
