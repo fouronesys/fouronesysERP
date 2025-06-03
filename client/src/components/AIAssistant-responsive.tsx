@@ -144,7 +144,7 @@ export function AIAssistant() {
                   className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 shadow-sm ${
                     message.isUser
                       ? "bg-blue-600 text-white"
-                      : "bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700"
+                      : "bg-white dark:bg-gray-600 border border-gray-200 dark:border-gray-500"
                   }`}
                 >
                   {message.isUser ? (
@@ -157,7 +157,7 @@ export function AIAssistant() {
                   className={`rounded-2xl px-4 py-3 shadow-sm ${
                     message.isUser
                       ? "bg-blue-600 text-white rounded-br-md"
-                      : "bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-50 border border-gray-200 dark:border-gray-700 rounded-bl-md"
+                      : "bg-white dark:bg-gray-700 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-600 rounded-bl-md"
                   }`}
                 >
                   <div className="prose prose-sm max-w-none">
