@@ -56,6 +56,11 @@ export default function POS() {
   const [lastSale, setLastSale] = useState<POSSale | null>(null);
   const [lastSaleItems, setLastSaleItems] = useState<POSSaleItem[]>([]);
   
+  // Restaurant-specific fields
+  const [orderType, setOrderType] = useState<"dine_in" | "takeout" | "delivery">("dine_in");
+  const [tableNumber, setTableNumber] = useState("");
+  const [preparationNotes, setPreparationNotes] = useState("");
+  
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();

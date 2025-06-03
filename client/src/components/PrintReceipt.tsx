@@ -228,8 +228,10 @@ export function PrintReceipt({
 
   const totals = calculateTotals();
 
-  return (
-    <>
+  const renderButton = () => {
+    const buttonText = invoice ? "Imprimir Factura" : "Imprimir Recibo";
+    
+    return (
       <Button
         onClick={handlePrint}
         size={size}
@@ -237,8 +239,14 @@ export function PrintReceipt({
         className="flex items-center gap-2"
       >
         <Printer className="h-4 w-4" />
-        Reimprimir
+        {buttonText}
       </Button>
+    );
+  };
+
+  return (
+    <>
+      {renderButton()}
 
       {/* Hidden print content */}
       <div ref={printRef} style={{ display: "none" }}>

@@ -570,17 +570,25 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createPOSSaleItem(itemData: InsertPOSSaleItem): Promise<POSSaleItem> {
-    const [item] = await db
-      .insert(posSaleItems)
-      .values(itemData)
-      .returning();
-    
-    // Reducir stock automáticamente
-    const quantity = parseInt(itemData.quantity);
+    // Get product info to include name
     const [currentProduct] = await db
       .select()
       .from(products)
       .where(eq(products.id, itemData.productId));
+    
+    // Include product name in the item data
+    const itemWithName = {
+      ...itemData,
+      productName: currentProduct?.name || `Producto #${itemData.productId}`
+    };
+    
+    const [item] = await db
+      .insert(posSaleItems)
+      .values(itemWithName)
+      .returning();
+    
+    // Reducir stock automáticamente
+    const quantity = parseInt(itemData.quantity);
     
     if (currentProduct) {
       const newStock = currentProduct.stock - quantity;
