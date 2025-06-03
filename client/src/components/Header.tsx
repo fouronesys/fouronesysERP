@@ -89,6 +89,7 @@ export function Header({ title, subtitle }: HeaderProps) {
 
           {/* New Invoice Button */}
           <Button 
+            onClick={() => setLocation("/billing")}
             className="bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm px-2 sm:px-4"
             size={isMobile ? "sm" : "default"}
           >

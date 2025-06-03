@@ -111,7 +111,7 @@ function Router() {
       <Switch>
         <Route path="/auth" component={AuthPage} />
         <Route path="/" component={Landing} />
-        <Route component={AuthPage} />
+        <Route component={Landing} />
       </Switch>
     );
   }

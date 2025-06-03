@@ -464,20 +464,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/products/create-samples", isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.id;
-      const company = await storage.getCompanyByUserId(userId);
-      if (!company) {
-        return res.status(404).json({ message: "Company not found" });
-      }
-      await storage.createSampleProducts(company.id);
-      res.json({ message: "Sample products created successfully" });
-    } catch (error) {
-      console.error("Error creating sample products:", error);
-      res.status(500).json({ message: "Failed to create sample products" });
-    }
-  });
+
 
   app.post("/api/products/generate-image", isAuthenticated, async (req: any, res) => {
     try {
