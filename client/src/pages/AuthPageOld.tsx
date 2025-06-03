@@ -65,9 +65,8 @@ export default function AuthPage() {
 
   const loginMutation = useMutation({
     mutationFn: async (data: LoginForm) => {
-      const response = await apiRequest("POST", "/api/login", {
+      const response = await apiRequest("/api/login", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: data,
       });
       return response.json();
@@ -93,9 +92,8 @@ export default function AuthPage() {
 
   const registerMutation = useMutation({
     mutationFn: async (data: RegisterForm) => {
-      const response = await apiRequest("POST", "/api/register", {
+      const response = await apiRequest("/api/register", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: data,
       });
       return response.json();
@@ -156,19 +154,19 @@ export default function AuthPage() {
                           name="email"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel className="text-gray-200">Email</FormLabel>
+                              <FormLabel>Email</FormLabel>
                               <FormControl>
                                 <div className="relative">
-                                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                   <Input
                                     type="email"
                                     placeholder="Enter your email"
-                                    className="pl-10 bg-gray-700/50 border-gray-600 text-white placeholder-gray-400 focus:border-blue-500 focus:ring-blue-500"
+                                    className="pl-10"
                                     {...field}
                                   />
                                 </div>
                               </FormControl>
-                              <FormMessage className="text-red-400" />
+                              <FormMessage />
                             </FormItem>
                           )}
                         />
@@ -177,21 +175,21 @@ export default function AuthPage() {
                           name="password"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel className="text-gray-200">Password</FormLabel>
+                              <FormLabel>Password</FormLabel>
                               <FormControl>
                                 <div className="relative">
-                                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                   <Input
                                     type={showPassword ? "text" : "password"}
                                     placeholder="Enter your password"
-                                    className="pl-10 pr-10 bg-gray-700/50 border-gray-600 text-white placeholder-gray-400 focus:border-blue-500 focus:ring-blue-500"
+                                    className="pl-10 pr-10"
                                     {...field}
                                   />
                                   <Button
                                     type="button"
                                     variant="ghost"
                                     size="sm"
-                                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent text-gray-400 hover:text-gray-200"
+                                    className="absolute right-0 top-0 h-full px-3"
                                     onClick={() => setShowPassword(!showPassword)}
                                   >
                                     {showPassword ? (
@@ -202,13 +200,13 @@ export default function AuthPage() {
                                   </Button>
                                 </div>
                               </FormControl>
-                              <FormMessage className="text-red-400" />
+                              <FormMessage />
                             </FormItem>
                           )}
                         />
                         <Button
                           type="submit"
-                          className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                          className="w-full"
                           disabled={loginMutation.isPending}
                         >
                           {loginMutation.isPending ? "Signing in..." : "Sign In"}
@@ -227,18 +225,18 @@ export default function AuthPage() {
                             name="firstName"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel className="text-gray-200">First Name</FormLabel>
+                                <FormLabel>First Name</FormLabel>
                                 <FormControl>
                                   <div className="relative">
-                                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                     <Input
                                       placeholder="First name"
-                                      className="pl-10 bg-gray-700/50 border-gray-600 text-white placeholder-gray-400 focus:border-blue-500 focus:ring-blue-500"
+                                      className="pl-10"
                                       {...field}
                                     />
                                   </div>
                                 </FormControl>
-                                <FormMessage className="text-red-400" />
+                                <FormMessage />
                               </FormItem>
                             )}
                           />
@@ -247,60 +245,60 @@ export default function AuthPage() {
                             name="lastName"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel className="text-gray-200">Last Name</FormLabel>
+                                <FormLabel>Last Name</FormLabel>
                                 <FormControl>
                                   <div className="relative">
-                                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                     <Input
                                       placeholder="Last name"
-                                      className="pl-10 bg-gray-700/50 border-gray-600 text-white placeholder-gray-400 focus:border-blue-500 focus:ring-blue-500"
+                                      className="pl-10"
                                       {...field}
                                     />
                                   </div>
                                 </FormControl>
-                                <FormMessage className="text-red-400" />
+                                <FormMessage />
                               </FormItem>
                             )}
                           />
                         </div>
                         <FormField
                           control={registerForm.control}
-                          name="companyName"
+                          name="email"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel className="text-gray-200">Company Name</FormLabel>
+                              <FormLabel>Email</FormLabel>
                               <FormControl>
                                 <div className="relative">
-                                  <Building className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                   <Input
-                                    placeholder="Enter company name"
-                                    className="pl-10 bg-gray-700/50 border-gray-600 text-white placeholder-gray-400 focus:border-blue-500 focus:ring-blue-500"
+                                    type="email"
+                                    placeholder="Enter your email"
+                                    className="pl-10"
                                     {...field}
                                   />
                                 </div>
                               </FormControl>
-                              <FormMessage className="text-red-400" />
+                              <FormMessage />
                             </FormItem>
                           )}
                         />
                         <FormField
                           control={registerForm.control}
-                          name="email"
+                          name="companyName"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel className="text-gray-200">Email</FormLabel>
+                              <FormLabel>Company Name</FormLabel>
                               <FormControl>
                                 <div className="relative">
-                                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                                  <Building className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                   <Input
-                                    type="email"
-                                    placeholder="Enter your email"
-                                    className="pl-10 bg-gray-700/50 border-gray-600 text-white placeholder-gray-400 focus:border-blue-500 focus:ring-blue-500"
+                                    placeholder="Enter your company name"
+                                    className="pl-10"
                                     {...field}
                                   />
                                 </div>
                               </FormControl>
-                              <FormMessage className="text-red-400" />
+                              <FormMessage />
                             </FormItem>
                           )}
                         />
@@ -309,21 +307,21 @@ export default function AuthPage() {
                           name="password"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel className="text-gray-200">Password</FormLabel>
+                              <FormLabel>Password</FormLabel>
                               <FormControl>
                                 <div className="relative">
-                                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                   <Input
                                     type={showPassword ? "text" : "password"}
                                     placeholder="Enter your password"
-                                    className="pl-10 pr-10 bg-gray-700/50 border-gray-600 text-white placeholder-gray-400 focus:border-blue-500 focus:ring-blue-500"
+                                    className="pl-10 pr-10"
                                     {...field}
                                   />
                                   <Button
                                     type="button"
                                     variant="ghost"
                                     size="sm"
-                                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent text-gray-400 hover:text-gray-200"
+                                    className="absolute right-0 top-0 h-full px-3"
                                     onClick={() => setShowPassword(!showPassword)}
                                   >
                                     {showPassword ? (
@@ -334,7 +332,7 @@ export default function AuthPage() {
                                   </Button>
                                 </div>
                               </FormControl>
-                              <FormMessage className="text-red-400" />
+                              <FormMessage />
                             </FormItem>
                           )}
                         />
@@ -343,21 +341,21 @@ export default function AuthPage() {
                           name="confirmPassword"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel className="text-gray-200">Confirm Password</FormLabel>
+                              <FormLabel>Confirm Password</FormLabel>
                               <FormControl>
                                 <div className="relative">
-                                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                   <Input
                                     type={showConfirmPassword ? "text" : "password"}
                                     placeholder="Confirm your password"
-                                    className="pl-10 pr-10 bg-gray-700/50 border-gray-600 text-white placeholder-gray-400 focus:border-blue-500 focus:ring-blue-500"
+                                    className="pl-10 pr-10"
                                     {...field}
                                   />
                                   <Button
                                     type="button"
                                     variant="ghost"
                                     size="sm"
-                                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent text-gray-400 hover:text-gray-200"
+                                    className="absolute right-0 top-0 h-full px-3"
                                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                                   >
                                     {showConfirmPassword ? (
@@ -368,58 +366,72 @@ export default function AuthPage() {
                                   </Button>
                                 </div>
                               </FormControl>
-                              <FormMessage className="text-red-400" />
+                              <FormMessage />
                             </FormItem>
                           )}
                         />
                         <Button
                           type="submit"
-                          className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                          className="w-full"
                           disabled={registerMutation.isPending}
                         >
-                          {registerMutation.isPending ? "Creating Account..." : "Create Account"}
+                          {registerMutation.isPending ? "Creating account..." : "Create Account"}
                         </Button>
                       </form>
                     </Form>
                   </TabsContent>
                 </Tabs>
-
-                <div className="mt-4 text-center">
-                  <LanguageSelector />
-                </div>
               </CardContent>
             </Card>
           </div>
 
           {/* Right Column - Hero Section */}
           <div className="hidden lg:flex items-center justify-center">
-            <div className="text-center space-y-6">
+            <div className="text-center space-y-6 max-w-lg">
               <div className="space-y-4">
-                <h1 className="text-4xl font-bold text-white">
-                  {t('landing.hero.title')}
+                <h1 className="text-4xl font-bold text-gray-900 dark:text-white">
+                  Complete Business Management
                 </h1>
-                <p className="text-xl text-gray-300">
-                  {t('landing.hero.subtitle')}
+                <p className="text-xl text-gray-600 dark:text-gray-300">
+                  Streamline your Dominican business operations with our comprehensive ERP solution
                 </p>
               </div>
               
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div className="bg-gray-800/30 rounded-lg p-4 border border-gray-700">
-                  <h3 className="font-semibold text-blue-400 mb-2">{t('landing.features.inventory')}</h3>
-                  <p className="text-gray-400">{t('landing.features.inventoryDesc')}</p>
+              <div className="grid gap-4 text-left">
+                <div className="flex items-start gap-3">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
+                  <div>
+                    <h3 className="font-semibold text-gray-900 dark:text-white">POS & Sales Management</h3>
+                    <p className="text-gray-600 dark:text-gray-300 text-sm">Complete point of sale system with thermal printing and NCF compliance</p>
+                  </div>
                 </div>
-                <div className="bg-gray-800/30 rounded-lg p-4 border border-gray-700">
-                  <h3 className="font-semibold text-blue-400 mb-2">{t('landing.features.sales')}</h3>
-                  <p className="text-gray-400">{t('landing.features.salesDesc')}</p>
+                <div className="flex items-start gap-3">
+                  <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
+                  <div>
+                    <h3 className="font-semibold text-gray-900 dark:text-white">Inventory Control</h3>
+                    <p className="text-gray-600 dark:text-gray-300 text-sm">Real-time inventory tracking with multi-warehouse support</p>
+                  </div>
                 </div>
-                <div className="bg-gray-800/30 rounded-lg p-4 border border-gray-700">
-                  <h3 className="font-semibold text-blue-400 mb-2">{t('landing.features.billing')}</h3>
-                  <p className="text-gray-400">{t('landing.features.billingDesc')}</p>
+                <div className="flex items-start gap-3">
+                  <div className="w-2 h-2 bg-purple-500 rounded-full mt-2"></div>
+                  <div>
+                    <h3 className="font-semibold text-gray-900 dark:text-white">Dominican Compliance</h3>
+                    <p className="text-gray-600 dark:text-gray-300 text-sm">Built-in support for NCF, RNC validation, and fiscal reporting</p>
+                  </div>
                 </div>
-                <div className="bg-gray-800/30 rounded-lg p-4 border border-gray-700">
-                  <h3 className="font-semibold text-blue-400 mb-2">{t('landing.features.reports')}</h3>
-                  <p className="text-gray-400">{t('landing.features.reportsDesc')}</p>
+                <div className="flex items-start gap-3">
+                  <div className="w-2 h-2 bg-orange-500 rounded-full mt-2"></div>
+                  <div>
+                    <h3 className="font-semibold text-gray-900 dark:text-white">Multi-User Support</h3>
+                    <p className="text-gray-600 dark:text-gray-300 text-sm">Team collaboration with role-based permissions and internal chat</p>
+                  </div>
                 </div>
+              </div>
+
+              <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
+                <p className="text-sm text-blue-700 dark:text-blue-300">
+                  <strong>Monthly Plan:</strong> Up to 5 users | <strong>Annual Plan:</strong> Unlimited users
+                </p>
               </div>
             </div>
           </div>
