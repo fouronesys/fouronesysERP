@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Header } from "@/components/Header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -63,29 +63,31 @@ export default function CompanySettings() {
   });
 
   const { data: company, isLoading } = useQuery<Company>({
-    queryKey: ["/api/companies/current"],
-    onSuccess: (data) => {
-      if (data) {
-        form.reset({
-          name: data.name,
-          businessName: data.businessName || "",
-          rnc: data.rnc || "",
-          address: data.address || "",
-          phone: data.phone || "",
-          email: data.email || "",
-          website: data.website || "",
-          industry: data.industry || "",
-          taxRegime: data.taxRegime || "general",
-          currency: data.currency || "DOP",
-          timezone: data.timezone || "America/Santo_Domingo",
-        });
-        
-        if (data.logoUrl) {
-          setLogoPreview(data.logoUrl);
-        }
-      }
-    },
+    queryKey: ["/api/companies/current"]
   });
+
+  // Use useEffect to handle form reset when company data loads
+  React.useEffect(() => {
+    if (company) {
+      form.reset({
+        name: company.name,
+        businessName: company.businessName || "",
+        rnc: company.rnc || "",
+        address: company.address || "",
+        phone: company.phone || "",
+        email: company.email || "",
+        website: company.website || "",
+        industry: company.industry || "",
+        taxRegime: company.taxRegime || "general",
+        currency: company.currency || "DOP",
+        timezone: company.timezone || "America/Santo_Domingo",
+      });
+      
+      if (company.logoUrl) {
+        setLogoPreview(company.logoUrl);
+      }
+    }
+  }, [company, form]);
 
   const updateMutation = useMutation({
     mutationFn: async (data: CompanySettingsFormData & { logoUrl?: string }) => {
