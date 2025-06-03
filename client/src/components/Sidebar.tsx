@@ -28,6 +28,8 @@ import {
   UserCog
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { LanguageSelector } from "@/components/LanguageSelector";
+import { useLanguage } from "@/hooks/useLanguage";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useIsMobile } from "@/hooks/use-mobile";
 import logoImage from "@assets/Four One Solutions Logo_20250130_143401_0000.png";
@@ -263,6 +265,11 @@ export function Sidebar() {
           </div>
         </div>
       )}
+
+      {/* Language Selector */}
+      <div className="p-3 sm:p-4 border-t border-gray-200 dark:border-gray-700 theme-blue:border-blue-500">
+        <LanguageSelector />
+      </div>
     </div>
   );
 
