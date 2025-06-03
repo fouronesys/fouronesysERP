@@ -665,15 +665,15 @@ export default function POS() {
                   />
                 </div>
 
-                {/* Products Grid - Improved Responsiveness */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 lg:gap-4">
+                {/* Products Grid - Fixed Layout */}
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 lg:gap-4">
                   {filteredProducts.map((product) => (
-                    <Card key={product.id} className="hover:shadow-md transition-all duration-200 cursor-pointer group hover:scale-105" onClick={() => addToCart(product)}>
-                      <CardContent className="p-3 lg:p-4">
+                    <Card key={product.id} className="flex flex-col hover:shadow-md transition-all duration-200 cursor-pointer group" onClick={() => addToCart(product)}>
+                      <CardContent className="p-3 flex flex-col h-full">
                         {/* Product Image */}
                         <div className="aspect-square mb-3 overflow-hidden rounded-lg bg-gray-100 dark:bg-gray-800">
                           <img
-                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-200"
+                            className="w-full h-full object-cover"
                             src={product.imageUrl || "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=400&fit=crop"}
                             alt={product.name}
                             onError={(e) => {
@@ -682,37 +682,42 @@ export default function POS() {
                           />
                         </div>
                         
-                        {/* Product Info */}
-                        <div className="space-y-2">
-                          <div className="flex justify-between items-start">
+                        {/* Product Info - Flex grow to fill space */}
+                        <div className="flex flex-col flex-grow space-y-2">
+                          {/* Header with stock badge */}
+                          <div className="flex justify-between items-start gap-2">
                             <div className="min-w-0 flex-1">
-                              <h3 className="font-medium text-sm lg:text-base line-clamp-2 leading-tight">{product.name}</h3>
+                              <h3 className="font-medium text-sm leading-tight line-clamp-2">{product.name}</h3>
                               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{product.code}</p>
                             </div>
                             <Badge 
                               variant={parseInt(product.stock.toString()) > 10 ? "default" : "destructive"} 
-                              className="ml-2 text-xs shrink-0"
+                              className="text-xs shrink-0"
                             >
                               {product.stock}
                             </Badge>
                           </div>
                           
-                          <div className="flex justify-between items-center mt-2">
-                            <span className="font-bold text-green-600 dark:text-green-400 text-sm lg:text-base">
+                          {/* Price */}
+                          <div className="flex-grow flex items-end">
+                            <span className="font-bold text-green-600 dark:text-green-400 text-sm">
                               {formatDOP(parseFloat(product.price))}
                             </span>
-                            <Button
-                              size="sm"
-                              className="h-8 px-3 text-xs"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                addToCart(product);
-                              }}
-                            >
-                              <Plus className="h-3 w-3 mr-1" />
-                              Agregar
-                            </Button>
                           </div>
+                          
+                          {/* Add Button - Always at bottom */}
+                          <Button
+                            size="sm"
+                            className="w-full h-8 text-xs mt-2"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              addToCart(product);
+                            }}
+                            disabled={parseInt(product.stock.toString()) <= 0}
+                          >
+                            <Plus className="h-3 w-3 mr-1" />
+                            Agregar
+                          </Button>
                         </div>
                       </CardContent>
                     </Card>

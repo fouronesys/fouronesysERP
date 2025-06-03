@@ -289,8 +289,30 @@ export function Sidebar() {
 
   // Desktop Sidebar
   return (
-    <aside className="hidden lg:flex w-64 xl:w-72 border-r border-gray-200 dark:border-gray-700 theme-blue:border-blue-500 h-screen overflow-hidden">
-      {sidebarContent}
-    </aside>
+    <>
+      {/* Desktop Collapse Button */}
+      {setIsCollapsed && (
+        <button
+          onClick={() => setIsCollapsed(!isCollapsed)}
+          className="fixed top-4 left-4 z-50 p-2 rounded-md bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 shadow-md hidden lg:block transition-all duration-300"
+          style={{ left: isCollapsed ? '4px' : '272px' }}
+        >
+          {isCollapsed ? (
+            <Menu className="h-4 w-4 text-gray-700 dark:text-gray-300" />
+          ) : (
+            <X className="h-4 w-4 text-gray-700 dark:text-gray-300" />
+          )}
+        </button>
+      )}
+
+      <aside 
+        className={cn(
+          "hidden lg:flex border-r border-gray-200 dark:border-gray-700 theme-blue:border-blue-500 h-screen overflow-hidden transition-all duration-300",
+          isCollapsed ? "w-0" : "w-64 xl:w-72"
+        )}
+      >
+        {!isCollapsed && sidebarContent}
+      </aside>
+    </>
   );
 }
