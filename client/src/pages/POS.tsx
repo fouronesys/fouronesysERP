@@ -23,13 +23,17 @@ import {
   Calculator,
   Users,
   Package,
-  X
+  X,
+  Eye,
+  RotateCcw,
+  FileText
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { apiRequest } from "@/lib/queryClient";
 import { formatDOP, calculateITBIS, ITBIS_RATE, generateNCF } from "@/lib/dominican";
-import type { Product, Customer, POSPrintSettings } from "@shared/schema";
+import { PrintReceipt } from "@/components/PrintReceipt";
+import type { Product, Customer, POSPrintSettings, Company, POSSale, POSSaleItem } from "@shared/schema";
 
 interface CartItem {
   product: Product;
@@ -47,6 +51,10 @@ export default function POS() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [activeTab, setActiveTab] = useState("products");
+  const [showPreview, setShowPreview] = useState(false);
+  const [previewAsCommand, setPreviewAsCommand] = useState(false);
+  const [lastSale, setLastSale] = useState<POSSale | null>(null);
+  const [lastSaleItems, setLastSaleItems] = useState<POSSaleItem[]>([]);
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -63,6 +71,15 @@ export default function POS() {
 
   const { data: printSettings } = useQuery<POSPrintSettings>({
     queryKey: ["/api/pos/print-settings"],
+  });
+
+  const { data: company } = useQuery<Company>({
+    queryKey: ["/api/companies/current"],
+  });
+
+  const { data: lastSaleData } = useQuery({
+    queryKey: ["/api/pos/sales/last"],
+    enabled: false,
   });
 
   const filteredProducts = products?.filter(product =>
@@ -204,13 +221,13 @@ export default function POS() {
     }
   };
 
-  const printReceipt = (sale: any) => {
+  const printReceipt = (sale: any, isCommand = false) => {
     const printWindow = window.open('', '_blank');
     if (printWindow && printRef.current) {
       printWindow.document.write(`
         <html>
           <head>
-            <title>Recibo - Venta #${sale.id}</title>
+            <title>${isCommand ? 'Comanda' : 'Recibo'} - Venta #${sale.id}</title>
             <style>
               body { font-family: monospace; margin: 0; padding: 10px; }
               .receipt { width: ${printSettings?.printerWidth === '58mm' ? '200px' : '300px'}; }
@@ -230,6 +247,83 @@ export default function POS() {
       printWindow.document.close();
       printWindow.print();
     }
+  };
+
+  const fetchLastSale = async () => {
+    try {
+      const lastSaleResponse = await apiRequest("/api/pos/sales/last");
+      if (lastSaleResponse) {
+        const saleItemsResponse = await apiRequest(`/api/pos/sales/${lastSaleResponse.id}/items`);
+        setLastSale(lastSaleResponse);
+        setLastSaleItems(saleItemsResponse || []);
+        return { sale: lastSaleResponse, items: saleItemsResponse || [] };
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "No se pudo obtener la última venta",
+        variant: "destructive",
+      });
+    }
+    return null;
+  };
+
+  const reprintLastSale = async () => {
+    const saleData = await fetchLastSale();
+    if (saleData) {
+      printReceipt(saleData.sale);
+      toast({
+        title: "Reimpresión exitosa",
+        description: `Factura #${saleData.sale.saleNumber} reimpresa`,
+      });
+    }
+  };
+
+  const previewCurrentInvoice = () => {
+    if (cart.length === 0) {
+      toast({
+        title: "Carrito vacío",
+        description: "Agrega productos para previsualizar la factura",
+        variant: "destructive",
+      });
+      return;
+    }
+    setShowPreview(true);
+    setPreviewAsCommand(false);
+  };
+
+  const previewAsKitchenCommand = () => {
+    if (cart.length === 0) {
+      toast({
+        title: "Carrito vacío",
+        description: "Agrega productos para previsualizar la comanda",
+        variant: "destructive",
+      });
+      return;
+    }
+    setShowPreview(true);
+    setPreviewAsCommand(true);
+  };
+
+  const printPreview = () => {
+    if (cart.length === 0) return;
+    
+    const mockSale = {
+      id: "PREVIEW",
+      saleNumber: "PREVIEW",
+      date: new Date().toISOString(),
+      subtotal: subtotal.toString(),
+      itbis: itbis.toString(),
+      total: total.toString(),
+      paymentMethod: paymentMethod,
+      cashReceived: cashReceived,
+      cashChange: cashChange.toString(),
+      ncf: generateNCF(),
+      customerName: customerName || "Cliente General",
+      customerPhone: customerPhone,
+    };
+
+    printReceipt(mockSale, previewAsCommand);
   };
 
   if (productsLoading) {
@@ -611,19 +705,56 @@ export default function POS() {
                   )}
                 </div>
 
-                <Button
-                  onClick={processSale}
-                  disabled={cart.length === 0 || isProcessing}
-                  className="w-full bg-green-600 hover:bg-green-700"
-                  size="lg"
-                >
-                  {isProcessing ? (
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                  ) : (
-                    <Receipt className="h-4 w-4 mr-2" />
-                  )}
-                  {isProcessing ? "Procesando..." : "Procesar Venta"}
-                </Button>
+                {/* Action Buttons */}
+                <div className="space-y-2">
+                  {/* Preview and Print Options */}
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button
+                      onClick={previewCurrentInvoice}
+                      disabled={cart.length === 0}
+                      variant="outline"
+                      size="sm"
+                    >
+                      <Eye className="h-4 w-4 mr-1" />
+                      Vista Previa
+                    </Button>
+                    <Button
+                      onClick={previewAsKitchenCommand}
+                      disabled={cart.length === 0}
+                      variant="outline"
+                      size="sm"
+                    >
+                      <FileText className="h-4 w-4 mr-1" />
+                      Comanda
+                    </Button>
+                  </div>
+
+                  {/* Reprint Last Sale */}
+                  <Button
+                    onClick={reprintLastSale}
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                  >
+                    <RotateCcw className="h-4 w-4 mr-2" />
+                    Reimprimir Última Venta
+                  </Button>
+
+                  {/* Main Process Button */}
+                  <Button
+                    onClick={processSale}
+                    disabled={cart.length === 0 || isProcessing}
+                    className="w-full bg-green-600 hover:bg-green-700"
+                    size="lg"
+                  >
+                    {isProcessing ? (
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                    ) : (
+                      <Receipt className="h-4 w-4 mr-2" />
+                    )}
+                    {isProcessing ? "Procesando..." : "Procesar Venta"}
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           </div>
@@ -700,10 +831,62 @@ export default function POS() {
           </div>
         )}
 
+        {/* Live Preview Dialog */}
+        <Dialog open={showPreview} onOpenChange={setShowPreview}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>
+                {previewAsCommand ? "Vista Previa - Comanda" : "Vista Previa - Factura"}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="max-h-96 overflow-y-auto">
+              {cart.length > 0 && company && (
+                <PrintReceipt
+                  sale={{
+                    id: "PREVIEW",
+                    saleNumber: "PREVIEW",
+                    date: new Date().toISOString(),
+                    subtotal: subtotal.toString(),
+                    itbis: itbis.toString(),
+                    total: total.toString(),
+                    paymentMethod: paymentMethod,
+                    cashReceived: cashReceived,
+                    cashChange: cashChange.toString(),
+                    ncf: generateNCF(),
+                    customerName: customerName || "Cliente General",
+                    customerPhone: customerPhone,
+                  }}
+                  items={cart.map(item => ({
+                    id: 0,
+                    saleId: 0,
+                    productId: item.product.id,
+                    productName: item.product.name,
+                    quantity: item.quantity.toString(),
+                    unitPrice: item.product.price,
+                    subtotal: item.subtotal.toString(),
+                  }))}
+                  company={company}
+                  printSettings={printSettings}
+                  isCommand={previewAsCommand}
+                />
+              )}
+            </div>
+            <div className="flex gap-2 mt-4">
+              <Button onClick={printPreview} className="flex-1">
+                <Printer className="h-4 w-4 mr-2" />
+                Imprimir {previewAsCommand ? "Comanda" : "Factura"}
+              </Button>
+              <Button variant="outline" onClick={() => setShowPreview(false)}>
+                Cerrar
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
         {/* Hidden print template */}
         <div ref={printRef} style={{ display: "none" }}>
           <div className="receipt center">
-            <div className="bold">RECIBO DE VENTA</div>
+            <div className="bold">{previewAsCommand ? "COMANDA DE COCINA" : "RECIBO DE VENTA"}</div>
             <div>#{cart.length > 0 ? 'TEMP' : ''}</div>
             <div className="line"></div>
             <div>{new Date().toLocaleString('es-DO')}</div>
