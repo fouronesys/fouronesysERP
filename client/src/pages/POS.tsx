@@ -33,6 +33,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { apiRequest } from "@/lib/queryClient";
 import { formatDOP, calculateITBIS, ITBIS_RATE, generateNCF } from "@/lib/dominican";
 import { PrintReceipt } from "@/components/PrintReceipt";
+import { EnhancedPrintReceipt } from "@/components/EnhancedPrintReceipt";
 import type { Product, Customer, POSPrintSettings, Company, POSSale, POSSaleItem } from "@shared/schema";
 
 interface CartItem {
@@ -217,28 +218,37 @@ export default function POS() {
       };
 
       const saleResponse = await apiRequest("POST", "/api/pos/sales", saleData);
-      const sale = saleResponse as any;
+      const sale = await saleResponse.json();
 
-      // Add sale items
+      // Add sale items with product names
+      const saleItems = [];
       for (const item of cart) {
-        await apiRequest("POST", "/api/pos/sale-items", {
+        const itemResponse = await apiRequest("POST", "/api/pos/sale-items", {
           saleId: sale.id,
           productId: item.product.id,
+          productName: item.product.name,
           quantity: item.quantity.toString(),
           unitPrice: item.product.price,
+          subtotal: item.subtotal.toString(),
         });
+        const saleItem = await itemResponse.json();
+        saleItems.push(saleItem);
       }
+
+      // Store for receipt printing
+      setLastSale(sale);
+      setLastSaleItems(saleItems);
 
       toast({
         title: "Venta completada",
         description: `Venta #${sale.id} procesada exitosamente`,
       });
 
-      // Print receipt if needed
-      if (printSettings) {
-        setTimeout(() => {
-          printReceipt(sale);
-        }, 500);
+      // Reset restaurant-specific fields after successful sale
+      if (company?.businessType === "restaurant") {
+        setOrderType("dine_in");
+        setTableNumber("");
+        setPreparationNotes("");
       }
 
       clearCart();
@@ -408,33 +418,50 @@ export default function POS() {
                     />
                   </div>
 
-                  {/* Products Grid */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {/* Products Grid - Responsive Layout */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
                     {filteredProducts.map((product) => (
-                      <Card key={product.id} className="hover:shadow-md transition-shadow">
-                        <CardContent className="p-4">
-                          <div className="flex justify-between items-start mb-2">
-                            <div className="min-w-0 flex-1">
-                              <h3 className="font-medium text-sm truncate">{product.name}</h3>
-                              <p className="text-xs text-gray-500 dark:text-gray-400">{product.code}</p>
+                      <Card key={product.id} className="hover:shadow-md transition-shadow border border-gray-200 dark:border-gray-700">
+                        <CardContent className="p-3">
+                          <div className="space-y-3">
+                            {/* Product Header */}
+                            <div className="space-y-1">
+                              <h3 className="font-medium text-sm leading-tight text-gray-900 dark:text-gray-100 min-h-[2.5rem] flex items-center">
+                                {product.name}
+                              </h3>
+                              <div className="flex justify-between items-center">
+                                <p className="text-xs text-gray-500 dark:text-gray-400 font-mono">
+                                  {product.code}
+                                </p>
+                                <Badge 
+                                  variant={parseInt(product.stock.toString()) > 10 ? "default" : "destructive"} 
+                                  className="text-xs px-2 py-0.5"
+                                >
+                                  {product.stock}
+                                </Badge>
+                              </div>
                             </div>
-                            <Badge variant="outline" className="ml-2">
-                              Stock: {product.stock}
-                            </Badge>
-                          </div>
-                          
-                          <div className="flex justify-between items-center">
-                            <span className="font-bold text-green-600 dark:text-green-400">
-                              {formatDOP(parseFloat(product.price))}
-                            </span>
-                            <Button
-                              size="sm"
-                              onClick={() => addToCart(product)}
-                              disabled={parseInt(product.stock.toString()) <= 0}
-                              className="bg-blue-600 hover:bg-blue-700"
-                            >
-                              <Plus className="h-3 w-3" />
-                            </Button>
+                            
+                            {/* Price and Add Button */}
+                            <div className="flex justify-between items-center pt-2 border-t border-gray-100 dark:border-gray-700">
+                              <div className="flex flex-col">
+                                <span className="font-bold text-base text-green-600 dark:text-green-400">
+                                  {formatDOP(parseFloat(product.price))}
+                                </span>
+                                <span className="text-xs text-gray-500 dark:text-gray-400">
+                                  Precio unitario
+                                </span>
+                              </div>
+                              <Button
+                                size="sm"
+                                onClick={() => addToCart(product)}
+                                disabled={parseInt(product.stock.toString()) <= 0}
+                                className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 h-8 flex items-center gap-1.5"
+                              >
+                                <Plus className="h-3 w-3" />
+                                <span className="hidden sm:inline text-xs">Agregar</span>
+                              </Button>
+                            </div>
                           </div>
                         </CardContent>
                       </Card>
@@ -457,45 +484,63 @@ export default function POS() {
                         </p>
                       ) : (
                         cart.map((item) => (
-                          <div key={item.product.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                            <div className="min-w-0 flex-1">
-                              <p className="font-medium text-sm truncate">{item.product.name}</p>
-                              <p className="text-xs text-gray-500 dark:text-gray-400">
-                                {formatDOP(parseFloat(item.product.price))} c/u
-                              </p>
-                            </div>
-                            
-                            <div className="flex items-center gap-2">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
-                                className="h-6 w-6 p-0"
-                              >
-                                <Minus className="h-3 w-3" />
-                              </Button>
+                          <div key={item.product.id} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                            <div className="space-y-3">
+                              {/* Product Info */}
+                              <div className="flex justify-between items-start">
+                                <div className="flex-1 min-w-0 pr-3">
+                                  <p className="font-medium text-sm text-gray-900 dark:text-gray-100 leading-tight">
+                                    {item.product.name}
+                                  </p>
+                                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                    {formatDOP(parseFloat(item.product.price))} por unidad
+                                  </p>
+                                </div>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => removeFromCart(item.product.id)}
+                                  className="h-6 w-6 p-0 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              </div>
                               
-                              <span className="w-8 text-center text-sm font-medium">
-                                {item.quantity}
-                              </span>
-                              
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
-                                className="h-6 w-6 p-0"
-                              >
-                                <Plus className="h-3 w-3" />
-                              </Button>
-                              
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => removeFromCart(item.product.id)}
-                                className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
-                              >
-                                <Trash2 className="h-3 w-3" />
-                              </Button>
+                              {/* Quantity Controls and Subtotal */}
+                              <div className="flex justify-between items-center">
+                                <div className="flex items-center gap-2 bg-white dark:bg-gray-700 rounded-md border border-gray-200 dark:border-gray-600">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
+                                    className="h-7 w-7 p-0 hover:bg-gray-100 dark:hover:bg-gray-600"
+                                  >
+                                    <Minus className="h-3 w-3" />
+                                  </Button>
+                                  
+                                  <span className="w-10 text-center text-sm font-medium bg-gray-50 dark:bg-gray-600 py-1 px-2 text-gray-900 dark:text-gray-100">
+                                    {item.quantity}
+                                  </span>
+                                  
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
+                                    className="h-7 w-7 p-0 hover:bg-gray-100 dark:hover:bg-gray-600"
+                                  >
+                                    <Plus className="h-3 w-3" />
+                                  </Button>
+                                </div>
+                                
+                                <div className="text-right">
+                                  <p className="font-bold text-sm text-green-600 dark:text-green-400">
+                                    {formatDOP(item.subtotal)}
+                                  </p>
+                                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                                    Subtotal
+                                  </p>
+                                </div>
+                              </div>
                             </div>
                             
                             <div className="text-right ml-3">
