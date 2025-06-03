@@ -162,7 +162,7 @@ export default function POS() {
         total: total.toString(),
         cashReceived: paymentMethod === "cash" ? cashReceived : null,
         cashChange: paymentMethod === "cash" ? cashChange.toString() : "0",
-        ncf: printSettings?.showNCF ? generateNCF() : null,
+        ncf: printSettings?.showNCF ? generateNCF('consumer', Date.now()) : null,
       };
 
       const sale = await apiRequest("POST", "/api/pos/sales", saleData);
@@ -711,13 +711,15 @@ export default function POS() {
             <div className="line"></div>
             
             <table>
-              {cart.map((item) => (
-                <tr key={item.product.id}>
-                  <td>{item.product.name}</td>
-                  <td className="right">{item.quantity} x {formatDOP(parseFloat(item.product.price))}</td>
-                  <td className="right">{formatDOP(item.subtotal)}</td>
-                </tr>
-              ))}
+              <tbody>
+                {cart.map((item) => (
+                  <tr key={item.product.id}>
+                    <td>{item.product.name}</td>
+                    <td className="right">{item.quantity} x {formatDOP(parseFloat(item.product.price))}</td>
+                    <td className="right">{formatDOP(item.subtotal)}</td>
+                  </tr>
+                ))}
+              </tbody>
             </table>
             
             <div className="line"></div>
