@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Check, Shield, Star } from "lucide-react";
+import logoImage from "@assets/Four One Solutions Logo_20250130_143033_0000.png";
 
 export default function Landing() {
   return (
@@ -9,15 +10,17 @@ export default function Landing() {
         {/* Header */}
         <div className="text-center mb-16">
           <div className="flex items-center justify-center mb-6">
-            <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center text-white font-bold text-2xl">
-              4
-            </div>
-            <div className="ml-4">
+            <img 
+              src={logoImage} 
+              alt="Four One Solutions Logo" 
+              className="w-20 h-20 object-contain"
+            />
+            <div className="ml-6">
               <h1 className="text-4xl font-bold text-gray-900 dark:text-white">
-                Four One System
+                Four One Solutions
               </h1>
               <p className="text-lg text-gray-600 dark:text-gray-400">
-                Sistema completo de facturación e inventario para República Dominicana
+                Sistema integral de gestión empresarial para República Dominicana
               </p>
             </div>
           </div>

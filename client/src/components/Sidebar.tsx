@@ -16,6 +16,7 @@ import {
   Star,
   CreditCard
 } from "lucide-react";
+import logoImage from "@assets/Four One Solutions Logo_20250130_143401_0000.png";
 
 const navigation = [
   {
@@ -65,15 +66,17 @@ export function Sidebar() {
       {/* Logo */}
       <div className="p-6 border-b border-gray-200 dark:border-gray-700 theme-blue:border-blue-500">
         <div className="flex items-center">
-          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center text-white font-bold text-xl">
-            4
-          </div>
+          <img 
+            src={logoImage} 
+            alt="Four One Solutions" 
+            className="w-10 h-10 object-contain"
+          />
           <div className="ml-3">
             <h1 className="text-xl font-bold text-gray-900 dark:text-white theme-blue:text-white">
-              Four One System
+              Four One Solutions
             </h1>
             <p className="text-xs text-gray-500 dark:text-gray-400 theme-blue:text-blue-100">
-              ERP Empresarial
+              Sistema ERP 1111
             </p>
           </div>
         </div>

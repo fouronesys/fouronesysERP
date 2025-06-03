@@ -183,6 +183,8 @@ const PrintTemplate58mm = ({ sale, items, customer, settings, company }: PrintTe
     <div className="w-[58mm] p-1 font-mono text-xs bg-white text-black print-container">
       {/* Header */}
       <div className="text-center mb-2">
+        <div className="font-bold text-sm mb-1">FOUR ONE SOLUTIONS</div>
+        <div className="text-xs mb-1">Sistema ERP 1111</div>
         {settings.headerText && (
           <div className="font-bold text-xs mb-1 break-words">{settings.headerText}</div>
         )}
