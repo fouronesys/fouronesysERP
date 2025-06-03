@@ -373,19 +373,30 @@ function NCFSequenceForm({ onSubmit }: { onSubmit: (data: any) => void }) {
   const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState({
     ncfType: "",
-    authorizedFrom: "",
-    authorizedTo: "",
+    fromNumber: "",
+    toNumber: "",
     expirationDate: "",
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(formData);
+    
+    // Generate full NCF numbers from simplified range input
+    const authorizedFrom = `${formData.ncfType}${String(formData.fromNumber).padStart(8, '0')}`;
+    const authorizedTo = `${formData.ncfType}${String(formData.toNumber).padStart(8, '0')}`;
+    
+    const submitData = {
+      ...formData,
+      authorizedFrom,
+      authorizedTo,
+    };
+    
+    onSubmit(submitData);
     setOpen(false);
     setFormData({
       ncfType: "",
-      authorizedFrom: "",
-      authorizedTo: "",
+      fromNumber: "",
+      toNumber: "",
       expirationDate: "",
     });
   };
