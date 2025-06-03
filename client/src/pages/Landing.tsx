@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Check, Shield, Star } from "lucide-react";
-import logoImage from "@assets/Four One Solutions Logo_20250130_143033_0000.png";
+import logoImage from "@assets/Four One Solutions Logo_20250130_143401_0000.png";
 
 export default function Landing() {
   return (

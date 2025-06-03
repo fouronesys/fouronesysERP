@@ -13,6 +13,7 @@ import { useQuery } from "@tanstack/react-query";
 
 // Pages
 import Landing from "@/pages/Landing";
+import Register from "@/pages/Register";
 import Dashboard from "@/pages/Dashboard";
 import Billing from "@/pages/Billing";
 import Customers from "@/pages/Customers";
@@ -21,6 +22,8 @@ import Manufacturing from "@/pages/Manufacturing";
 import BOM from "@/pages/BOM";
 import POS from "@/pages/POS";
 import Setup from "@/pages/Setup";
+import SuperAdmin from "@/pages/SuperAdmin";
+import CompanySettings from "@/pages/CompanySettings";
 import NotFound from "@/pages/not-found";
 
 function ProtectedRoute({ component: Component, ...props }: { component: React.ComponentType }) {
@@ -79,6 +82,7 @@ function Router() {
     return (
       <Switch>
         <Route path="/" component={Landing} />
+        <Route path="/register" component={Register} />
         <Route component={Landing} />
       </Switch>
     );
