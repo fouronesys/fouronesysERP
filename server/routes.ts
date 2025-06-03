@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
+import { AIProductService, AIBusinessService, AIChatService, AIDocumentService } from "./ai-services";
 import { 
   insertCompanySchema,
   insertWarehouseSchema,
@@ -1499,6 +1500,147 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error creating sample products:", error);
       res.status(500).json({ message: "Failed to create sample products" });
+    }
+  });
+
+  // AI Integration Routes
+  
+  // Generate product description with AI
+  app.post("/api/ai/product-description", isAuthenticated, async (req: any, res) => {
+    try {
+      const { productName, category, features } = req.body;
+      
+      if (!process.env.ANTHROPIC_API_KEY) {
+        return res.status(503).json({ message: "AI service not configured" });
+      }
+
+      const description = await AIProductService.generateProductDescription(
+        productName,
+        category,
+        features
+      );
+      
+      res.json({ description });
+    } catch (error) {
+      console.error("Error generating product description:", error);
+      res.status(500).json({ message: error.message || "Failed to generate description" });
+    }
+  });
+
+  // Generate product code with AI
+  app.post("/api/ai/product-code", isAuthenticated, async (req: any, res) => {
+    try {
+      const { productName, category, brand } = req.body;
+      
+      if (!process.env.ANTHROPIC_API_KEY) {
+        return res.status(503).json({ message: "AI service not configured" });
+      }
+
+      const code = await AIProductService.generateProductCode(
+        productName,
+        category,
+        brand
+      );
+      
+      res.json({ code });
+    } catch (error) {
+      console.error("Error generating product code:", error);
+      res.status(500).json({ message: error.message || "Failed to generate code" });
+    }
+  });
+
+  // AI Sales Analysis
+  app.post("/api/ai/sales-analysis", isAuthenticated, async (req: any, res) => {
+    try {
+      const userCompany = await storage.getCompanyByUserId(req.user.claims.sub);
+      
+      if (!userCompany) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      if (!process.env.ANTHROPIC_API_KEY) {
+        return res.status(503).json({ message: "AI service not configured" });
+      }
+
+      // Get recent sales data
+      const posSales = await storage.getPOSSales(userCompany.id);
+      const invoices = await storage.getInvoices(userCompany.id);
+      
+      const salesData = [...posSales, ...invoices].slice(0, 20);
+      
+      const analysis = await AIBusinessService.analyzeSalesPattern(salesData);
+      
+      res.json(analysis);
+    } catch (error) {
+      console.error("Error analyzing sales:", error);
+      res.status(500).json({ message: error.message || "Failed to analyze sales" });
+    }
+  });
+
+  // AI Inventory Optimization
+  app.post("/api/ai/inventory-optimization", isAuthenticated, async (req: any, res) => {
+    try {
+      const userCompany = await storage.getCompanyByUserId(req.user.claims.sub);
+      
+      if (!userCompany) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      if (!process.env.ANTHROPIC_API_KEY) {
+        return res.status(503).json({ message: "AI service not configured" });
+      }
+
+      const products = await storage.getProducts(userCompany.id);
+      const salesHistory = await storage.getPOSSales(userCompany.id);
+      
+      const optimization = await AIBusinessService.optimizeInventory(products, salesHistory);
+      
+      res.json(optimization);
+    } catch (error) {
+      console.error("Error optimizing inventory:", error);
+      res.status(500).json({ message: error.message || "Failed to optimize inventory" });
+    }
+  });
+
+  // AI Chat Assistant
+  app.post("/api/ai/chat", isAuthenticated, async (req: any, res) => {
+    try {
+      const { message } = req.body;
+      const userCompany = await storage.getCompanyByUserId(req.user.claims.sub);
+      
+      if (!process.env.ANTHROPIC_API_KEY) {
+        return res.status(503).json({ message: "AI service not configured" });
+      }
+
+      const context = {
+        companyName: userCompany?.name,
+        userId: req.user.claims.sub
+      };
+      
+      const response = await AIChatService.processQuery(message, context);
+      
+      res.json({ response });
+    } catch (error) {
+      console.error("Error processing chat:", error);
+      res.status(500).json({ message: error.message || "Failed to process message" });
+    }
+  });
+
+  // AI Document Processing
+  app.post("/api/ai/extract-invoice", isAuthenticated, async (req: any, res) => {
+    try {
+      const { text } = req.body;
+      
+      if (!process.env.ANTHROPIC_API_KEY) {
+        return res.status(503).json({ message: "AI service not configured" });
+      }
+
+      const extractedData = await AIDocumentService.extractInvoiceData(text);
+      
+      res.json(extractedData);
+    } catch (error) {
+      console.error("Error extracting invoice data:", error);
+      res.status(500).json({ message: error.message || "Failed to extract data" });
     }
   });
 
