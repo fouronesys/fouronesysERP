@@ -302,7 +302,7 @@ export default function POS() {
                             <Button
                               size="sm"
                               onClick={() => addToCart(product)}
-                              disabled={parseInt(product.stock) <= 0}
+                              disabled={parseInt(product.stock.toString()) <= 0}
                               className="bg-blue-600 hover:bg-blue-700"
                             >
                               <Plus className="h-3 w-3" />
@@ -408,7 +408,7 @@ export default function POS() {
                             <h3 className="font-medium text-sm truncate">{product.name}</h3>
                             <p className="text-xs text-gray-500 dark:text-gray-400">{product.code}</p>
                           </div>
-                          <Badge variant={parseInt(product.stock) > 10 ? "default" : "destructive"} className="ml-2 text-xs">
+                          <Badge variant={parseInt(product.stock.toString()) > 10 ? "default" : "destructive"} className="ml-2 text-xs">
                             {product.stock}
                           </Badge>
                         </div>
@@ -423,7 +423,7 @@ export default function POS() {
                               e.stopPropagation();
                               addToCart(product);
                             }}
-                            disabled={parseInt(product.stock) <= 0}
+                            disabled={parseInt(product.stock.toString()) <= 0}
                             className="bg-blue-600 hover:bg-blue-700"
                           >
                             <Plus className="h-3 w-3" />
@@ -754,7 +754,7 @@ export default function POS() {
             <div className="line"></div>
             <div className="center">¡Gracias por su compra!</div>
             {printSettings?.showNCF && (
-              <div className="center">NCF: {generateNCF()}</div>
+              <div className="center">NCF: {generateNCF("B01", 1)}</div>
             )}
           </div>
         </div>

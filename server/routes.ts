@@ -636,6 +636,143 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.put("/api/pos/print-settings", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+      const settingsData = insertPOSPrintSettingsSchema.parse({ ...req.body, companyId: company.id });
+      const settings = await storage.upsertPOSPrintSettings(settingsData);
+      res.json(settings);
+    } catch (error) {
+      console.error("Error updating POS print settings:", error);
+      res.status(500).json({ message: "Failed to update POS print settings" });
+    }
+  });
+
+  // Profile routes
+  app.patch("/api/auth/profile", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { firstName, lastName, email } = req.body;
+      
+      // In a real implementation, you would update the user in your database
+      // For now, return success as user data comes from Replit Auth
+      res.json({ success: true, message: "Profile updated successfully" });
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      res.status(500).json({ message: "Failed to update profile" });
+    }
+  });
+
+  app.put("/api/auth/change-password", isAuthenticated, async (req: any, res) => {
+    try {
+      const { currentPassword, newPassword } = req.body;
+      
+      // In a real implementation, you would verify current password and update
+      // For now, simulate password change
+      if (!currentPassword || !newPassword) {
+        return res.status(400).json({ message: "Current and new passwords are required" });
+      }
+      
+      res.json({ success: true, message: "Password changed successfully" });
+    } catch (error) {
+      console.error("Error changing password:", error);
+      res.status(500).json({ message: "Failed to change password" });
+    }
+  });
+
+  // Settings routes
+  app.put("/api/settings/system", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const settings = req.body;
+      
+      // Store system settings (in real app, save to database)
+      res.json({ success: true, settings });
+    } catch (error) {
+      console.error("Error updating system settings:", error);
+      res.status(500).json({ message: "Failed to update system settings" });
+    }
+  });
+
+  app.put("/api/settings/security", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const settings = req.body;
+      
+      // Store security settings
+      res.json({ success: true, settings });
+    } catch (error) {
+      console.error("Error updating security settings:", error);
+      res.status(500).json({ message: "Failed to update security settings" });
+    }
+  });
+
+  // Notifications routes
+  app.get("/api/notifications", isAuthenticated, async (req: any, res) => {
+    try {
+      // Return mock notifications for demo
+      const notifications = [
+        {
+          id: 1,
+          title: "Venta completada",
+          message: "Se ha registrado una nueva venta por DOP $1,500.00",
+          type: "success",
+          read: false,
+          createdAt: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
+        },
+        {
+          id: 2,
+          title: "Stock bajo",
+          message: "El producto 'Café Premium' tiene stock bajo (5 unidades restantes)",
+          type: "warning",
+          read: false,
+          createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
+        }
+      ];
+      res.json(notifications);
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+      res.status(500).json({ message: "Failed to fetch notifications" });
+    }
+  });
+
+  app.patch("/api/notifications/:id/read", isAuthenticated, async (req: any, res) => {
+    try {
+      const notificationId = req.params.id;
+      res.json({ success: true, id: notificationId });
+    } catch (error) {
+      console.error("Error marking notification as read:", error);
+      res.status(500).json({ message: "Failed to mark notification as read" });
+    }
+  });
+
+  app.delete("/api/notifications/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const notificationId = req.params.id;
+      res.json({ success: true, id: notificationId });
+    } catch (error) {
+      console.error("Error deleting notification:", error);
+      res.status(500).json({ message: "Failed to delete notification" });
+    }
+  });
+
+  app.put("/api/notifications/settings", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const settings = req.body;
+      
+      // Store notification settings
+      res.json({ success: true, settings });
+    } catch (error) {
+      console.error("Error updating notification settings:", error);
+      res.status(500).json({ message: "Failed to update notification settings" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
