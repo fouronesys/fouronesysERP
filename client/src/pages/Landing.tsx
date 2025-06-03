@@ -146,7 +146,7 @@ export default function Landing() {
                   <Button 
                     variant="outline"
                     onClick={() => window.location.href = "/register"}
-                    className="w-full border-gray-500 text-gray-300 hover:bg-gray-700 hover:text-white"
+                    className="w-full border-white text-white hover:bg-white hover:text-black"
                   >
                     Registrar Nueva Empresa
                   </Button>
@@ -209,7 +209,7 @@ export default function Landing() {
                   <Button 
                     variant="outline"
                     onClick={() => window.location.href = "/register"}
-                    className="w-full border-green-500 text-green-400 hover:bg-green-600 hover:text-white"
+                    className="w-full border-white text-white hover:bg-white hover:text-black"
                   >
                     Registrar Nueva Empresa
                   </Button>
