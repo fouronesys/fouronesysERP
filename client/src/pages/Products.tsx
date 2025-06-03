@@ -36,6 +36,7 @@ export default function Products() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [imagePreviewKey, setImagePreviewKey] = useState(0);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -155,6 +156,7 @@ export default function Products() {
     },
     onSuccess: (data) => {
       form.setValue("imageUrl", data.imageUrl);
+      setImagePreviewKey(prev => prev + 1); // Force image preview refresh
       toast({
         title: "Imagen generada",
         description: "Nueva imagen generada automáticamente.",
@@ -406,6 +408,7 @@ export default function Products() {
                     {form.watch("imageUrl") && (
                       <div className="flex justify-center">
                         <img
+                          key={`${form.watch("imageUrl")}-${imagePreviewKey}`} // Force re-render when URL changes or key updates
                           src={form.watch("imageUrl") || ""}
                           alt="Vista previa del producto"
                           className="h-32 w-32 object-cover rounded-lg border border-gray-300 dark:border-gray-600"
