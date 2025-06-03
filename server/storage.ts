@@ -1189,7 +1189,7 @@ export class DatabaseStorage implements IStorage {
             try {
               const googleQuery = `${query} product image`;
               const response = await fetch(
-                `https://www.googleapis.com/customsearch/v1?key=${process.env.GOOGLE_API_KEY}&cx=${process.env.GOOGLE_SEARCH_ENGINE_ID}&q=${encodeURIComponent(googleQuery)}&searchType=image&num=3&imgSize=medium&safe=active`,
+                `https://www.googleapis.com/customsearch/v1?key=${process.env.GOOGLE_API_KEY}&cx=${process.env.GOOGLE_SEARCH_ENGINE_ID}&q=${encodeURIComponent(googleQuery)}&searchType=image&num=3&imgSize=medium&safe=active&fileType=jpg,png`,
               );
 
               if (response.ok) {
@@ -1198,10 +1198,40 @@ export class DatabaseStorage implements IStorage {
                   // Return the first image result
                   return data.items[0].link;
                 }
+              } else {
+                console.error(`Google API Error: ${response.status} - ${await response.text()}`);
               }
             } catch (error) {
               console.error(`Error with Google search query "${query}":`, error);
               continue; // Try next query
+            }
+          }
+        }
+        
+        // If Google API fails, try Pexels as alternative
+        if (process.env.PEXELS_API_KEY) {
+          for (const query of searchQueries) {
+            if (query && query.trim()) {
+              try {
+                const response = await fetch(
+                  `https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=3&orientation=square`,
+                  {
+                    headers: {
+                      'Authorization': process.env.PEXELS_API_KEY
+                    }
+                  }
+                );
+
+                if (response.ok) {
+                  const data = await response.json();
+                  if (data.photos && data.photos.length > 0) {
+                    return data.photos[0].src.medium;
+                  }
+                }
+              } catch (error) {
+                console.error(`Error with Pexels query "${query}":`, error);
+                continue;
+              }
             }
           }
         }
