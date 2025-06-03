@@ -4,7 +4,7 @@ import { Header } from "@/components/Header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -22,9 +22,11 @@ import {
   Settings,
   Calculator,
   Users,
-  Package
+  Package,
+  X
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { apiRequest } from "@/lib/queryClient";
 import { formatDOP, calculateITBIS, ITBIS_RATE, generateNCF } from "@/lib/dominican";
 import type { Product, Customer, POSPrintSettings } from "@shared/schema";
@@ -35,274 +37,23 @@ interface CartItem {
   subtotal: number;
 }
 
-interface PrintTemplateProps {
-  sale: any;
-  items: CartItem[];
-  customer?: Customer;
-  settings: POSPrintSettings;
-  company: any;
-}
-
-const PrintTemplate80mm = ({ sale, items, customer, settings, company }: PrintTemplateProps) => {
-  const currentDate = new Date().toLocaleString("es-DO", {
-    timeZone: "America/Santo_Domingo",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-
-  return (
-    <div className="w-[80mm] p-2 font-mono text-xs bg-white text-black print-container">
-      {/* Header */}
-      <div className="text-center mb-2">
-        {settings.headerText && (
-          <div className="font-bold text-sm mb-1">{settings.headerText}</div>
-        )}
-        <div className="font-bold">{company?.name || "EMPRESA"}</div>
-        {company?.rnc && <div>RNC: {company.rnc}</div>}
-        {company?.address && <div>{company.address}</div>}
-        {company?.phone && <div>Tel: {company.phone}</div>}
-      </div>
-
-      <div className="border-t border-dashed border-black my-2"></div>
-
-      {/* Sale Info */}
-      <div className="mb-2">
-        <div className="flex justify-between">
-          <span>Factura:</span>
-          <span>{sale.saleNumber}</span>
-        </div>
-        <div className="flex justify-between">
-          <span>Fecha:</span>
-          <span>{currentDate}</span>
-        </div>
-        {settings.showNCF && sale.ncf && (
-          <div className="flex justify-between">
-            <span>NCF:</span>
-            <span>{sale.ncf}</span>
-          </div>
-        )}
-        {settings.showCustomerInfo && customer && (
-          <>
-            <div className="flex justify-between">
-              <span>Cliente:</span>
-              <span>{customer.name}</span>
-            </div>
-            {customer.rnc && (
-              <div className="flex justify-between">
-                <span>RNC/Ced:</span>
-                <span>{customer.rnc}</span>
-              </div>
-            )}
-          </>
-        )}
-      </div>
-
-      <div className="border-t border-dashed border-black my-2"></div>
-
-      {/* Items */}
-      <div className="mb-2">
-        {items.map((item, index) => (
-          <div key={index} className="mb-1">
-            <div className="flex justify-between">
-              <span className="truncate flex-1 mr-2">{item.product.name}</span>
-            </div>
-            <div className="flex justify-between text-xs">
-              <span>{item.quantity} x {formatDOP(parseFloat(item.product.price))}</span>
-              <span>{formatDOP(item.subtotal)}</span>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div className="border-t border-dashed border-black my-2"></div>
-
-      {/* Totals */}
-      <div className="mb-2">
-        <div className="flex justify-between">
-          <span>Subtotal:</span>
-          <span>{formatDOP(parseFloat(sale.subtotal))}</span>
-        </div>
-        <div className="flex justify-between">
-          <span>ITBIS (18%):</span>
-          <span>{formatDOP(parseFloat(sale.itbis))}</span>
-        </div>
-        <div className="flex justify-between font-bold text-sm">
-          <span>TOTAL:</span>
-          <span>{formatDOP(parseFloat(sale.total))}</span>
-        </div>
-      </div>
-
-      {/* Payment */}
-      <div className="mb-2">
-        <div className="flex justify-between">
-          <span>Pago:</span>
-          <span>{sale.paymentMethod === 'cash' ? 'Efectivo' : 'Tarjeta'}</span>
-        </div>
-        {sale.paymentMethod === 'cash' && (
-          <>
-            <div className="flex justify-between">
-              <span>Recibido:</span>
-              <span>{formatDOP(parseFloat(sale.cashReceived || 0))}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Cambio:</span>
-              <span>{formatDOP(parseFloat(sale.cashChange || 0))}</span>
-            </div>
-          </>
-        )}
-      </div>
-
-      <div className="border-t border-dashed border-black my-2"></div>
-
-      {/* Footer */}
-      <div className="text-center text-xs">
-        {settings.footerText && (
-          <div className="mb-1">{settings.footerText}</div>
-        )}
-        <div>¡Gracias por su compra!</div>
-        <div>Four One System - POS</div>
-      </div>
-    </div>
-  );
-};
-
-const PrintTemplate58mm = ({ sale, items, customer, settings, company }: PrintTemplateProps) => {
-  const currentDate = new Date().toLocaleString("es-DO", {
-    timeZone: "America/Santo_Domingo",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-
-  return (
-    <div className="w-[58mm] p-1 font-mono text-xs bg-white text-black print-container">
-      {/* Header */}
-      <div className="text-center mb-2">
-        <div className="font-bold text-sm mb-1">FOUR ONE SOLUTIONS</div>
-        <div className="text-xs mb-1">Sistema ERP 1111</div>
-        {settings.headerText && (
-          <div className="font-bold text-xs mb-1 break-words">{settings.headerText}</div>
-        )}
-        <div className="font-bold text-xs break-words">{company?.name || "EMPRESA"}</div>
-        {company?.rnc && <div className="text-xs">RNC: {company.rnc}</div>}
-        {company?.address && <div className="text-xs break-words">{company.address}</div>}
-        {company?.phone && <div className="text-xs">Tel: {company.phone}</div>}
-      </div>
-
-      <div className="border-t border-dashed border-black my-1"></div>
-
-      {/* Sale Info */}
-      <div className="mb-2 text-xs">
-        <div>Factura: {sale.saleNumber}</div>
-        <div>Fecha: {currentDate}</div>
-        {settings.showNCF && sale.ncf && (
-          <div>NCF: {sale.ncf}</div>
-        )}
-        {settings.showCustomerInfo && customer && (
-          <>
-            <div>Cliente: {customer.name}</div>
-            {customer.rnc && (
-              <div>RNC/Ced: {customer.rnc}</div>
-            )}
-          </>
-        )}
-      </div>
-
-      <div className="border-t border-dashed border-black my-1"></div>
-
-      {/* Items */}
-      <div className="mb-2">
-        {items.map((item, index) => (
-          <div key={index} className="mb-1 text-xs">
-            <div className="break-words">{item.product.name}</div>
-            <div className="flex justify-between">
-              <span>{item.quantity} x {formatDOP(parseFloat(item.product.price))}</span>
-              <span>{formatDOP(item.subtotal)}</span>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div className="border-t border-dashed border-black my-1"></div>
-
-      {/* Totals */}
-      <div className="mb-2 text-xs">
-        <div className="flex justify-between">
-          <span>Subtotal:</span>
-          <span>{formatDOP(parseFloat(sale.subtotal))}</span>
-        </div>
-        <div className="flex justify-between">
-          <span>ITBIS:</span>
-          <span>{formatDOP(parseFloat(sale.itbis))}</span>
-        </div>
-        <div className="flex justify-between font-bold">
-          <span>TOTAL:</span>
-          <span>{formatDOP(parseFloat(sale.total))}</span>
-        </div>
-      </div>
-
-      {/* Payment */}
-      <div className="mb-2 text-xs">
-        <div>Pago: {sale.paymentMethod === 'cash' ? 'Efectivo' : 'Tarjeta'}</div>
-        {sale.paymentMethod === 'cash' && (
-          <>
-            <div>Recibido: {formatDOP(parseFloat(sale.cashReceived || 0))}</div>
-            <div>Cambio: {formatDOP(parseFloat(sale.cashChange || 0))}</div>
-          </>
-        )}
-      </div>
-
-      <div className="border-t border-dashed border-black my-1"></div>
-
-      {/* Footer */}
-      <div className="text-center text-xs">
-        {settings.footerText && (
-          <div className="mb-1 break-words">{settings.footerText}</div>
-        )}
-        <div>¡Gracias por su compra!</div>
-        <div>Four One System</div>
-      </div>
-    </div>
-  );
-};
-
 export default function POS() {
-  // Cargar carrito del localStorage al inicializar
-  const [cart, setCart] = useState<CartItem[]>(() => {
-    try {
-      const savedCart = localStorage.getItem('pos-cart');
-      return savedCart ? JSON.parse(savedCart) : [];
-    } catch {
-      return [];
-    }
-  });
-  
+  const [cart, setCart] = useState<CartItem[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [customerPhone, setCustomerPhone] = useState("");
+  const [customerName, setCustomerName] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<"cash" | "card">("cash");
   const [cashReceived, setCashReceived] = useState("");
-  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
-  const [isPrintSettingsOpen, setIsPrintSettingsOpen] = useState(false);
-  const [currentSale, setCurrentSale] = useState<any>(null);
-  const printRef = useRef<HTMLDivElement>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [activeTab, setActiveTab] = useState("products");
+  
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const isMobile = useIsMobile();
+  const printRef = useRef<HTMLDivElement>(null);
 
-  // Guardar carrito en localStorage cada vez que cambie
-  useEffect(() => {
-    try {
-      localStorage.setItem('pos-cart', JSON.stringify(cart));
-    } catch (error) {
-      console.error('Error saving cart to localStorage:', error);
-    }
-  }, [cart]);
-
-  const { data: products } = useQuery<Product[]>({
+  const { data: products, isLoading: productsLoading } = useQuery<Product[]>({
     queryKey: ["/api/products"],
   });
 
@@ -314,94 +65,38 @@ export default function POS() {
     queryKey: ["/api/pos/print-settings"],
   });
 
-  const { data: company } = useQuery({
-    queryKey: ["/api/companies/current"],
-  });
-
-  const createSaleMutation = useMutation({
-    mutationFn: async (saleData: any) => {
-      return await apiRequest("POST", "/api/pos/sales", saleData);
-    },
-    onSuccess: (sale: any) => {
-      toast({
-        title: "Venta completada",
-        description: `Venta ${sale.saleNumber} registrada exitosamente.`,
-      });
-      setCurrentSale({ ...sale, items: cart });
-      
-      // Imprimir recibo automáticamente
-      setTimeout(() => {
-        if (printRef.current) {
-          const printContent = printRef.current.innerHTML;
-          const printWindow = window.open('', '_blank');
-          if (printWindow) {
-            printWindow.document.write(`
-              <html>
-                <head>
-                  <title>Recibo - ${sale.saleNumber}</title>
-                  <style>
-                    body { 
-                      font-family: 'Courier New', monospace; 
-                      margin: 0; 
-                      padding: 10px;
-                      font-size: 12px;
-                      line-height: 1.2;
-                    }
-                    .receipt { max-width: 80mm; }
-                    .center { text-align: center; }
-                    .bold { font-weight: bold; }
-                    .line { border-top: 1px dashed #000; margin: 5px 0; }
-                    table { width: 100%; border-collapse: collapse; }
-                    td { padding: 1px 0; }
-                    .right { text-align: right; }
-                  </style>
-                </head>
-                <body>
-                  ${printContent}
-                </body>
-              </html>
-            `);
-            printWindow.document.close();
-            printWindow.focus();
-            printWindow.print();
-            printWindow.close();
-          }
-        }
-      }, 500);
-      
-      setCart([]);
-      setSelectedCustomer(null);
-      setCashReceived("");
-      setIsCheckoutOpen(false);
-      // Limpiar carrito del localStorage
-      localStorage.removeItem('pos-cart');
-      queryClient.invalidateQueries({ queryKey: ["/api/pos/sales"] });
-    },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "No se pudo completar la venta.",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const availableProducts = products?.filter(p => 
-    p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    p.code.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredProducts = products?.filter(product =>
+    product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    product.code.toLowerCase().includes(searchTerm.toLowerCase())
   ) || [];
 
+  const subtotal = cart.reduce((sum, item) => sum + item.subtotal, 0);
+  const itbis = calculateITBIS(subtotal);
+  const total = subtotal + itbis;
+  const cashChange = paymentMethod === "cash" && cashReceived ? 
+    Math.max(0, parseFloat(cashReceived) - total) : 0;
+
   const addToCart = (product: Product) => {
-    setCart(current => {
-      const existingItem = current.find(item => item.product.id === product.id);
+    setCart(prev => {
+      const existingItem = prev.find(item => item.product.id === product.id);
+      
       if (existingItem) {
-        return current.map(item =>
+        return prev.map(item =>
           item.product.id === product.id
-            ? { ...item, quantity: item.quantity + 1, subtotal: (item.quantity + 1) * parseFloat(product.price) }
+            ? { 
+                ...item, 
+                quantity: item.quantity + 1,
+                subtotal: (item.quantity + 1) * parseFloat(product.price)
+              }
             : item
         );
       }
-      return [...current, { product, quantity: 1, subtotal: parseFloat(product.price) }];
+      
+      return [...prev, {
+        product,
+        quantity: 1,
+        subtotal: parseFloat(product.price)
+      }];
     });
   };
 
@@ -410,404 +105,657 @@ export default function POS() {
       removeFromCart(productId);
       return;
     }
-    setCart(current =>
-      current.map(item =>
+    
+    setCart(prev =>
+      prev.map(item =>
         item.product.id === productId
-          ? { ...item, quantity: newQuantity, subtotal: newQuantity * parseFloat(item.product.price) }
+          ? { 
+              ...item, 
+              quantity: newQuantity,
+              subtotal: newQuantity * parseFloat(item.product.price)
+            }
           : item
       )
     );
   };
 
   const removeFromCart = (productId: number) => {
-    setCart(current => current.filter(item => item.product.id !== productId));
+    setCart(prev => prev.filter(item => item.product.id !== productId));
   };
 
-  const cartSubtotal = cart.reduce((sum, item) => sum + item.subtotal, 0);
-  const cartITBIS = calculateITBIS(cartSubtotal);
-  const cartTotal = cartSubtotal + cartITBIS;
-  const cashChange = paymentMethod === "cash" ? Math.max(0, parseFloat(cashReceived || "0") - cartTotal) : 0;
+  const clearCart = () => {
+    setCart([]);
+    setCustomerPhone("");
+    setCustomerName("");
+    setCashReceived("");
+    setPaymentMethod("cash");
+  };
 
-  const handleCheckout = () => {
+  const processSale = async () => {
     if (cart.length === 0) {
       toast({
-        title: "Carrito vacío",
-        description: "Agrega productos al carrito antes de procesar la venta.",
+        title: "Error",
+        description: "El carrito está vacío",
         variant: "destructive",
       });
       return;
     }
 
-    if (paymentMethod === "cash" && parseFloat(cashReceived) < cartTotal) {
+    if (paymentMethod === "cash" && (!cashReceived || parseFloat(cashReceived) < total)) {
       toast({
-        title: "Pago insuficiente",
-        description: "El monto recibido es menor al total de la venta.",
+        title: "Error",
+        description: "El efectivo recibido debe ser mayor o igual al total",
         variant: "destructive",
       });
       return;
     }
 
-    const saleData = {
-      customerId: selectedCustomer?.id || null,
-      subtotal: cartSubtotal.toFixed(2),
-      itbis: cartITBIS.toFixed(2),
-      total: cartTotal.toFixed(2),
-      paymentMethod,
-      cashReceived: paymentMethod === "cash" ? cashReceived : null,
-      cashChange: paymentMethod === "cash" ? cashChange.toFixed(2) : null,
-      ncf: generateNCF("B01", Math.floor(Math.random() * 100000)),
-      items: cart.map(item => ({
-        productId: item.product.id,
-        quantity: item.quantity.toString(),
-        unitPrice: item.product.price,
-        subtotal: item.subtotal.toFixed(2),
-      })),
-    };
+    setIsProcessing(true);
 
-    createSaleMutation.mutate(saleData);
+    try {
+      const saleData = {
+        customerName: customerName || null,
+        customerPhone: customerPhone || null,
+        paymentMethod,
+        subtotal: subtotal.toString(),
+        itbis: itbis.toString(),
+        total: total.toString(),
+        cashReceived: paymentMethod === "cash" ? cashReceived : null,
+        cashChange: paymentMethod === "cash" ? cashChange.toString() : "0",
+        ncf: printSettings?.showNCF ? generateNCF() : null,
+      };
+
+      const sale = await apiRequest("POST", "/api/pos/sales", saleData);
+
+      // Add sale items
+      for (const item of cart) {
+        await apiRequest("POST", "/api/pos/sale-items", {
+          saleId: sale.id,
+          productId: item.product.id,
+          quantity: item.quantity.toString(),
+          unitPrice: item.product.price,
+        });
+      }
+
+      toast({
+        title: "Venta completada",
+        description: `Venta #${sale.id} procesada exitosamente`,
+      });
+
+      // Print receipt if needed
+      if (printSettings) {
+        setTimeout(() => {
+          printReceipt(sale);
+        }, 500);
+      }
+
+      clearCart();
+      queryClient.invalidateQueries({ queryKey: ["/api/pos/sales"] });
+      
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "No se pudo procesar la venta",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
-  const handlePrint = () => {
-    if (!currentSale) return;
-    
+  const printReceipt = (sale: any) => {
     const printWindow = window.open('', '_blank');
-    if (printWindow) {
-      const printContent = printRef.current?.innerHTML || '';
+    if (printWindow && printRef.current) {
       printWindow.document.write(`
         <html>
           <head>
-            <title>Recibo - ${currentSale.saleNumber}</title>
+            <title>Recibo - Venta #${sale.id}</title>
             <style>
-              body { margin: 0; padding: 0; font-family: monospace; }
-              .print-container { page-break-after: always; }
-              @media print {
-                body { -webkit-print-color-adjust: exact; }
-                .print-container { margin: 0; padding: 2mm; }
-              }
+              body { font-family: monospace; margin: 0; padding: 10px; }
+              .receipt { width: ${printSettings?.printerWidth === '58mm' ? '200px' : '300px'}; }
+              .center { text-align: center; }
+              .right { text-align: right; }
+              .bold { font-weight: bold; }
+              .line { border-bottom: 1px dashed #000; margin: 5px 0; }
+              table { width: 100%; border-collapse: collapse; }
+              td { padding: 2px 0; }
             </style>
           </head>
-          <body>${printContent}</body>
+          <body>
+            ${printRef.current.innerHTML}
+          </body>
         </html>
       `);
       printWindow.document.close();
       printWindow.print();
-      printWindow.close();
     }
   };
 
-  return (
-    <div className="flex-1 overflow-hidden bg-gray-50 dark:bg-gray-900">
-      <Header title="Punto de Venta (POS)" subtitle="Sistema de ventas con impresión térmica" />
-      
-      <div className="flex h-[calc(100vh-120px)]">
-        {/* Products Panel */}
-        <div className="flex-1 p-6 overflow-y-auto">
-          <div className="mb-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Buscar productos..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
+  if (productsLoading) {
+    return (
+      <div className="w-full">
+        <Header title="Punto de Venta" subtitle="Sistema POS integrado" />
+        <div className="p-4 sm:p-6">
+          <div className="text-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-2 text-gray-500 dark:text-gray-400">Cargando productos...</p>
           </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {availableProducts.map((product) => (
-              <Card 
-                key={product.id} 
-                className="cursor-pointer hover:shadow-lg transition-shadow bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700"
-                onClick={() => addToCart(product)}
-              >
-                <CardContent className="p-4">
-                  <div className="text-center">
-                    <Package className="mx-auto h-8 w-8 text-gray-400 mb-2" />
-                    <h3 className="font-semibold text-sm text-gray-900 dark:text-white mb-1 truncate">
-                      {product.name}
-                    </h3>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">{product.code}</p>
-                    <p className="text-lg font-bold text-blue-600 dark:text-blue-400">
-                      {formatDOP(parseFloat(product.price))}
-                    </p>
-                    <Badge variant={parseInt(product.stock.toString()) > 0 ? "default" : "destructive"} className="text-xs">
-                      Stock: {product.stock}
-                    </Badge>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-
-        {/* Cart Panel */}
-        <div className="w-96 bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 flex flex-col">
-          <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
-                <ShoppingCart className="mr-2 h-5 w-5" />
-                Carrito
-              </h2>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setIsPrintSettingsOpen(true)}
-                >
-                  <Settings className="h-4 w-4" />
-                </Button>
-                {currentSale && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handlePrint}
-                  >
-                    <Printer className="h-4 w-4" />
-                  </Button>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div className="flex-1 overflow-y-auto p-4">
-            {cart.length === 0 ? (
-              <div className="text-center py-8">
-                <ShoppingCart className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" />
-                <p className="mt-2 text-gray-500 dark:text-gray-400">Carrito vacío</p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {cart.map((item) => (
-                  <div key={item.product.id} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-700 rounded">
-                    <div className="flex-1">
-                      <p className="font-medium text-sm text-gray-900 dark:text-white">{item.product.name}</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        {formatDOP(parseFloat(item.product.price))} c/u
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
-                      >
-                        <Minus className="h-3 w-3" />
-                      </Button>
-                      <span className="w-8 text-center text-sm">{item.quantity}</span>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
-                      >
-                        <Plus className="h-3 w-3" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => removeFromCart(item.product.id)}
-                      >
-                        <Trash2 className="h-3 w-3 text-red-500" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {cart.length > 0 && (
-            <div className="p-4 border-t border-gray-200 dark:border-gray-700">
-              <div className="space-y-2 mb-4">
-                <div className="flex justify-between text-sm">
-                  <span>Subtotal:</span>
-                  <span>{formatDOP(cartSubtotal)}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span>ITBIS (18%):</span>
-                  <span>{formatDOP(cartITBIS)}</span>
-                </div>
-                <Separator />
-                <div className="flex justify-between font-bold">
-                  <span>Total:</span>
-                  <span>{formatDOP(cartTotal)}</span>
-                </div>
-              </div>
-
-              <Dialog open={isCheckoutOpen} onOpenChange={setIsCheckoutOpen}>
-                <DialogTrigger asChild>
-                  <Button className="w-full bg-green-600 hover:bg-green-700 text-white">
-                    <CreditCard className="mr-2 h-4 w-4" />
-                    Procesar Venta
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Procesar Venta</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <div>
-                      <label className="text-sm font-medium">Cliente (Opcional)</label>
-                      <Select onValueChange={(value) => {
-                        const customer = customers?.find(c => c.id.toString() === value);
-                        setSelectedCustomer(customer || null);
-                      }}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Seleccionar cliente..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {customers?.map((customer) => (
-                            <SelectItem key={customer.id} value={customer.id.toString()}>
-                              {customer.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div>
-                      <label className="text-sm font-medium">Método de Pago</label>
-                      <div className="flex gap-2 mt-2">
-                        <Button
-                          variant={paymentMethod === "cash" ? "default" : "outline"}
-                          onClick={() => setPaymentMethod("cash")}
-                          className="flex-1"
-                        >
-                          <Banknote className="mr-2 h-4 w-4" />
-                          Efectivo
-                        </Button>
-                        <Button
-                          variant={paymentMethod === "card" ? "default" : "outline"}
-                          onClick={() => setPaymentMethod("card")}
-                          className="flex-1"
-                        >
-                          <CreditCard className="mr-2 h-4 w-4" />
-                          Tarjeta
-                        </Button>
-                      </div>
-                    </div>
-
-                    {paymentMethod === "cash" && (
-                      <div>
-                        <label className="text-sm font-medium">Monto Recibido</label>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          value={cashReceived}
-                          onChange={(e) => setCashReceived(e.target.value)}
-                          placeholder="0.00"
-                        />
-                        {cashReceived && (
-                          <p className="text-sm text-gray-500 mt-1">
-                            Cambio: {formatDOP(cashChange)}
-                          </p>
-                        )}
-                      </div>
-                    )}
-
-                    <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded">
-                      <div className="flex justify-between font-bold">
-                        <span>Total a Pagar:</span>
-                        <span>{formatDOP(cartTotal)}</span>
-                      </div>
-                    </div>
-
-                    <Button
-                      onClick={handleCheckout}
-                      disabled={createSaleMutation.isPending}
-                      className="w-full bg-green-600 hover:bg-green-700 text-white"
-                    >
-                      <Receipt className="mr-2 h-4 w-4" />
-                      Completar Venta
-                    </Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
-            </div>
-          )}
         </div>
       </div>
+    );
+  }
 
-      {/* Print Preview */}
-      {currentSale && (
-        <div className="hidden">
-          <div ref={printRef}>
-            {printSettings?.printerWidth === "58mm" ? (
-              <PrintTemplate58mm
-                sale={currentSale}
-                items={currentSale.items || cart}
-                customer={selectedCustomer || undefined}
-                settings={printSettings || { 
-                  id: 0, 
-                  companyId: 0, 
-                  printerWidth: "58mm", 
-                  showNCF: true, 
-                  showCustomerInfo: true,
-                  showLogo: false,
-                  headerText: null,
-                  footerText: null,
-                  fontSize: "10px",
-                  createdAt: null,
-                  updatedAt: null
-                }}
-                company={company}
-              />
-            ) : (
-              <PrintTemplate80mm
-                sale={currentSale}
-                items={currentSale.items || cart}
-                customer={selectedCustomer || undefined}
-                settings={printSettings || { 
-                  id: 0, 
-                  companyId: 0, 
-                  printerWidth: "80mm", 
-                  showNCF: true, 
-                  showCustomerInfo: true,
-                  showLogo: false,
-                  headerText: null,
-                  footerText: null,
-                  fontSize: "12px",
-                  createdAt: null,
-                  updatedAt: null
-                }}
-                company={company}
-              />
+  return (
+    <div className="w-full">
+      <Header title="Punto de Venta" subtitle="Sistema POS integrado" />
+      
+      <div className="p-3 sm:p-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+          {/* Products and Cart Section */}
+          <div className="lg:col-span-2 space-y-4">
+            {/* Mobile Tabs for Products/Cart */}
+            {isMobile && (
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="products">
+                    <Package className="h-4 w-4 mr-2" />
+                    Productos
+                  </TabsTrigger>
+                  <TabsTrigger value="cart">
+                    <ShoppingCart className="h-4 w-4 mr-2" />
+                    Carrito ({cart.length})
+                  </TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="products" className="mt-4">
+                  {/* Search */}
+                  <div className="relative mb-4">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                    <Input
+                      placeholder="Buscar productos..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+
+                  {/* Products Grid */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {filteredProducts.map((product) => (
+                      <Card key={product.id} className="hover:shadow-md transition-shadow">
+                        <CardContent className="p-4">
+                          <div className="flex justify-between items-start mb-2">
+                            <div className="min-w-0 flex-1">
+                              <h3 className="font-medium text-sm truncate">{product.name}</h3>
+                              <p className="text-xs text-gray-500 dark:text-gray-400">{product.code}</p>
+                            </div>
+                            <Badge variant="outline" className="ml-2">
+                              Stock: {product.stock}
+                            </Badge>
+                          </div>
+                          
+                          <div className="flex justify-between items-center">
+                            <span className="font-bold text-green-600 dark:text-green-400">
+                              {formatDOP(parseFloat(product.price))}
+                            </span>
+                            <Button
+                              size="sm"
+                              onClick={() => addToCart(product)}
+                              disabled={parseInt(product.stock) <= 0}
+                              className="bg-blue-600 hover:bg-blue-700"
+                            >
+                              <Plus className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </TabsContent>
+                
+                <TabsContent value="cart" className="mt-4">
+                  <Card>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <ShoppingCart className="h-4 w-4" />
+                        Carrito de Compras
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      {cart.length === 0 ? (
+                        <p className="text-gray-500 dark:text-gray-400 text-center py-8">
+                          Carrito vacío
+                        </p>
+                      ) : (
+                        cart.map((item) => (
+                          <div key={item.product.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                            <div className="min-w-0 flex-1">
+                              <p className="font-medium text-sm truncate">{item.product.name}</p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400">
+                                {formatDOP(parseFloat(item.product.price))} c/u
+                              </p>
+                            </div>
+                            
+                            <div className="flex items-center gap-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
+                                className="h-6 w-6 p-0"
+                              >
+                                <Minus className="h-3 w-3" />
+                              </Button>
+                              
+                              <span className="w-8 text-center text-sm font-medium">
+                                {item.quantity}
+                              </span>
+                              
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
+                                className="h-6 w-6 p-0"
+                              >
+                                <Plus className="h-3 w-3" />
+                              </Button>
+                              
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => removeFromCart(item.product.id)}
+                                className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </div>
+                            
+                            <div className="text-right ml-3">
+                              <p className="font-bold text-sm">
+                                {formatDOP(item.subtotal)}
+                              </p>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+              </Tabs>
+            )}
+
+            {/* Desktop Products View */}
+            {!isMobile && (
+              <>
+                {/* Search */}
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <Input
+                    placeholder="Buscar productos por nombre o código..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+
+                {/* Products Grid */}
+                <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {filteredProducts.map((product) => (
+                    <Card key={product.id} className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => addToCart(product)}>
+                      <CardContent className="p-4">
+                        <div className="flex justify-between items-start mb-3">
+                          <div className="min-w-0 flex-1">
+                            <h3 className="font-medium text-sm truncate">{product.name}</h3>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">{product.code}</p>
+                          </div>
+                          <Badge variant={parseInt(product.stock) > 10 ? "default" : "destructive"} className="ml-2 text-xs">
+                            {product.stock}
+                          </Badge>
+                        </div>
+                        
+                        <div className="flex justify-between items-center">
+                          <span className="font-bold text-green-600 dark:text-green-400">
+                            {formatDOP(parseFloat(product.price))}
+                          </span>
+                          <Button
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              addToCart(product);
+                            }}
+                            disabled={parseInt(product.stock) <= 0}
+                            className="bg-blue-600 hover:bg-blue-700"
+                          >
+                            <Plus className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Cart and Checkout Section */}
+          <div className={`space-y-4 ${isMobile ? 'hidden' : ''}`}>
+            {/* Cart */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center justify-between">
+                  <span className="flex items-center gap-2">
+                    <ShoppingCart className="h-4 w-4" />
+                    Carrito ({cart.length})
+                  </span>
+                  {cart.length > 0 && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={clearCart}
+                      className="text-red-600 hover:text-red-700"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  )}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3 max-h-64 overflow-y-auto">
+                {cart.length === 0 ? (
+                  <p className="text-gray-500 dark:text-gray-400 text-center py-8">
+                    Carrito vacío
+                  </p>
+                ) : (
+                  cart.map((item) => (
+                    <div key={item.product.id} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium text-sm truncate">{item.product.name}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            {formatDOP(parseFloat(item.product.price))} c/u
+                          </p>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeFromCart(item.product.id)}
+                          className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
+                      
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
+                            className="h-6 w-6 p-0"
+                          >
+                            <Minus className="h-3 w-3" />
+                          </Button>
+                          
+                          <span className="w-8 text-center text-sm font-medium">
+                            {item.quantity}
+                          </span>
+                          
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
+                            className="h-6 w-6 p-0"
+                          >
+                            <Plus className="h-3 w-3" />
+                          </Button>
+                        </div>
+                        
+                        <span className="font-bold text-sm">
+                          {formatDOP(item.subtotal)}
+                        </span>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Customer Info */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Users className="h-4 w-4" />
+                  Cliente (Opcional)
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <Input
+                  placeholder="Nombre del cliente"
+                  value={customerName}
+                  onChange={(e) => setCustomerName(e.target.value)}
+                />
+                <Input
+                  placeholder="Teléfono"
+                  value={customerPhone}
+                  onChange={(e) => setCustomerPhone(e.target.value)}
+                />
+              </CardContent>
+            </Card>
+
+            {/* Payment */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Calculator className="h-4 w-4" />
+                  Totales
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span>Subtotal:</span>
+                    <span>{formatDOP(subtotal)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span>ITBIS ({ITBIS_RATE}%):</span>
+                    <span>{formatDOP(itbis)}</span>
+                  </div>
+                  <Separator />
+                  <div className="flex justify-between text-lg font-bold">
+                    <span>Total:</span>
+                    <span className="text-green-600 dark:text-green-400">
+                      {formatDOP(total)}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Método de Pago</label>
+                    <Select value={paymentMethod} onValueChange={(value: "cash" | "card") => setPaymentMethod(value)}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="cash">
+                          <div className="flex items-center gap-2">
+                            <Banknote className="h-4 w-4" />
+                            Efectivo
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="card">
+                          <div className="flex items-center gap-2">
+                            <CreditCard className="h-4 w-4" />
+                            Tarjeta
+                          </div>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {paymentMethod === "cash" && (
+                    <div>
+                      <label className="text-sm font-medium mb-2 block">Efectivo Recibido</label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        placeholder="0.00"
+                        value={cashReceived}
+                        onChange={(e) => setCashReceived(e.target.value)}
+                      />
+                      {cashReceived && parseFloat(cashReceived) >= total && (
+                        <p className="text-sm text-green-600 dark:text-green-400 mt-1">
+                          Cambio: {formatDOP(cashChange)}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                <Button
+                  onClick={processSale}
+                  disabled={cart.length === 0 || isProcessing}
+                  className="w-full bg-green-600 hover:bg-green-700"
+                  size="lg"
+                >
+                  {isProcessing ? (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                  ) : (
+                    <Receipt className="h-4 w-4 mr-2" />
+                  )}
+                  {isProcessing ? "Procesando..." : "Procesar Venta"}
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
+        {/* Mobile Checkout Button */}
+        {isMobile && activeTab === "cart" && cart.length > 0 && (
+          <div className="fixed bottom-0 left-0 right-0 p-4 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700">
+            <div className="space-y-3">
+              {/* Totals Summary */}
+              <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg">
+                <div className="flex justify-between text-sm mb-1">
+                  <span>Subtotal:</span>
+                  <span>{formatDOP(subtotal)}</span>
+                </div>
+                <div className="flex justify-between text-sm mb-2">
+                  <span>ITBIS:</span>
+                  <span>{formatDOP(itbis)}</span>
+                </div>
+                <div className="flex justify-between text-lg font-bold">
+                  <span>Total:</span>
+                  <span className="text-green-600 dark:text-green-400">
+                    {formatDOP(total)}
+                  </span>
+                </div>
+              </div>
+
+              {/* Payment Method */}
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  variant={paymentMethod === "cash" ? "default" : "outline"}
+                  onClick={() => setPaymentMethod("cash")}
+                  className="flex items-center gap-2"
+                >
+                  <Banknote className="h-4 w-4" />
+                  Efectivo
+                </Button>
+                <Button
+                  variant={paymentMethod === "card" ? "default" : "outline"}
+                  onClick={() => setPaymentMethod("card")}
+                  className="flex items-center gap-2"
+                >
+                  <CreditCard className="h-4 w-4" />
+                  Tarjeta
+                </Button>
+              </div>
+
+              {/* Cash Input */}
+              {paymentMethod === "cash" && (
+                <Input
+                  type="number"
+                  step="0.01"
+                  placeholder="Efectivo recibido"
+                  value={cashReceived}
+                  onChange={(e) => setCashReceived(e.target.value)}
+                />
+              )}
+
+              {/* Process Button */}
+              <Button
+                onClick={processSale}
+                disabled={cart.length === 0 || isProcessing || (paymentMethod === "cash" && (!cashReceived || parseFloat(cashReceived) < total))}
+                className="w-full bg-green-600 hover:bg-green-700"
+                size="lg"
+              >
+                {isProcessing ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                ) : (
+                  <Receipt className="h-4 w-4 mr-2" />
+                )}
+                {isProcessing ? "Procesando..." : "Procesar Venta"}
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Hidden print template */}
+        <div ref={printRef} style={{ display: "none" }}>
+          <div className="receipt center">
+            <div className="bold">RECIBO DE VENTA</div>
+            <div>#{cart.length > 0 ? 'TEMP' : ''}</div>
+            <div className="line"></div>
+            <div>{new Date().toLocaleString('es-DO')}</div>
+            {customerName && <div>Cliente: {customerName}</div>}
+            {customerPhone && <div>Tel: {customerPhone}</div>}
+            <div className="line"></div>
+            
+            <table>
+              {cart.map((item) => (
+                <tr key={item.product.id}>
+                  <td>{item.product.name}</td>
+                  <td className="right">{item.quantity} x {formatDOP(parseFloat(item.product.price))}</td>
+                  <td className="right">{formatDOP(item.subtotal)}</td>
+                </tr>
+              ))}
+            </table>
+            
+            <div className="line"></div>
+            <table>
+              <tr>
+                <td>Subtotal:</td>
+                <td className="right">{formatDOP(subtotal)}</td>
+              </tr>
+              <tr>
+                <td>ITBIS:</td>
+                <td className="right">{formatDOP(itbis)}</td>
+              </tr>
+              <tr className="bold">
+                <td>TOTAL:</td>
+                <td className="right">{formatDOP(total)}</td>
+              </tr>
+              {paymentMethod === "cash" && cashReceived && (
+                <>
+                  <tr>
+                    <td>Efectivo:</td>
+                    <td className="right">{formatDOP(parseFloat(cashReceived))}</td>
+                  </tr>
+                  <tr>
+                    <td>Cambio:</td>
+                    <td className="right">{formatDOP(cashChange)}</td>
+                  </tr>
+                </>
+              )}
+            </table>
+            
+            <div className="line"></div>
+            <div className="center">¡Gracias por su compra!</div>
+            {printSettings?.showNCF && (
+              <div className="center">NCF: {generateNCF()}</div>
             )}
           </div>
         </div>
-      )}
-
-      {/* Print Settings Dialog */}
-      <Dialog open={isPrintSettingsOpen} onOpenChange={setIsPrintSettingsOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Configuración de Impresión</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium">Ancho de Impresora</label>
-              <Select defaultValue={printSettings?.printerWidth || "80mm"}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="80mm">80mm (Estándar)</SelectItem>
-                  <SelectItem value="58mm">58mm (Compacta)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <label className="text-sm font-medium">Texto del Encabezado</label>
-              <Input placeholder="Mensaje personalizado..." />
-            </div>
-            <div>
-              <label className="text-sm font-medium">Texto del Pie</label>
-              <Input placeholder="Gracias por su compra..." />
-            </div>
-            <Button className="w-full">Guardar Configuración</Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      </div>
     </div>
   );
 }

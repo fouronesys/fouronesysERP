@@ -27,6 +27,7 @@ import CompanySettings from "@/pages/CompanySettings";
 import SalesReports from "@/pages/SalesReports";
 import POSSales from "@/pages/POSSales";
 import Warehouses from "@/pages/Warehouses";
+import Movements from "@/pages/Movements";
 import NotFound from "@/pages/not-found";
 
 function ProtectedRoute({ component: Component, ...props }: { component: React.ComponentType }) {
@@ -118,8 +119,8 @@ function Router() {
       <Route path="/admin" component={() => <ProtectedRoute component={SuperAdmin} />} />
       <Route path="/companies" component={() => <ProtectedRoute component={CompanySettings} />} />
       
-      {/* Placeholder routes for future implementation */}
-      <Route path="/movements" component={() => <ProtectedRoute component={Dashboard} />} />
+      {/* Active functional routes continued */}
+      <Route path="/movements" component={() => <ProtectedRoute component={Movements} />} />
       <Route path="/recipes" component={() => <ProtectedRoute component={Manufacturing} />} />
       <Route path="/suppliers" component={() => <ProtectedRoute component={Customers} />} />
       <Route path="/purchase-orders" component={() => <ProtectedRoute component={Dashboard} />} />
