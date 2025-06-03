@@ -1018,30 +1018,31 @@ export class DatabaseStorage implements IStorage {
   generateProductImageUrl(productName: string): string {
     const imageMapping: { [key: string]: string } = {
       // Fruits
-      "manzana": "https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=400&h=400&fit=crop",
-      "banana": "https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=400&h=400&fit=crop",
-      "naranja": "https://images.unsplash.com/photo-1547036967-23d11aacaee0?w=400&h=400&fit=crop",
-      "plátano": "https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=400&h=400&fit=crop",
-      "limón": "https://images.unsplash.com/photo-1565493231593-77ae94c73489?w=400&h=400&fit=crop",
-      "aguacate": "https://images.unsplash.com/photo-1523049673857-eb18f1d7b578?w=400&h=400&fit=crop",
-      "mango": "https://images.unsplash.com/photo-1553279998-a3fd90dd6295?w=400&h=400&fit=crop",
+      "manzana": "https://picsum.photos/300/300?random=1",
+      "banana": "https://picsum.photos/300/300?random=2",
+      "naranja": "https://picsum.photos/300/300?random=3",
+      "plátano": "https://picsum.photos/300/300?random=4",
+      "limón": "https://picsum.photos/300/300?random=5",
+      "pera": "https://picsum.photos/300/300?random=6",
+      "aguacate": "https://picsum.photos/300/300?random=7",
+      "mango": "https://picsum.photos/300/300?random=8",
       
       // Beverages
-      "agua": "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400&h=400&fit=crop",
-      "coca cola": "https://images.unsplash.com/photo-1629203851122-3726ecdf080e?w=400&h=400&fit=crop",
-      "café": "https://images.unsplash.com/photo-1497515114629-f71d768fd07c?w=400&h=400&fit=crop",
-      "jugo": "https://images.unsplash.com/photo-1613478223719-2ab802602423?w=400&h=400&fit=crop",
+      "agua": "https://picsum.photos/300/300?random=9",
+      "coca cola": "https://picsum.photos/300/300?random=10",
+      "café": "https://picsum.photos/300/300?random=11",
+      "jugo": "https://picsum.photos/300/300?random=12",
       
       // Food items
-      "arroz": "https://images.unsplash.com/photo-1586201375761-83865001e31c?w=400&h=400&fit=crop",
-      "pollo": "https://images.unsplash.com/photo-1598103442097-8b74394b95c6?w=400&h=400&fit=crop",
-      "pan": "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=400&h=400&fit=crop",
-      "pizza": "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=400&h=400&fit=crop",
+      "arroz": "https://picsum.photos/300/300?random=13",
+      "pollo": "https://picsum.photos/300/300?random=14",
+      "pan": "https://picsum.photos/300/300?random=15",
+      "pizza": "https://picsum.photos/300/300?random=16",
       
       // Electronics
-      "teléfono": "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=400&h=400&fit=crop",
-      "laptop": "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=400&h=400&fit=crop",
-      "auriculares": "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&h=400&fit=crop",
+      "teléfono": "https://picsum.photos/300/300?random=17",
+      "laptop": "https://picsum.photos/300/300?random=18",
+      "auriculares": "https://picsum.photos/300/300?random=19",
     };
 
     // Try to find a matching image based on product name
@@ -1052,8 +1053,10 @@ export class DatabaseStorage implements IStorage {
       }
     }
 
-    // Default image for unknown products
-    return "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=400&fit=crop";
+    // Generate a unique random image based on product name hash
+    const hash = productName.split('').reduce((a, b) => a + b.charCodeAt(0), 0);
+    const randomId = (hash % 100) + 20; // Generate number between 20-119
+    return `https://picsum.photos/300/300?random=${randomId}`;
   }
 
   async createSampleProducts(companyId: number) {

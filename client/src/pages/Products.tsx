@@ -467,6 +467,9 @@ export default function Products() {
                       onClick={() => {
                         const productName = form.getValues("name");
                         if (productName) {
+                          // Show immediate preview while generating
+                          const tempUrl = `https://picsum.photos/300/300?random=${Date.now()}`;
+                          setCurrentImageUrl(tempUrl);
                           generateImageMutation.mutate(productName);
                         } else {
                           toast({
@@ -479,7 +482,14 @@ export default function Products() {
                       disabled={generateImageMutation.isPending}
                       className="w-full"
                     >
-                      {generateImageMutation.isPending ? "Generando..." : "Generar Imagen Automáticamente"}
+                      {generateImageMutation.isPending ? (
+                        <div className="flex items-center gap-2">
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                          Generando...
+                        </div>
+                      ) : (
+                        "Generar Imagen Automáticamente"
+                      )}
                     </Button>
                   </div>
 
