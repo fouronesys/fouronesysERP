@@ -18,10 +18,11 @@ export function AIAssistant() {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "welcome",
-      content: "¡Hola! Soy tu asistente de IA para Four One Solutions. Puedo ayudarte con gestión de productos, análisis de ventas, configuración del sistema y más. ¿En qué puedo ayudarte hoy?",
+      content:
+        "¡Hola! Soy tu asistente de IA para Four One Solutions. Puedo ayudarte con gestión de productos, análisis de ventas, configuración del sistema y más. ¿En qué puedo ayudarte hoy?",
       isUser: false,
-      timestamp: new Date()
-    }
+      timestamp: new Date(),
+    },
   ]);
   const [inputMessage, setInputMessage] = useState("");
   const { toast } = useToast();
@@ -40,21 +41,24 @@ export function AIAssistant() {
     mutationFn: async (message: string) => {
       const response = await apiRequest(`/api/ai/chat`, {
         method: "POST",
-        body: { message }
+        body: { message },
       });
       return await response.json();
     },
     onSuccess: (data: any) => {
-      console.log('AI Response received:', data);
+      console.log("AI Response received:", data);
       if (data && data.response) {
-        setMessages(prev => [...prev, {
-          id: Date.now().toString() + "_ai",
-          content: data.response,
-          isUser: false,
-          timestamp: new Date()
-        }]);
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: Date.now().toString() + "_ai",
+            content: data.response,
+            isUser: false,
+            timestamp: new Date(),
+          },
+        ]);
       } else {
-        console.error('Invalid response format:', data);
+        console.error("Invalid response format:", data);
         toast({
           title: "Error",
           description: "Respuesta de IA inválida",
@@ -66,7 +70,8 @@ export function AIAssistant() {
       if (error.message.includes("AI service not configured")) {
         toast({
           title: "Servicio de IA no configurado",
-          description: "Configure la clave API de Anthropic para usar el asistente de IA.",
+          description:
+            "Configure la clave API de Anthropic para usar el asistente de IA.",
           variant: "destructive",
         });
       } else {
@@ -76,7 +81,7 @@ export function AIAssistant() {
           variant: "destructive",
         });
       }
-    }
+    },
   });
 
   const handleSendMessage = () => {
@@ -86,13 +91,13 @@ export function AIAssistant() {
       id: Date.now().toString() + "_user",
       content: inputMessage.trim(),
       isUser: true,
-      timestamp: new Date()
+      timestamp: new Date(),
     };
 
-    setMessages(prev => [...prev, userMessage]);
+    setMessages((prev) => [...prev, userMessage]);
     chatMutation.mutate(inputMessage.trim());
     setInputMessage("");
-    
+
     // Reset textarea height
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
@@ -108,7 +113,7 @@ export function AIAssistant() {
 
   const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInputMessage(e.target.value);
-    
+
     // Auto-resize textarea
     const textarea = e.target;
     textarea.style.height = "auto";
@@ -126,7 +131,7 @@ export function AIAssistant() {
           Asistente de IA
         </CardTitle>
       </CardHeader>
-      
+
       <CardContent className="flex-1 flex flex-col p-0 min-h-0">
         {/* Messages Container */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50/50 dark:bg-gray-900/50">
@@ -157,7 +162,7 @@ export function AIAssistant() {
                   className={`rounded-2xl px-4 py-3 shadow-sm ${
                     message.isUser
                       ? "bg-blue-600 text-white rounded-br-md"
-                      : "bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-600 rounded-bl-md"
+                      : "bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700 rounded-bl-md"
                   }`}
                 >
                   <div className="prose prose-sm max-w-none">
@@ -172,16 +177,16 @@ export function AIAssistant() {
                         : "text-gray-500 dark:text-gray-400"
                     }`}
                   >
-                    {message.timestamp.toLocaleTimeString([], { 
-                      hour: '2-digit', 
-                      minute: '2-digit' 
+                    {message.timestamp.toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
                     })}
                   </p>
                 </div>
               </div>
             </div>
           ))}
-          
+
           {/* Loading indicator */}
           {chatMutation.isPending && (
             <div className="flex justify-start animate-in slide-in-from-bottom-2 duration-300">
@@ -192,14 +197,20 @@ export function AIAssistant() {
                 <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl rounded-bl-md px-4 py-3 shadow-sm">
                   <div className="flex items-center gap-1">
                     <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                    <div
+                      className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                      style={{ animationDelay: "0.1s" }}
+                    ></div>
+                    <div
+                      className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                      style={{ animationDelay: "0.2s" }}
+                    ></div>
                   </div>
                 </div>
               </div>
             </div>
           )}
-          
+
           <div ref={messagesEndRef} />
         </div>
 
@@ -226,7 +237,7 @@ export function AIAssistant() {
               <Send className="h-4 w-4" />
             </Button>
           </div>
-          
+
           <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
             Presiona Enter para enviar, Shift+Enter para nueva línea
           </div>
