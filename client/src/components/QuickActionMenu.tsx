@@ -15,6 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
+import CalculatorComponent from "./Calculator";
 
 interface QuickAction {
   id: string;
@@ -27,6 +28,7 @@ interface QuickAction {
 
 export default function QuickActionMenu() {
   const [isOpen, setIsOpen] = useState(false);
+  const [showCalculator, setShowCalculator] = useState(false);
   const [, setLocation] = useLocation();
   const { user } = useAuth();
   const menuRef = useRef<HTMLDivElement>(null);
@@ -87,7 +89,7 @@ export default function QuickActionMenu() {
       id: "calculator",
       label: "Calculadora",
       icon: Calculator,
-      action: () => openCalculator(),
+      action: () => setShowCalculator(true),
       color: "bg-gray-500 hover:bg-gray-600",
       description: "Calculadora empresarial"
     },
@@ -101,19 +103,7 @@ export default function QuickActionMenu() {
     }
   ];
 
-  const openCalculator = () => {
-    // Simple calculator implementation - can be enhanced later
-    const result = prompt("Calculadora básica (ej: 10+5*2):");
-    if (result) {
-      try {
-        const calculation = eval(result);
-        alert(`Resultado: ${calculation}`);
-      } catch (error) {
-        alert("Error en el cálculo");
-      }
-    }
-    setIsOpen(false);
-  };
+
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -205,6 +195,12 @@ export default function QuickActionMenu() {
           onClick={() => setIsOpen(false)}
         />
       )}
+
+      {/* Calculator Component */}
+      <CalculatorComponent 
+        isOpen={showCalculator} 
+        onClose={() => setShowCalculator(false)} 
+      />
     </div>
   );
 }
