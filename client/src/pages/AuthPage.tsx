@@ -14,6 +14,7 @@ import { Eye, EyeOff, Building, Lock, Mail, User } from "lucide-react";
 
 import fourOneLogo from "@assets/Four One Solutions Logo.png";
 import { useLocation } from "wouter";
+import FourOneLoginAnimation from "@/components/FourOneLoginAnimation";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -39,6 +40,7 @@ export default function AuthPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [activeTab, setActiveTab] = useState("login");
+  const [showLoginAnimation, setShowLoginAnimation] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -76,12 +78,14 @@ export default function AuthPage() {
       queryClient.setQueryData(["/api/user"], user);
       queryClient.invalidateQueries({ queryKey: ["/api/user"] });
       queryClient.invalidateQueries({ queryKey: ["/api/companies/current"] });
+      
+      // Show login animation
+      setShowLoginAnimation(true);
+      
       toast({
-        title: "Welcome back!",
-        description: "You have successfully logged in.",
+        title: "¡Bienvenido de vuelta!",
+        description: "Has iniciado sesión exitosamente.",
       });
-      // Navigate to dashboard after successful login
-      setLocation("/");
     },
     onError: (error: any) => {
       toast({
@@ -124,7 +128,17 @@ export default function AuthPage() {
     registerMutation.mutate(data);
   };
 
+  const handleAnimationComplete = () => {
+    setShowLoginAnimation(false);
+    setLocation("/");
+  };
+
   return (
+    <>
+      <FourOneLoginAnimation 
+        isVisible={showLoginAnimation} 
+        onComplete={handleAnimationComplete}
+      />
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-700">
       <div className="flex min-h-screen">
         {/* Left Column - Hero Section */}
@@ -522,5 +536,6 @@ export default function AuthPage() {
         </div>
       </div>
     </div>
+    </>
   );
 }
