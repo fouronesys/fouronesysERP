@@ -119,6 +119,18 @@ export interface TranslationKeys {
   'footer.legal': string;
   'footer.privacy': string;
   'footer.terms': string;
+  
+  // Landing Page
+  'landing.hero.title': string;
+  'landing.hero.subtitle': string;
+  'landing.features.inventory': string;
+  'landing.features.inventoryDesc': string;
+  'landing.features.sales': string;
+  'landing.features.salesDesc': string;
+  'landing.features.billing': string;
+  'landing.features.billingDesc': string;
+  'landing.features.reports': string;
+  'landing.features.reportsDesc': string;
 }
 
 export const translations: Record<Language, TranslationKeys> = {
@@ -239,6 +251,18 @@ export const translations: Record<Language, TranslationKeys> = {
     'footer.legal': 'Legal',
     'footer.privacy': 'Privacidad',
     'footer.terms': 'Términos',
+    
+    // Landing Page
+    'landing.hero.title': 'Solución ERP Integral para República Dominicana',
+    'landing.hero.subtitle': 'Gestiona tu empresa con tecnología de vanguardia. Sistema completo de gestión empresarial con facturación DGII, punto de venta, inventario y más.',
+    'landing.features.inventory': 'Gestión de Inventario',
+    'landing.features.inventoryDesc': 'Control completo de productos, stock y almacenes en tiempo real',
+    'landing.features.sales': 'Punto de Venta',
+    'landing.features.salesDesc': 'Sistema POS moderno con impresión térmica y sincronización automática',
+    'landing.features.billing': 'Facturación DGII',
+    'landing.features.billingDesc': 'Cumplimiento total con regulaciones dominicanas y NCF automáticos',
+    'landing.features.reports': 'Reportes Avanzados',
+    'landing.features.reportsDesc': 'Análisis detallados y reportes personalizables para tomar mejores decisiones',
   },
   
   en: {
@@ -358,6 +382,18 @@ export const translations: Record<Language, TranslationKeys> = {
     'footer.legal': 'Legal',
     'footer.privacy': 'Privacy',
     'footer.terms': 'Terms',
+    
+    // Landing Page
+    'landing.hero.title': 'Complete ERP Solution for Dominican Republic',
+    'landing.hero.subtitle': 'Manage your business with cutting-edge technology. Complete business management system with DGII billing, point of sale, inventory and more.',
+    'landing.features.inventory': 'Inventory Management',
+    'landing.features.inventoryDesc': 'Complete control of products, stock and warehouses in real time',
+    'landing.features.sales': 'Point of Sale',
+    'landing.features.salesDesc': 'Modern POS system with thermal printing and automatic synchronization',
+    'landing.features.billing': 'DGII Billing',
+    'landing.features.billingDesc': 'Full compliance with Dominican regulations and automatic NCF',
+    'landing.features.reports': 'Advanced Reports',
+    'landing.features.reportsDesc': 'Detailed analysis and customizable reports to make better decisions',
   }
 };
 

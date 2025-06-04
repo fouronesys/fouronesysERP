@@ -1,5 +1,5 @@
 import { useState, useEffect, ReactNode } from 'react';
-import { LanguageContext, Language, translations } from '@/lib/i18n';
+import { LanguageContext, Language, translations, TranslationKeys } from '@/lib/i18n';
 
 interface LanguageProviderProps {
   children: ReactNode;
@@ -17,7 +17,7 @@ export function LanguageProvider({ children }: LanguageProviderProps) {
     localStorage.setItem('fourOneLanguage', language);
   }, [language]);
 
-  const t = (key: keyof typeof translations.es) => {
+  const t = (key: keyof TranslationKeys) => {
     return translations[language][key] || key;
   };
 

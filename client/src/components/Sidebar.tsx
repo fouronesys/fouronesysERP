@@ -29,7 +29,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { LanguageSelector } from "@/components/LanguageSelector";
-import { useLanguage } from "@/hooks/useLanguage";
+import { useTranslation } from "@/lib/i18n";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useIsMobile } from "@/hooks/use-mobile";
 import logoImage from "@assets/Four One Solutions Logo_20250130_143401_0000.png";
