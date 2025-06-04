@@ -10,6 +10,7 @@ import SyncStatusIndicator from "@/components/SyncStatusIndicator";
 import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
+import { registerSW } from "@/lib/serviceWorkerRegistration";
 
 // Pages
 import Landing from "@/pages/Landing";
@@ -201,6 +202,11 @@ function Router() {
 }
 
 function App() {
+  useEffect(() => {
+    // Registrar Service Worker para funcionalidad offline
+    registerSW();
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
