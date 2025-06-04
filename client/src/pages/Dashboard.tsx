@@ -86,7 +86,7 @@ export default function Dashboard() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="pt-0">
-                  <div className="text-xl sm:text-2xl font-bold text-blue-500">142</div>
+                  <div className="text-xl sm:text-2xl font-bold text-gray-500">0</div>
                   <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">en total</p>
                 </CardContent>
               </Card>
@@ -114,28 +114,14 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent className="p-3 sm:p-4">
                 <div className="space-y-3">
-                  {[
-                    { action: "Nueva factura creada", time: "Hace 2 horas", amount: "RD$ 45,000" },
-                    { action: "Pago recibido", time: "Hace 5 horas", amount: "RD$ 32,500" },
-                    { action: "Producto agregado", time: "Ayer", amount: null },
-                    { action: "Cliente registrado", time: "Hace 2 días", amount: null },
-                  ].map((item, index) => (
-                    <div key={index} className="flex items-start justify-between py-2 border-b border-gray-100 dark:border-gray-700 last:border-0">
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs sm:text-sm font-medium text-gray-900 dark:text-white truncate">
-                          {item.action}
-                        </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                          {item.time}
-                        </p>
-                      </div>
-                      {item.amount && (
-                        <div className="text-xs sm:text-sm font-medium text-green-600 dark:text-green-400 ml-2">
-                          {item.amount}
-                        </div>
-                      )}
-                    </div>
-                  ))}
+                  <div className="text-center py-8">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      No hay actividad reciente
+                    </p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                      Las actividades aparecerán aquí cuando uses el sistema
+                    </p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -149,29 +135,14 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent className="p-3 sm:p-4">
                 <div className="space-y-2">
-                  {[
-                    { name: "Producto A", sales: 45 },
-                    { name: "Producto B", sales: 32 },
-                    { name: "Producto C", sales: 28 },
-                    { name: "Producto D", sales: 15 },
-                  ].map((product, index) => (
-                    <div key={index} className="flex items-center justify-between py-1">
-                      <span className="text-xs sm:text-sm text-gray-900 dark:text-white truncate flex-1">
-                        {product.name}
-                      </span>
-                      <div className="flex items-center ml-2">
-                        <div className="w-12 sm:w-16 bg-gray-200 dark:bg-gray-700 rounded-full h-1.5 mr-2">
-                          <div 
-                            className="bg-blue-500 h-1.5 rounded-full" 
-                            style={{ width: `${(product.sales / 50) * 100}%` }}
-                          />
-                        </div>
-                        <span className="text-xs font-medium text-gray-600 dark:text-gray-300 w-6">
-                          {product.sales}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
+                  <div className="text-center py-8">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      No hay productos registrados
+                    </p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                      Los productos más vendidos aparecerán aquí
+                    </p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -188,7 +159,7 @@ export default function Dashboard() {
           <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white">
             <CardContent className="p-3 text-center">
               <ShoppingCart className="h-6 w-6 mx-auto mb-1" />
-              <div className="text-lg font-bold">23</div>
+              <div className="text-lg font-bold">0</div>
               <div className="text-xs opacity-90">Órdenes</div>
             </CardContent>
           </Card>
@@ -196,7 +167,7 @@ export default function Dashboard() {
           <Card className="bg-gradient-to-r from-green-500 to-green-600 text-white">
             <CardContent className="p-3 text-center">
               <DollarSign className="h-6 w-6 mx-auto mb-1" />
-              <div className="text-lg font-bold">89K</div>
+              <div className="text-lg font-bold">$0</div>
               <div className="text-xs opacity-90">Ingresos</div>
             </CardContent>
           </Card>
@@ -204,7 +175,7 @@ export default function Dashboard() {
           <Card className="bg-gradient-to-r from-purple-500 to-purple-600 text-white">
             <CardContent className="p-3 text-center">
               <Users className="h-6 w-6 mx-auto mb-1" />
-              <div className="text-lg font-bold">142</div>
+              <div className="text-lg font-bold">0</div>
               <div className="text-xs opacity-90">Clientes</div>
             </CardContent>
           </Card>
@@ -212,7 +183,7 @@ export default function Dashboard() {
           <Card className="bg-gradient-to-r from-orange-500 to-orange-600 text-white">
             <CardContent className="p-3 text-center">
               <TrendingUp className="h-6 w-6 mx-auto mb-1" />
-              <div className="text-lg font-bold">+15%</div>
+              <div className="text-lg font-bold">0%</div>
               <div className="text-xs opacity-90">Crecimiento</div>
             </CardContent>
           </Card>
