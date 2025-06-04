@@ -145,58 +145,11 @@ export default function Chat() {
     }
   });
 
-  // WebSocket connection
+  // WebSocket connection - temporarily disabled to avoid conflicts with Replit's HMR
   useEffect(() => {
-    if (!user) return;
-
-    // Check if WebSocket is available and port is configured
-    const wsPort = window.location.port || (window.location.protocol === 'https:' ? '443' : '80');
-    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const wsUrl = `${protocol}//${window.location.hostname}:${wsPort}/ws`;
-    
-    try {
-      const socket = new WebSocket(wsUrl);
-
-      socket.onopen = () => {
-        console.log("WebSocket connected to:", wsUrl);
-        socket.send(JSON.stringify({
-          type: 'authenticate',
-          userId: user.id
-        }));
-      };
-
-      socket.onmessage = (event) => {
-        try {
-          const message = JSON.parse(event.data);
-          
-          if (message.type === 'new_message') {
-            queryClient.invalidateQueries({ 
-              queryKey: ["/api/chat/channels", message.data.channelId, "messages"] 
-            });
-          }
-        } catch (error) {
-          console.error("Error parsing WebSocket message:", error);
-        }
-      };
-
-      socket.onclose = (event) => {
-        console.log("WebSocket disconnected:", event.code, event.reason);
-      };
-
-      socket.onerror = (error) => {
-        console.error("WebSocket error:", error);
-      };
-
-      setWs(socket);
-
-      return () => {
-        if (socket.readyState === WebSocket.OPEN) {
-          socket.close();
-        }
-      };
-    } catch (error) {
-      console.error("Failed to create WebSocket connection:", error);
-    }
+    // TODO: Implement WebSocket connection for real-time chat when deployed
+    // Currently disabled to prevent conflicts with development environment
+    console.log("WebSocket chat connection disabled in development mode");
   }, [user, queryClient]);
 
   // Auto-scroll to bottom when new messages arrive
