@@ -221,7 +221,7 @@ export function Sidebar() {
         })}
 
         {/* Super Admin Access */}
-        {user && (user as any)?.role === 'super_admin' && (
+        {user && user.role === 'super_admin' && (
           <div className="pt-3 sm:pt-4 border-t border-gray-200 dark:border-gray-700 theme-blue:border-blue-500">
             <h3 className="px-2 sm:px-3 text-xs font-semibold text-gray-500 dark:text-gray-400 theme-blue:text-blue-200 uppercase tracking-wider">
               Administración
@@ -264,10 +264,7 @@ export function Sidebar() {
         </div>
       )}
 
-      {/* Language Selector */}
-      <div className="p-3 sm:p-4 border-t border-gray-200 dark:border-gray-700 theme-blue:border-blue-500">
-        <LanguageSelector />
-      </div>
+
     </div>
   );
 

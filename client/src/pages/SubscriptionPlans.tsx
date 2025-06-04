@@ -4,8 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Check, Star, Crown, Zap, Building2, Globe } from 'lucide-react';
-import { useTranslation } from '@/lib/i18n';
-import { LanguageSelector } from '@/components/LanguageSelector';
+
 import fourOneLogo from '@assets/Four One Solutions Logo.png';
 
 interface PlanFeature {

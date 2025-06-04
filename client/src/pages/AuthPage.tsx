@@ -11,8 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { Eye, EyeOff, Building, Lock, Mail, User } from "lucide-react";
-import { useTranslation } from "@/lib/i18n";
-import { LanguageSelector } from "@/components/LanguageSelector";
+
 import fourOneLogo from "@assets/Four One Solutions Logo.png";
 import { useLocation } from "wouter";
 
@@ -42,7 +41,7 @@ export default function AuthPage() {
   const [activeTab, setActiveTab] = useState("login");
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { t } = useTranslation();
+
   const [, setLocation] = useLocation();
 
   const loginForm = useForm<LoginForm>({
