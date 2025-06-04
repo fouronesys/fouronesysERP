@@ -1968,6 +1968,31 @@ export class DatabaseStorage implements IStorage {
     // Delete the company
     await db.delete(companies).where(eq(companies.id, companyId));
   }
+
+  // RNC Registry operations
+  async searchRNC(rnc: string): Promise<RNCRegistry | undefined> {
+    const [result] = await db.select().from(rncRegistry).where(eq(rncRegistry.rnc, rnc));
+    return result;
+  }
+
+  async createRNCRegistry(rncData: InsertRNCRegistry): Promise<RNCRegistry> {
+    const [result] = await db
+      .insert(rncRegistry)
+      .values(rncData)
+      .onConflictDoUpdate({
+        target: rncRegistry.rnc,
+        set: {
+          razonSocial: rncData.razonSocial,
+          nombreComercial: rncData.nombreComercial,
+          categoria: rncData.categoria,
+          regimen: rncData.regimen,
+          estado: rncData.estado,
+          lastUpdated: new Date()
+        }
+      })
+      .returning();
+    return result;
+  }
 }
 
 export const storage = new DatabaseStorage();
