@@ -377,6 +377,11 @@ export const insertCompanySchema = createInsertSchema(companies).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+  ownerId: true,
+  registrationStatus: true,
+  invitationToken: true,
+  invitationSentAt: true,
+  invitationExpiresAt: true,
 });
 
 export const insertCustomerSchema = createInsertSchema(customers).omit({
