@@ -116,6 +116,61 @@ export function Sidebar() {
   const [isOpen, setIsOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
 
+  // Dynamic navigation with translations
+  const getNavigationItems = () => [
+    {
+      name: t('nav.dashboard'),
+      href: "/",
+      icon: BarChart3,
+    },
+    {
+      category: "Ventas",
+      items: [
+        { name: t('nav.pos'), href: "/pos", icon: CreditCard },
+        { name: t('nav.billing'), href: "/billing", icon: FileText },
+        { name: t('nav.customers'), href: "/customers", icon: Users },
+        { name: "Reportes de Ventas", href: "/sales-reports", icon: ChartBar },
+      ],
+    },
+    {
+      category: t('nav.inventory'),
+      items: [
+        { name: t('nav.products'), href: "/products", icon: Package },
+        { name: t('nav.warehouses'), href: "/warehouses", icon: Warehouse },
+        { name: "Movimientos", href: "/movements", icon: ArrowLeftRight },
+      ],
+    },
+    {
+      category: t('nav.manufacturing'),
+      items: [
+        { name: "Órdenes de Producción", href: "/manufacturing", icon: Factory },
+        { name: "Lista de Materiales (BOM)", href: "/bom", icon: List },
+        { name: "Recetas", href: "/recipes", icon: FlaskConical },
+      ],
+    },
+    {
+      category: "Recursos Humanos",
+      items: [
+        { name: t('nav.employees'), href: "/employees", icon: Users },
+        { name: t('nav.payroll'), href: "/payroll", icon: Calculator },
+      ],
+    },
+    {
+      category: "Análisis",
+      items: [
+        { name: t('nav.reports'), href: "/reports", icon: ChartBar },
+        { name: t('nav.aiInsights'), href: "/ai-insights", icon: Brain },
+        { name: t('nav.chat'), href: "/chat", icon: MessageCircle },
+      ],
+    },
+    {
+      category: t('nav.settings'),
+      items: [
+        { name: "Empresa", href: "/company-settings", icon: Settings },
+      ],
+    },
+  ];
+
   // Cerrar menú móvil al cambiar de ruta
   useEffect(() => {
     setIsOpen(false);

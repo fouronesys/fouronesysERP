@@ -36,6 +36,7 @@ import Payroll from "@/pages/Payroll";
 import FiscalDocuments from "@/pages/FiscalDocuments";
 import AIInsights from "@/pages/AIInsights";
 import SubscriptionPlans from "@/pages/SubscriptionPlans";
+import TestTranslations from "@/pages/TestTranslations";
 import NotFound from "@/pages/not-found";
 
 function ProtectedRoute({ component: Component, ...props }: { component: React.ComponentType }) {
@@ -182,6 +183,9 @@ function Router() {
       <Route path="/profile" component={() => <ProtectedRoute component={Profile} />} />
       <Route path="/notifications" component={() => <ProtectedRoute component={Notifications} />} />
       <Route path="/settings" component={() => <ProtectedRoute component={Settings} />} />
+      
+      {/* Test translations page */}
+      <Route path="/test-translations" component={() => <ProtectedRoute component={TestTranslations} />} />
       
       {/* Fallback to 404 */}
       <Route component={NotFound} />
