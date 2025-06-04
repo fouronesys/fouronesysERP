@@ -12,7 +12,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { Eye, EyeOff, Building, Lock, Mail, User } from "lucide-react";
 
-import fourOneLogo from "@assets/Four One Solutions Logo.png";
+import fourOneLogo from "@assets/Four One Solutions Logo_20250603_002341_0000.png";
 import { useLocation } from "wouter";
 
 const loginSchema = z.object({
@@ -217,7 +217,7 @@ export default function AuthPage() {
             <Card className="bg-white/10 backdrop-blur-lg border-2 border-white/20 shadow-2xl rounded-3xl overflow-hidden">
               <CardHeader className="text-center pb-6 bg-gradient-to-b from-black/30 to-transparent border-b border-white/10">
                 <div className="lg:hidden flex justify-center mb-4">
-                  <img src="/attached_assets/Four One Solutions Logo_20250603_002341_0000.png" alt="Four One Solutions" className="h-16 w-auto" />
+                  <img src={fourOneLogo} alt="Four One Solutions" className="h-16 w-auto" />
                 </div>
                 <CardTitle className="text-2xl font-bold text-white">Four One Solutions</CardTitle>
                 <CardDescription className="text-gray-200">
