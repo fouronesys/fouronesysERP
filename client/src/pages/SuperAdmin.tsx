@@ -124,10 +124,11 @@ export default function SuperAdmin() {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/companies"] });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/stats"] });
     },
-    onError: () => {
+    onError: (error: any) => {
+      console.error("Company creation error:", error);
       toast({
         title: "Error",
-        description: "No se pudo crear la empresa.",
+        description: error.message || "No se pudo crear la empresa.",
         variant: "destructive",
       });
     },
