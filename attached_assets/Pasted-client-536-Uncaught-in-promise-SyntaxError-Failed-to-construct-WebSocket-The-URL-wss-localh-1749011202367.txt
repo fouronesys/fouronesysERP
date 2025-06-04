@@ -1,0 +1,45 @@
+client:536 Uncaught (in promise) SyntaxError: Failed to construct 'WebSocket': The URL 'wss://localhost:undefined/?token=dyomokaCPL9i' is invalid.
+    at setupWebSocket (client:536:19)
+    at fallback (client:509:16)
+    at WebSocket.<anonymous> (client:555:7)
+api/fiscal/verify-rnc/06700093161:1 
+            
+            
+           Failed to load resource: the server responded with a status of 500 (Internal Server Error)
+api/fiscal/verify-rnc/06700093161:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+ 
+            
+            
+           POST https://7ce310d6-f7c4-4f33-acdc-ca701d08f86e-00-zimm1kwfhzmx.kirk.replit.dev/api/fiscal/ncf-sequences 502 (Bad Gateway)
+apiRequest @ src/lib/queryClient.ts:11
+mutationFn @ FiscalDocuments.tsx:54
+fn @ @fs/home/runner/work….js?v=088be9d5:1189
+run @ @fs/home/runner/work…y.js?v=088be9d5:494
+start @ @fs/home/runner/work…y.js?v=088be9d5:536
+execute @ @fs/home/runner/work….js?v=088be9d5:1225
+await in execute
+mutate @ @fs/home/runner/work….js?v=088be9d5:2630
+(anonymous) @ @fs/home/runner/work….js?v=088be9d5:3295
+handleSubmit @ FiscalDocuments.tsx:394
+callCallback2 @ @fs/home/runner/work….js?v=088be9d5:3674
+invokeGuardedCallbackDev @ @fs/home/runner/work….js?v=088be9d5:3699
+invokeGuardedCallback @ @fs/home/runner/work….js?v=088be9d5:3733
+invokeGuardedCallbackAndCatchFirstError @ @fs/home/runner/work….js?v=088be9d5:3736
+executeDispatch @ @fs/home/runner/work….js?v=088be9d5:7014
+processDispatchQueueItemsInOrder @ @fs/home/runner/work….js?v=088be9d5:7034
+processDispatchQueue @ @fs/home/runner/work….js?v=088be9d5:7043
+dispatchEventsForPlugins @ @fs/home/runner/work….js?v=088be9d5:7051
+(anonymous) @ @fs/home/runner/work….js?v=088be9d5:7174
+batchedUpdates$1 @ @fs/home/runner/work…js?v=088be9d5:18913
+batchedUpdates @ @fs/home/runner/work….js?v=088be9d5:3579
+dispatchEventForPluginEventSystem @ @fs/home/runner/work….js?v=088be9d5:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ @fs/home/runner/work….js?v=088be9d5:5478
+dispatchEvent @ @fs/home/runner/work….js?v=088be9d5:5472
+dispatchDiscreteEvent @ @fs/home/runner/work….js?v=088be9d5:5449
+ 
+            
+            
+           GET https://7ce310d6-f7c4-4f33-acdc-ca701d08f86e-00-zimm1kwfhzmx.kirk.replit.dev/api/fiscal/verify-rnc/06700093161 404 (Not Found)
