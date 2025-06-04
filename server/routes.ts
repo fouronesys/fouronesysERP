@@ -281,12 +281,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const id = parseInt(req.params.id);
-      const companyData = insertCompanySchema.parse(req.body);
-      const company = await storage.updateCompany(id, companyData);
+      
+      // Get existing company to preserve ownerId
+      const existingCompany = await storage.getCompanyById(id);
+      if (!existingCompany) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+      
+      // Use partial schema for updates, preserving ownerId
+      const updateData = {
+        ...req.body,
+        ownerId: existingCompany.ownerId // Preserve existing ownerId
+      };
+      
+      const validatedData = insertCompanySchema.partial().parse(updateData);
+      const company = await storage.updateCompany(id, validatedData);
       res.json(company);
     } catch (error) {
       console.error("Error updating company:", error);
-      res.status(500).json({ message: "Failed to update company" });
+      res.status(500).json({ message: "Failed to update company", error: error.message });
     }
   });
 

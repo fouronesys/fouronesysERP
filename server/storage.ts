@@ -119,7 +119,9 @@ export interface IStorage {
   // Company operations
   createCompany(company: InsertCompany): Promise<Company>;
   getCompanyByUserId(userId: string): Promise<Company | undefined>;
+  getCompanyById(id: number): Promise<Company | undefined>;
   updateCompany(id: number, company: Partial<InsertCompany>): Promise<Company>;
+  deleteCompany(id: number): Promise<void>;
   
   // Super Admin operations
   getAllCompanies(): Promise<Company[]>;
@@ -295,6 +297,11 @@ export class DatabaseStorage implements IStorage {
     return company;
   }
 
+  async getCompanyById(id: number): Promise<Company | undefined> {
+    const [company] = await db.select().from(companies).where(eq(companies.id, id));
+    return company;
+  }
+
   async updateCompany(id: number, companyData: Partial<InsertCompany>): Promise<Company> {
     const [company] = await db
       .update(companies)
@@ -302,6 +309,10 @@ export class DatabaseStorage implements IStorage {
       .where(eq(companies.id, id))
       .returning();
     return company;
+  }
+
+  async deleteCompany(id: number): Promise<void> {
+    await db.delete(companies).where(eq(companies.id, id));
   }
 
   // Super Admin operations
