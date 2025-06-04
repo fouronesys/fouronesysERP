@@ -56,6 +56,7 @@ const companySchema = insertCompanySchema.extend({
   name: z.string().min(1, "Nombre es requerido"),
   rnc: z.string().optional(),
   subscriptionPlan: z.enum(["trial", "monthly", "annual"]),
+  ownerEmail: z.string().email("Email válido es requerido"),
 });
 
 type CompanyFormData = z.infer<typeof companySchema>;

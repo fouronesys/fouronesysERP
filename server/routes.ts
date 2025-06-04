@@ -223,9 +223,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Access denied. Super admin required." });
       }
       
-      const companyData = insertCompanySchema.parse(req.body);
-      const company = await storage.createCompanyForUser(companyData, companyData.ownerId || userId);
-      res.json(company);
+      const { ownerEmail, ...companyData } = req.body;
+      
+      if (!ownerEmail) {
+        return res.status(400).json({ message: "Owner email is required" });
+      }
+
+      // Generate invitation token and expiry
+      const invitationToken = Math.random().toString(36).substr(2, 32) + Date.now().toString(36);
+      const invitationExpiresAt = new Date(Date.now() + (7 * 24 * 60 * 60 * 1000)); // 7 days
+
+      // Create company with invitation
+      const company = await storage.createCompanyWithInvitation({
+        ...companyData,
+        ownerEmail,
+        invitationToken,
+        invitationExpiresAt,
+      });
+
+      // Send invitation email
+      const { sendCompanyInvitationEmail } = await import('./email-service');
+      const emailSent = await sendCompanyInvitationEmail({
+        companyName: company.name,
+        companyEmail: ownerEmail,
+        invitationToken,
+      });
+
+      if (!emailSent) {
+        console.error('Failed to send invitation email');
+      }
+
+      res.status(201).json({ 
+        ...company, 
+        emailSent,
+        invitationSent: emailSent 
+      });
     } catch (error) {
       console.error("Error creating company:", error);
       res.status(500).json({ message: "Failed to create company" });
@@ -2233,6 +2265,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // For now, we'll store the logo URL in the database without file upload
   // This can be enhanced later with proper cloud storage
+
+  // Company registration routes (no authentication required)
+  app.get("/api/company-invitation/:token", async (req, res) => {
+    try {
+      const { token } = req.params;
+      const company = await storage.getCompanyByInvitationToken(token);
+      
+      if (!company) {
+        return res.status(404).json({ 
+          message: "Token de invitación inválido o expirado" 
+        });
+      }
+
+      res.json({
+        companyName: company.name,
+        companyEmail: company.email,
+        isValid: true
+      });
+    } catch (error) {
+      console.error("Error validating invitation token:", error);
+      res.status(500).json({ message: "Error al validar la invitación" });
+    }
+  });
+
+  app.post("/api/complete-registration", async (req, res) => {
+    try {
+      const { token, firstName, lastName, password } = req.body;
+      
+      if (!token || !firstName || !lastName || !password) {
+        return res.status(400).json({ 
+          message: "Todos los campos son requeridos" 
+        });
+      }
+
+      // Hash the password
+      const { hashPassword } = await import('./auth');
+      const hashedPassword = await hashPassword(password);
+
+      const result = await storage.completeCompanyRegistration(token, {
+        firstName,
+        lastName,
+        password: hashedPassword,
+      });
+
+      if (!result) {
+        return res.status(400).json({ 
+          message: "Token de invitación inválido o expirado" 
+        });
+      }
+
+      res.json({ 
+        message: "Registro completado exitosamente",
+        company: result.company,
+        redirectTo: "/auth"
+      });
+    } catch (error) {
+      console.error("Error completing registration:", error);
+      res.status(500).json({ message: "Error al completar el registro" });
+    }
+  });
 
   const httpServer = createServer(app);
 
