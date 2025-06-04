@@ -10,11 +10,30 @@
     <script>
       // Apply theme immediately to prevent flash
       (function() {
-        const savedTheme = localStorage.getItem('fourOneTheme');
+        let savedTheme = localStorage.getItem('fourOneTheme');
+        const html = document.documentElement;
+        
+        // If no theme is saved, default to dark
+        if (!savedTheme) {
+          savedTheme = 'dark';
+          localStorage.setItem('fourOneTheme', 'dark');
+        }
+        
+        // Remove existing theme classes
+        html.classList.remove('dark', 'theme-blue');
+        
         if (savedTheme === 'dark') {
-          document.documentElement.classList.add('dark');
+          html.classList.add('dark');
+          html.style.colorScheme = 'dark';
+          document.body.style.backgroundColor = 'hsl(240 10% 3.9%)';
+          document.body.style.color = 'hsl(0 0% 98%)';
         } else if (savedTheme === 'blue') {
-          document.documentElement.classList.add('theme-blue');
+          html.classList.add('theme-blue');
+        } else {
+          // Light theme
+          html.style.colorScheme = 'light';
+          document.body.style.backgroundColor = 'hsl(0 0% 100%)';
+          document.body.style.color = 'hsl(20 14.3% 4.1%)';
         }
       })();
     </script>
