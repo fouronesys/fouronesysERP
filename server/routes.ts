@@ -21,67 +21,59 @@ import {
   insertUserPermissionSchema
 } from "@shared/schema";
 
-  // Initialize RNC registry with real Dominican businesses
+  // Initialize with sample DGII RNC data for fast startup
   async function initializeRNCRegistry() {
     try {
-      const domincanRNCs = [
+      // Sample authentic RNCs from DGII for quick initialization
+      const sampleRNCs = [
         {
-          rnc: "101000013",
-          razonSocial: "BANCO CENTRAL DE LA REPUBLICA DOMINICANA",
-          nombreComercial: "BANCO CENTRAL",
+          rnc: "05600791692",
+          razonSocial: "BETHANIA CARBONELL SANTANA",
+          nombreComercial: null,
+          categoria: "REGIMEN SIMPLIFICADO",
+          regimen: "SIMPLIFICADO",
+          estado: "ACTIVO"
+        },
+        {
+          rnc: "06700093161", 
+          razonSocial: "ROMELIA GONZALEZ GERVACIO",
+          nombreComercial: null,
+          categoria: "REGIMEN SIMPLIFICADO",
+          regimen: "SIMPLIFICADO",
+          estado: "ACTIVO"
+        },
+        {
+          rnc: "02800982452",
+          razonSocial: "ESTERLYN CONTRERAS GONZALEZ",
+          nombreComercial: "S&R REFRIGERACION GONZALEZ",
           categoria: "JURIDICA",
           regimen: "ORDINARIO",
           estado: "ACTIVO"
         },
         {
-          rnc: "101000021", 
-          razonSocial: "MINISTERIO DE HACIENDA",
-          nombreComercial: "HACIENDA",
-          categoria: "JURIDICA",
-          regimen: "ORDINARIO",
-          estado: "ACTIVO"
-        },
-        {
-          rnc: "130000014",
-          razonSocial: "COMPAÑIA DOMINICANA DE TELEFONOS SA",
-          nombreComercial: "CLARO DOMINICANA", 
-          categoria: "JURIDICA",
-          regimen: "ORDINARIO",
-          estado: "ACTIVO"
-        },
-        {
-          rnc: "06700093161",
-          razonSocial: "EMPRESA DISTRIBUIDORA DE ELECTRICIDAD DEL ESTE SA",
-          nombreComercial: "EDE ESTE",
+          rnc: "05000006584",
+          razonSocial: "ANYOLINO MORONTA ABREU",
+          nombreComercial: "SUPERCOLMADO ABREU",
           categoria: "JURIDICA", 
-          regimen: "ORDINARIO",
-          estado: "ACTIVO"
-        },
-        {
-          rnc: "130207012",
-          razonSocial: "BANCO POPULAR DOMINICANO SA",
-          nombreComercial: "BANCO POPULAR",
-          categoria: "JURIDICA",
-          regimen: "ORDINARIO", 
-          estado: "ACTIVO"
-        },
-        {
-          rnc: "130100170",
-          razonSocial: "BANCO DE RESERVAS DE LA REPUBLICA DOMINICANA",
-          nombreComercial: "BANRESERVAS",
-          categoria: "JURIDICA",
           regimen: "ORDINARIO",
           estado: "ACTIVO"
         }
       ];
 
-      for (const rncData of domincanRNCs) {
-        const existing = await storage.searchRNC(rncData.rnc);
-        if (!existing) {
-          await storage.createRNCRegistry(rncData);
-          console.log(`Added RNC to registry: ${rncData.rnc} - ${rncData.razonSocial}`);
+      let imported = 0;
+      for (const rncData of sampleRNCs) {
+        try {
+          const existing = await storage.searchRNC(rncData.rnc);
+          if (!existing) {
+            await storage.createRNCRegistry(rncData);
+            imported++;
+          }
+        } catch (error) {
+          console.error(`Error importing RNC ${rncData.rnc}:`, error);
         }
       }
+      
+      console.log(`Initialized RNC registry with ${imported} authentic DGII records`);
     } catch (error) {
       console.error("Error initializing RNC registry:", error);
     }
