@@ -458,19 +458,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/companies/current", isAuthenticated, async (req: any, res) => {
     try {
+      console.log("PUT /api/companies/current - Request body:", req.body);
+      console.log("PUT /api/companies/current - User ID:", req.user.id);
+      
       const userId = req.user.id;
       const company = await storage.getCompanyByUserId(userId);
       
       if (!company) {
+        console.log("Company not found for user:", userId);
         return res.status(404).json({ message: "Company not found" });
       }
 
-      const updateData = insertCompanySchema.parse({ ...req.body, ownerId: userId });
-      const updatedCompany = await storage.updateCompany(company.id, updateData);
+      console.log("Existing company:", company);
+      
+      // Validate and prepare update data
+      const updateData = {
+        ...req.body,
+        ownerId: userId,
+        id: company.id // Ensure we include the company ID
+      };
+      
+      console.log("Update data before validation:", updateData);
+      
+      // Use partial schema for updates (only validate provided fields)
+      const validatedData = insertCompanySchema.partial().parse(updateData);
+      console.log("Validated update data:", validatedData);
+      
+      const updatedCompany = await storage.updateCompany(company.id, validatedData);
+      console.log("Company updated successfully:", updatedCompany);
+      
       res.json(updatedCompany);
     } catch (error) {
       console.error("Error updating company:", error);
-      res.status(500).json({ message: "Failed to update company" });
+      console.error("Error details:", error.message);
+      res.status(500).json({ 
+        message: "Failed to update company",
+        error: error.message 
+      });
     }
   });
 
