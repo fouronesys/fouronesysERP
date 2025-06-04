@@ -54,7 +54,11 @@ import { formatDominicanDateTime } from "@/lib/dominican";
 
 const companySchema = insertCompanySchema.extend({
   name: z.string().min(1, "Nombre es requerido"),
-  rnc: z.string().optional(),
+  rnc: z.string().optional().refine((val) => {
+    if (!val || val.trim() === '') return true; // Allow empty RNC
+    const rncPattern = /^[0-9]{9}$|^[0-9]{11}$/;
+    return rncPattern.test(val);
+  }, "El RNC debe tener 9 o 11 dígitos"),
   subscriptionPlan: z.enum(["trial", "monthly", "annual"]),
   ownerEmail: z.string().email("Email válido es requerido"),
 });
@@ -86,6 +90,7 @@ export default function SuperAdmin() {
       industry: "",
       subscriptionPlan: "trial",
       isActive: true,
+      ownerEmail: "",
     },
   });
 
@@ -105,10 +110,12 @@ export default function SuperAdmin() {
       });
       return await response.json();
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
+      const emailStatus = result.emailSent ? "Invitación enviada exitosamente." : "Empresa creada, pero no se pudo enviar la invitación por email.";
       toast({
         title: "Empresa creada",
-        description: "La empresa ha sido creada exitosamente.",
+        description: emailStatus,
+        variant: result.emailSent ? "default" : "destructive",
       });
       setIsDialogOpen(false);
       form.reset();

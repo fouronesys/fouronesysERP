@@ -274,8 +274,41 @@ export class DatabaseStorage implements IStorage {
 
   // Company operations
   async createCompany(companyData: InsertCompany): Promise<Company> {
+    // Validate company name uniqueness
+    const existingCompanyByName = await db
+      .select()
+      .from(companies)
+      .where(eq(companies.name, companyData.name))
+      .limit(1);
+    
+    if (existingCompanyByName.length > 0) {
+      throw new Error(`Ya existe una empresa registrada con el nombre "${companyData.name}"`);
+    }
+
+    // Validate RNC uniqueness if provided
+    if (companyData.rnc && companyData.rnc.trim() !== '') {
+      const existingCompanyByRNC = await db
+        .select()
+        .from(companies)
+        .where(eq(companies.rnc, companyData.rnc))
+        .limit(1);
+      
+      if (existingCompanyByRNC.length > 0) {
+        throw new Error(`Ya existe una empresa registrada con el RNC "${companyData.rnc}"`);
+      }
+
+      // Validate RNC format (Dominican Republic format: 9 or 11 digits)
+      const rncPattern = /^[0-9]{9}$|^[0-9]{11}$/;
+      if (!rncPattern.test(companyData.rnc)) {
+        throw new Error('El RNC debe tener 9 o 11 dígitos');
+      }
+    }
+
     // Set trial expiry date for trial companies
-    const dataToInsert = { ...companyData };
+    const dataToInsert = { 
+      ...companyData,
+      rnc: companyData.rnc?.trim() || null // Store null if empty
+    };
     if (companyData.subscriptionPlan === 'trial' && !companyData.subscriptionExpiry) {
       const now = new Date();
       const trialExpiry = new Date(now.getTime() + (15 * 24 * 60 * 60 * 1000)); // 15 days from now
@@ -294,6 +327,47 @@ export class DatabaseStorage implements IStorage {
     invitationToken: string;
     invitationExpiresAt: Date;
   }): Promise<Company> {
+    // Validate company name uniqueness
+    const existingCompanyByName = await db
+      .select()
+      .from(companies)
+      .where(eq(companies.name, companyData.name))
+      .limit(1);
+    
+    if (existingCompanyByName.length > 0) {
+      throw new Error(`Ya existe una empresa registrada con el nombre "${companyData.name}"`);
+    }
+
+    // Validate email uniqueness
+    const existingUserByEmail = await db
+      .select()
+      .from(users)
+      .where(eq(users.email, companyData.ownerEmail))
+      .limit(1);
+    
+    if (existingUserByEmail.length > 0) {
+      throw new Error(`Ya existe un usuario registrado con el email "${companyData.ownerEmail}"`);
+    }
+
+    // Validate RNC uniqueness if provided
+    if (companyData.rnc && companyData.rnc.trim() !== '') {
+      const existingCompanyByRNC = await db
+        .select()
+        .from(companies)
+        .where(eq(companies.rnc, companyData.rnc))
+        .limit(1);
+      
+      if (existingCompanyByRNC.length > 0) {
+        throw new Error(`Ya existe una empresa registrada con el RNC "${companyData.rnc}"`);
+      }
+
+      // Validate RNC format (Dominican Republic format: 9 or 11 digits)
+      const rncPattern = /^[0-9]{9}$|^[0-9]{11}$/;
+      if (!rncPattern.test(companyData.rnc)) {
+        throw new Error('El RNC debe tener 9 o 11 dígitos');
+      }
+    }
+
     // Create temporary user for the company owner
     const tempUserId = `temp_${Math.random().toString(36).substr(2, 9)}`;
     
@@ -313,6 +387,7 @@ export class DatabaseStorage implements IStorage {
       .insert(companies)
       .values({
         ...companyData,
+        rnc: companyData.rnc?.trim() || null, // Store null if empty
         ownerId: tempUser.id,
         registrationStatus: 'pending',
         invitationToken: companyData.invitationToken,

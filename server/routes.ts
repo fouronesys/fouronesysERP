@@ -258,9 +258,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         emailSent,
         invitationSent: emailSent 
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creating company:", error);
-      res.status(500).json({ message: "Failed to create company" });
+      // Return specific validation errors
+      if (error.message.includes('Ya existe')) {
+        res.status(400).json({ message: error.message });
+      } else if (error.message.includes('RNC debe tener')) {
+        res.status(400).json({ message: error.message });
+      } else {
+        res.status(500).json({ message: "Error al crear la empresa" });
+      }
     }
   });
 
