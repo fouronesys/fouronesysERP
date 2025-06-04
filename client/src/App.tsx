@@ -64,7 +64,31 @@ function ProtectedRoute({ component: Component, ...props }: { component: React.C
   }, [isAuthenticated, isLoading, toast]);
 
   if (isLoading) {
-    return <LoginAnimation />;
+    return (
+      <div className="fixed inset-0 bg-gradient-to-br from-blue-900 via-blue-800 to-indigo-900 flex items-center justify-center z-50">
+        <div className="text-center max-w-md mx-auto px-6">
+          <div className="mb-8">
+            <div className="relative">
+              <div className="w-24 h-24 mx-auto border-4 border-blue-300 border-t-white rounded-full animate-spin"></div>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-lg">
+                  <div className="text-blue-900 font-bold text-xl">41</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <h1 className="text-4xl font-bold text-white mb-2">Four One Solutions</h1>
+          <p className="text-blue-200 mb-8 text-lg">Soluciones Empresariales Dominicanas</p>
+          
+          <div className="w-full bg-blue-800 rounded-full h-2 mb-6">
+            <div className="bg-gradient-to-r from-blue-400 to-white h-2 rounded-full animate-pulse"></div>
+          </div>
+          
+          <p className="text-blue-300 text-xs">© 2025 Four One Solutions - Tecnología Empresarial Dominicana</p>
+        </div>
+      </div>
+    );
   }
 
   if (!isAuthenticated) {
