@@ -441,7 +441,7 @@ export const insertCompanyUserSchema = createInsertSchema(companyUsers).omit({
   updatedAt: true,
 });
 
-// POS Sales table
+// POS Sales table with Fiscal Receipt support
 export const posSales = pgTable("pos_sales", {
   id: serial("id").primaryKey(),
   companyId: integer("company_id").references(() => companies.id).notNull(),
@@ -455,7 +455,12 @@ export const posSales = pgTable("pos_sales", {
   cashChange: varchar("cash_change"),
   customerName: varchar("customer_name", { length: 255 }),
   customerPhone: varchar("customer_phone", { length: 20 }),
-  ncf: varchar("ncf", { length: 20 }),
+  customerRnc: varchar("customer_rnc", { length: 11 }), // Dominican RNC
+  // Fiscal Receipt fields
+  ncf: varchar("ncf", { length: 20 }).notNull(), // Comprobante Fiscal
+  ncfType: varchar("ncf_type", { length: 3 }).default("B01"), // B01, B02, B04, etc.
+  ncfSequence: integer("ncf_sequence").notNull(),
+  fiscalPeriod: varchar("fiscal_period", { length: 8 }).notNull(), // YYYYMMDD
   notes: text("notes"),
   status: varchar("status", { length: 20 }).default("completed"),
   // Restaurant-specific fields
@@ -463,6 +468,8 @@ export const posSales = pgTable("pos_sales", {
   tableNumber: varchar("table_number", { length: 10 }),
   kitchenStatus: varchar("kitchen_status", { length: 20 }).default("pending"), // pending, preparing, ready, served
   preparationNotes: text("preparation_notes"),
+  // Audit fields
+  createdBy: varchar("created_by").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -473,10 +480,51 @@ export const posSaleItems = pgTable("pos_sale_items", {
   saleId: integer("sale_id").references(() => posSales.id).notNull(),
   productId: integer("product_id").references(() => products.id).notNull(),
   productName: varchar("product_name", { length: 255 }).notNull(),
+  productCode: varchar("product_code", { length: 50 }).notNull(),
   quantity: varchar("quantity").notNull(),
   unitPrice: varchar("unit_price").notNull(),
+  discount: varchar("discount").default("0"),
   subtotal: varchar("subtotal").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
+});
+
+// NCF Sequence Control for Fiscal Receipts
+export const ncfSequences = pgTable("ncf_sequences", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").references(() => companies.id).notNull(),
+  ncfType: varchar("ncf_type", { length: 3 }).notNull(), // B01, B02, B04, etc.
+  currentSequence: integer("current_sequence").default(1),
+  maxSequence: integer("max_sequence").default(50000000), // DGII limit
+  fiscalPeriod: varchar("fiscal_period", { length: 8 }).notNull(), // YYYYMMDD
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// POS Session for real-time synchronization
+export const posSessions = pgTable("pos_sessions", {
+  id: serial("id").primaryKey(),
+  sessionId: varchar("session_id", { length: 255 }).notNull().unique(),
+  companyId: integer("company_id").references(() => companies.id).notNull(),
+  userId: varchar("user_id").notNull(),
+  deviceInfo: text("device_info"),
+  cartData: jsonb("cart_data"), // Real-time cart sync
+  isActive: boolean("is_active").default(true),
+  lastActivity: timestamp("last_activity").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Stock Reservations for cart items
+export const stockReservations = pgTable("stock_reservations", {
+  id: serial("id").primaryKey(),
+  productId: integer("product_id").references(() => products.id).notNull(),
+  sessionId: varchar("session_id", { length: 255 }).notNull(),
+  quantity: integer("quantity").notNull(),
+  reservedAt: timestamp("reserved_at").defaultNow(),
+  expiresAt: timestamp("expires_at").notNull(), // Auto-expire after 30 minutes
+  isReleased: boolean("is_released").default(false),
+  releasedAt: timestamp("released_at"),
 });
 
 // POS Print Settings table
@@ -533,6 +581,19 @@ export const insertPOSPrintSettingsSchema = createInsertSchema(posPrintSettings)
   id: true,
   createdAt: true,
   updatedAt: true,
+});
+
+export const insertPOSSessionSchema = createInsertSchema(posSessions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertStockReservationSchema = createInsertSchema(stockReservations).omit({
+  id: true,
+  reservedAt: true,
+  isReleased: true,
+  releasedAt: true,
 });
 
 export const insertNotificationSchema = createInsertSchema(notifications).omit({
@@ -664,19 +725,7 @@ export const insertLeaveSchema = createInsertSchema(leaves).omit({
   updatedAt: true,
 });
 
-// NCF Management Tables
-export const ncfSequences = pgTable("ncf_sequences", {
-  id: serial("id").primaryKey(),
-  companyId: integer("company_id").notNull().references(() => companies.id),
-  ncfType: varchar("ncf_type", { length: 3 }).notNull(), // B01, B02, etc.
-  authorizedFrom: varchar("authorized_from", { length: 11 }).notNull(),
-  authorizedTo: varchar("authorized_to", { length: 11 }).notNull(),
-  currentSequence: integer("current_sequence").notNull().default(0),
-  expirationDate: timestamp("expiration_date").notNull(),
-  isActive: boolean("is_active").notNull().default(true),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-});
+// Remove duplicate ncfSequences table as it's already defined above
 
 export const comprobantes605 = pgTable("comprobantes_605", {
   id: serial("id").primaryKey(),
@@ -739,11 +788,7 @@ export const rncRegistry = pgTable("rnc_registry", {
   lastUpdated: timestamp("last_updated").defaultNow(),
 });
 
-export const insertNCFSequenceSchema = createInsertSchema(ncfSequences).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+// insertNCFSequenceSchema already defined above
 
 export const insertComprobante605Schema = createInsertSchema(comprobantes605).omit({
   id: true,
@@ -793,6 +838,12 @@ export type POSSale = typeof posSales.$inferSelect;
 export type InsertPOSSale = z.infer<typeof insertPOSSaleSchema>;
 export type POSSaleItem = typeof posSaleItems.$inferSelect;
 export type InsertPOSSaleItem = z.infer<typeof insertPOSSaleItemSchema>;
+export type NCFSequence = typeof ncfSequences.$inferSelect;
+export type InsertNCFSequence = z.infer<typeof insertNCFSequenceSchema>;
+export type POSSession = typeof posSessions.$inferSelect;
+export type InsertPOSSession = z.infer<typeof insertPOSSessionSchema>;
+export type StockReservation = typeof stockReservations.$inferSelect;
+export type InsertStockReservation = z.infer<typeof insertStockReservationSchema>;
 export type POSPrintSettings = typeof posPrintSettings.$inferSelect;
 export type InsertPOSPrintSettings = z.infer<typeof insertPOSPrintSettingsSchema>;
 export type Notification = typeof notifications.$inferSelect;
