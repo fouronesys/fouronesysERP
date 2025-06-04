@@ -149,37 +149,54 @@ export default function Chat() {
   useEffect(() => {
     if (!user) return;
 
+    // Check if WebSocket is available and port is configured
+    const wsPort = window.location.port || (window.location.protocol === 'https:' ? '443' : '80');
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const wsUrl = `${protocol}//${window.location.host}/ws`;
-    const socket = new WebSocket(wsUrl);
+    const wsUrl = `${protocol}//${window.location.hostname}:${wsPort}/ws`;
+    
+    try {
+      const socket = new WebSocket(wsUrl);
 
-    socket.onopen = () => {
-      console.log("WebSocket connected");
-      socket.send(JSON.stringify({
-        type: 'authenticate',
-        userId: user.id
-      }));
-    };
+      socket.onopen = () => {
+        console.log("WebSocket connected to:", wsUrl);
+        socket.send(JSON.stringify({
+          type: 'authenticate',
+          userId: user.id
+        }));
+      };
 
-    socket.onmessage = (event) => {
-      const message = JSON.parse(event.data);
-      
-      if (message.type === 'new_message') {
-        queryClient.invalidateQueries({ 
-          queryKey: ["/api/chat/channels", message.data.channelId, "messages"] 
-        });
-      }
-    };
+      socket.onmessage = (event) => {
+        try {
+          const message = JSON.parse(event.data);
+          
+          if (message.type === 'new_message') {
+            queryClient.invalidateQueries({ 
+              queryKey: ["/api/chat/channels", message.data.channelId, "messages"] 
+            });
+          }
+        } catch (error) {
+          console.error("Error parsing WebSocket message:", error);
+        }
+      };
 
-    socket.onclose = () => {
-      console.log("WebSocket disconnected");
-    };
+      socket.onclose = (event) => {
+        console.log("WebSocket disconnected:", event.code, event.reason);
+      };
 
-    setWs(socket);
+      socket.onerror = (error) => {
+        console.error("WebSocket error:", error);
+      };
 
-    return () => {
-      socket.close();
-    };
+      setWs(socket);
+
+      return () => {
+        if (socket.readyState === WebSocket.OPEN) {
+          socket.close();
+        }
+      };
+    } catch (error) {
+      console.error("Failed to create WebSocket connection:", error);
+    }
   }, [user, queryClient]);
 
   // Auto-scroll to bottom when new messages arrive

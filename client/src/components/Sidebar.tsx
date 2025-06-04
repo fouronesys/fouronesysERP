@@ -228,18 +228,17 @@ export function Sidebar() {
               Administración
             </h3>
             <div className="mt-1 sm:mt-2">
-              <Link to="/super-admin">
-                <a
-                  className={cn(
-                    "group flex items-center px-2 sm:px-3 py-2 text-xs sm:text-sm font-medium rounded-lg transition-colors",
-                    location === "/super-admin"
-                      ? "text-blue-600 bg-blue-50 dark:bg-blue-900/20 theme-blue:bg-white/20 theme-blue:text-white"
-                      : "text-gray-700 dark:text-gray-300 theme-blue:text-blue-100 hover:bg-gray-100 dark:hover:bg-gray-800 theme-blue:hover:bg-white/10"
-                  )}
-                >
-                  <ShieldCheck className="mr-2 sm:mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
-                  <span className="truncate">Panel de Admin</span>
-                </a>
+              <Link 
+                href="/super-admin"
+                className={cn(
+                  "group flex items-center px-2 sm:px-3 py-2 text-xs sm:text-sm font-medium rounded-lg transition-colors",
+                  location === "/super-admin"
+                    ? "text-blue-600 bg-blue-50 dark:bg-blue-900/20 theme-blue:bg-white/20 theme-blue:text-white"
+                    : "text-gray-700 dark:text-gray-300 theme-blue:text-blue-100 hover:bg-gray-100 dark:hover:bg-gray-800 theme-blue:hover:bg-white/10"
+                )}
+              >
+                <ShieldCheck className="mr-2 sm:mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+                <span className="truncate">Panel de Admin</span>
               </Link>
             </div>
           </div>
