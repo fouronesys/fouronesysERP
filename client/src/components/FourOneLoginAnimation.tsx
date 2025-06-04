@@ -13,10 +13,10 @@ export default function FourOneLoginAnimation({ isVisible, onComplete }: FourOne
 
   // Icons representing the four "1"s of Four One Solutions
   const fourOnes = [
-    { icon: Building2, label: "Gestión", color: "text-blue-500" },
-    { icon: Users, label: "Equipos", color: "text-green-500" },
-    { icon: BarChart3, label: "Analytics", color: "text-purple-500" },
-    { icon: Settings, label: "Control", color: "text-orange-500" }
+    { icon: Building2, label: "Gestión", color: "text-cyan-400" },
+    { icon: Users, label: "Equipos", color: "text-emerald-400" },
+    { icon: BarChart3, label: "Analytics", color: "text-violet-400" },
+    { icon: Settings, label: "Control", color: "text-amber-400" }
   ];
 
   useEffect(() => {
@@ -39,12 +39,12 @@ export default function FourOneLoginAnimation({ isVisible, onComplete }: FourOne
   if (!isVisible) return null;
 
   return (
-    <div className="fixed inset-0 bg-gradient-to-br from-blue-900 via-blue-800 to-indigo-900 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-gradient-to-br from-gray-900 via-black to-slate-900 flex items-center justify-center z-50">
       {/* Background Pattern */}
-      <div className="absolute inset-0 opacity-10">
-        <div className="absolute top-1/4 left-1/4 w-32 h-32 bg-white rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-1/4 right-1/4 w-24 h-24 bg-blue-300 rounded-full blur-2xl animate-pulse delay-1000"></div>
-        <div className="absolute top-1/2 right-1/3 w-20 h-20 bg-indigo-300 rounded-full blur-xl animate-pulse delay-500"></div>
+      <div className="absolute inset-0 opacity-20">
+        <div className="absolute top-1/4 left-1/4 w-32 h-32 bg-blue-500 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-1/4 right-1/4 w-24 h-24 bg-purple-500 rounded-full blur-2xl animate-pulse delay-1000"></div>
+        <div className="absolute top-1/2 right-1/3 w-20 h-20 bg-indigo-500 rounded-full blur-xl animate-pulse delay-500"></div>
       </div>
 
       <div className="relative flex flex-col items-center space-y-8">
