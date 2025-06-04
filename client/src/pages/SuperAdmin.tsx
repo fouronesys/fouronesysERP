@@ -93,10 +93,11 @@ export default function SuperAdmin() {
 
   const createMutation = useMutation({
     mutationFn: async (data: CompanyFormData) => {
-      await apiRequest(`/api/admin/companies`, {
+      const response = await apiRequest("/api/admin/companies", {
         method: "POST",
-        body: JSON.stringify(data),
+        body: data,
       });
+      return await response.json();
     },
     onSuccess: () => {
       toast({
@@ -119,10 +120,11 @@ export default function SuperAdmin() {
 
   const updateMutation = useMutation({
     mutationFn: async (data: CompanyFormData) => {
-      await apiRequest(`/api/admin/companies/${editingCompany?.id}`, {
+      const response = await apiRequest(`/api/admin/companies/${editingCompany?.id}`, {
         method: "PUT",
-        body: JSON.stringify(data),
+        body: data,
       });
+      return await response.json();
     },
     onSuccess: () => {
       toast({
