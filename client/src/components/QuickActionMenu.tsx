@@ -197,7 +197,7 @@ export default function QuickActionMenu() {
       )}
 
       {/* Calculator Component */}
-      <CalculatorComponent 
+      <MobileCalculator 
         isOpen={showCalculator} 
         onClose={() => setShowCalculator(false)} 
       />
