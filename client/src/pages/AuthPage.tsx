@@ -468,9 +468,7 @@ export default function AuthPage() {
                   </TabsContent>
                 </Tabs>
 
-                <div className="mt-4 text-center">
-                  <LanguageSelector />
-                </div>
+
               </CardContent>
             </Card>
 
@@ -492,29 +490,29 @@ export default function AuthPage() {
             <div className="text-center space-y-6">
               <div className="space-y-4">
                 <h1 className="text-4xl font-bold text-white">
-                  {t('landing.hero.title')}
+                  Solución ERP Integral para República Dominicana
                 </h1>
                 <p className="text-xl text-gray-300">
-                  {t('landing.hero.subtitle')}
+                  Gestiona tu empresa con tecnología de vanguardia. Sistema completo de gestión empresarial con facturación DGII, punto de venta, inventario y más.
                 </p>
               </div>
               
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div className="bg-gray-800/30 rounded-lg p-4 border border-gray-700">
-                  <h3 className="font-semibold text-blue-400 mb-2">{t('landing.features.inventory')}</h3>
-                  <p className="text-gray-400">{t('landing.features.inventoryDesc')}</p>
+                  <h3 className="font-semibold text-blue-400 mb-2">Gestión de Inventario</h3>
+                  <p className="text-gray-400">Control completo de productos, stock y almacenes en tiempo real</p>
                 </div>
                 <div className="bg-gray-800/30 rounded-lg p-4 border border-gray-700">
-                  <h3 className="font-semibold text-blue-400 mb-2">{t('landing.features.sales')}</h3>
-                  <p className="text-gray-400">{t('landing.features.salesDesc')}</p>
+                  <h3 className="font-semibold text-blue-400 mb-2">Punto de Venta</h3>
+                  <p className="text-gray-400">Sistema POS moderno con impresión térmica y sincronización automática</p>
                 </div>
                 <div className="bg-gray-800/30 rounded-lg p-4 border border-gray-700">
-                  <h3 className="font-semibold text-blue-400 mb-2">{t('landing.features.billing')}</h3>
-                  <p className="text-gray-400">{t('landing.features.billingDesc')}</p>
+                  <h3 className="font-semibold text-blue-400 mb-2">Facturación DGII</h3>
+                  <p className="text-gray-400">Cumplimiento total con regulaciones dominicanas y NCF automáticos</p>
                 </div>
                 <div className="bg-gray-800/30 rounded-lg p-4 border border-gray-700">
-                  <h3 className="font-semibold text-blue-400 mb-2">{t('landing.features.reports')}</h3>
-                  <p className="text-gray-400">{t('landing.features.reportsDesc')}</p>
+                  <h3 className="font-semibold text-blue-400 mb-2">Reportes Avanzados</h3>
+                  <p className="text-gray-400">Análisis detallados y reportes personalizables para tomar mejores decisiones</p>
                 </div>
               </div>
             </div>
