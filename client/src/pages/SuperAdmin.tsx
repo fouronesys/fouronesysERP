@@ -106,11 +106,16 @@ export default function SuperAdmin() {
 
   const createMutation = useMutation({
     mutationFn: async (data: CompanyFormData) => {
-      const response = await apiRequest("/api/admin/companies", {
-        method: "POST",
-        body: data,
-      });
-      return await response.json();
+      try {
+        console.log("Sending request to create company:", data);
+        const response = await apiRequest("POST", "/api/admin/companies", data);
+        const result = await response.json();
+        console.log("Company creation response:", result);
+        return result;
+      } catch (error) {
+        console.error("API request failed:", error);
+        throw error;
+      }
     },
     onSuccess: (result) => {
       const emailStatus = result.emailSent ? "Invitación enviada exitosamente." : "Empresa creada, pero no se pudo enviar la invitación por email.";
@@ -209,10 +214,22 @@ export default function SuperAdmin() {
   });
 
   const onSubmit = (data: CompanyFormData) => {
-    if (editingCompany) {
-      updateMutation.mutate(data);
-    } else {
-      createMutation.mutate(data);
+    try {
+      console.log("Form submitted with data:", data);
+      console.log("Form errors:", form.formState.errors);
+      
+      if (editingCompany) {
+        updateMutation.mutate(data);
+      } else {
+        createMutation.mutate(data);
+      }
+    } catch (error) {
+      console.error("Form submission error:", error);
+      toast({
+        title: "Error en el formulario",
+        description: "Error al procesar el formulario",
+        variant: "destructive",
+      });
     }
   };
 
