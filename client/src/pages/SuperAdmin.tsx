@@ -108,7 +108,10 @@ export default function SuperAdmin() {
     mutationFn: async (data: CompanyFormData) => {
       try {
         console.log("Sending request to create company:", data);
-        const response = await apiRequest("POST", "/api/admin/companies", data);
+        const response = await apiRequest("/api/admin/companies", {
+          method: "POST",
+          body: data
+        });
         const result = await response.json();
         console.log("Company creation response:", result);
         return result;
@@ -775,6 +778,12 @@ export default function SuperAdmin() {
                           type="submit"
                           disabled={createMutation.isPending || updateMutation.isPending}
                           className="w-full sm:w-auto"
+                          onClick={() => {
+                            console.log("Button clicked!");
+                            console.log("Form valid:", form.formState.isValid);
+                            console.log("Form errors:", form.formState.errors);
+                            console.log("Form values:", form.getValues());
+                          }}
                         >
                           {editingCompany ? "Actualizar" : "Registrar"} Empresa
                         </Button>
