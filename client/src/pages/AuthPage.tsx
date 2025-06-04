@@ -130,7 +130,8 @@ export default function AuthPage() {
 
   const handleAnimationComplete = () => {
     setShowLoginAnimation(false);
-    setLocation("/");
+    // Force a page reload to ensure proper route handling
+    window.location.href = "/";
   };
 
   return (
