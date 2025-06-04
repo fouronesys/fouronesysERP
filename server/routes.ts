@@ -2273,6 +2273,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // For now, we'll store the logo URL in the database without file upload
   // This can be enhanced later with proper cloud storage
 
+  // RNC auto-fill endpoint
+  app.get("/api/rnc/:rnc", async (req, res) => {
+    try {
+      const { rnc } = req.params;
+      
+      // Validate RNC format
+      if (!/^[0-9]{9}$|^[0-9]{11}$/.test(rnc)) {
+        return res.status(400).json({ message: "RNC debe tener 9 o 11 dígitos" });
+      }
+
+      const rncData = await storage.searchRNC(rnc);
+      
+      if (!rncData) {
+        return res.status(404).json({ message: "RNC no encontrado en el registro de DGII" });
+      }
+
+      // Check if RNC is already used by another company
+      const existingCompany = await storage.getCompanyByRNC(rnc);
+      if (existingCompany) {
+        return res.status(409).json({ 
+          message: "Este RNC ya está registrado por otra empresa",
+          companyName: existingCompany.name
+        });
+      }
+
+      // Return formatted company data for auto-fill
+      res.json({
+        rnc: rncData.rnc,
+        name: rncData.razonSocial,
+        businessName: rncData.nombreComercial || rncData.razonSocial,
+        category: rncData.categoria,
+        regime: rncData.regimen,
+        status: rncData.estado,
+        isActive: rncData.estado === 'ACTIVO'
+      });
+    } catch (error) {
+      console.error("Error searching RNC:", error);
+      res.status(500).json({ message: "Error al buscar RNC" });
+    }
+  });
+
   // Company registration routes (no authentication required)
   app.get("/api/company-invitation/:token", async (req, res) => {
     try {
