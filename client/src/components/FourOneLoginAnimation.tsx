@@ -29,7 +29,7 @@ export default function FourOneLoginAnimation({ isVisible, onComplete }: FourOne
         setShowLogo(true);
         setTimeout(() => {
           onComplete?.();
-        }, 1500);
+        }, 3000);
       }
     }, 600);
 
