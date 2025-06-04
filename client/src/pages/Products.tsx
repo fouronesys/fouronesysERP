@@ -21,10 +21,18 @@ const productSchema = z.object({
   code: z.string().min(1, "El código es requerido"),
   name: z.string().min(1, "El nombre es requerido"),
   description: z.string().optional(),
-  price: z.string().min(1, "El precio es requerido"),
-  cost: z.string().optional(),
-  stock: z.string().default("0"),
-  minStock: z.string().default("0"),
+  price: z.string()
+    .min(1, "El precio es requerido")
+    .refine((val) => parseFloat(val) >= 0, "El precio no puede ser negativo"),
+  cost: z.string()
+    .optional()
+    .refine((val) => !val || parseFloat(val) >= 0, "El costo no puede ser negativo"),
+  stock: z.string()
+    .default("0")
+    .refine((val) => parseInt(val) >= 0, "El stock no puede ser negativo"),
+  minStock: z.string()
+    .default("0")
+    .refine((val) => parseInt(val) >= 0, "El stock mínimo no puede ser negativo"),
   unit: z.string().default("unit"),
   isManufactured: z.boolean().default(false),
   imageUrl: z.string().optional(),

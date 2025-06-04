@@ -429,8 +429,8 @@ export default function POS() {
       
       <div className="p-3 sm:p-6">
         <div className="grid grid-cols-1 xl:grid-cols-4 gap-4 sm:gap-6">
-          {/* Products Section */}
-          <div className="xl:col-span-2 space-y-4">
+          {/* Products Section with Enhanced Layout */}
+          <div className="xl:col-span-2 space-y-4 h-[calc(100vh-200px)] overflow-hidden">
             {/* Mobile Tabs for Products/Cart */}
             {isMobile && (
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -668,8 +668,8 @@ export default function POS() {
                 </div>
 
                 {/* Products Grid with Scroll and Wider Layout */}
-                <div className="max-h-[70vh] overflow-y-auto pr-2">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="max-h-[75vh] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {filteredProducts.map((product) => (
                     <Card key={product.id} className="flex flex-col hover:shadow-md transition-all duration-200 cursor-pointer group" onClick={() => addToCart(product)}>
                       <CardContent className="p-3 flex flex-col h-full">
