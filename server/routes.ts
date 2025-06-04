@@ -1450,8 +1450,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-
-
   // RNC Verification API endpoint
   app.get("/api/verify-rnc/:rnc", isAuthenticated, async (req: any, res) => {
     try {
