@@ -36,6 +36,7 @@ import Payroll from "@/pages/Payroll";
 import FiscalDocuments from "@/pages/FiscalDocuments";
 import AIInsights from "@/pages/AIInsights";
 import SubscriptionPlans from "@/pages/SubscriptionPlans";
+import CompanyAnalytics from "@/pages/CompanyAnalytics";
 import NotFound from "@/pages/not-found";
 
 function ProtectedRoute({ component: Component, ...props }: { component: React.ComponentType }) {
@@ -177,6 +178,7 @@ function Router() {
       
       {/* Admin routes */}
       <Route path="/super-admin" component={() => <ProtectedRoute component={SuperAdmin} />} />
+      <Route path="/company-analytics" component={() => <ProtectedRoute component={CompanyAnalytics} />} />
       
       {/* Profile menu routes */}
       <Route path="/profile" component={() => <ProtectedRoute component={Profile} />} />

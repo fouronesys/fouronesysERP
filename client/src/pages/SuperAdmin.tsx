@@ -64,6 +64,11 @@ export default function SuperAdmin() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingCompany, setEditingCompany] = useState<Company | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCompanies, setSelectedCompanies] = useState<number[]>([]);
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
+  const [planFilter, setPlanFilter] = useState<"all" | "trial" | "monthly" | "annual">("all");
+  const [sortBy, setSortBy] = useState<"name" | "created" | "revenue">("created");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -223,10 +228,122 @@ export default function SuperAdmin() {
     setIsDialogOpen(true);
   };
 
-  const filteredCompanies = companies?.filter(company =>
-    company.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (company.rnc && company.rnc.toLowerCase().includes(searchTerm.toLowerCase()))
-  ) || [];
+  // Bulk operations mutations
+  const bulkStatusMutation = useMutation({
+    mutationFn: async ({ companyIds, isActive }: { companyIds: number[]; isActive: boolean }) => {
+      const promises = companyIds.map(id => 
+        apiRequest(`/api/admin/companies/${id}/status`, {
+          method: "PATCH",
+          body: { isActive },
+        })
+      );
+      return await Promise.all(promises);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Operación completada",
+        description: "El estado de las empresas seleccionadas ha sido actualizado.",
+      });
+      setSelectedCompanies([]);
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/companies"] });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "No se pudo actualizar el estado de algunas empresas.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const bulkPlanMutation = useMutation({
+    mutationFn: async ({ companyIds, plan }: { companyIds: number[]; plan: string }) => {
+      const promises = companyIds.map(id => 
+        apiRequest(`/api/admin/companies/${id}`, {
+          method: "PUT",
+          body: { subscriptionPlan: plan },
+        })
+      );
+      return await Promise.all(promises);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Planes actualizados",
+        description: "Los planes de suscripción han sido actualizados.",
+      });
+      setSelectedCompanies([]);
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/companies"] });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "No se pudo actualizar los planes de algunas empresas.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Enhanced filtering and sorting
+  const filteredCompanies = companies?.filter(company => {
+    const matchesSearch = company.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (company.rnc && company.rnc.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (company.email && company.email.toLowerCase().includes(searchTerm.toLowerCase()));
+    
+    const matchesStatus = statusFilter === "all" || 
+      (statusFilter === "active" && company.isActive) ||
+      (statusFilter === "inactive" && !company.isActive);
+    
+    const matchesPlan = planFilter === "all" || company.subscriptionPlan === planFilter;
+    
+    return matchesSearch && matchesStatus && matchesPlan;
+  }).sort((a, b) => {
+    let comparison = 0;
+    
+    switch (sortBy) {
+      case "name":
+        comparison = a.name.localeCompare(b.name);
+        break;
+      case "created":
+        comparison = new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime();
+        break;
+      case "revenue":
+        const planValues = { trial: 0, starter: 29, professional: 79, business: 149, enterprise: 299 };
+        const aValue = planValues[a.subscriptionPlan as keyof typeof planValues] || 0;
+        const bValue = planValues[b.subscriptionPlan as keyof typeof planValues] || 0;
+        comparison = aValue - bValue;
+        break;
+    }
+    
+    return sortOrder === "asc" ? comparison : -comparison;
+  }) || [];
+
+  const handleSelectAll = () => {
+    if (selectedCompanies.length === filteredCompanies.length) {
+      setSelectedCompanies([]);
+    } else {
+      setSelectedCompanies(filteredCompanies.map(c => c.id));
+    }
+  };
+
+  const handleSelectCompany = (companyId: number) => {
+    setSelectedCompanies(prev => 
+      prev.includes(companyId) 
+        ? prev.filter(id => id !== companyId)
+        : [...prev, companyId]
+    );
+  };
+
+  const handleBulkActivate = () => {
+    bulkStatusMutation.mutate({ companyIds: selectedCompanies, isActive: true });
+  };
+
+  const handleBulkDeactivate = () => {
+    bulkStatusMutation.mutate({ companyIds: selectedCompanies, isActive: false });
+  };
+
+  const handleBulkPlanChange = (plan: string) => {
+    bulkPlanMutation.mutate({ companyIds: selectedCompanies, plan });
+  };
 
   const getSubscriptionBadge = (plan: string) => {
     const colors = {
