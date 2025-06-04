@@ -197,13 +197,7 @@ export default function AuthPage() {
         {/* Right Column - Form */}
         <div className="flex-1 flex flex-col justify-center px-4 sm:px-6 lg:px-8 xl:px-12">
           <div className="w-full max-w-md mx-auto">
-            <div className="text-center mb-8 lg:hidden">
-              <img
-                src={fourOneLogo}
-                alt="Four One Solutions Logo"
-                className="h-16 w-auto mx-auto mb-4"
-              />
-            </div>
+
             
             <div className="text-center mb-8">
               <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
