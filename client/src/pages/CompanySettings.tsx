@@ -71,16 +71,16 @@ export default function CompanySettings() {
     if (company) {
       form.reset({
         name: company.name,
-        businessName: company.businessName || "",
-        rnc: company.rnc || "",
-        address: company.address || "",
-        phone: company.phone || "",
-        email: company.email || "",
-        website: company.website || "",
-        industry: company.industry || "",
-        taxRegime: company.taxRegime || "general",
-        currency: company.currency || "DOP",
-        timezone: company.timezone || "America/Santo_Domingo",
+        businessName: company.businessName ?? "",
+        rnc: company.rnc ?? "",
+        address: company.address ?? "",
+        phone: company.phone ?? "",
+        email: company.email ?? "",
+        website: company.website ?? "",
+        industry: company.industry ?? "",
+        taxRegime: company.taxRegime ?? "general",
+        currency: company.currency ?? "DOP",
+        timezone: company.timezone ?? "America/Santo_Domingo",
       });
       
       if (company.logoUrl) {
@@ -206,7 +206,7 @@ export default function CompanySettings() {
     console.log("Form is valid:", form.formState.isValid);
     
     try {
-      let logoUrl = company?.logoUrl;
+      let logoUrl = company?.logoUrl ?? undefined;
 
       if (logoFile) {
         const uploadedUrl = await uploadLogo();
@@ -348,7 +348,7 @@ export default function CompanySettings() {
                 <div className="space-y-2">
                   <Label htmlFor="businessType">Tipo de Negocio</Label>
                   <Select
-                    value={form.watch("businessType")}
+                    value={form.watch("businessType") ?? ""}
                     onValueChange={(value) => form.setValue("businessType", value)}
                   >
                     <SelectTrigger>
@@ -427,7 +427,7 @@ export default function CompanySettings() {
                 <div className="space-y-2">
                   <Label htmlFor="taxRegime">Régimen Tributario</Label>
                   <Select
-                    value={form.watch("taxRegime")}
+                    value={form.watch("taxRegime") ?? "general"}
                     onValueChange={(value) => form.setValue("taxRegime", value)}
                   >
                     <SelectTrigger>
@@ -444,7 +444,7 @@ export default function CompanySettings() {
                 <div className="space-y-2">
                   <Label htmlFor="currency">Moneda</Label>
                   <Select
-                    value={form.watch("currency")}
+                    value={form.watch("currency") ?? "DOP"}
                     onValueChange={(value) => form.setValue("currency", value)}
                   >
                     <SelectTrigger>
@@ -460,7 +460,7 @@ export default function CompanySettings() {
                 <div className="space-y-2">
                   <Label htmlFor="timezone">Zona Horaria</Label>
                   <Select
-                    value={form.watch("timezone")}
+                    value={form.watch("timezone") ?? "America/Santo_Domingo"}
                     onValueChange={(value) => form.setValue("timezone", value)}
                   >
                     <SelectTrigger>
