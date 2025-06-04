@@ -317,8 +317,14 @@ export default function CompanySettings() {
       <div className="p-6 space-y-6">
         <form onSubmit={(e) => {
           console.log("🔥 Form submit event triggered!");
+          console.log("Form errors before submit:", form.formState.errors);
+          console.log("Form isValid:", form.formState.isValid);
           e.preventDefault();
-          form.handleSubmit(onSubmit)(e);
+          
+          // Force call onSubmit regardless of validation
+          const formData = form.getValues();
+          console.log("Force calling onSubmit with:", formData);
+          onSubmit(formData);
         }} className="space-y-6">
           {/* Logo de la Empresa */}
           <Card>
