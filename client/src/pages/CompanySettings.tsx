@@ -93,22 +93,30 @@ export default function CompanySettings() {
 
   const updateMutation = useMutation({
     mutationFn: async (data: CompanySettingsFormData & { logoUrl?: string }) => {
-      console.log("Mutation starting with data:", data);
+      console.log("🚀 Starting company update mutation with data:", data);
       try {
         const response = await apiRequest('/api/companies/current', {
           method: 'PUT',
           body: data,
         });
-        console.log("API response received:", response);
+        console.log("✅ API response received:", response);
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Error al actualizar la empresa');
+        }
+        
         const result = await response.json();
-        console.log("API response parsed:", result);
+        console.log("📋 Parsed response data:", result);
         return result;
-      } catch (error) {
-        console.error("Mutation error:", error);
-        throw error;
+      } catch (error: any) {
+        console.error("❌ Mutation error:", error);
+        throw new Error(error.message || 'Error de conexión');
       }
     },
-    onSuccess: (updatedCompany) => {
+    onSuccess: (updatedCompany: any) => {
+      console.log("🎉 Company update successful:", updatedCompany);
+      
       const savedFields = [];
       if (updatedCompany.name) savedFields.push("Nombre comercial");
       if (updatedCompany.businessName) savedFields.push("Razón social");
@@ -128,16 +136,17 @@ export default function CompanySettings() {
         : "Se actualizó la configuración de la empresa";
 
       toast({
-        title: "✅ Configuración guardada exitosamente",
+        title: "Configuración guardada exitosamente",
         description: description,
         duration: 5000,
       });
+      
       queryClient.invalidateQueries({ queryKey: ["/api/companies/current"] });
     },
     onError: (error: any) => {
-      console.error("Update error:", error);
+      console.error("❌ Update error:", error);
       toast({
-        title: "Error",
+        title: "Error al guardar",
         description: error.message || "No se pudo actualizar la configuración de la empresa.",
         variant: "destructive",
       });
@@ -244,27 +253,42 @@ export default function CompanySettings() {
   };
 
   const onSubmit = async (data: CompanySettingsFormData) => {
-    console.log("Form submitted with data:", data);
-    console.log("Form errors:", form.formState.errors);
-    console.log("Form is valid:", form.formState.isValid);
+    console.log("🔄 Form submitted with data:", data);
+    console.log("🔍 Form errors:", form.formState.errors);
+    console.log("✅ Form is valid:", form.formState.isValid);
+    console.log("📋 Form dirty fields:", form.formState.dirtyFields);
+    
+    if (!form.formState.isValid) {
+      console.error("❌ Form validation failed");
+      toast({
+        title: "Error de validación",
+        description: "Por favor revisa los campos marcados en rojo.",
+        variant: "destructive",
+      });
+      return;
+    }
     
     try {
       let logoUrl = company?.logoUrl ?? undefined;
 
       if (logoFile) {
+        console.log("📸 Uploading logo...");
         const uploadedUrl = await uploadLogo();
         if (uploadedUrl) {
           logoUrl = uploadedUrl;
+          console.log("✅ Logo uploaded:", uploadedUrl);
         }
       }
 
-      console.log("Calling mutation with data:", { ...data, logoUrl });
-      updateMutation.mutate({ ...data, logoUrl });
+      const submitData = { ...data, logoUrl };
+      console.log("🚀 Calling mutation with final data:", submitData);
+      
+      updateMutation.mutate(submitData);
     } catch (error) {
-      console.error("Form submission error:", error);
+      console.error("❌ Form submission error:", error);
       toast({
         title: "Error",
-        description: "Ocurrió un error al guardar la configuración.",
+        description: "Ocurrió un error al preparar los datos para guardar.",
         variant: "destructive",
       });
     }
