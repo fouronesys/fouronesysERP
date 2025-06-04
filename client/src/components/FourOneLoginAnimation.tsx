@@ -39,15 +39,52 @@ export default function FourOneLoginAnimation({ isVisible, onComplete }: FourOne
   if (!isVisible) return null;
 
   return (
-    <div className="fixed inset-0 bg-gradient-to-br from-gray-900 via-black to-slate-900 flex items-center justify-center z-50">
-      {/* Background Pattern */}
-      <div className="absolute inset-0 opacity-20">
-        <div className="absolute top-1/4 left-1/4 w-32 h-32 bg-blue-500 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-1/4 right-1/4 w-24 h-24 bg-purple-500 rounded-full blur-2xl animate-pulse delay-1000"></div>
-        <div className="absolute top-1/2 right-1/3 w-20 h-20 bg-indigo-500 rounded-full blur-xl animate-pulse delay-500"></div>
+    <div className="fixed inset-0 bg-gradient-to-br from-gray-900 via-black to-slate-900 flex items-center justify-center z-50 overflow-hidden">
+      {/* Animated Background Particles */}
+      <div className="absolute inset-0">
+        <div className="absolute top-1/4 left-1/4 w-32 h-32 bg-blue-500 rounded-full blur-3xl animate-pulse opacity-30"></div>
+        <div className="absolute bottom-1/4 right-1/4 w-24 h-24 bg-purple-500 rounded-full blur-2xl animate-pulse delay-1000 opacity-25"></div>
+        <div className="absolute top-1/2 right-1/3 w-20 h-20 bg-indigo-500 rounded-full blur-xl animate-pulse delay-500 opacity-20"></div>
+        <div className="absolute top-3/4 left-1/3 w-16 h-16 bg-cyan-400 rounded-full blur-lg animate-pulse delay-700 opacity-15"></div>
+        <div className="absolute top-1/6 right-1/2 w-28 h-28 bg-violet-500 rounded-full blur-2xl animate-pulse delay-300 opacity-25"></div>
+      </div>
+      
+      {/* Geometric Background Pattern */}
+      <div className="absolute inset-0 opacity-10">
+        <div className="absolute inset-0" style={{
+          backgroundImage: `radial-gradient(circle at 25% 25%, rgba(59, 130, 246, 0.1) 0%, transparent 50%),
+                           radial-gradient(circle at 75% 75%, rgba(147, 51, 234, 0.1) 0%, transparent 50%),
+                           radial-gradient(circle at 50% 50%, rgba(99, 102, 241, 0.05) 0%, transparent 50%)`
+        }}></div>
       </div>
 
-      <div className="relative flex flex-col items-center space-y-8">
+      {/* Floating Particles */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {[...Array(12)].map((_, i) => (
+          <motion.div
+            key={i}
+            className="absolute w-2 h-2 bg-white rounded-full opacity-60"
+            initial={{
+              x: Math.random() * window.innerWidth,
+              y: window.innerHeight + 10,
+              scale: Math.random() * 0.5 + 0.5
+            }}
+            animate={{
+              y: -10,
+              x: Math.random() * window.innerWidth,
+              opacity: [0, 0.8, 0]
+            }}
+            transition={{
+              duration: Math.random() * 3 + 4,
+              repeat: Infinity,
+              delay: Math.random() * 2,
+              ease: "linear"
+            }}
+          />
+        ))}
+      </div>
+
+      <div className="relative flex flex-col items-center space-y-8 z-10">
         {/* Four "1"s Animation */}
         <div className="flex items-center justify-center space-x-4">
           {fourOnes.map((item, index) => {
@@ -71,24 +108,76 @@ export default function FourOneLoginAnimation({ isVisible, onComplete }: FourOne
                 }}
                 className="relative"
               >
-                {/* Glow Effect */}
+                {/* Enhanced Glow Effects */}
                 <motion.div
-                  className="absolute inset-0 bg-white rounded-full blur-md"
+                  className={`absolute inset-0 ${item.color} rounded-full blur-xl`}
                   animate={{
-                    scale: isActive ? [1, 1.2, 1] : 1,
-                    opacity: isActive ? [0.3, 0.6, 0.3] : 0
+                    scale: isActive ? [1, 1.4, 1] : 1,
+                    opacity: isActive ? [0.4, 0.8, 0.4] : 0
                   }}
                   transition={{
-                    duration: 2,
+                    duration: 1.5,
                     repeat: Infinity,
                     delay: index * 0.2
                   }}
                 />
+                <motion.div
+                  className={`absolute inset-2 ${item.color} rounded-full blur-lg`}
+                  animate={{
+                    scale: isActive ? [1, 1.3, 1] : 1,
+                    opacity: isActive ? [0.2, 0.5, 0.2] : 0
+                  }}
+                  transition={{
+                    duration: 2,
+                    repeat: Infinity,
+                    delay: index * 0.2 + 0.3
+                  }}
+                />
                 
                 {/* Icon Container */}
-                <div className="relative w-16 h-16 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center border border-white/30">
-                  <IconComponent className={`w-8 h-8 text-white ${item.color}`} />
-                </div>
+                <motion.div 
+                  className="relative w-20 h-20 bg-gradient-to-br from-white/25 to-white/5 backdrop-blur-lg rounded-full flex items-center justify-center border border-white/40 shadow-2xl"
+                  animate={{
+                    boxShadow: isActive ? [
+                      "0 0 20px rgba(255,255,255,0.3)",
+                      "0 0 40px rgba(255,255,255,0.5)",
+                      "0 0 20px rgba(255,255,255,0.3)"
+                    ] : "0 0 0px rgba(255,255,255,0)"
+                  }}
+                  transition={{
+                    duration: 1.5,
+                    repeat: Infinity,
+                    delay: index * 0.2
+                  }}
+                >
+                  <motion.div
+                    animate={{
+                      scale: isActive ? [1, 1.1, 1] : 1,
+                      rotate: isActive ? [0, 5, -5, 0] : 0
+                    }}
+                    transition={{
+                      duration: 2,
+                      repeat: Infinity,
+                      delay: index * 0.2 + 0.5
+                    }}
+                  >
+                    <IconComponent className={`w-10 h-10 ${item.color} drop-shadow-lg`} />
+                  </motion.div>
+                  
+                  {/* Inner glow ring */}
+                  <motion.div
+                    className={`absolute inset-2 rounded-full border-2 ${item.color} opacity-40`}
+                    animate={{
+                      scale: isActive ? [1, 1.1, 1] : 1,
+                      opacity: isActive ? [0.4, 0.8, 0.4] : 0
+                    }}
+                    transition={{
+                      duration: 1.8,
+                      repeat: Infinity,
+                      delay: index * 0.2 + 0.7
+                    }}
+                  />
+                </motion.div>
                 
                 {/* Label */}
                 <motion.div
@@ -132,26 +221,50 @@ export default function FourOneLoginAnimation({ isVisible, onComplete }: FourOne
               transition={{ duration: 0.6, ease: "easeOut" }}
               className="text-center"
             >
-              {/* Main Title */}
+              {/* Main Title with Enhanced Effects */}
               <motion.h1
-                className="text-4xl md:text-6xl font-bold text-white mb-2"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.3 }}
+                className="text-5xl md:text-7xl font-bold mb-4 tracking-wide"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ 
+                  opacity: 1, 
+                  scale: 1,
+                  textShadow: [
+                    "0 0 20px rgba(255,255,255,0.8), 0 0 40px rgba(59,130,246,0.6)",
+                    "0 0 30px rgba(255,255,255,1), 0 0 60px rgba(147,51,234,0.8)",
+                    "0 0 20px rgba(255,255,255,0.8), 0 0 40px rgba(59,130,246,0.6)"
+                  ]
+                }}
+                transition={{ 
+                  delay: 0.3,
+                  textShadow: { duration: 2.5, repeat: Infinity }
+                }}
               >
-                <span className="bg-gradient-to-r from-blue-400 via-purple-400 to-indigo-400 bg-clip-text text-transparent">
+                <span className="bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600 bg-clip-text text-transparent">
                   Four One
                 </span>
               </motion.h1>
               
-              {/* Subtitle */}
+              {/* Subtitle with Glow */}
               <motion.p
-                className="text-xl text-blue-200 font-medium"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.6 }}
+                className="text-2xl md:text-3xl font-semibold mb-2"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ 
+                  opacity: 1, 
+                  y: 0,
+                  textShadow: [
+                    "0 0 15px rgba(168,85,247,0.8)",
+                    "0 0 25px rgba(236,72,153,0.8)",
+                    "0 0 15px rgba(168,85,247,0.8)"
+                  ]
+                }}
+                transition={{ 
+                  delay: 0.6,
+                  textShadow: { duration: 2, repeat: Infinity, delay: 0.5 }
+                }}
               >
-                Solutions
+                <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent">
+                  Solutions
+                </span>
               </motion.p>
               
               {/* Tagline */}
