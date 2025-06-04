@@ -152,10 +152,10 @@ export default function Calculator({ isOpen, onClose }: CalculatorProps) {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.8, y: 50 }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50"
+            className="fixed inset-4 md:top-1/2 md:left-1/2 md:transform md:-translate-x-1/2 md:-translate-y-1/2 md:inset-auto z-50 flex items-center justify-center"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="bg-gray-900 rounded-2xl shadow-2xl border border-gray-700 p-4 sm:p-6 w-80 sm:w-96 max-w-[90vw]">
+            <div className="bg-gray-900 rounded-none md:rounded-2xl shadow-2xl border border-gray-700 p-4 sm:p-6 w-full h-full md:w-96 md:h-auto max-w-none md:max-w-[90vw]">
               {/* Header */}
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-white font-bold text-lg">Calculadora</h3>

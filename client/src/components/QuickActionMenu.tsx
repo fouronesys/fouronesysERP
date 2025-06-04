@@ -15,7 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
-import CalculatorComponent from "./Calculator";
+import MobileCalculator from "./MobileCalculator";
 
 interface QuickAction {
   id: string;
