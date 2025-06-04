@@ -7,6 +7,17 @@
     <meta name="description" content="Sistema integral de gestión empresarial para República Dominicana. Facturación, inventario, POS y más." />
   </head>
   <body>
+    <script>
+      // Apply theme immediately to prevent flash
+      (function() {
+        const savedTheme = localStorage.getItem('fourOneTheme');
+        if (savedTheme === 'dark') {
+          document.documentElement.classList.add('dark');
+        } else if (savedTheme === 'blue') {
+          document.documentElement.classList.add('theme-blue');
+        }
+      })();
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
     <!-- This is a replit script which adds a banner on the top of the page when opened in development mode outside the replit environment -->
