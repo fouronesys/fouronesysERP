@@ -232,6 +232,10 @@ export interface IStorage {
   createLeave(leave: InsertLeave): Promise<Leave>;
   updateLeave(id: number, leave: Partial<InsertLeave>, companyId: number): Promise<Leave | undefined>;
   deleteLeave(id: number, companyId: number): Promise<void>;
+
+  // RNC Registry operations
+  searchRNC(rnc: string): Promise<RNCRegistry | undefined>;
+  createRNCRegistry(rncData: InsertRNCRegistry): Promise<RNCRegistry>;
 }
 
 export class DatabaseStorage implements IStorage {

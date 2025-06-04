@@ -202,6 +202,47 @@ export default function CompanySettings() {
     }
   };
 
+  // RNC Verification function
+  const handleRNCVerification = async (rnc: string) => {
+    if (!rnc || rnc.length < 9) {
+      setRncValidationResult(null);
+      return;
+    }
+
+    setIsVerifyingRNC(true);
+    try {
+      const response = await fetch(`/api/verify-rnc/${rnc}`);
+      const result = await response.json();
+      
+      setRncValidationResult(result);
+      
+      if (result.valid && result.data) {
+        // Auto-fill business name if verified
+        form.setValue("businessName", result.data.razonSocial);
+        
+        toast({
+          title: "RNC Verificado",
+          description: `Empresa encontrada: ${result.data.razonSocial}`,
+        });
+      } else {
+        toast({
+          title: "RNC No Encontrado",
+          description: result.message || "No se pudo verificar el RNC en la DGII",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Error verifying RNC:", error);
+      toast({
+        title: "Error de Verificación",
+        description: "No se pudo conectar con el servicio de verificación",
+        variant: "destructive",
+      });
+    } finally {
+      setIsVerifyingRNC(false);
+    }
+  };
+
   const onSubmit = async (data: CompanySettingsFormData) => {
     console.log("Form submitted with data:", data);
     console.log("Form errors:", form.formState.errors);
@@ -330,12 +371,52 @@ export default function CompanySettings() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="rnc">RNC</Label>
-                  <Input
-                    id="rnc"
-                    placeholder="Ej: 131-12345-6"
-                    {...form.register("rnc")}
-                  />
+                  <Label htmlFor="rnc">RNC (Registro Nacional del Contribuyente)</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="rnc"
+                      placeholder="Ej: 131-12345-6"
+                      {...form.register("rnc")}
+                      onBlur={(e) => {
+                        const rncValue = e.target.value;
+                        if (rncValue && rncValue.length >= 9) {
+                          handleRNCVerification(rncValue);
+                        }
+                      }}
+                      className={rncValidationResult?.valid === true ? "border-green-500" : 
+                                rncValidationResult?.valid === false ? "border-red-500" : ""}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={isVerifyingRNC || !form.watch("rnc")}
+                      onClick={() => handleRNCVerification(form.watch("rnc") || "")}
+                    >
+                      {isVerifyingRNC ? "Verificando..." : "Verificar"}
+                    </Button>
+                  </div>
+                  {rncValidationResult && (
+                    <div className={`text-sm p-2 rounded ${
+                      rncValidationResult.valid 
+                        ? "bg-green-50 text-green-700 border border-green-200" 
+                        : "bg-red-50 text-red-700 border border-red-200"
+                    }`}>
+                      {rncValidationResult.valid ? (
+                        <div>
+                          <p className="font-medium">✓ RNC Verificado en DGII</p>
+                          <p>Empresa: {rncValidationResult.data?.razonSocial}</p>
+                          {rncValidationResult.data?.categoria && (
+                            <p>Categoría: {rncValidationResult.data.categoria}</p>
+                          )}
+                          {rncValidationResult.data?.estado && (
+                            <p>Estado: {rncValidationResult.data.estado}</p>
+                          )}
+                        </div>
+                      ) : (
+                        <p>✗ {rncValidationResult.message}</p>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-2">
