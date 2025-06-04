@@ -69,7 +69,8 @@ export default function Chat() {
   const [selectedChannel, setSelectedChannel] = useState<ChatChannel | null>(null);
   const [newMessage, setNewMessage] = useState("");
   const [isCreateChannelOpen, setIsCreateChannelOpen] = useState(false);
-  const [ws, setWs] = useState<WebSocket | null>(null);
+  // WebSocket disabled - using REST API only
+  // const [ws, setWs] = useState<WebSocket | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const form = useForm<CreateChannelForm>({
@@ -145,12 +146,8 @@ export default function Chat() {
     }
   });
 
-  // WebSocket connection - temporarily disabled to avoid conflicts with Replit's HMR
-  useEffect(() => {
-    // TODO: Implement WebSocket connection for real-time chat when deployed
-    // Currently disabled to prevent conflicts with development environment
-    console.log("WebSocket chat connection disabled in development mode");
-  }, [user, queryClient]);
+  // WebSocket connection disabled - using REST API only for chat functionality
+  // Real-time updates will be handled through polling when needed
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
