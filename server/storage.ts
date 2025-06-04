@@ -1940,6 +1940,30 @@ export class DatabaseStorage implements IStorage {
     
     return false; // Default: no more users allowed
   }
+
+  async updateCompanyStatus(companyId: number, isActive: boolean): Promise<Company | undefined> {
+    const [company] = await db
+      .update(companies)
+      .set({ 
+        isActive,
+        updatedAt: new Date()
+      })
+      .where(eq(companies.id, companyId))
+      .returning();
+    return company;
+  }
+
+  async deleteCompany(companyId: number): Promise<void> {
+    // Delete related data first
+    await db.delete(products).where(eq(products.companyId, companyId));
+    await db.delete(customers).where(eq(customers.companyId, companyId));
+    await db.delete(invoices).where(eq(invoices.companyId, companyId));
+    await db.delete(employees).where(eq(employees.companyId, companyId));
+    await db.delete(companyUsers).where(eq(companyUsers.companyId, companyId));
+    
+    // Delete the company
+    await db.delete(companies).where(eq(companies.id, companyId));
+  }
 }
 
 export const storage = new DatabaseStorage();

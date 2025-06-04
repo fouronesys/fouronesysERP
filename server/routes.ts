@@ -99,6 +99,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.patch("/api/admin/companies/:id/status", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const isSuperAdmin = await storage.isUserSuperAdmin(userId);
+      
+      if (!isSuperAdmin) {
+        return res.status(403).json({ message: "Access denied. Super admin required." });
+      }
+
+      const companyId = parseInt(req.params.id);
+      const { isActive } = req.body;
+      
+      const updatedCompany = await storage.updateCompanyStatus(companyId, isActive);
+      res.json(updatedCompany);
+    } catch (error) {
+      console.error("Error updating company status:", error);
+      res.status(500).json({ message: "Failed to update company status" });
+    }
+  });
+
+  app.delete("/api/admin/companies/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const isSuperAdmin = await storage.isUserSuperAdmin(userId);
+      
+      if (!isSuperAdmin) {
+        return res.status(403).json({ message: "Access denied. Super admin required." });
+      }
+
+      const companyId = parseInt(req.params.id);
+      
+      await storage.deleteCompany(companyId);
+      res.json({ success: true, message: "Company deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting company:", error);
+      res.status(500).json({ message: "Failed to delete company" });
+    }
+  });;
+
   app.put("/api/admin/companies/:id", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.id;

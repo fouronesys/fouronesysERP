@@ -553,9 +553,15 @@ export default function SuperAdmin() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => {/* Implementar vista de detalles */}}
+                            className="text-red-600 hover:text-red-800"
+                            onClick={() => {
+                              if (confirm("¿Estás seguro de que quieres eliminar esta empresa? Esta acción no se puede deshacer.")) {
+                                deleteCompanyMutation.mutate(company.id);
+                              }
+                            }}
+                            disabled={deleteCompanyMutation.isPending}
                           >
-                            <Settings className="h-4 w-4" />
+                            <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
                       </TableCell>
