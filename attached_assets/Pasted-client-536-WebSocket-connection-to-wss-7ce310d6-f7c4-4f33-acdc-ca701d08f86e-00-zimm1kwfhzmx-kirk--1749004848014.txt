@@ -1,0 +1,36 @@
+client:536 WebSocket connection to 'wss://7ce310d6-f7c4-4f33-acdc-ca701d08f86e-00-zimm1kwfhzmx.kirk.replit.dev/?token=F22ZMhSg7wkv' failed: 
+setupWebSocket @ client:536
+client:536 Uncaught (in promise) SyntaxError: Failed to construct 'WebSocket': The URL 'wss://localhost:undefined/?token=F22ZMhSg7wkv' is invalid.
+    at setupWebSocket (client:536:19)
+    at fallback (client:509:16)
+    at WebSocket.<anonymous> (client:555:7)
+api/user:1 
+            
+            
+           Failed to load resource: the server responded with a status of 401 (Unauthorized)
+chunk-RPCDYKBN.js?v=088be9d5:521 Warning: validateDOMNesting(...): <a> cannot appear as a descendant of <a>.
+    at a
+    at a
+    at https://7ce310d6-f7c4-4f33-acdc-ca701d08f86e-00-zimm1kwfhzmx.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=088be9d5:337:18
+    at div
+    at div
+    at nav
+    at div
+    at aside
+    at Sidebar (https://7ce310d6-f7c4-4f33-acdc-ca701d08f86e-00-zimm1kwfhzmx.kirk.replit.dev/src/components/Sidebar.tsx:123:22)
+    at div
+    at ProtectedRoute (https://7ce310d6-f7c4-4f33-acdc-ca701d08f86e-00-zimm1kwfhzmx.kirk.replit.dev/src/App.tsx?v=LxlPWiWBI-0ylkrzA4AFC:55:38)
+    at component
+    at Route (https://7ce310d6-f7c4-4f33-acdc-ca701d08f86e-00-zimm1kwfhzmx.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=088be9d5:323:16)
+    at Switch (https://7ce310d6-f7c4-4f33-acdc-ca701d08f86e-00-zimm1kwfhzmx.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=088be9d5:379:17)
+    at Router (https://7ce310d6-f7c4-4f33-acdc-ca701d08f86e-00-zimm1kwfhzmx.kirk.replit.dev/src/App.tsx?v=LxlPWiWBI-0ylkrzA4AFC:131:37)
+    at Provider (https://7ce310d6-f7c4-4f33-acdc-ca701d08f86e-00-zimm1kwfhzmx.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-5AJU3CG7.js?v=088be9d5:38:15)
+    at TooltipProvider (https://7ce310d6-f7c4-4f33-acdc-ca701d08f86e-00-zimm1kwfhzmx.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=088be9d5:63:5)
+    at ThemeProvider (https://7ce310d6-f7c4-4f33-acdc-ca701d08f86e-00-zimm1kwfhzmx.kirk.replit.dev/src/components/ThemeProvider.tsx:21:33)
+    at QueryClientProvider (https://7ce310d6-f7c4-4f33-acdc-ca701d08f86e-00-zimm1kwfhzmx.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=088be9d5:2805:3)
+    at App
+    at LanguageProvider (https://7ce310d6-f7c4-4f33-acdc-ca701d08f86e-00-zimm1kwfhzmx.kirk.replit.dev/src/components/LanguageProvider.tsx:20:36)
+    at V (https://7ce310d6-f7c4-4f33-acdc-ca701d08f86e-00-zimm1kwfhzmx.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/next-themes.js?v=088be9d5:44:25)
+    at J (https://7ce310d6-f7c4-4f33-acdc-ca701d08f86e-00-zimm1kwfhzmx.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/next-themes.js?v=088be9d5:42:18)
+    at QueryClientProvider (https://7ce310d6-f7c4-4f33-acdc-ca701d08f86e-00-zimm1kwfhzmx.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=088be9d5:2805:3)
+printWarning @ chunk-RPCDYKBN.js?v=088be9d5:521

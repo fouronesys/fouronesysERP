@@ -126,26 +126,110 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-800 flex items-center justify-center p-4">
-      <div className="w-full max-w-6xl flex items-center justify-center">
-        <div className="grid lg:grid-cols-2 gap-8 w-full max-w-5xl">
-          {/* Left Column - Auth Form */}
-          <div className="flex items-center justify-center">
-            <Card className="w-full max-w-md bg-gray-800/50 border-gray-700 backdrop-blur-sm">
-              <CardHeader className="text-center">
-                <div className="flex justify-center mb-4">
-                  <img src={fourOneLogo} alt="Four One Solutions" className="h-16 w-auto" />
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-700">
+      <div className="flex min-h-screen">
+        {/* Left Column - Hero Section */}
+        <div className="hidden lg:flex lg:flex-1 lg:flex-col lg:justify-center lg:px-8 xl:px-12 bg-gradient-to-br from-blue-600 to-indigo-800 relative overflow-hidden">
+          {/* Background Pattern */}
+          <div className="absolute inset-0 bg-black/10">
+            <div className="absolute inset-0" style={{
+              backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+            }}></div>
+          </div>
+          
+          <div className="relative z-10 max-w-md">
+            <div className="mb-8">
+              <img
+                src={fourOneLogo}
+                alt="Four One Solutions"
+                className="h-20 w-auto mb-6 filter brightness-0 invert"
+              />
+              <h1 className="text-4xl font-bold text-white mb-4">
+                Sistema de Gestión Empresarial
+              </h1>
+              <p className="text-xl text-blue-100 leading-relaxed">
+                Solución integral para empresas dominicanas con módulos de manufactura, POS, inventario, RRHH y nómina.
+              </p>
+            </div>
+            
+            <div className="space-y-6">
+              <div className="flex items-start space-x-4">
+                <div className="flex-shrink-0 w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                  <Building className="w-4 h-4 text-white" />
                 </div>
-                <CardTitle className="text-2xl font-bold text-white">Four One Solutions</CardTitle>
-                <CardDescription className="text-gray-300">
-                  {t('auth.welcome')}
+                <div>
+                  <h3 className="text-lg font-semibold text-white">Gestión Completa</h3>
+                  <p className="text-blue-100">Manufactura, POS, inventario y más en una sola plataforma</p>
+                </div>
+              </div>
+              
+              <div className="flex items-start space-x-4">
+                <div className="flex-shrink-0 w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                  <Lock className="w-4 h-4 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-white">Seguro y Confiable</h3>
+                  <p className="text-blue-100">Cumplimiento fiscal dominicano y seguridad de datos</p>
+                </div>
+              </div>
+              
+              <div className="flex items-start space-x-4">
+                <div className="flex-shrink-0 w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                  <User className="w-4 h-4 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-white">Multi-usuario</h3>
+                  <p className="text-blue-100">Roles y permisos personalizados para tu equipo</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="mt-8 pt-8 border-t border-blue-400/30">
+              <p className="text-blue-100 text-sm">
+                "Four One Solutions ha transformado completamente nuestra operación empresarial"
+              </p>
+              <p className="text-blue-200 text-xs mt-2 font-medium">
+                - Empresas líderes en República Dominicana
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Column - Form */}
+        <div className="flex-1 flex flex-col justify-center px-4 sm:px-6 lg:px-8 xl:px-12">
+          <div className="w-full max-w-md mx-auto">
+            <div className="text-center mb-8 lg:hidden">
+              <img
+                src={fourOneLogo}
+                alt="Four One Solutions Logo"
+                className="h-16 w-auto mx-auto mb-4"
+              />
+            </div>
+            
+            <div className="text-center mb-8">
+              <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                Bienvenido de vuelta
+              </h2>
+              <p className="text-gray-600 dark:text-gray-300">
+                Accede a tu cuenta para continuar
+              </p>
+            </div>
+
+            <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-xl">
+              <CardHeader className="text-center pb-4">
+                <div className="lg:hidden flex justify-center mb-4">
+                  <img src={fourOneLogo} alt="Four One Solutions" className="h-12 w-auto" />
+                </div>
+                <CardTitle className="text-xl font-bold text-gray-900 dark:text-white">Four One Solutions</CardTitle>
+                <CardDescription className="text-gray-600 dark:text-gray-300">
+                  Sistema de gestión empresarial
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <Tabs value={activeTab} onValueChange={setActiveTab}>
-                  <TabsList className="grid w-full grid-cols-2 bg-gray-700/50 border-gray-600">
-                    <TabsTrigger value="login" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white text-gray-300">Login</TabsTrigger>
-                    <TabsTrigger value="register" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white text-gray-300">Register</TabsTrigger>
+                  <TabsList className="grid w-full grid-cols-2 bg-gray-100 dark:bg-gray-700/50 border-gray-200 dark:border-gray-600">
+                    <TabsTrigger value="login" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white text-gray-700 dark:text-gray-300">Iniciar Sesión</TabsTrigger>
+                    <TabsTrigger value="register" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white text-gray-700 dark:text-gray-300">Registrarse</TabsTrigger>
                   </TabsList>
 
                   {/* Login Tab */}
@@ -157,19 +241,19 @@ export default function AuthPage() {
                           name="email"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel className="text-gray-200">Email</FormLabel>
+                              <FormLabel className="text-gray-700 dark:text-gray-200">Correo Electrónico</FormLabel>
                               <FormControl>
                                 <div className="relative">
-                                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500 dark:text-gray-400" />
                                   <Input
                                     type="email"
-                                    placeholder="Enter your email"
-                                    className="pl-10 bg-gray-700/50 border-gray-600 text-white placeholder-gray-400 focus:border-blue-500 focus:ring-blue-500"
+                                    placeholder="Ingresa tu email"
+                                    className="pl-10 bg-gray-50 dark:bg-gray-700/50 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:border-blue-500 focus:ring-blue-500"
                                     {...field}
                                   />
                                 </div>
                               </FormControl>
-                              <FormMessage className="text-red-400" />
+                              <FormMessage className="text-red-500 dark:text-red-400" />
                             </FormItem>
                           )}
                         />
@@ -209,10 +293,10 @@ export default function AuthPage() {
                         />
                         <Button
                           type="submit"
-                          className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                          className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl transition-all duration-200"
                           disabled={loginMutation.isPending}
                         >
-                          {loginMutation.isPending ? "Signing in..." : "Sign In"}
+                          {loginMutation.isPending ? "Iniciando sesión..." : "Iniciar Sesión"}
                         </Button>
                       </form>
                     </Form>
