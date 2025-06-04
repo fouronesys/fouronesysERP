@@ -289,6 +289,104 @@ export class DatabaseStorage implements IStorage {
     return company;
   }
 
+  async createCompanyWithInvitation(companyData: Omit<InsertCompany, 'ownerId'> & { 
+    ownerEmail: string;
+    invitationToken: string;
+    invitationExpiresAt: Date;
+  }): Promise<Company> {
+    // Create temporary user for the company owner
+    const tempUserId = `temp_${Math.random().toString(36).substr(2, 9)}`;
+    
+    const [tempUser] = await db
+      .insert(users)
+      .values({
+        id: tempUserId,
+        email: companyData.ownerEmail,
+        firstName: 'Pendiente',
+        lastName: 'Registro',
+        password: '', // Will be set during registration
+        isActive: false, // Inactive until registration is completed
+      })
+      .returning();
+
+    const [company] = await db
+      .insert(companies)
+      .values({
+        ...companyData,
+        ownerId: tempUser.id,
+        registrationStatus: 'pending',
+        invitationToken: companyData.invitationToken,
+        invitationSentAt: new Date(),
+        invitationExpiresAt: companyData.invitationExpiresAt,
+      })
+      .returning();
+    
+    return company;
+  }
+
+  async getCompanyByInvitationToken(token: string): Promise<Company | undefined> {
+    const [company] = await db
+      .select()
+      .from(companies)
+      .where(and(
+        eq(companies.invitationToken, token),
+        eq(companies.registrationStatus, 'pending'),
+        sql`${companies.invitationExpiresAt} > NOW()`
+      ))
+      .limit(1);
+    return company;
+  }
+
+  async completeCompanyRegistration(
+    token: string, 
+    userData: { 
+      firstName: string; 
+      lastName: string; 
+      password: string; 
+    }
+  ): Promise<{ company: Company; user: User } | null> {
+    const company = await this.getCompanyByInvitationToken(token);
+    if (!company) return null;
+
+    // Update the temporary user with real data
+    const [updatedUser] = await db
+      .update(users)
+      .set({
+        firstName: userData.firstName,
+        lastName: userData.lastName,
+        password: userData.password,
+        isActive: true,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, company.ownerId))
+      .returning();
+
+    // Update company registration status
+    const [updatedCompany] = await db
+      .update(companies)
+      .set({
+        registrationStatus: 'completed',
+        invitationToken: null, // Clear the token
+        updatedAt: new Date(),
+      })
+      .where(eq(companies.id, company.id))
+      .returning();
+
+    return { company: updatedCompany, user: updatedUser };
+  }
+
+  async updateCompanyInvitationStatus(companyId: number, status: 'pending' | 'completed' | 'expired'): Promise<Company | undefined> {
+    const [company] = await db
+      .update(companies)
+      .set({
+        registrationStatus: status,
+        updatedAt: new Date(),
+      })
+      .where(eq(companies.id, companyId))
+      .returning();
+    return company;
+  }
+
   async getCompanyByUserId(userId: string): Promise<Company | undefined> {
     const [company] = await db
       .select()
