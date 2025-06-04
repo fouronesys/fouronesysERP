@@ -155,10 +155,10 @@ export default function Calculator({ isOpen, onClose }: CalculatorProps) {
             className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="bg-gray-900 rounded-2xl shadow-2xl border border-gray-700 p-6 w-80">
+            <div className="bg-gray-900 rounded-2xl shadow-2xl border border-gray-700 p-4 sm:p-6 w-80 sm:w-96 max-w-[90vw]">
               {/* Header */}
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-white font-bold text-lg">Calculadora Empresarial</h3>
+                <h3 className="text-white font-bold text-lg">Calculadora</h3>
                 <Button
                   onClick={onClose}
                   variant="ghost"
@@ -180,7 +180,7 @@ export default function Calculator({ isOpen, onClose }: CalculatorProps) {
                       </div>
                     )}
                     {/* Main display */}
-                    <div className="text-white text-2xl font-mono leading-tight">
+                    <div className="text-white text-xl sm:text-2xl font-mono leading-tight break-all">
                       {formatDisplay(display)}
                     </div>
                   </div>
@@ -188,7 +188,7 @@ export default function Calculator({ isOpen, onClose }: CalculatorProps) {
               </div>
 
               {/* Button Grid */}
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-4 gap-2 sm:gap-3">
                 {buttons.map((button, index) => {
                   if (button.label === "=") {
                     return (
@@ -198,10 +198,10 @@ export default function Calculator({ isOpen, onClose }: CalculatorProps) {
                         whileTap={{ scale: 0.95 }}
                         onClick={button.action}
                         className={`
-                          ${button.color} text-white font-semibold rounded-lg h-12
+                          ${button.color} text-white font-semibold rounded-lg h-10 sm:h-12
                           row-span-2 flex items-center justify-center
-                          transition-all duration-200 shadow-lg hover:shadow-xl
-                          border border-gray-600
+                          transition-all duration-200 shadow-lg hover:shadow-xl active:scale-95
+                          border border-gray-600 touch-manipulation select-none
                         `}
                         style={{ gridRow: "span 2" }}
                       >
@@ -236,9 +236,10 @@ export default function Calculator({ isOpen, onClose }: CalculatorProps) {
                       whileTap={{ scale: 0.95 }}
                       onClick={button.action}
                       className={`
-                        ${button.color} text-white font-semibold rounded-lg h-12
-                        transition-all duration-200 shadow-lg hover:shadow-xl
+                        ${button.color} text-white font-semibold rounded-lg h-10 sm:h-12 text-sm sm:text-base
+                        transition-all duration-200 shadow-lg hover:shadow-xl active:scale-95
                         border border-gray-600 flex items-center justify-center
+                        touch-manipulation select-none
                       `}
                     >
                       {button.label === "⌫" ? (
