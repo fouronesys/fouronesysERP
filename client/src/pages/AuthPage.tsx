@@ -226,9 +226,19 @@ export default function AuthPage() {
               </CardHeader>
               <CardContent>
                 <Tabs value={activeTab} onValueChange={setActiveTab}>
-                  <TabsList className="grid w-full grid-cols-2 bg-gray-100 dark:bg-gray-700/50 border-gray-200 dark:border-gray-600">
-                    <TabsTrigger value="login" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white text-gray-700 dark:text-gray-300">Iniciar Sesión</TabsTrigger>
-                    <TabsTrigger value="register" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white text-gray-700 dark:text-gray-300">Registrarse</TabsTrigger>
+                  <TabsList className="grid w-full grid-cols-2 p-2 bg-gradient-to-r from-gray-800 to-gray-700 border-2 border-gray-600 rounded-xl shadow-lg">
+                    <TabsTrigger 
+                      value="login" 
+                      className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-blue-500 data-[state=active]:text-white data-[state=active]:shadow-xl data-[state=active]:border data-[state=active]:border-blue-400 text-gray-300 hover:text-white hover:bg-gray-600 transition-all duration-300 rounded-lg font-medium py-3"
+                    >
+                      Iniciar Sesión
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="register" 
+                      className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-blue-500 data-[state=active]:text-white data-[state=active]:shadow-xl data-[state=active]:border data-[state=active]:border-blue-400 text-gray-300 hover:text-white hover:bg-gray-600 transition-all duration-300 rounded-lg font-medium py-3"
+                    >
+                      Registrarse
+                    </TabsTrigger>
                   </TabsList>
 
                   {/* Login Tab */}
@@ -240,19 +250,19 @@ export default function AuthPage() {
                           name="email"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel className="text-gray-700 dark:text-gray-200">Correo Electrónico</FormLabel>
+                              <FormLabel className="text-gray-200 font-medium">Correo Electrónico</FormLabel>
                               <FormControl>
                                 <div className="relative">
-                                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500 dark:text-gray-400" />
+                                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                                   <Input
                                     type="email"
                                     placeholder="Ingresa tu email"
-                                    className="pl-10 bg-gray-50 dark:bg-gray-700/50 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:border-blue-500 focus:ring-blue-500"
+                                    className="pl-10 bg-gradient-to-r from-gray-800 to-gray-700 border-2 border-gray-600 text-gray-100 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 rounded-lg transition-all duration-300 hover:border-gray-500"
                                     {...field}
                                   />
                                 </div>
                               </FormControl>
-                              <FormMessage className="text-red-500 dark:text-red-400" />
+                              <FormMessage className="text-red-400" />
                             </FormItem>
                           )}
                         />
