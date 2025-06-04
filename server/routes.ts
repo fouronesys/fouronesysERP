@@ -288,13 +288,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Company not found" });
       }
       
-      // Use partial schema for updates, preserving ownerId
-      const updateData = {
-        ...req.body,
-        ownerId: existingCompany.ownerId // Preserve existing ownerId
-      };
+      // Create update data without ownerId to avoid validation issues
+      const updateData = { ...req.body };
+      delete updateData.ownerId; // Remove ownerId from updates
       
-      const validatedData = insertCompanySchema.partial().parse(updateData);
+      // Use partial schema for updates without requiring ownerId
+      const validatedData = insertCompanySchema.omit({ ownerId: true }).partial().parse(updateData);
       const company = await storage.updateCompany(id, validatedData);
       res.json(company);
     } catch (error) {
