@@ -48,7 +48,8 @@ import {
   Calendar,
   DollarSign,
   Globe,
-  Shield
+  Shield,
+  Mail
 } from "lucide-react";
 import { formatDominicanDateTime } from "@/lib/dominican";
 
@@ -211,6 +212,31 @@ export default function SuperAdmin() {
       toast({
         title: "Error",
         description: "No se pudo eliminar la empresa.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const resendEmailMutation = useMutation({
+    mutationFn: async (companyId: number) => {
+      const response = await apiRequest(`/api/admin/companies/${companyId}/resend-email`, {
+        method: "POST",
+      });
+      return await response.json();
+    },
+    onSuccess: (result) => {
+      toast({
+        title: "Email reenviado",
+        description: result.emailSent 
+          ? "La invitación ha sido reenviada exitosamente." 
+          : "No se pudo reenviar la invitación por email.",
+        variant: result.emailSent ? "default" : "destructive",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "No se pudo reenviar la invitación.",
         variant: "destructive",
       });
     },
@@ -859,8 +885,19 @@ export default function SuperAdmin() {
                             variant="ghost"
                             size="sm"
                             onClick={() => handleEdit(company)}
+                            title="Editar empresa"
                           >
                             <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-blue-600 hover:text-blue-800"
+                            onClick={() => handleResendEmail(company)}
+                            disabled={resendEmailMutation.isPending}
+                            title="Reenviar invitación por email"
+                          >
+                            <Mail className="h-4 w-4" />
                           </Button>
                           <Button
                             variant="ghost"
@@ -872,6 +909,7 @@ export default function SuperAdmin() {
                               }
                             }}
                             disabled={deleteCompanyMutation.isPending}
+                            title="Eliminar empresa"
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
