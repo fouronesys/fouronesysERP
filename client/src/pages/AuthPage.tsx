@@ -207,10 +207,12 @@ export default function AuthPage() {
             
             <div className="text-center mb-8">
               <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                Bienvenido de vuelta
+                {activeTab === "login" ? "Bienvenido de vuelta" : "Únete a nosotros"}
               </h2>
               <p className="text-gray-600 dark:text-gray-300">
-                Accede a tu cuenta para continuar
+                {activeTab === "login" 
+                  ? "Accede a tu cuenta para continuar" 
+                  : "Crea tu cuenta y comienza a gestionar tu empresa"}
               </p>
             </div>
 
