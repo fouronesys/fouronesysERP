@@ -347,23 +347,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/companies/current", isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.id;
-      const company = await storage.getCompanyByUserId(userId);
-      
-      if (!company) {
-        return res.status(404).json({ message: "No company found for user" });
-      }
-      
-      const companyData = insertCompanySchema.parse(req.body);
-      const updatedCompany = await storage.updateCompany(company.id, companyData);
-      res.json(updatedCompany);
-    } catch (error) {
-      console.error("Error updating company:", error);
-      res.status(500).json({ message: "Failed to update company" });
-    }
-  });
+
 
   // Warehouse routes
   app.get("/api/warehouses", isAuthenticated, async (req: any, res) => {
