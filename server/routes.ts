@@ -63,6 +63,102 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // RNC Verification Service
+  const verifyRNCWithDGII = async (rnc: string) => {
+    try {
+      // Validate RNC format (9-11 digits)
+      const cleanRNC = rnc.replace(/[-\s]/g, "");
+      if (!/^\d{9,11}$/.test(cleanRNC)) {
+        return null;
+      }
+
+      // Check cache first
+      const cachedResult = await storage.searchRNC(cleanRNC);
+      if (cachedResult) {
+        const cacheAge = new Date().getTime() - new Date(cachedResult.lastUpdated || new Date()).getTime();
+        const isValidCache = cacheAge < (24 * 60 * 60 * 1000); // 24 hours
+        
+        if (isValidCache) {
+          return cachedResult;
+        }
+      }
+
+      // Consult DGII website
+      const response = await fetch("https://dgii.gov.do/app/WebApps/Consultas/RNC/WFRNCPUB.aspx", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+        },
+        body: new URLSearchParams({
+          "__EVENTTARGET": "",
+          "__EVENTARGUMENT": "",
+          "txtRNCCedula": cleanRNC,
+          "btnBuscarPorRNC": "Buscar"
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const html = await response.text();
+      
+      // Parse response
+      const nombreMatch = html.match(/Nombre.*?<[^>]*>\s*([^<]+)/i);
+      const categoriaMatch = html.match(/Categoría.*?<[^>]*>\s*([^<]+)/i);
+      const regimenMatch = html.match(/Régimen.*?<[^>]*>\s*([^<]+)/i);
+      const estadoMatch = html.match(/Estado.*?<[^>]*>\s*([^<]+)/i);
+
+      if (!nombreMatch) {
+        return null;
+      }
+
+      const rncData = {
+        rnc: cleanRNC,
+        razonSocial: nombreMatch[1].trim(),
+        nombreComercial: null,
+        categoria: categoriaMatch?.[1]?.trim() || "No especificada",
+        regimen: regimenMatch?.[1]?.trim() || "No especificado",
+        estado: estadoMatch?.[1]?.trim() || "Activo",
+        lastUpdated: new Date()
+      };
+
+      // Save to cache
+      await storage.createRNCRegistry(rncData);
+      return rncData;
+    } catch (error) {
+      console.error("Error verifying RNC:", error);
+      return null;
+    }
+  };
+
+  // RNC Verification API endpoint
+  app.get("/api/verify-rnc/:rnc", isAuthenticated, async (req: any, res) => {
+    try {
+      const { rnc } = req.params;
+      const rncData = await verifyRNCWithDGII(rnc);
+      
+      if (rncData) {
+        res.json({
+          valid: true,
+          data: rncData
+        });
+      } else {
+        res.json({
+          valid: false,
+          message: "RNC no encontrado en la base de datos de la DGII"
+        });
+      }
+    } catch (error) {
+      console.error("Error in RNC verification:", error);
+      res.status(500).json({ 
+        valid: false, 
+        message: "Error interno del servidor" 
+      });
+    }
+  });
+
   // Super Admin routes
   app.get("/api/admin/companies", isAuthenticated, async (req: any, res) => {
     try {

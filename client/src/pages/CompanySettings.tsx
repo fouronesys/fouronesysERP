@@ -42,6 +42,8 @@ type CompanySettingsFormData = z.infer<typeof companySettingsSchema>;
 export default function CompanySettings() {
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [isVerifyingRNC, setIsVerifyingRNC] = useState(false);
+  const [rncValidationResult, setRncValidationResult] = useState<any>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
