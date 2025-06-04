@@ -405,7 +405,83 @@ export default function FiscalDocuments() {
 
           {/* RNC Verification Tab */}
           <TabsContent value="rnc-verification" className="space-y-4">
-            <RNCVerificationCard />
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Building2 className="mr-2 h-5 w-5" />
+                  Verificación de RNC en DGII
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="rncInput">RNC a Verificar</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="rncInput"
+                      placeholder="Ej: 131-12345-6"
+                      value={rncToVerify}
+                      onChange={(e) => setRncToVerify(e.target.value)}
+                      className={rncVerificationResult?.valid === true ? "border-green-500" : 
+                                rncVerificationResult?.valid === false ? "border-red-500" : ""}
+                    />
+                    <Button
+                      onClick={handleRNCVerification}
+                      disabled={isVerifyingRNC || !rncToVerify}
+                    >
+                      {isVerifyingRNC ? "Verificando..." : "Verificar"}
+                    </Button>
+                  </div>
+                </div>
+
+                {rncVerificationResult && (
+                  <div className={`p-4 rounded-lg border ${
+                    rncVerificationResult.valid 
+                      ? "bg-green-50 text-green-700 border-green-200" 
+                      : "bg-red-50 text-red-700 border-red-200"
+                  }`}>
+                    {rncVerificationResult.valid ? (
+                      <div className="space-y-2">
+                        <h3 className="font-medium flex items-center">
+                          <CheckCircle className="h-4 w-4 mr-2" />
+                          RNC Verificado en DGII
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                          <div>
+                            <p><strong>RNC:</strong> {rncVerificationResult.data?.rnc}</p>
+                            <p><strong>Razón Social:</strong> {rncVerificationResult.data?.razonSocial}</p>
+                          </div>
+                          <div>
+                            {rncVerificationResult.data?.categoria && (
+                              <p><strong>Categoría:</strong> {rncVerificationResult.data.categoria}</p>
+                            )}
+                            {rncVerificationResult.data?.estado && (
+                              <p><strong>Estado:</strong> {rncVerificationResult.data.estado}</p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-center">
+                        <AlertTriangle className="h-4 w-4 mr-2" />
+                        <p>{rncVerificationResult.message}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
+                  <h4 className="font-medium text-blue-800 dark:text-blue-200 mb-2">
+                    Información sobre la Verificación RNC
+                  </h4>
+                  <ul className="text-sm text-blue-700 dark:text-blue-300 space-y-1">
+                    <li>• La verificación se realiza directamente en los servidores de la DGII</li>
+                    <li>• Los datos se actualizan en tiempo real</li>
+                    <li>• Se valida el formato y existencia del RNC</li>
+                    <li>• Los resultados se guardan en cache por 24 horas para optimizar consultas</li>
+                  </ul>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>

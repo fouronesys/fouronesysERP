@@ -1450,54 +1450,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // RNC Verification
+
+
+  // RNC Verification API endpoint
+  app.get("/api/verify-rnc/:rnc", isAuthenticated, async (req: any, res) => {
+    try {
+      const { rnc } = req.params;
+      const rncData = await verifyRNCWithDGII(rnc);
+      
+      if (rncData) {
+        res.json({
+          valid: true,
+          data: rncData
+        });
+      } else {
+        res.json({
+          valid: false,
+          message: "RNC no encontrado en la base de datos de la DGII"
+        });
+      }
+    } catch (error) {
+      console.error("Error in RNC verification:", error);
+      res.status(500).json({ 
+        valid: false, 
+        message: "Error interno del servidor" 
+      });
+    }
+  });
+
+  // Legacy RNC verification endpoint (fiscal module)
   app.get("/api/fiscal/verify-rnc/:rnc", isAuthenticated, async (req: any, res) => {
     try {
       const { rnc } = req.params;
-      const cleanRnc = rnc.replace(/\D/g, ""); // Remove non-digits
+      const cleanRnc = rnc.replace(/\D/g, "");
       
       if (cleanRnc.length < 9 || cleanRnc.length > 11) {
         return res.status(400).json({ error: "RNC debe tener entre 9 y 11 dígitos" });
       }
 
-      // First check local database
-      const localResult = await storage.searchRNC(cleanRnc);
-      if (localResult) {
-        return res.json(localResult);
+      const rncData = await verifyRNCWithDGII(cleanRnc);
+      
+      if (rncData) {
+        return res.json(rncData);
+      } else {
+        return res.status(404).json({ error: "RNC no encontrado en los registros de la DGII" });
       }
-
-      // If not found locally, try to fetch from DGII API
-      // Note: You would need to provide the DGII API credentials for this to work
-      try {
-        const dgiiResponse = await fetch(`https://api.dgii.gov.do/wsMovilDGII/WSMovilDGII.asmx/GetContribuyentes?value=${cleanRnc}&patronBusqueda=1&inicioFilas=1&filaFilas=1&IMEI=`, {
-          method: 'GET',
-          headers: {
-            'User-Agent': 'Four One System/1.0'
-          }
-        });
-        
-        if (dgiiResponse.ok) {
-          const dgiiData = await dgiiResponse.text();
-          // Parse DGII response and save to local database
-          // This is a simplified version - actual DGII API response would need proper parsing
-          const mockData = {
-            rnc: cleanRnc,
-            razonSocial: "Empresa de prueba",
-            nombreComercial: "Empresa comercial",
-            estado: "ACTIVO",
-            categoria: "PERSONA JURIDICA",
-            regimen: "ORDINARIO"
-          };
-          
-          await storage.createRNCRegistry(mockData);
-          return res.json(mockData);
-        }
-      } catch (dgiiError) {
-        console.log("DGII API not available, using fallback");
-      }
-
-      // Fallback response
-      res.status(404).json({ error: "RNC no encontrado en los registros" });
     } catch (error) {
       console.error("Error verifying RNC:", error);
       res.status(500).json({ message: "Failed to verify RNC" });
