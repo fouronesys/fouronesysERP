@@ -27,7 +27,7 @@ export default function Landing() {
               Iniciar Sesión
             </Button>
             <Button 
-              onClick={() => window.location.href = "/register"}
+              onClick={() => window.location.href = "/auth"}
               className="px-4 py-2 text-sm bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white border-none transition-all"
             >
               Registrarse
@@ -225,7 +225,7 @@ export default function Landing() {
                   </Button>
                   <Button 
                     variant="outline"
-                    onClick={() => window.location.href = "/register"}
+                    onClick={() => window.location.href = "/auth"}
                     className="w-full border-green-400 text-green-300 bg-transparent hover:bg-green-400 hover:text-black"
                   >
                     Registrar Nueva Empresa
