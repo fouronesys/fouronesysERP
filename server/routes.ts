@@ -459,9 +459,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/companies/current", isAuthenticated, async (req: any, res) => {
     try {
       console.log("PUT /api/companies/current - Request body:", req.body);
-      console.log("PUT /api/companies/current - User ID:", req.user.id);
+      console.log("PUT /api/companies/current - User object:", req.user);
       
-      const userId = req.user.id;
+      const userId = req.user.claims?.sub || req.user.id;
+      console.log("PUT /api/companies/current - Resolved User ID:", userId);
+      
       const company = await storage.getCompanyByUserId(userId);
       
       if (!company) {
@@ -471,24 +473,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log("Existing company:", company);
       
-      // Validate and prepare update data
+      // Don't include ownerId in update data since it shouldn't change
       const updateData = {
-        ...req.body,
-        ownerId: userId,
-        id: company.id // Ensure we include the company ID
+        ...req.body
       };
       
       console.log("Update data before validation:", updateData);
       
-      // Use partial schema for updates (only validate provided fields)
-      const validatedData = insertCompanySchema.partial().parse(updateData);
+      // Use partial schema for updates without requiring ownerId
+      const validatedData = insertCompanySchema.omit({ ownerId: true }).partial().parse(updateData);
       console.log("Validated update data:", validatedData);
       
       const updatedCompany = await storage.updateCompany(company.id, validatedData);
       console.log("Company updated successfully:", updatedCompany);
       
       res.json(updatedCompany);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error updating company:", error);
       console.error("Error details:", error.message);
       res.status(500).json({ 
