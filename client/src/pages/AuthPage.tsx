@@ -75,20 +75,13 @@ export default function AuthPage() {
       return response.json();
     },
     onSuccess: (user) => {
-      // Show login animation first, delay data updates
-      setShowLoginAnimation(true);
-      
-      // Delay setting user data to prevent immediate redirect
-      setTimeout(() => {
-        queryClient.setQueryData(["/api/user"], user);
-        queryClient.invalidateQueries({ queryKey: ["/api/user"] });
-        queryClient.invalidateQueries({ queryKey: ["/api/companies/current"] });
-      }, 100);
-      
       toast({
         title: "¡Bienvenido de vuelta!",
         description: "Has iniciado sesión exitosamente.",
       });
+      
+      // Show animation immediately and handle redirect
+      setShowLoginAnimation(true);
     },
     onError: (error: any) => {
       toast({
@@ -133,13 +126,8 @@ export default function AuthPage() {
 
   const handleAnimationComplete = () => {
     setShowLoginAnimation(false);
-    // Update the query cache and force reload
-    queryClient.invalidateQueries({ queryKey: ["/api/user"] });
-    queryClient.invalidateQueries({ queryKey: ["/api/companies/current"] });
-    // Force page reload to ensure proper routing
-    setTimeout(() => {
-      window.location.href = "/";
-    }, 200);
+    // Clear any router cache and force reload
+    window.location.replace("/");
   };
 
   return (
