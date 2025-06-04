@@ -139,7 +139,7 @@ export default function AuthPage() {
         isVisible={showLoginAnimation} 
         onComplete={handleAnimationComplete}
       />
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-700">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-700">
       <div className="flex min-h-screen">
         {/* Left Column - Hero Section */}
         <div className="hidden lg:flex lg:flex-1 lg:flex-col lg:justify-center lg:px-8 xl:px-12 bg-gradient-to-br from-blue-600 to-indigo-800 relative overflow-hidden">
