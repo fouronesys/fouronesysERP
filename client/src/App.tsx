@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { Sidebar } from "@/components/Sidebar";
+import QuickActionMenu from "@/components/QuickActionMenu";
 import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
@@ -190,6 +191,9 @@ function Router() {
           <Route component={NotFound} />
         </Switch>
       </div>
+      
+      {/* Quick Action Floating Menu */}
+      <QuickActionMenu />
     </div>
   );
 }
