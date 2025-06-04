@@ -219,24 +219,22 @@ export default function SuperAdmin() {
 
   const resendEmailMutation = useMutation({
     mutationFn: async (companyId: number) => {
-      const response = await apiRequest(`/api/admin/companies/${companyId}/resend-email`, {
-        method: "POST",
-      });
-      return await response.json();
+      const response = await apiRequest("POST", `/api/admin/companies/${companyId}/resend-email`);
+      return response.json();
     },
-    onSuccess: (result) => {
+    onSuccess: (data: any) => {
       toast({
-        title: "Email reenviado",
-        description: result.emailSent 
-          ? "La invitación ha sido reenviada exitosamente." 
-          : "No se pudo reenviar la invitación por email.",
-        variant: result.emailSent ? "default" : "destructive",
+        title: "Éxito",
+        description: data.emailSent ? "Invitación reenviada exitosamente" : "Error en el envío del correo",
+        variant: data.emailSent ? "default" : "destructive",
       });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/companies"] });
     },
-    onError: () => {
+    onError: (error: Error) => {
+      console.error("Error resending email:", error);
       toast({
         title: "Error",
-        description: "No se pudo reenviar la invitación.",
+        description: "No se pudo reenviar la invitación",
         variant: "destructive",
       });
     },
@@ -287,8 +285,8 @@ export default function SuperAdmin() {
   };
 
   const handleResendEmail = (company: Company) => {
-    if (confirm(`¿Reenviar invitación por email a ${company.ownerEmail}?`)) {
-      resendEmailMutation.mutate(company.id);
+    if (confirm(`¿Reenviar invitación por email a ${company.ownerEmail || company.email}?`)) {
+      resendEmailMutation.mutate(company);
     }
   };
 

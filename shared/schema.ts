@@ -380,9 +380,15 @@ export const insertCompanySchema = createInsertSchema(companies).omit({
   updatedAt: true,
   ownerId: true,
   registrationStatus: true,
-  invitationToken: true,
-  invitationSentAt: true,
-  invitationExpiresAt: true,
+});
+
+// Schema for admin company creation (includes invitation fields)
+export const insertCompanySchemaForAdmin = createInsertSchema(companies).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  ownerId: true,
+  registrationStatus: true,
 });
 
 export const insertCustomerSchema = createInsertSchema(customers).omit({
