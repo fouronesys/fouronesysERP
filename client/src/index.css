@@ -2,14 +2,47 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Ensure dark theme applies immediately */
+/* Force dark theme styles with high specificity */
 html.dark {
-  color-scheme: dark;
+  color-scheme: dark !important;
 }
 
 html.dark body {
-  background-color: hsl(240 10% 3.9%);
-  color: hsl(0 0% 98%);
+  background-color: hsl(240 10% 3.9%) !important;
+  color: hsl(0 0% 98%) !important;
+}
+
+html.dark #root {
+  background-color: hsl(240 10% 3.9%) !important;
+  color: hsl(0 0% 98%) !important;
+  min-height: 100vh !important;
+}
+
+/* Force dark theme on all major containers */
+html.dark .bg-white {
+  background-color: hsl(240 10% 3.9%) !important;
+}
+
+html.dark .bg-background {
+  background-color: hsl(240 10% 3.9%) !important;
+}
+
+html.dark .text-foreground {
+  color: hsl(0 0% 98%) !important;
+}
+
+/* Override any light backgrounds in auth page */
+html.dark [class*="bg-"] {
+  background-color: hsl(240 10% 3.9%) !important;
+}
+
+/* Force card backgrounds to be dark */
+html.dark .bg-card {
+  background-color: hsl(240 10% 8%) !important;
+}
+
+html.dark .border {
+  border-color: hsl(240 3.7% 15.9%) !important;
 }
 
 /* Line clamp utility for text truncation */
