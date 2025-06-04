@@ -152,60 +152,45 @@ function Router() {
     return <Setup onComplete={() => setSetupComplete(true)} />;
   }
 
-  // Show authenticated routes
+  // Show authenticated routes with Sidebar layout
   return (
-    <Switch>
-      <Route path="/"><ProtectedRoute component={Dashboard} /></Route>
-      <Route path="/billing"><ProtectedRoute component={Billing} /></Route>
-      <Route path="/customers"><ProtectedRoute component={Customers} /></Route>
-      <Route path="/products"><ProtectedRoute component={Products} /></Route>
-      <Route path="/manufacturing"><ProtectedRoute component={Manufacturing} /></Route>
-      <Route path="/pos"><ProtectedRoute component={POS} /></Route>
-      
-      {/* Active functional routes */}
-      <Route path="/sales-reports"><ProtectedRoute component={SalesReports} /></Route>
-      <Route path="/pos-sales"><ProtectedRoute component={POSSales} /></Route>
-      <Route path="/warehouses"><ProtectedRoute component={Warehouses} /></Route>
-      <Route path="/bom"><ProtectedRoute component={BOM} /></Route>
-      <Route path="/admin"><ProtectedRoute component={SuperAdmin} /></Route>
-      <Route path="/companies"><ProtectedRoute component={CompanySettings} /></Route>
-      <Route path="/company-settings"><ProtectedRoute component={CompanySettings} /></Route>
-      
-      {/* Active functional routes continued */}
-      <Route path="/movements"><ProtectedRoute component={Movements} /></Route>
-      <Route path="/recipes"><ProtectedRoute component={Manufacturing} /></Route>
-      <Route path="/suppliers"><ProtectedRoute component={Customers} /></Route>
-      <Route path="/purchase-orders"><ProtectedRoute component={Dashboard} /></Route>
-      
-      {/* HR and Payroll routes */}
-      <Route path="/employees"><ProtectedRoute component={Employees} /></Route>
-      <Route path="/payroll"><ProtectedRoute component={Payroll} /></Route>
-      
-      {/* Fiscal Documents route */}
-      <Route path="/fiscal-documents"><ProtectedRoute component={FiscalDocuments} /></Route>
-      
-      {/* AI Integration route */}
-      <Route path="/ai-insights"><ProtectedRoute component={AIInsights} /></Route>
-      
-      {/* Subscription Plans route */}
-      <Route path="/plans" component={SubscriptionPlans} />
-      
-      {/* Communication routes */}
-      <Route path="/chat"><ProtectedRoute component={Chat} /></Route>
-      <Route path="/user-management"><ProtectedRoute component={UserManagement} /></Route>
-      
-      {/* Admin routes */}
-      <Route path="/super-admin"><ProtectedRoute component={SuperAdmin} /></Route>
-      <Route path="/company-analytics"><ProtectedRoute component={CompanyAnalytics} /></Route>
-      
-      {/* Profile menu routes */}
-      <Route path="/profile"><ProtectedRoute component={Profile} /></Route>
-      <Route path="/notifications"><ProtectedRoute component={Notifications} /></Route>
-      <Route path="/settings"><ProtectedRoute component={Settings} /></Route>
-      
-      {/* Fallback to 404 */}
-      <Route component={NotFound} />
-    </Switch>
+    <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
+      <Sidebar />
+      <div className="flex-1 overflow-hidden">
+        <Switch>
+          <Route path="/" component={Dashboard} />
+          <Route path="/billing" component={Billing} />
+          <Route path="/customers" component={Customers} />
+          <Route path="/products" component={Products} />
+          <Route path="/manufacturing" component={Manufacturing} />
+          <Route path="/pos" component={POS} />
+          <Route path="/sales-reports" component={SalesReports} />
+          <Route path="/pos-sales" component={POSSales} />
+          <Route path="/warehouses" component={Warehouses} />
+          <Route path="/bom" component={BOM} />
+          <Route path="/admin" component={SuperAdmin} />
+          <Route path="/companies" component={CompanySettings} />
+          <Route path="/company-settings" component={CompanySettings} />
+          <Route path="/movements" component={Movements} />
+          <Route path="/recipes" component={Manufacturing} />
+          <Route path="/suppliers" component={Customers} />
+          <Route path="/purchase-orders" component={Dashboard} />
+          <Route path="/employees" component={Employees} />
+          <Route path="/payroll" component={Payroll} />
+          <Route path="/fiscal-documents" component={FiscalDocuments} />
+          <Route path="/ai-insights" component={AIInsights} />
+          <Route path="/plans" component={SubscriptionPlans} />
+          <Route path="/chat" component={Chat} />
+          <Route path="/user-management" component={UserManagement} />
+          <Route path="/super-admin" component={SuperAdmin} />
+          <Route path="/company-analytics" component={CompanyAnalytics} />
+          <Route path="/profile" component={Profile} />
+          <Route path="/notifications" component={Notifications} />
+          <Route path="/settings" component={Settings} />
+          <Route component={NotFound} />
+        </Switch>
+      </div>
+    </div>
   );
 }
 
