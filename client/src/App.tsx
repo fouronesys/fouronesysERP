@@ -4,7 +4,6 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/ThemeProvider";
-import { LanguageProvider } from "@/components/LanguageProvider";
 import { Sidebar } from "@/components/Sidebar";
 import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -37,7 +36,6 @@ import Payroll from "@/pages/Payroll";
 import FiscalDocuments from "@/pages/FiscalDocuments";
 import AIInsights from "@/pages/AIInsights";
 import SubscriptionPlans from "@/pages/SubscriptionPlans";
-import TestTranslations from "@/pages/TestTranslations";
 import NotFound from "@/pages/not-found";
 
 function ProtectedRoute({ component: Component, ...props }: { component: React.ComponentType }) {
@@ -185,9 +183,6 @@ function Router() {
       <Route path="/notifications" component={() => <ProtectedRoute component={Notifications} />} />
       <Route path="/settings" component={() => <ProtectedRoute component={Settings} />} />
       
-      {/* Test translations page */}
-      <Route path="/test-translations" component={() => <ProtectedRoute component={TestTranslations} />} />
-      
       {/* Fallback to 404 */}
       <Route component={NotFound} />
     </Switch>
@@ -197,14 +192,12 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <LanguageProvider>
-        <ThemeProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Router />
-          </TooltipProvider>
-        </ThemeProvider>
-      </LanguageProvider>
+      <ThemeProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Router />
+        </TooltipProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }

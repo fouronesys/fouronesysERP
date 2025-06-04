@@ -28,8 +28,7 @@ import {
   UserCog
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { LanguageSelector } from "@/components/LanguageSelector";
-import { useTranslation } from "@/lib/i18n";
+
 import { useSubscription } from "@/hooks/useSubscription";
 import { useIsMobile } from "@/hooks/use-mobile";
 import logoImage from "@assets/Four One Solutions Logo_20250130_143401_0000.png";
@@ -111,65 +110,9 @@ export function Sidebar() {
   const [location] = useLocation();
   const { user } = useAuth();
   const { currentPlan, daysUntilExpiry } = useSubscription();
-  const { t } = useTranslation();
   const isMobile = useIsMobile();
   const [isOpen, setIsOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
-
-  // Dynamic navigation with translations
-  const getNavigationItems = () => [
-    {
-      name: t('nav.dashboard'),
-      href: "/",
-      icon: BarChart3,
-    },
-    {
-      category: "Ventas",
-      items: [
-        { name: t('nav.pos'), href: "/pos", icon: CreditCard },
-        { name: t('nav.billing'), href: "/billing", icon: FileText },
-        { name: t('nav.customers'), href: "/customers", icon: Users },
-        { name: "Reportes de Ventas", href: "/sales-reports", icon: ChartBar },
-      ],
-    },
-    {
-      category: t('nav.inventory'),
-      items: [
-        { name: t('nav.products'), href: "/products", icon: Package },
-        { name: t('nav.warehouses'), href: "/warehouses", icon: Warehouse },
-        { name: "Movimientos", href: "/movements", icon: ArrowLeftRight },
-      ],
-    },
-    {
-      category: t('nav.manufacturing'),
-      items: [
-        { name: "Órdenes de Producción", href: "/manufacturing", icon: Factory },
-        { name: "Lista de Materiales (BOM)", href: "/bom", icon: List },
-        { name: "Recetas", href: "/recipes", icon: FlaskConical },
-      ],
-    },
-    {
-      category: "Recursos Humanos",
-      items: [
-        { name: t('nav.employees'), href: "/employees", icon: Users },
-        { name: t('nav.payroll'), href: "/payroll", icon: Calculator },
-      ],
-    },
-    {
-      category: "Análisis",
-      items: [
-        { name: t('nav.reports'), href: "/reports", icon: ChartBar },
-        { name: t('nav.aiInsights'), href: "/ai-insights", icon: Brain },
-        { name: t('nav.chat'), href: "/chat", icon: MessageCircle },
-      ],
-    },
-    {
-      category: t('nav.settings'),
-      items: [
-        { name: "Empresa", href: "/company-settings", icon: Settings },
-      ],
-    },
-  ];
 
   // Cerrar menú móvil al cambiar de ruta
   useEffect(() => {
@@ -225,7 +168,7 @@ export function Sidebar() {
 
       {/* Navigation */}
       <nav className="flex-1 p-3 sm:p-4 space-y-1 overflow-y-auto">
-        {getNavigationItems().map((item, index) => {
+        {navigation.map((item, index) => {
           if ("href" in item) {
             const isActive = location === item.href;
             const Icon = item.icon;
