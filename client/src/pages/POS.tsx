@@ -487,8 +487,9 @@ export default function POS() {
                     )}
                   </div>
 
-                  {/* Products Grid - Enhanced Layout */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {/* Products Grid - Enhanced Layout with Scroll */}
+                  <div className="max-h-[70vh] overflow-y-auto pr-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {filteredProducts.map((product) => (
                       <Card key={product.id} className="overflow-hidden hover:shadow-lg transition-all duration-300 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
                         <CardContent className="p-0">
@@ -560,6 +561,7 @@ export default function POS() {
                         </CardContent>
                       </Card>
                     ))}
+                    </div>
                   </div>
                 </TabsContent>
                 
@@ -665,8 +667,9 @@ export default function POS() {
                   />
                 </div>
 
-                {/* Products Grid - Fixed Layout */}
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 lg:gap-4">
+                {/* Products Grid with Scroll and Wider Layout */}
+                <div className="max-h-[70vh] overflow-y-auto pr-2">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {filteredProducts.map((product) => (
                     <Card key={product.id} className="flex flex-col hover:shadow-md transition-all duration-200 cursor-pointer group" onClick={() => addToCart(product)}>
                       <CardContent className="p-3 flex flex-col h-full">
@@ -722,6 +725,7 @@ export default function POS() {
                       </CardContent>
                     </Card>
                   ))}
+                  </div>
                 </div>
               </>
             )}
