@@ -702,7 +702,7 @@ export default function SuperAdmin() {
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <Label htmlFor="subscriptionPlan">Plan de Suscripción</Label>
+                          <Label htmlFor="subscriptionPlan">Plan de Suscripción*</Label>
                           <Select
                             value={form.watch("subscriptionPlan")}
                             onValueChange={(value) => form.setValue("subscriptionPlan", value as "trial" | "monthly" | "annual")}
@@ -716,16 +716,32 @@ export default function SuperAdmin() {
                               <SelectItem value="annual">Anual - RD$ 15,000/año</SelectItem>
                             </SelectContent>
                           </Select>
+                          {form.formState.errors.subscriptionPlan && (
+                            <p className="text-sm text-red-500">{form.formState.errors.subscriptionPlan.message}</p>
+                          )}
                         </div>
 
-                        <div className="flex items-center space-x-2 pt-8">
-                          <Switch
-                            id="isActive"
-                            checked={form.watch("isActive")}
-                            onCheckedChange={(checked) => form.setValue("isActive", checked)}
+                        <div className="space-y-2">
+                          <Label htmlFor="ownerEmail">Email del Propietario*</Label>
+                          <Input
+                            id="ownerEmail"
+                            type="email"
+                            placeholder="propietario@empresa.com"
+                            {...form.register("ownerEmail")}
                           />
-                          <Label htmlFor="isActive">Empresa activa</Label>
+                          {form.formState.errors.ownerEmail && (
+                            <p className="text-sm text-red-500">{form.formState.errors.ownerEmail.message}</p>
+                          )}
                         </div>
+                      </div>
+
+                      <div className="flex items-center space-x-2">
+                        <Switch
+                          id="isActive"
+                          checked={form.watch("isActive")}
+                          onCheckedChange={(checked) => form.setValue("isActive", checked)}
+                        />
+                        <Label htmlFor="isActive">Empresa activa al crearla</Label>
                       </div>
 
                       <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-2 pt-4">
