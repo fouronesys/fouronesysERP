@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { Sidebar } from "@/components/Sidebar";
 import QuickActionMenu from "@/components/QuickActionMenu";
+import SyncStatusIndicator from "@/components/SyncStatusIndicator";
 import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
@@ -157,6 +158,7 @@ function Router() {
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
       <Sidebar />
+      <SyncStatusIndicator />
       <div className="flex-1 overflow-hidden">
         <Switch>
           <Route path="/" component={Dashboard} />
