@@ -315,7 +315,11 @@ export default function CompanySettings() {
       <Header title="Configuración de Empresa" subtitle="Personaliza la información fiscal y visual de tu empresa" />
       
       <div className="p-6 space-y-6">
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <form onSubmit={(e) => {
+          console.log("🔥 Form submit event triggered!");
+          e.preventDefault();
+          form.handleSubmit(onSubmit)(e);
+        }} className="space-y-6">
           {/* Logo de la Empresa */}
           <Card>
             <CardHeader>
@@ -590,6 +594,11 @@ export default function CompanySettings() {
               type="submit"
               disabled={updateMutation.isPending}
               size="lg"
+              onClick={(e) => {
+                console.log("🖱️ Save button clicked!");
+                console.log("Form state:", form.formState);
+                console.log("Form values:", form.getValues());
+              }}
             >
               <Save className="mr-2 h-4 w-4" />
               {updateMutation.isPending ? "Guardando..." : "Guardar Configuración"}
