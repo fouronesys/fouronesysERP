@@ -719,30 +719,65 @@ function RNCVerificationCard() {
                 {result.error}
               </div>
             ) : (
-              <div className="space-y-2">
-                <div className="flex items-center text-green-600">
+              <div className="space-y-4">
+                <div className="flex items-center text-green-600 mb-4">
                   <CheckCircle className="h-5 w-5 mr-2" />
-                  RNC Verificado
+                  <span className="font-semibold">RNC Verificado - DGII</span>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <strong>RNC:</strong> {result.rnc}
+                
+                {/* Información Principal */}
+                <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg">
+                  <h4 className="font-semibold text-blue-800 dark:text-blue-200 mb-3">Información de la Empresa</h4>
+                  <div className="grid grid-cols-1 gap-3">
+                    <div className="flex flex-col">
+                      <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">RNC</span>
+                      <span className="font-mono text-lg font-semibold">{result.rnc}</span>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Razón Social</span>
+                      <span className="font-semibold text-gray-900 dark:text-gray-100">{result.razonSocial}</span>
+                    </div>
+                    {result.nombreComercial && (
+                      <div className="flex flex-col">
+                        <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Nombre Comercial</span>
+                        <span className="text-gray-700 dark:text-gray-300">{result.nombreComercial}</span>
+                      </div>
+                    )}
                   </div>
-                  <div>
-                    <strong>Razón Social:</strong> {result.razonSocial}
+                </div>
+
+                {/* Información Fiscal */}
+                <div className="bg-green-50 dark:bg-green-950/20 p-4 rounded-lg">
+                  <h4 className="font-semibold text-green-800 dark:text-green-200 mb-3">Información Fiscal</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="flex flex-col">
+                      <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Estado</span>
+                      <span className={`font-semibold ${result.estado === 'ACTIVO' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                        {result.estado}
+                      </span>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Categoría</span>
+                      <span className="text-gray-700 dark:text-gray-300">{result.categoria || "N/A"}</span>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Régimen</span>
+                      <span className="text-gray-700 dark:text-gray-300">{result.regimen || "N/A"}</span>
+                    </div>
+                    {result.lastUpdated && (
+                      <div className="flex flex-col">
+                        <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Última Actualización</span>
+                        <span className="text-gray-700 dark:text-gray-300 text-sm">
+                          {new Date(result.lastUpdated).toLocaleDateString('es-DO')}
+                        </span>
+                      </div>
+                    )}
                   </div>
-                  <div>
-                    <strong>Nombre Comercial:</strong> {result.nombreComercial || "N/A"}
-                  </div>
-                  <div>
-                    <strong>Estado:</strong> {result.estado}
-                  </div>
-                  <div>
-                    <strong>Categoría:</strong> {result.categoria || "N/A"}
-                  </div>
-                  <div>
-                    <strong>Régimen:</strong> {result.regimen || "N/A"}
-                  </div>
+                </div>
+
+                {/* Información DGII */}
+                <div className="text-xs text-gray-500 dark:text-gray-400 italic border-t pt-2">
+                  Información verificada con la Dirección General de Impuestos Internos (DGII)
                 </div>
               </div>
             )}
