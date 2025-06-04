@@ -145,10 +145,11 @@ export default function SuperAdmin() {
 
   const toggleStatusMutation = useMutation({
     mutationFn: async ({ id, isActive }: { id: number; isActive: boolean }) => {
-      await apiRequest(`/api/admin/companies/${id}/status`, {
+      const response = await apiRequest(`/api/admin/companies/${id}/status`, {
         method: "PATCH",
-        body: JSON.stringify({ isActive }),
+        body: { isActive },
       });
+      return await response.json();
     },
     onSuccess: () => {
       toast({
@@ -161,6 +162,29 @@ export default function SuperAdmin() {
       toast({
         title: "Error",
         description: "No se pudo actualizar el estado.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteCompanyMutation = useMutation({
+    mutationFn: async (companyId: number) => {
+      const response = await apiRequest(`/api/admin/companies/${companyId}`, {
+        method: "DELETE",
+      });
+      return await response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Empresa eliminada",
+        description: "La empresa ha sido eliminada exitosamente.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/companies"] });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "No se pudo eliminar la empresa.",
         variant: "destructive",
       });
     },
