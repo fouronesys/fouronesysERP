@@ -225,7 +225,7 @@ export function Sidebar() {
 
       {/* Navigation */}
       <nav className="flex-1 p-3 sm:p-4 space-y-1 overflow-y-auto">
-        {navigation.map((item, index) => {
+        {getNavigationItems().map((item, index) => {
           if ("href" in item) {
             const isActive = location === item.href;
             const Icon = item.icon;
