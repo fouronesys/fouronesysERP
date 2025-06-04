@@ -1,9 +1,13 @@
 import type { Express } from "express";
+import express from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./auth";
 import { AIProductService, AIBusinessService, AIChatService, AIDocumentService } from "./ai-services-fixed";
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
 import { 
   insertCompanySchema,
   insertWarehouseSchema,
@@ -2054,6 +2058,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to update permissions" });
     }
   });
+
+  // Configure multer for logo uploads
+  const uploadDir = path.join(process.cwd(), 'uploads', 'logos');
+  if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+  }
+
+  const logoStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+      cb(null, uploadDir);
+    },
+    filename: (req, file, cb) => {
+      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+      const ext = path.extname(file.originalname);
+      cb(null, `logo-${uniqueSuffix}${ext}`);
+    }
+  });
+
+  const uploadLogo = multer({
+    storage: logoStorage,
+    limits: {
+      fileSize: 5 * 1024 * 1024, // 5MB limit
+    },
+    fileFilter: (req, file, cb) => {
+      if (file.mimetype.startsWith('image/')) {
+        cb(null, true);
+      } else {
+        cb(new Error('Only image files are allowed'));
+      }
+    }
+  });
+
+  // Logo upload endpoint
+  app.post("/api/upload/logo", isAuthenticated, uploadLogo.single('logo'), async (req: any, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+
+      // Return the file path that can be served by the static middleware
+      const logoUrl = `/uploads/logos/${req.file.filename}`;
+      
+      res.json({ url: logoUrl });
+    } catch (error: any) {
+      console.error("Error uploading logo:", error);
+      res.status(500).json({ message: "Failed to upload logo" });
+    }
+  });
+
+  // Create uploads directory if it doesn't exist
+  const uploadsPath = path.join(process.cwd(), 'uploads');
+  if (!fs.existsSync(uploadsPath)) {
+    fs.mkdirSync(uploadsPath, { recursive: true });
+  }
+  
+  // Serve uploaded files statically 
+  const staticExpress = await import('express');
+  app.use('/uploads', staticExpress.default.static(uploadsPath));
 
   const httpServer = createServer(app);
 
