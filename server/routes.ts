@@ -1491,6 +1491,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Import RNC data from DGII file
+  app.post("/api/admin/import-rnc-data", isAuthenticated, async (req: any, res) => {
+    try {
+      const { parseAndImportRNCFile } = await import('./rnc-parser');
+      const result = await parseAndImportRNCFile('attached_assets/DGII_RNC.TXT');
+      
+      res.json({
+        message: "RNC data imported successfully",
+        total: result.total,
+        imported: result.imported
+      });
+    } catch (error) {
+      console.error("Error importing RNC data:", error);
+      res.status(500).json({ 
+        message: "Failed to import RNC data",
+        error: error.message 
+      });
+    }
+  });
+
   // RNC Verification API endpoint
   app.get("/api/verify-rnc/:rnc", isAuthenticated, async (req: any, res) => {
     try {
