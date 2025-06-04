@@ -214,28 +214,28 @@ export default function AuthPage() {
               </p>
             </div>
 
-            <Card className="bg-gray-900/95 backdrop-blur-sm border border-gray-700 shadow-2xl rounded-2xl overflow-hidden">
-              <CardHeader className="text-center pb-6 bg-gradient-to-b from-gray-800 to-gray-900">
+            <Card className="bg-white/10 backdrop-blur-lg border-2 border-white/20 shadow-2xl rounded-3xl overflow-hidden">
+              <CardHeader className="text-center pb-6 bg-gradient-to-b from-black/30 to-transparent border-b border-white/10">
                 <div className="lg:hidden flex justify-center mb-4">
                   <img src={fourOneLogo} alt="Four One Solutions" className="h-12 w-auto filter brightness-0 invert" />
                 </div>
                 <CardTitle className="text-2xl font-bold text-white">Four One Solutions</CardTitle>
-                <CardDescription className="text-gray-300">
+                <CardDescription className="text-gray-200">
                   Sistema de gestión empresarial
                 </CardDescription>
               </CardHeader>
-              <CardContent className="p-6">
+              <CardContent className="p-8">
                 <Tabs value={activeTab} onValueChange={setActiveTab}>
-                  <TabsList className="grid w-full grid-cols-2 mb-6 p-1 bg-gray-800 border border-gray-700 rounded-lg">
+                  <TabsList className="grid w-full grid-cols-2 mb-8 p-2 bg-black/40 backdrop-blur-sm border-2 border-white/20 rounded-xl shadow-lg">
                     <TabsTrigger 
                       value="login" 
-                      className="data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-md text-gray-400 hover:text-gray-200 transition-all duration-200 rounded-md py-2 font-medium"
+                      className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-blue-600 data-[state=active]:text-white data-[state=active]:shadow-xl data-[state=active]:border-2 data-[state=active]:border-blue-400/50 text-gray-300 hover:text-white hover:bg-white/10 transition-all duration-300 rounded-lg font-semibold py-3 px-4"
                     >
                       Iniciar Sesión
                     </TabsTrigger>
                     <TabsTrigger 
                       value="register" 
-                      className="data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-md text-gray-400 hover:text-gray-200 transition-all duration-200 rounded-md py-2 font-medium"
+                      className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-blue-600 data-[state=active]:text-white data-[state=active]:shadow-xl data-[state=active]:border-2 data-[state=active]:border-blue-400/50 text-gray-300 hover:text-white hover:bg-white/10 transition-all duration-300 rounded-lg font-semibold py-3 px-4"
                     >
                       Registrarse
                     </TabsTrigger>
@@ -249,20 +249,20 @@ export default function AuthPage() {
                           control={loginForm.control}
                           name="email"
                           render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="text-gray-200 font-medium">Correo Electrónico</FormLabel>
+                            <FormItem className="space-y-3">
+                              <FormLabel className="text-white font-semibold text-sm">Correo Electrónico</FormLabel>
                               <FormControl>
                                 <div className="relative">
-                                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                                  <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-blue-400" />
                                   <Input
                                     type="email"
                                     placeholder="Ingresa tu email"
-                                    className="pl-10 bg-gray-800 border border-gray-600 text-gray-100 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 rounded-lg transition-all duration-200"
+                                    className="pl-12 pr-4 py-4 bg-black/30 backdrop-blur-sm border-2 border-white/30 text-white placeholder-gray-300 focus:border-blue-400 focus:ring-4 focus:ring-blue-500/20 rounded-xl transition-all duration-300 shadow-lg hover:border-white/40 text-base"
                                     {...field}
                                   />
                                 </div>
                               </FormControl>
-                              <FormMessage className="text-red-400" />
+                              <FormMessage className="text-red-300 font-medium" />
                             </FormItem>
                           )}
                         />
@@ -270,39 +270,39 @@ export default function AuthPage() {
                           control={loginForm.control}
                           name="password"
                           render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="text-gray-200 font-medium">Contraseña</FormLabel>
+                            <FormItem className="space-y-3">
+                              <FormLabel className="text-white font-semibold text-sm">Contraseña</FormLabel>
                               <FormControl>
                                 <div className="relative">
-                                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                                  <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-blue-400" />
                                   <Input
                                     type={showPassword ? "text" : "password"}
                                     placeholder="Ingresa tu contraseña"
-                                    className="pl-10 pr-10 bg-gray-800 border border-gray-600 text-gray-100 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 rounded-lg transition-all duration-200"
+                                    className="pl-12 pr-12 py-4 bg-black/30 backdrop-blur-sm border-2 border-white/30 text-white placeholder-gray-300 focus:border-blue-400 focus:ring-4 focus:ring-blue-500/20 rounded-xl transition-all duration-300 shadow-lg hover:border-white/40 text-base"
                                     {...field}
                                   />
                                   <Button
                                     type="button"
                                     variant="ghost"
                                     size="sm"
-                                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent text-gray-400 hover:text-gray-200"
+                                    className="absolute right-2 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 hover:bg-white/10 text-blue-400 hover:text-blue-300 rounded-lg"
                                     onClick={() => setShowPassword(!showPassword)}
                                   >
                                     {showPassword ? (
-                                      <EyeOff className="h-4 w-4" />
+                                      <EyeOff className="h-5 w-5" />
                                     ) : (
-                                      <Eye className="h-4 w-4" />
+                                      <Eye className="h-5 w-5" />
                                     )}
                                   </Button>
                                 </div>
                               </FormControl>
-                              <FormMessage className="text-red-400" />
+                              <FormMessage className="text-red-300 font-medium" />
                             </FormItem>
                           )}
                         />
                         <Button
                           type="submit"
-                          className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl transition-all duration-200"
+                          className="w-full py-4 mt-6 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold rounded-xl shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-[1.02] border-2 border-blue-400/30 text-base"
                           disabled={loginMutation.isPending}
                         >
                           {loginMutation.isPending ? "Iniciando sesión..." : "Iniciar Sesión"}
