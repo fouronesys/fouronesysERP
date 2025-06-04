@@ -32,9 +32,19 @@ import {
   Settings
 } from "lucide-react";
 
-const companySettingsSchema = insertCompanySchema.extend({
+const companySettingsSchema = z.object({
   name: z.string().min(1, "Nombre es requerido"),
+  businessName: z.string().optional(),
   rnc: z.string().optional(),
+  address: z.string().optional(),
+  phone: z.string().optional(),
+  email: z.string().email("Email inválido").optional().or(z.literal("")),
+  website: z.string().optional(),
+  industry: z.string().optional(),
+  businessType: z.string().optional(),
+  taxRegime: z.string().optional(),
+  currency: z.string().optional(),
+  timezone: z.string().optional(),
 });
 
 type CompanySettingsFormData = z.infer<typeof companySettingsSchema>;
