@@ -227,12 +227,7 @@ export default function CompanySettings() {
     }
   };
 
-  // Debug function to check button click
-  const handleButtonClick = (e: React.MouseEvent) => {
-    console.log("Button clicked!");
-    console.log("Button type:", e.currentTarget.getAttribute('type'));
-    console.log("Form state:", form.formState);
-  };
+
 
   if (isLoading) {
     return (
@@ -488,7 +483,6 @@ export default function CompanySettings() {
               type="submit"
               disabled={updateMutation.isPending}
               size="lg"
-              onClick={handleButtonClick}
             >
               <Save className="mr-2 h-4 w-4" />
               {updateMutation.isPending ? "Guardando..." : "Guardar Configuración"}
