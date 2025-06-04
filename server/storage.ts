@@ -14,6 +14,9 @@ import {
   posSales,
   posSaleItems,
   posPrintSettings,
+  posSessions,
+  stockReservations,
+  ncfSequences,
   aiChatMessages,
   notifications,
   employees,
@@ -21,7 +24,6 @@ import {
   payrollEntries,
   timeTracking,
   leaves,
-  ncfSequences,
   comprobantes605,
   comprobantes606,
   rncRegistry,
@@ -81,6 +83,10 @@ import {
   type InsertPOSSaleItem,
   type POSPrintSettings,
   type InsertPOSPrintSettings,
+  type POSSession,
+  type InsertPOSSession,
+  type StockReservation,
+  type InsertStockReservation,
   type NCFSequence,
   type InsertNCFSequence,
   type Comprobante605,
@@ -238,6 +244,24 @@ export interface IStorage {
   // RNC Registry operations
   searchRNC(rnc: string): Promise<RNCRegistry | undefined>;
   createRNCRegistry(rncData: InsertRNCRegistry): Promise<RNCRegistry>;
+
+  // NCF Sequence operations for Fiscal Receipts
+  getNextNCF(companyId: number, ncfType: string): Promise<{ ncf: string; sequence: number }>;
+  createNCFSequence(ncfData: InsertNCFSequence): Promise<NCFSequence>;
+  updateNCFSequence(id: number, sequence: number): Promise<void>;
+
+  // POS Session operations for real-time synchronization
+  createPOSSession(sessionData: InsertPOSSession): Promise<POSSession>;
+  updatePOSSession(sessionId: string, cartData: any): Promise<void>;
+  getPOSSession(sessionId: string): Promise<POSSession | undefined>;
+  getActivePOSSessions(companyId: number): Promise<POSSession[]>;
+  deactivatePOSSession(sessionId: string): Promise<void>;
+
+  // Stock Reservation operations for cart synchronization
+  createStockReservation(reservationData: InsertStockReservation): Promise<StockReservation>;
+  releaseStockReservations(sessionId: string): Promise<void>;
+  getStockReservations(productId: number): Promise<StockReservation[]>;
+  cleanExpiredReservations(): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {

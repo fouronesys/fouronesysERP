@@ -788,7 +788,11 @@ export const rncRegistry = pgTable("rnc_registry", {
   lastUpdated: timestamp("last_updated").defaultNow(),
 });
 
-// insertNCFSequenceSchema already defined above
+export const insertNCFSequenceSchema = createInsertSchema(ncfSequences).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
 
 export const insertComprobante605Schema = createInsertSchema(comprobantes605).omit({
   id: true,
@@ -838,8 +842,7 @@ export type POSSale = typeof posSales.$inferSelect;
 export type InsertPOSSale = z.infer<typeof insertPOSSaleSchema>;
 export type POSSaleItem = typeof posSaleItems.$inferSelect;
 export type InsertPOSSaleItem = z.infer<typeof insertPOSSaleItemSchema>;
-export type NCFSequence = typeof ncfSequences.$inferSelect;
-export type InsertNCFSequence = z.infer<typeof insertNCFSequenceSchema>;
+// NCF types removed as they are defined below
 export type POSSession = typeof posSessions.$inferSelect;
 export type InsertPOSSession = z.infer<typeof insertPOSSessionSchema>;
 export type StockReservation = typeof stockReservations.$inferSelect;
@@ -858,10 +861,6 @@ export type TimeTracking = typeof timeTracking.$inferSelect;
 export type InsertTimeTracking = z.infer<typeof insertTimeTrackingSchema>;
 export type Leave = typeof leaves.$inferSelect;
 export type InsertLeave = z.infer<typeof insertLeaveSchema>;
-
-// NCF Types
-export type NCFSequence = typeof ncfSequences.$inferSelect;
-export type InsertNCFSequence = z.infer<typeof insertNCFSequenceSchema>;
 export type Comprobante605 = typeof comprobantes605.$inferSelect;
 export type InsertComprobante605 = z.infer<typeof insertComprobante605Schema>;
 export type Comprobante606 = typeof comprobantes606.$inferSelect;
