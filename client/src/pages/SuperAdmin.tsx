@@ -286,6 +286,12 @@ export default function SuperAdmin() {
     setIsDialogOpen(true);
   };
 
+  const handleResendEmail = (company: Company) => {
+    if (confirm(`¿Reenviar invitación por email a ${company.ownerEmail}?`)) {
+      resendEmailMutation.mutate(company.id);
+    }
+  };
+
   const handleRNCVerification = async (rnc: string) => {
     if (!rnc || rnc.trim() === '') {
       setRncValidationResult(null);

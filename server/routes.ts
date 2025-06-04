@@ -2491,5 +2491,114 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  // Admin endpoint for resending invitation emails
+  app.post("/api/admin/companies/:id/resend-email", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const isSuperAdmin = await storage.isUserSuperAdmin(userId);
+      
+      if (!isSuperAdmin) {
+        return res.status(403).json({ message: "Access denied. Super admin required." });
+      }
+
+      const companyId = parseInt(req.params.id);
+      const company = await storage.getCompany(companyId);
+      
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      if (!company.ownerEmail) {
+        return res.status(400).json({ message: "Company does not have an owner email" });
+      }
+
+      // Generate new invitation token and expiry
+      const invitationToken = Math.random().toString(36).substr(2, 32) + Date.now().toString(36);
+      const invitationExpiresAt = new Date(Date.now() + (7 * 24 * 60 * 60 * 1000)); // 7 days
+
+      // Update company with new invitation token
+      await storage.updateCompany(companyId, {
+        invitationToken,
+        invitationSentAt: new Date(),
+        invitationExpiresAt,
+      });
+
+      // Send invitation email
+      const { sendCompanyInvitationEmail } = await import('./email-service');
+      const emailSent = await sendCompanyInvitationEmail({
+        companyName: company.name,
+        companyEmail: company.ownerEmail,
+        invitationToken,
+      });
+
+      res.json({ 
+        emailSent,
+        message: emailSent ? "Invitación reenviada exitosamente" : "No se pudo enviar la invitación"
+      });
+    } catch (error) {
+      console.error("Error resending company invitation:", error);
+      res.status(500).json({ message: "Error al reenviar la invitación" });
+    }
+  });
+
+  // Enhanced PUT endpoint for updating companies with automatic email resend
+  app.put("/api/admin/companies/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const isSuperAdmin = await storage.isUserSuperAdmin(userId);
+      
+      if (!isSuperAdmin) {
+        return res.status(403).json({ message: "Access denied. Super admin required." });
+      }
+
+      const companyId = parseInt(req.params.id);
+      const existingCompany = await storage.getCompany(companyId);
+      
+      if (!existingCompany) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      const { ownerEmail: newOwnerEmail, ...updateData } = req.body;
+      const emailChanged = newOwnerEmail && newOwnerEmail !== existingCompany.ownerEmail;
+      
+      // Update company data
+      const updatedData = {
+        ...updateData,
+        ...(newOwnerEmail && { ownerEmail: newOwnerEmail })
+      };
+
+      const updatedCompany = await storage.updateCompany(companyId, updatedData);
+      
+      // If email changed, resend invitation to new email
+      let emailSent = false;
+      if (emailChanged) {
+        const invitationToken = Math.random().toString(36).substr(2, 32) + Date.now().toString(36);
+        const invitationExpiresAt = new Date(Date.now() + (7 * 24 * 60 * 60 * 1000));
+
+        await storage.updateCompany(companyId, {
+          invitationToken,
+          invitationSentAt: new Date(),
+          invitationExpiresAt,
+        });
+
+        const { sendCompanyInvitationEmail } = await import('./email-service');
+        emailSent = await sendCompanyInvitationEmail({
+          companyName: updatedCompany.name,
+          companyEmail: newOwnerEmail,
+          invitationToken,
+        });
+      }
+
+      res.json({ 
+        ...updatedCompany,
+        emailSent: emailChanged ? emailSent : null,
+        emailChanged
+      });
+    } catch (error) {
+      console.error("Error updating company:", error);
+      res.status(500).json({ message: "Failed to update company" });
+    }
+  });
+
   return httpServer;
 }

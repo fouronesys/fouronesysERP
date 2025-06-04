@@ -81,6 +81,7 @@ export const companies = pgTable("companies", {
   invitationToken: varchar("invitation_token", { length: 255 }), // token for registration link
   invitationSentAt: timestamp("invitation_sent_at"),
   invitationExpiresAt: timestamp("invitation_expires_at"),
+  ownerEmail: varchar("owner_email", { length: 255 }), // email del propietario para invitación
   isActive: boolean("is_active").notNull().default(true),
   ownerId: varchar("owner_id").notNull().references(() => users.id),
   createdAt: timestamp("created_at").defaultNow(),
