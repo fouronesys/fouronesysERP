@@ -2090,32 +2090,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Logo upload endpoint
+  // Logo upload endpoint - convert to base64 data URL
   app.post("/api/upload/logo", isAuthenticated, uploadLogo.single('logo'), async (req: any, res) => {
     try {
       if (!req.file) {
         return res.status(400).json({ message: "No file uploaded" });
       }
 
-      // Return the file path that can be served by the static middleware
-      const logoUrl = `/uploads/logos/${req.file.filename}`;
+      // Convert file to base64 data URL
+      const fileData = fs.readFileSync(req.file.path);
+      const base64Data = fileData.toString('base64');
+      const mimeType = req.file.mimetype;
+      const dataUrl = `data:${mimeType};base64,${base64Data}`;
       
-      res.json({ url: logoUrl });
+      // Clean up the temporary file
+      fs.unlinkSync(req.file.path);
+      
+      res.json({ url: dataUrl });
     } catch (error: any) {
       console.error("Error uploading logo:", error);
       res.status(500).json({ message: "Failed to upload logo" });
     }
   });
 
-  // Create uploads directory if it doesn't exist
-  const uploadsPath = path.join(process.cwd(), 'uploads');
-  if (!fs.existsSync(uploadsPath)) {
-    fs.mkdirSync(uploadsPath, { recursive: true });
-  }
-  
-  // Serve uploaded files statically 
-  const staticExpress = await import('express');
-  app.use('/uploads', staticExpress.default.static(uploadsPath));
+  // For now, we'll store the logo URL in the database without file upload
+  // This can be enhanced later with proper cloud storage
 
   const httpServer = createServer(app);
 
