@@ -533,17 +533,17 @@ export default function SuperAdmin() {
         {/* Gestión de Empresas */}
         <Card>
           <CardHeader>
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center space-y-4 lg:space-y-0">
               <CardTitle className="flex items-center">
                 <Shield className="mr-2 h-5 w-5" />
                 Empresas Registradas
               </CardTitle>
-              <div className="flex items-center space-x-4">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
                 <Input
                   placeholder="Buscar empresas..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-64"
+                  className="w-full sm:w-64"
                 />
                 <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                   <DialogTrigger asChild>
@@ -552,7 +552,7 @@ export default function SuperAdmin() {
                       Nueva Empresa
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="sm:max-w-[600px]">
+                  <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                       <DialogTitle>
                         {editingCompany ? "Editar Empresa" : "Registrar Nueva Empresa"}
@@ -618,7 +618,7 @@ export default function SuperAdmin() {
                         )}
                       </div>
 
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label htmlFor="name">Nombre Comercial*</Label>
                           <Input
@@ -641,7 +641,7 @@ export default function SuperAdmin() {
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label htmlFor="rnc">RNC</Label>
                           <Input
@@ -670,7 +670,7 @@ export default function SuperAdmin() {
                         />
                       </div>
 
-                      <div className="grid grid-cols-3 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div className="space-y-2">
                           <Label htmlFor="phone">Teléfono</Label>
                           <Input
@@ -700,7 +700,7 @@ export default function SuperAdmin() {
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label htmlFor="subscriptionPlan">Plan de Suscripción</Label>
                           <Select
@@ -728,17 +728,19 @@ export default function SuperAdmin() {
                         </div>
                       </div>
 
-                      <div className="flex justify-end space-x-2 pt-4">
+                      <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-2 pt-4">
                         <Button
                           type="button"
                           variant="outline"
                           onClick={() => setIsDialogOpen(false)}
+                          className="w-full sm:w-auto"
                         >
                           Cancelar
                         </Button>
                         <Button
                           type="submit"
                           disabled={createMutation.isPending || updateMutation.isPending}
+                          className="w-full sm:w-auto"
                         >
                           {editingCompany ? "Actualizar" : "Registrar"} Empresa
                         </Button>
@@ -751,19 +753,20 @@ export default function SuperAdmin() {
           </CardHeader>
           <CardContent>
             {filteredCompanies && filteredCompanies.length > 0 ? (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Empresa</TableHead>
-                    <TableHead>RNC</TableHead>
-                    <TableHead>Industria</TableHead>
-                    <TableHead>Plan</TableHead>
-                    <TableHead>Registrado</TableHead>
-                    <TableHead>Estado</TableHead>
-                    <TableHead className="text-right">Acciones</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="min-w-[200px]">Empresa</TableHead>
+                      <TableHead className="hidden sm:table-cell">RNC</TableHead>
+                      <TableHead className="hidden md:table-cell">Industria</TableHead>
+                      <TableHead className="hidden lg:table-cell">Plan</TableHead>
+                      <TableHead className="hidden xl:table-cell">Registrado</TableHead>
+                      <TableHead>Estado</TableHead>
+                      <TableHead className="text-right min-w-[100px]">Acciones</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
                   {filteredCompanies.map((company) => (
                     <TableRow key={company.id}>
                       <TableCell>
@@ -772,22 +775,30 @@ export default function SuperAdmin() {
                           {company.businessName && (
                             <div className="text-sm text-gray-500">{company.businessName}</div>
                           )}
+                          <div className="flex flex-wrap gap-1 mt-1 sm:hidden">
+                            {company.rnc && (
+                              <Badge variant="outline" className="text-xs">{company.rnc}</Badge>
+                            )}
+                            <Badge variant="secondary" className="text-xs">
+                              {company.industry || "Sin industria"}
+                            </Badge>
+                          </div>
                         </div>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="hidden sm:table-cell">
                         {company.rnc ? (
                           <Badge variant="outline">{company.rnc}</Badge>
                         ) : (
                           <span className="text-gray-400">Sin RNC</span>
                         )}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="hidden md:table-cell">
                         {company.industry || "No especificada"}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="hidden lg:table-cell">
                         {getSubscriptionBadge(company.subscriptionPlan)}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="hidden xl:table-cell">
                         {formatDominicanDateTime(company.createdAt!)}
                       </TableCell>
                       <TableCell>
@@ -800,7 +811,7 @@ export default function SuperAdmin() {
                         />
                       </TableCell>
                       <TableCell className="text-right">
-                        <div className="flex justify-end space-x-2">
+                        <div className="flex justify-end space-x-1">
                           <Button
                             variant="ghost"
                             size="sm"
@@ -826,7 +837,8 @@ export default function SuperAdmin() {
                     </TableRow>
                   ))}
                 </TableBody>
-              </Table>
+                </Table>
+              </div>
             ) : (
               <div className="text-center py-12">
                 <Building2 className="mx-auto h-12 w-12 text-gray-400" />
