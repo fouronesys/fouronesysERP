@@ -179,14 +179,16 @@ export default function FourOneLoginAnimation({ isVisible, onComplete }: FourOne
                   />
                 </motion.div>
                 
-                {/* Label */}
+                {/* Centered Label */}
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: isActive ? 1 : 0, y: isActive ? 0 : 10 }}
                   transition={{ delay: index * 0.2 + 0.3 }}
-                  className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 text-white text-sm font-medium whitespace-nowrap"
+                  className="absolute -bottom-10 left-1/2 transform -translate-x-1/2 text-center"
                 >
-                  {item.label}
+                  <span className={`text-sm font-semibold ${item.color} drop-shadow-lg whitespace-nowrap`}>
+                    {item.label}
+                  </span>
                 </motion.div>
               </motion.div>
             );

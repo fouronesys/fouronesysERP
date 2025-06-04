@@ -226,15 +226,7 @@ export default function AuthPage() {
                   : "Crea tu cuenta y comienza a gestionar tu empresa"}
               </p>
               
-              {/* Botón de prueba para la animación - solo en desarrollo */}
-              {process.env.NODE_ENV === "development" && (
-                <button
-                  onClick={() => setShowLoginAnimation(true)}
-                  className="mt-4 px-4 py-2 bg-purple-600 text-white rounded-lg text-sm hover:bg-purple-700 transition-colors"
-                >
-                  🎬 Probar Animación
-                </button>
-              )}
+
             </div>
 
             <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-xl">
