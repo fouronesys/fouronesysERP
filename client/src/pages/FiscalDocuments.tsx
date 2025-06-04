@@ -31,6 +31,9 @@ export default function FiscalDocuments() {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   });
+  const [rncToVerify, setRncToVerify] = useState("");
+  const [isVerifyingRNC, setIsVerifyingRNC] = useState(false);
+  const [rncVerificationResult, setRncVerificationResult] = useState<any>(null);
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -47,6 +50,48 @@ export default function FiscalDocuments() {
   const { data: comprobantes606, isLoading: loading606 } = useQuery<Comprobante606[]>({
     queryKey: ["/api/fiscal/comprobantes-606", selectedPeriod],
   });
+
+  // RNC Verification function
+  const handleRNCVerification = async () => {
+    if (!rncToVerify || rncToVerify.length < 9) {
+      toast({
+        title: "RNC Inválido",
+        description: "Por favor ingresa un RNC válido de al menos 9 dígitos",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsVerifyingRNC(true);
+    try {
+      const response = await fetch(`/api/verify-rnc/${rncToVerify}`);
+      const result = await response.json();
+      
+      setRncVerificationResult(result);
+      
+      if (result.valid && result.data) {
+        toast({
+          title: "RNC Verificado",
+          description: `Empresa encontrada: ${result.data.razonSocial}`,
+        });
+      } else {
+        toast({
+          title: "RNC No Encontrado",
+          description: result.message || "No se pudo verificar el RNC en la DGII",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Error verifying RNC:", error);
+      toast({
+        title: "Error de Verificación",
+        description: "No se pudo conectar con el servicio de verificación",
+        variant: "destructive",
+      });
+    } finally {
+      setIsVerifyingRNC(false);
+    }
+  };
 
   // Mutations
   const createSequenceMutation = useMutation({
