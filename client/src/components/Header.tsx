@@ -42,11 +42,15 @@ export function Header({ title, subtitle }: HeaderProps) {
         method: "POST",
         credentials: "include",
       });
-      window.location.href = "/";
+      // Clear any cached data
+      window.localStorage.clear();
+      window.sessionStorage.clear();
+      // Force redirect to auth page
+      window.location.href = "/auth";
     } catch (error) {
       console.error("Logout error:", error);
       // Force redirect even if logout fails
-      window.location.href = "/";
+      window.location.href = "/auth";
     }
   };
 
