@@ -38,6 +38,7 @@ import AIInsights from "@/pages/AIInsights";
 import SubscriptionPlans from "@/pages/SubscriptionPlans";
 import CompanyAnalytics from "@/pages/CompanyAnalytics";
 import NotFound from "@/pages/not-found";
+import LoginAnimation from "@/components/LoginAnimation";
 
 function ProtectedRoute({ component: Component, ...props }: { component: React.ComponentType }) {
   // Check user authentication status
@@ -63,14 +64,7 @@ function ProtectedRoute({ component: Component, ...props }: { component: React.C
   }, [isAuthenticated, isLoading, toast]);
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600 dark:text-gray-400">Cargando...</p>
-        </div>
-      </div>
-    );
+    return <LoginAnimation />;
   }
 
   if (!isAuthenticated) {
