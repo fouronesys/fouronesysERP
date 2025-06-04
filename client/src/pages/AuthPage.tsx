@@ -214,28 +214,28 @@ export default function AuthPage() {
               </p>
             </div>
 
-            <Card className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm border-gray-200 dark:border-gray-600 shadow-2xl">
-              <CardHeader className="text-center pb-4">
+            <Card className="bg-gray-900/95 backdrop-blur-sm border border-gray-700 shadow-2xl rounded-2xl overflow-hidden">
+              <CardHeader className="text-center pb-6 bg-gradient-to-b from-gray-800 to-gray-900">
                 <div className="lg:hidden flex justify-center mb-4">
-                  <img src={fourOneLogo} alt="Four One Solutions" className="h-12 w-auto" />
+                  <img src={fourOneLogo} alt="Four One Solutions" className="h-12 w-auto filter brightness-0 invert" />
                 </div>
-                <CardTitle className="text-2xl font-bold text-gray-900 dark:text-white">Four One Solutions</CardTitle>
-                <CardDescription className="text-gray-600 dark:text-gray-300">
+                <CardTitle className="text-2xl font-bold text-white">Four One Solutions</CardTitle>
+                <CardDescription className="text-gray-300">
                   Sistema de gestión empresarial
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-6">
                 <Tabs value={activeTab} onValueChange={setActiveTab}>
-                  <TabsList className="grid w-full grid-cols-2 p-2 bg-gradient-to-r from-gray-800 to-gray-700 border-2 border-gray-600 rounded-xl shadow-lg">
+                  <TabsList className="grid w-full grid-cols-2 mb-6 p-1 bg-gray-800 border border-gray-700 rounded-lg">
                     <TabsTrigger 
                       value="login" 
-                      className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-blue-500 data-[state=active]:text-white data-[state=active]:shadow-xl data-[state=active]:border data-[state=active]:border-blue-400 text-gray-300 hover:text-white hover:bg-gray-600 transition-all duration-300 rounded-lg font-medium py-3"
+                      className="data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-md text-gray-400 hover:text-gray-200 transition-all duration-200 rounded-md py-2 font-medium"
                     >
                       Iniciar Sesión
                     </TabsTrigger>
                     <TabsTrigger 
                       value="register" 
-                      className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-blue-500 data-[state=active]:text-white data-[state=active]:shadow-xl data-[state=active]:border data-[state=active]:border-blue-400 text-gray-300 hover:text-white hover:bg-gray-600 transition-all duration-300 rounded-lg font-medium py-3"
+                      className="data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-md text-gray-400 hover:text-gray-200 transition-all duration-200 rounded-md py-2 font-medium"
                     >
                       Registrarse
                     </TabsTrigger>
@@ -257,7 +257,7 @@ export default function AuthPage() {
                                   <Input
                                     type="email"
                                     placeholder="Ingresa tu email"
-                                    className="pl-10 bg-gradient-to-r from-gray-800 to-gray-700 border-2 border-gray-600 text-gray-100 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 rounded-lg transition-all duration-300 hover:border-gray-500"
+                                    className="pl-10 bg-gray-800 border border-gray-600 text-gray-100 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 rounded-lg transition-all duration-200"
                                     {...field}
                                   />
                                 </div>
@@ -271,21 +271,21 @@ export default function AuthPage() {
                           name="password"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel className="text-gray-700 dark:text-gray-200">Contraseña</FormLabel>
+                              <FormLabel className="text-gray-200 font-medium">Contraseña</FormLabel>
                               <FormControl>
                                 <div className="relative">
-                                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500 dark:text-gray-400" />
+                                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                                   <Input
                                     type={showPassword ? "text" : "password"}
                                     placeholder="Ingresa tu contraseña"
-                                    className="pl-10 pr-10 bg-gray-50 dark:bg-gray-700/50 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:border-blue-500 focus:ring-blue-500"
+                                    className="pl-10 pr-10 bg-gray-800 border border-gray-600 text-gray-100 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 rounded-lg transition-all duration-200"
                                     {...field}
                                   />
                                   <Button
                                     type="button"
                                     variant="ghost"
                                     size="sm"
-                                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+                                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent text-gray-400 hover:text-gray-200"
                                     onClick={() => setShowPassword(!showPassword)}
                                   >
                                     {showPassword ? (
@@ -296,7 +296,7 @@ export default function AuthPage() {
                                   </Button>
                                 </div>
                               </FormControl>
-                              <FormMessage className="text-red-500 dark:text-red-400" />
+                              <FormMessage className="text-red-400" />
                             </FormItem>
                           )}
                         />
