@@ -7,55 +7,6 @@
     <meta name="description" content="Sistema integral de gestión empresarial para República Dominicana. Facturación, inventario, POS y más." />
   </head>
   <body>
-    <style>
-      /* Force immediate dark theme application */
-      html, body {
-        background-color: hsl(240 10% 3.9%) !important;
-        color: hsl(0 0% 98%) !important;
-        color-scheme: dark !important;
-      }
-      
-      #root {
-        background-color: hsl(240 10% 3.9%) !important;
-        color: hsl(0 0% 98%) !important;
-        min-height: 100vh !important;
-      }
-      
-      * {
-        background-color: inherit !important;
-        color: inherit !important;
-      }
-    </style>
-    <script>
-      // Apply theme immediately to prevent flash
-      (function() {
-        let savedTheme = localStorage.getItem('fourOneTheme');
-        const html = document.documentElement;
-        
-        // Force dark theme always
-        savedTheme = 'dark';
-        localStorage.setItem('fourOneTheme', 'dark');
-        
-        // Remove existing theme classes
-        html.classList.remove('dark', 'theme-blue');
-        html.classList.add('dark');
-        html.style.colorScheme = 'dark';
-        
-        // Apply aggressive dark styling
-        document.body.style.setProperty('background-color', 'hsl(240 10% 3.9%)', 'important');
-        document.body.style.setProperty('color', 'hsl(0 0% 98%)', 'important');
-        
-        // Wait for DOM and apply to root
-        document.addEventListener('DOMContentLoaded', function() {
-          const root = document.getElementById('root');
-          if (root) {
-            root.style.setProperty('background-color', 'hsl(240 10% 3.9%)', 'important');
-            root.style.setProperty('color', 'hsl(0 0% 98%)', 'important');
-            root.style.setProperty('min-height', '100vh', 'important');
-          }
-        });
-      })();
-    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
     <!-- This is a replit script which adds a banner on the top of the page when opened in development mode outside the replit environment -->
