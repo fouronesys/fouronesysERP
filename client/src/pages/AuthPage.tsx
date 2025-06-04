@@ -125,7 +125,7 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-700">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black">
       <div className="flex min-h-screen">
         {/* Left Column - Hero Section */}
         <div className="hidden lg:flex lg:flex-1 lg:flex-col lg:justify-center lg:px-8 xl:px-12 bg-gradient-to-br from-blue-600 to-indigo-800 relative overflow-hidden">
@@ -214,12 +214,12 @@ export default function AuthPage() {
               </p>
             </div>
 
-            <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-xl">
+            <Card className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm border-gray-200 dark:border-gray-600 shadow-2xl">
               <CardHeader className="text-center pb-4">
                 <div className="lg:hidden flex justify-center mb-4">
                   <img src={fourOneLogo} alt="Four One Solutions" className="h-12 w-auto" />
                 </div>
-                <CardTitle className="text-xl font-bold text-gray-900 dark:text-white">Four One Solutions</CardTitle>
+                <CardTitle className="text-2xl font-bold text-gray-900 dark:text-white">Four One Solutions</CardTitle>
                 <CardDescription className="text-gray-600 dark:text-gray-300">
                   Sistema de gestión empresarial
                 </CardDescription>
