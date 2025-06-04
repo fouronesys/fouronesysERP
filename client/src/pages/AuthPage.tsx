@@ -217,7 +217,9 @@ export default function AuthPage() {
             <Card className="bg-white/10 backdrop-blur-lg border-2 border-white/20 shadow-2xl rounded-3xl overflow-hidden">
               <CardHeader className="text-center pb-6 bg-gradient-to-b from-black/30 to-transparent border-b border-white/10">
                 <div className="lg:hidden flex justify-center mb-4">
-                  <img src={fourOneLogo} alt="Four One Solutions" className="h-12 w-auto filter brightness-0 invert" />
+                  <div className="h-12 w-12 bg-gradient-to-br from-blue-400 to-blue-600 rounded-lg flex items-center justify-center shadow-lg">
+                    <span className="text-white font-bold text-lg">41</span>
+                  </div>
                 </div>
                 <CardTitle className="text-2xl font-bold text-white">Four One Solutions</CardTitle>
                 <CardDescription className="text-gray-200">
