@@ -73,7 +73,7 @@ export default function Dashboard() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="pt-0">
-                  <div className="text-xl sm:text-2xl font-bold text-green-500">+15.2%</div>
+                  <div className="text-xl sm:text-2xl font-bold text-gray-500">0%</div>
                   <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">vs mes anterior</p>
                 </CardContent>
               </Card>
