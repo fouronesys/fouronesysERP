@@ -48,40 +48,59 @@ import {
   Calendar,
   DollarSign,
   Globe,
-  Shield,
-  Mail
+  Phone,
+  Mail,
+  MapPin,
+  CheckCircle,
+  XCircle,
+  AlertCircle,
+  Search,
+  Filter,
+  MoreHorizontal,
+  Archive,
+  RefreshCw,
+  Send
 } from "lucide-react";
-import { formatDominicanDateTime } from "@/lib/dominican";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
-const companySchema = insertCompanySchema.extend({
-  name: z.string().min(1, "Nombre es requerido"),
-  rnc: z.string().optional().refine((val) => {
-    if (!val || val.trim() === '') return true; // Allow empty RNC
-    const rncPattern = /^[0-9]{9}$|^[0-9]{11}$/;
-    return rncPattern.test(val);
-  }, "El RNC debe tener 9 o 11 dígitos"),
-  subscriptionPlan: z.enum(["trial", "monthly", "annual"]),
-  ownerEmail: z.string().email("Email válido es requerido"),
-});
+// Schema for admin form with ownerEmail
+const companySchemaForAdmin = insertCompanySchema.extend({
+  ownerEmail: z.string().email("Email del propietario requerido"),
+}).omit({ ownerId: true });
 
-type CompanyFormData = z.infer<typeof companySchema>;
+type CompanyFormData = z.infer<typeof companySchemaForAdmin>;
 
 export default function SuperAdmin() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingCompany, setEditingCompany] = useState<Company | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [planFilter, setPlanFilter] = useState<string>("all");
+  const [sortBy, setSortBy] = useState<string>("name");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [selectedCompanies, setSelectedCompanies] = useState<number[]>([]);
-  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
-  const [planFilter, setPlanFilter] = useState<"all" | "trial" | "monthly" | "annual">("all");
-  const [sortBy, setSortBy] = useState<"name" | "created" | "revenue">("created");
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
-  const [isVerifyingRNC, setIsVerifyingRNC] = useState(false);
   const [rncValidationResult, setRncValidationResult] = useState<any>(null);
-  const queryClient = useQueryClient();
+  const [isVerifyingRNC, setIsVerifyingRNC] = useState(false);
+
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const form = useForm<CompanyFormData>({
-    resolver: zodResolver(companySchema),
+    resolver: zodResolver(companySchemaForAdmin),
     defaultValues: {
       name: "",
       businessName: "",
@@ -101,43 +120,25 @@ export default function SuperAdmin() {
     queryKey: ["/api/admin/companies"],
   });
 
-  const { data: stats } = useQuery({
-    queryKey: ["/api/admin/stats"],
-  });
-
   const createMutation = useMutation({
     mutationFn: async (data: CompanyFormData) => {
-      try {
-        console.log("Sending request to create company:", data);
-        const response = await apiRequest("/api/admin/companies", {
-          method: "POST",
-          body: data
-        });
-        const result = await response.json();
-        console.log("Company creation response:", result);
-        return result;
-      } catch (error) {
-        console.error("API request failed:", error);
-        throw error;
-      }
+      const response = await apiRequest("POST", "/api/admin/companies", data);
+      return response.json();
     },
-    onSuccess: (result) => {
-      const emailStatus = result.emailSent ? "Invitación enviada exitosamente." : "Empresa creada, pero no se pudo enviar la invitación por email.";
+    onSuccess: () => {
       toast({
         title: "Empresa creada",
-        description: emailStatus,
-        variant: result.emailSent ? "default" : "destructive",
+        description: "La empresa ha sido creada exitosamente.",
       });
       setIsDialogOpen(false);
+      setEditingCompany(null);
       form.reset();
       queryClient.invalidateQueries({ queryKey: ["/api/admin/companies"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/stats"] });
     },
-    onError: (error: any) => {
-      console.error("Company creation error:", error);
+    onError: () => {
       toast({
         title: "Error",
-        description: error.message || "No se pudo crear la empresa.",
+        description: "No se pudo crear la empresa.",
         variant: "destructive",
       });
     },
@@ -145,16 +146,17 @@ export default function SuperAdmin() {
 
   const updateMutation = useMutation({
     mutationFn: async (data: CompanyFormData) => {
-      const response = await apiRequest(`/api/admin/companies/${editingCompany?.id}`, {
-        method: "PUT",
-        body: data,
-      });
-      return await response.json();
+      if (!editingCompany) throw new Error("No company selected for editing");
+      const response = await apiRequest("PUT", `/api/admin/companies/${editingCompany.id}`, data);
+      return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data: any) => {
       toast({
         title: "Empresa actualizada",
-        description: "La empresa ha sido actualizada exitosamente.",
+        description: data.emailChanged 
+          ? `Empresa actualizada. ${data.emailSent ? 'Nueva invitación enviada.' : 'Error enviando invitación.'}`
+          : "La empresa ha sido actualizada exitosamente.",
+        variant: data.emailChanged && !data.emailSent ? "destructive" : "default",
       });
       setIsDialogOpen(false);
       setEditingCompany(null);
@@ -172,11 +174,8 @@ export default function SuperAdmin() {
 
   const toggleStatusMutation = useMutation({
     mutationFn: async ({ id, isActive }: { id: number; isActive: boolean }) => {
-      const response = await apiRequest(`/api/admin/companies/${id}/status`, {
-        method: "PATCH",
-        body: { isActive },
-      });
-      return await response.json();
+      const response = await apiRequest("PATCH", `/api/admin/companies/${id}/status`, { isActive });
+      return response.json();
     },
     onSuccess: () => {
       toast({
@@ -196,10 +195,8 @@ export default function SuperAdmin() {
 
   const deleteCompanyMutation = useMutation({
     mutationFn: async (companyId: number) => {
-      const response = await apiRequest(`/api/admin/companies/${companyId}`, {
-        method: "DELETE",
-      });
-      return await response.json();
+      const response = await apiRequest("DELETE", `/api/admin/companies/${companyId}`);
+      return response.json();
     },
     onSuccess: () => {
       toast({
@@ -219,7 +216,7 @@ export default function SuperAdmin() {
 
   const resendEmailMutation = useMutation({
     mutationFn: async (companyId: number) => {
-      const response = await apiRequest("POST", `/api/admin/companies/${companyId}/resend-email`);
+      const response = await apiRequest("POST", `/api/admin/companies/${companyId}/resend-email`, {});
       return response.json();
     },
     onSuccess: (data: any) => {
@@ -273,6 +270,7 @@ export default function SuperAdmin() {
       industry: company.industry || "",
       subscriptionPlan: company.subscriptionPlan as "trial" | "monthly" | "annual",
       isActive: company.isActive,
+      ownerEmail: company.ownerEmail || "",
     });
     setIsDialogOpen(true);
   };
@@ -286,7 +284,7 @@ export default function SuperAdmin() {
 
   const handleResendEmail = (company: Company) => {
     if (confirm(`¿Reenviar invitación por email a ${company.ownerEmail || company.email}?`)) {
-      resendEmailMutation.mutate(company);
+      resendEmailMutation.mutate(company.id);
     }
   };
 
@@ -296,68 +294,51 @@ export default function SuperAdmin() {
       return;
     }
 
-    // Remove any formatting and validate basic format
-    const cleanRNC = rnc.replace(/\D/g, '');
-    if (!/^[0-9]{9}$|^[0-9]{11}$/.test(cleanRNC)) {
-      setRncValidationResult({
-        valid: false,
-        message: "El RNC debe tener 9 o 11 dígitos"
-      });
-      return;
-    }
-
-    setIsVerifyingRNC(true);
     try {
-      const response = await fetch(`/api/rnc/${cleanRNC}`);
-      const result = await response.json();
+      setIsVerifyingRNC(true);
+      setRncValidationResult(null);
+
+      const response = await fetch(`/api/verify-rnc?rnc=${encodeURIComponent(rnc.trim())}`);
       
-      if (response.ok) {
+      if (!response.ok) {
         setRncValidationResult({
-          valid: true,
-          data: result,
-          message: "RNC verificado exitosamente"
+          isValid: false,
+          message: `Error del servidor: ${response.status}`
         });
-        
-        // Auto-fill form fields with DGII data
-        form.setValue("name", result.name);
-        form.setValue("businessName", result.businessName);
-        form.setValue("rnc", result.rnc);
+        return;
+      }
+
+      const result = await response.json();
+      setRncValidationResult(result);
+
+      if (result.isValid && result.company) {
+        // Auto-llenar campos con datos de DGII
+        form.setValue('businessName', result.company.businessName || '');
+        form.setValue('name', result.company.name || result.company.businessName || '');
+        form.setValue('address', result.company.address || '');
+        form.setValue('phone', result.company.phone || '');
+        form.setValue('email', result.company.email || '');
         
         toast({
-          title: "RNC Verificado",
-          description: `Datos de empresa cargados: ${result.name}`,
+          title: "RNC Válido",
+          description: "Datos empresariales cargados automáticamente desde DGII",
         });
       } else {
         setRncValidationResult({
-          valid: false,
-          message: result.message || "RNC no encontrado",
-          data: null
+          isValid: false,
+          message: result.message || "RNC no encontrado en el registro de DGII"
         });
-        
-        if (response.status === 409) {
-          toast({
-            title: "RNC ya registrado",
-            description: result.message,
-            variant: "destructive",
-          });
-        } else {
-          toast({
-            title: "RNC no encontrado",
-            description: result.message || "No se encontró en el registro de DGII",
-            variant: "destructive",
-          });
-        }
       }
     } catch (error) {
-      console.error("Error verifying RNC:", error);
+      console.error('Error verifying RNC:', error);
       setRncValidationResult({
-        valid: false,
-        message: "Error al verificar RNC",
-        data: null
+        isValid: false,
+        message: "Error al verificar RNC. Inténtelo nuevamente."
       });
+      
       toast({
         title: "Error de verificación",
-        description: "No se pudo conectar con el servicio de verificación",
+        description: "No se pudo verificar el RNC en este momento",
         variant: "destructive",
       });
     } finally {
@@ -365,21 +346,15 @@ export default function SuperAdmin() {
     }
   };
 
-  // Bulk operations mutations
-  const bulkStatusMutation = useMutation({
-    mutationFn: async ({ companyIds, isActive }: { companyIds: number[]; isActive: boolean }) => {
-      const promises = companyIds.map(id => 
-        apiRequest(`/api/admin/companies/${id}/status`, {
-          method: "PATCH",
-          body: { isActive },
-        })
-      );
-      return await Promise.all(promises);
+  const bulkActivateMutation = useMutation({
+    mutationFn: async (companyIds: number[]) => {
+      const response = await apiRequest("PATCH", "/api/admin/companies/bulk-activate", { companyIds });
+      return response.json();
     },
     onSuccess: () => {
       toast({
-        title: "Operación completada",
-        description: "El estado de las empresas seleccionadas ha sido actualizado.",
+        title: "Empresas activadas",
+        description: "Las empresas seleccionadas han sido activadas.",
       });
       setSelectedCompanies([]);
       queryClient.invalidateQueries({ queryKey: ["/api/admin/companies"] });
@@ -387,26 +362,21 @@ export default function SuperAdmin() {
     onError: () => {
       toast({
         title: "Error",
-        description: "No se pudo actualizar el estado de algunas empresas.",
+        description: "No se pudieron activar las empresas.",
         variant: "destructive",
       });
     },
   });
 
-  const bulkPlanMutation = useMutation({
-    mutationFn: async ({ companyIds, plan }: { companyIds: number[]; plan: string }) => {
-      const promises = companyIds.map(id => 
-        apiRequest(`/api/admin/companies/${id}`, {
-          method: "PUT",
-          body: { subscriptionPlan: plan },
-        })
-      );
-      return await Promise.all(promises);
+  const bulkDeactivateMutation = useMutation({
+    mutationFn: async (companyIds: number[]) => {
+      const response = await apiRequest("PATCH", "/api/admin/companies/bulk-deactivate", { companyIds });
+      return response.json();
     },
     onSuccess: () => {
       toast({
-        title: "Planes actualizados",
-        description: "Los planes de suscripción han sido actualizados.",
+        title: "Empresas desactivadas",
+        description: "Las empresas seleccionadas han sido desactivadas.",
       });
       setSelectedCompanies([]);
       queryClient.invalidateQueries({ queryKey: ["/api/admin/companies"] });
@@ -414,19 +384,21 @@ export default function SuperAdmin() {
     onError: () => {
       toast({
         title: "Error",
-        description: "No se pudo actualizar los planes de algunas empresas.",
+        description: "No se pudieron desactivar las empresas.",
         variant: "destructive",
       });
     },
   });
 
-  // Enhanced filtering and sorting
-  const filteredCompanies = companies?.filter(company => {
-    const matchesSearch = company.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (company.rnc && company.rnc.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (company.email && company.email.toLowerCase().includes(searchTerm.toLowerCase()));
+  // Filter and sort companies
+  const filteredCompanies = companies?.filter((company) => {
+    const matchesSearch = 
+      company.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      company.businessName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      company.rnc?.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesStatus = statusFilter === "all" || 
+    const matchesStatus = 
+      statusFilter === "all" ||
       (statusFilter === "active" && company.isActive) ||
       (statusFilter === "inactive" && !company.isActive);
     
@@ -435,79 +407,81 @@ export default function SuperAdmin() {
     return matchesSearch && matchesStatus && matchesPlan;
   }).sort((a, b) => {
     let comparison = 0;
-    
     switch (sortBy) {
       case "name":
         comparison = a.name.localeCompare(b.name);
         break;
-      case "created":
+      case "businessName":
+        comparison = (a.businessName || "").localeCompare(b.businessName || "");
+        break;
+      case "createdAt":
         comparison = new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime();
         break;
-      case "revenue":
-        const planValues = { trial: 0, starter: 29, professional: 79, business: 149, enterprise: 299 };
-        const aValue = planValues[a.subscriptionPlan as keyof typeof planValues] || 0;
-        const bValue = planValues[b.subscriptionPlan as keyof typeof planValues] || 0;
-        comparison = aValue - bValue;
+      case "subscriptionPlan":
+        comparison = a.subscriptionPlan.localeCompare(b.subscriptionPlan);
         break;
+      default:
+        comparison = a.name.localeCompare(b.name);
     }
-    
-    return sortOrder === "asc" ? comparison : -comparison;
-  }) || [];
+    return sortOrder === "desc" ? -comparison : comparison;
+  });
 
   const handleSelectAll = () => {
-    if (selectedCompanies.length === filteredCompanies.length) {
+    if (selectedCompanies.length === filteredCompanies?.length) {
       setSelectedCompanies([]);
     } else {
-      setSelectedCompanies(filteredCompanies.map(c => c.id));
+      setSelectedCompanies(filteredCompanies?.map(c => c.id) || []);
     }
   };
 
-  const handleSelectCompany = (companyId: number) => {
+  const handleSelectCompany = (id: number) => {
     setSelectedCompanies(prev => 
-      prev.includes(companyId) 
-        ? prev.filter(id => id !== companyId)
-        : [...prev, companyId]
+      prev.includes(id) 
+        ? prev.filter(companyId => companyId !== id)
+        : [...prev, id]
     );
   };
 
-  const handleBulkActivate = () => {
-    bulkStatusMutation.mutate({ companyIds: selectedCompanies, isActive: true });
+  const isAllSelected = selectedCompanies.length === filteredCompanies?.length && filteredCompanies?.length > 0;
+  const isSomeSelected = selectedCompanies.length > 0;
+
+  const getStatusBadge = (company: Company) => {
+    if (!company.isActive) {
+      return <Badge variant="destructive">Inactiva</Badge>;
+    }
+    switch (company.registrationStatus) {
+      case "completed":
+        return <Badge variant="default">Completada</Badge>;
+      case "pending":
+        return <Badge variant="secondary">Pendiente</Badge>;
+      case "expired":
+        return <Badge variant="outline">Expirada</Badge>;
+      default:
+        return <Badge variant="secondary">Pendiente</Badge>;
+    }
   };
 
-  const handleBulkDeactivate = () => {
-    bulkStatusMutation.mutate({ companyIds: selectedCompanies, isActive: false });
-  };
-
-  const handleBulkPlanChange = (plan: string) => {
-    bulkPlanMutation.mutate({ companyIds: selectedCompanies, plan });
-  };
-
-  const getSubscriptionBadge = (plan: string) => {
-    const colors = {
-      trial: "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300",
-      monthly: "bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300",
-      annual: "bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300",
-    };
-    const labels = {
-      trial: "Prueba",
-      monthly: "Mensual",
-      annual: "Anual",
-    };
-    return (
-      <Badge className={colors[plan as keyof typeof colors] || ""}>
-        {labels[plan as keyof typeof labels] || plan}
-      </Badge>
-    );
+  const getPlanBadge = (plan: string) => {
+    switch (plan) {
+      case "trial":
+        return <Badge variant="outline">Prueba</Badge>;
+      case "monthly":
+        return <Badge variant="default">Mensual</Badge>;
+      case "annual":
+        return <Badge variant="secondary">Anual</Badge>;
+      default:
+        return <Badge variant="outline">Prueba</Badge>;
+    }
   };
 
   if (isLoading) {
     return (
-      <div className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900">
-        <Header title="Panel de Administración" subtitle="Gestiona todas las empresas del sistema" />
-        <div className="p-6">
-          <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-2 text-gray-500 dark:text-gray-400">Cargando datos...</p>
+      <div className="space-y-6">
+        <Header title="Panel de Super Administrador" />
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4 text-muted-foreground" />
+            <p className="text-muted-foreground">Cargando empresas...</p>
           </div>
         </div>
       </div>
@@ -515,438 +489,497 @@ export default function SuperAdmin() {
   }
 
   return (
-    <div className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900">
-      <Header title="Panel de Administración" subtitle="Gestiona todas las empresas registradas en Four One Solutions" />
+    <div className="space-y-6">
+      <Header title="Panel de Super Administrador" />
       
-      <div className="p-6 space-y-6">
-        {/* Estadísticas Generales */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Empresas</CardTitle>
-              <Building2 className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{companies?.length || 0}</div>
-              <p className="text-xs text-muted-foreground">
-                {companies?.filter(c => c.isActive).length || 0} activas
-              </p>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Suscripciones Activas</CardTitle>
-              <Crown className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {companies?.filter(c => c.subscriptionPlan !== "trial" && c.isActive).length || 0}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                empresas con plan pagado
-              </p>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Pruebas Gratuitas</CardTitle>
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {companies?.filter(c => c.subscriptionPlan === "trial").length || 0}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                empresas en periodo de prueba
-              </p>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Ingresos Mensuales</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                RD$ {((companies?.filter(c => c.subscriptionPlan === "monthly").length || 0) * 1800 +
-                     (companies?.filter(c => c.subscriptionPlan === "annual").length || 0) * 1250).toLocaleString()}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                ingresos recurrentes estimados
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Gestión de Empresas */}
+      {/* Statistics Cards */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
-          <CardHeader>
-            <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center space-y-4 lg:space-y-0">
-              <CardTitle className="flex items-center">
-                <Shield className="mr-2 h-5 w-5" />
-                Empresas Registradas
-              </CardTitle>
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Empresas</CardTitle>
+            <Building2 className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{companies?.length || 0}</div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Empresas Activas</CardTitle>
+            <CheckCircle className="h-4 w-4 text-green-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {companies?.filter(c => c.isActive).length || 0}
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Registros Pendientes</CardTitle>
+            <AlertCircle className="h-4 w-4 text-yellow-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {companies?.filter(c => c.registrationStatus === "pending").length || 0}
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Planes Premium</CardTitle>
+            <Crown className="h-4 w-4 text-purple-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {companies?.filter(c => c.subscriptionPlan !== "trial").length || 0}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Main Content */}
+      <Card>
+        <CardHeader>
+          <div className="flex flex-col space-y-4 lg:flex-row lg:items-center lg:justify-between lg:space-y-0">
+            <CardTitle className="flex items-center gap-2">
+              <Building2 className="h-5 w-5" />
+              Gestión de Empresas
+            </CardTitle>
+            
+            <div className="flex flex-col space-y-2 lg:flex-row lg:items-center lg:space-y-0 lg:space-x-2">
+              {/* Search */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                 <Input
                   placeholder="Buscar empresas..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full sm:w-64"
+                  className="pl-10 w-full lg:w-64"
                 />
-                <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button onClick={handleNewCompany}>
-                      <Plus className="mr-2 h-4 w-4" />
-                      Nueva Empresa
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
-                    <DialogHeader>
-                      <DialogTitle>
-                        {editingCompany ? "Editar Empresa" : "Registrar Nueva Empresa"}
-                      </DialogTitle>
-                      <DialogDescription>
-                        {editingCompany 
-                          ? "Modifica la información de la empresa seleccionada."
-                          : "Registra una nueva empresa en el sistema Four One Solutions."
-                        }
-                      </DialogDescription>
-                    </DialogHeader>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                      {/* RNC Field with Auto-fill */}
-                      <div className="space-y-2">
-                        <Label htmlFor="rnc">RNC (Registro Nacional del Contribuyente)</Label>
-                        <div className="flex gap-2">
-                          <Input
-                            id="rnc"
-                            placeholder="Ej: 131123456 o 13112345678"
-                            {...form.register("rnc")}
-                            onBlur={(e) => {
-                              const rncValue = e.target.value;
-                              if (rncValue && rncValue.trim().length >= 9) {
-                                handleRNCVerification(rncValue);
-                              }
-                            }}
-                            className={rncValidationResult?.valid === true ? "border-green-500" : 
-                                      rncValidationResult?.valid === false ? "border-red-500" : ""}
-                          />
-                          <Button
-                            type="button"
-                            variant="outline"
-                            disabled={isVerifyingRNC || !form.watch("rnc")}
-                            onClick={() => handleRNCVerification(form.watch("rnc") || "")}
-                          >
-                            {isVerifyingRNC ? "Verificando..." : "Verificar"}
-                          </Button>
-                        </div>
-                        {rncValidationResult && (
-                          <div className={`text-sm p-2 rounded ${
-                            rncValidationResult.valid 
-                              ? "bg-green-50 text-green-700 border border-green-200" 
-                              : "bg-red-50 text-red-700 border border-red-200"
-                          }`}>
-                            {rncValidationResult.valid ? (
-                              <div>
-                                <p className="font-medium">✓ RNC Verificado en DGII</p>
-                                <p>Empresa: {rncValidationResult.data?.name}</p>
-                                {rncValidationResult.data?.category && (
-                                  <p>Categoría: {rncValidationResult.data.category}</p>
-                                )}
-                                {rncValidationResult.data?.status && (
-                                  <p>Estado: {rncValidationResult.data.status}</p>
-                                )}
+              </div>
+              
+              {/* Filters */}
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-full lg:w-32">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="active">Activas</SelectItem>
+                  <SelectItem value="inactive">Inactivas</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              <Select value={planFilter} onValueChange={setPlanFilter}>
+                <SelectTrigger className="w-full lg:w-32">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos los planes</SelectItem>
+                  <SelectItem value="trial">Prueba</SelectItem>
+                  <SelectItem value="monthly">Mensual</SelectItem>
+                  <SelectItem value="annual">Anual</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button onClick={handleNewCompany}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Nueva Empresa
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>
+                      {editingCompany ? "Editar Empresa" : "Crear Nueva Empresa"}
+                    </DialogTitle>
+                    <DialogDescription>
+                      {editingCompany 
+                        ? "Modifica los datos de la empresa" 
+                        : "Crea una nueva empresa en el sistema"}
+                    </DialogDescription>
+                  </DialogHeader>
+                  
+                  <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField
+                          control={form.control}
+                          name="name"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Nombre Comercial *</FormLabel>
+                              <FormControl>
+                                <Input {...field} placeholder="Empresa ABC" />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <FormField
+                          control={form.control}
+                          name="ownerEmail"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Email del Propietario *</FormLabel>
+                              <FormControl>
+                                <Input 
+                                  {...field} 
+                                  type="email" 
+                                  placeholder="propietario@empresa.com" 
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="rnc"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>RNC</FormLabel>
+                              <FormControl>
+                                <Input 
+                                  {...field} 
+                                  placeholder="123456789"
+                                  onBlur={(e) => handleRNCVerification(e.target.value)}
+                                />
+                              </FormControl>
+                              {isVerifyingRNC && (
+                                <div className="flex items-center text-sm text-muted-foreground">
+                                  <RefreshCw className="h-3 w-3 animate-spin mr-1" />
+                                  Verificando RNC...
+                                </div>
+                              )}
+                              {rncValidationResult && (
+                                <div className={`text-sm ${rncValidationResult.isValid ? 'text-green-600' : 'text-red-600'}`}>
+                                  {rncValidationResult.isValid ? '✓ RNC válido' : `✗ ${rncValidationResult.message}`}
+                                </div>
+                              )}
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="businessName"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Razón Social</FormLabel>
+                              <FormControl>
+                                <Input {...field} placeholder="Empresa ABC S.R.L." />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="phone"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Teléfono</FormLabel>
+                              <FormControl>
+                                <Input {...field} placeholder="(809) 555-0123" />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="email"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Email de la Empresa</FormLabel>
+                              <FormControl>
+                                <Input {...field} type="email" placeholder="info@empresa.com" />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="website"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Sitio Web</FormLabel>
+                              <FormControl>
+                                <Input {...field} placeholder="https://empresa.com" />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="industry"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Industria</FormLabel>
+                              <FormControl>
+                                <Input {...field} placeholder="Retail, Manufactura, etc." />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="subscriptionPlan"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Plan de Suscripción</FormLabel>
+                              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="trial">Prueba</SelectItem>
+                                  <SelectItem value="monthly">Mensual</SelectItem>
+                                  <SelectItem value="annual">Anual</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="isActive"
+                          render={({ field }) => (
+                            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                              <div className="space-y-0.5">
+                                <FormLabel className="text-base">Empresa Activa</FormLabel>
+                                <p className="text-sm text-muted-foreground">
+                                  Permite que la empresa acceda al sistema
+                                </p>
                               </div>
-                            ) : (
-                              <p>✗ {rncValidationResult.message}</p>
-                            )}
-                          </div>
-                        )}
-                        {form.formState.errors.rnc && (
-                          <p className="text-sm text-red-500">{form.formState.errors.rnc.message}</p>
-                        )}
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="name">Nombre Comercial*</Label>
-                          <Input
-                            id="name"
-                            placeholder="Ej: Mi Empresa"
-                            {...form.register("name")}
-                          />
-                          {form.formState.errors.name && (
-                            <p className="text-sm text-red-500">{form.formState.errors.name.message}</p>
+                              <FormControl>
+                                <Switch
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
+                                />
+                              </FormControl>
+                            </FormItem>
                           )}
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label htmlFor="businessName">Razón Social</Label>
-                          <Input
-                            id="businessName"
-                            placeholder="Ej: Mi Empresa SRL"
-                            {...form.register("businessName")}
-                          />
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="rnc">RNC</Label>
-                          <Input
-                            id="rnc"
-                            placeholder="Ej: 131-12345-6"
-                            {...form.register("rnc")}
-                          />
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label htmlFor="industry">Industria</Label>
-                          <Input
-                            id="industry"
-                            placeholder="Ej: Retail, Manufactura"
-                            {...form.register("industry")}
-                          />
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="address">Dirección</Label>
-                        <Textarea
-                          id="address"
-                          placeholder="Dirección completa de la empresa"
-                          {...form.register("address")}
                         />
                       </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="phone">Teléfono</Label>
-                          <Input
-                            id="phone"
-                            placeholder="(809) 123-4567"
-                            {...form.register("phone")}
-                          />
-                        </div>
+                      <FormField
+                        control={form.control}
+                        name="address"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Dirección</FormLabel>
+                            <FormControl>
+                              <Textarea 
+                                {...field} 
+                                placeholder="Dirección completa de la empresa"
+                                rows={3}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
-                        <div className="space-y-2">
-                          <Label htmlFor="email">Email</Label>
-                          <Input
-                            id="email"
-                            type="email"
-                            placeholder="contacto@empresa.com"
-                            {...form.register("email")}
-                          />
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label htmlFor="website">Sitio Web</Label>
-                          <Input
-                            id="website"
-                            placeholder="www.empresa.com"
-                            {...form.register("website")}
-                          />
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="subscriptionPlan">Plan de Suscripción*</Label>
-                          <Select
-                            value={form.watch("subscriptionPlan")}
-                            onValueChange={(value) => form.setValue("subscriptionPlan", value as "trial" | "monthly" | "annual")}
-                          >
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="trial">Prueba Gratuita (7 días)</SelectItem>
-                              <SelectItem value="monthly">Mensual - RD$ 1,800/mes</SelectItem>
-                              <SelectItem value="annual">Anual - RD$ 15,000/año</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          {form.formState.errors.subscriptionPlan && (
-                            <p className="text-sm text-red-500">{form.formState.errors.subscriptionPlan.message}</p>
-                          )}
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label htmlFor="ownerEmail">Email del Propietario*</Label>
-                          <Input
-                            id="ownerEmail"
-                            type="email"
-                            placeholder="propietario@empresa.com"
-                            {...form.register("ownerEmail")}
-                          />
-                          {form.formState.errors.ownerEmail && (
-                            <p className="text-sm text-red-500">{form.formState.errors.ownerEmail.message}</p>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="flex items-center space-x-2">
-                        <Switch
-                          id="isActive"
-                          checked={form.watch("isActive")}
-                          onCheckedChange={(checked) => form.setValue("isActive", checked)}
-                        />
-                        <Label htmlFor="isActive">Empresa activa al crearla</Label>
-                      </div>
-
-                      <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-2 pt-4">
+                      <div className="flex justify-end space-x-2">
                         <Button
                           type="button"
                           variant="outline"
                           onClick={() => setIsDialogOpen(false)}
-                          className="w-full sm:w-auto"
                         >
                           Cancelar
                         </Button>
-                        <Button
-                          type="submit"
+                        <Button 
+                          type="submit" 
                           disabled={createMutation.isPending || updateMutation.isPending}
-                          className="w-full sm:w-auto"
-                          onClick={() => {
-                            console.log("Button clicked!");
-                            console.log("Form valid:", form.formState.isValid);
-                            console.log("Form errors:", form.formState.errors);
-                            console.log("Form values:", form.getValues());
-                          }}
                         >
-                          {editingCompany ? "Actualizar" : "Registrar"} Empresa
+                          {createMutation.isPending || updateMutation.isPending ? (
+                            <>
+                              <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                              {editingCompany ? "Actualizando..." : "Creando..."}
+                            </>
+                          ) : (
+                            editingCompany ? "Actualizar Empresa" : "Crear Empresa"
+                          )}
                         </Button>
                       </div>
                     </form>
-                  </DialogContent>
-                </Dialog>
+                  </Form>
+                </DialogContent>
+              </Dialog>
+            </div>
+          </div>
+        </CardHeader>
+
+        <CardContent>
+          {/* Bulk Actions */}
+          {isSomeSelected && (
+            <div className="mb-4 p-4 bg-muted rounded-lg">
+              <div className="flex items-center justify-between">
+                <span className="text-sm">
+                  {selectedCompanies.length} empresa(s) seleccionada(s)
+                </span>
+                <div className="space-x-2">
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => bulkActivateMutation.mutate(selectedCompanies)}
+                    disabled={bulkActivateMutation.isPending}
+                  >
+                    Activar
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => bulkDeactivateMutation.mutate(selectedCompanies)}
+                    disabled={bulkDeactivateMutation.isPending}
+                  >
+                    Desactivar
+                  </Button>
+                </div>
               </div>
             </div>
-          </CardHeader>
-          <CardContent>
-            {filteredCompanies && filteredCompanies.length > 0 ? (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="min-w-[200px]">Empresa</TableHead>
-                      <TableHead className="hidden sm:table-cell">RNC</TableHead>
-                      <TableHead className="hidden md:table-cell">Industria</TableHead>
-                      <TableHead className="hidden lg:table-cell">Plan</TableHead>
-                      <TableHead className="hidden xl:table-cell">Registrado</TableHead>
-                      <TableHead>Estado</TableHead>
-                      <TableHead className="text-right min-w-[100px]">Acciones</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                  {filteredCompanies.map((company) => (
-                    <TableRow key={company.id}>
-                      <TableCell>
-                        <div>
-                          <div className="font-medium">{company.name}</div>
-                          {company.businessName && (
-                            <div className="text-sm text-gray-500">{company.businessName}</div>
-                          )}
-                          <div className="flex flex-wrap gap-1 mt-1 sm:hidden">
-                            {company.rnc && (
-                              <Badge variant="outline" className="text-xs">{company.rnc}</Badge>
-                            )}
-                            <Badge variant="secondary" className="text-xs">
-                              {company.industry || "Sin industria"}
-                            </Badge>
+          )}
+
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-12">
+                    <Checkbox
+                      checked={isAllSelected}
+                      onCheckedChange={handleSelectAll}
+                    />
+                  </TableHead>
+                  <TableHead>Empresa</TableHead>
+                  <TableHead>RNC</TableHead>
+                  <TableHead>Email Propietario</TableHead>
+                  <TableHead>Estado</TableHead>
+                  <TableHead>Plan</TableHead>
+                  <TableHead>Fecha Creación</TableHead>
+                  <TableHead className="text-right">Acciones</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredCompanies?.map((company) => (
+                  <TableRow key={company.id}>
+                    <TableCell>
+                      <Checkbox
+                        checked={selectedCompanies.includes(company.id)}
+                        onCheckedChange={() => handleSelectCompany(company.id)}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <div>
+                        <div className="font-medium">{company.name}</div>
+                        {company.businessName && (
+                          <div className="text-sm text-muted-foreground">
+                            {company.businessName}
                           </div>
-                        </div>
-                      </TableCell>
-                      <TableCell className="hidden sm:table-cell">
-                        {company.rnc ? (
-                          <Badge variant="outline">{company.rnc}</Badge>
-                        ) : (
-                          <span className="text-gray-400">Sin RNC</span>
                         )}
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        {company.industry || "No especificada"}
-                      </TableCell>
-                      <TableCell className="hidden lg:table-cell">
-                        {getSubscriptionBadge(company.subscriptionPlan)}
-                      </TableCell>
-                      <TableCell className="hidden xl:table-cell">
-                        {formatDominicanDateTime(company.createdAt!)}
-                      </TableCell>
-                      <TableCell>
-                        <Switch
-                          checked={company.isActive}
-                          onCheckedChange={(checked) => 
-                            toggleStatusMutation.mutate({ id: company.id, isActive: checked })
-                          }
-                          disabled={toggleStatusMutation.isPending}
-                        />
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end space-x-1">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleEdit(company)}
-                            title="Editar empresa"
-                          >
-                            <Edit className="h-4 w-4" />
+                      </div>
+                    </TableCell>
+                    <TableCell>{company.rnc || "N/A"}</TableCell>
+                    <TableCell>{company.ownerEmail || company.email || "N/A"}</TableCell>
+                    <TableCell>{getStatusBadge(company)}</TableCell>
+                    <TableCell>{getPlanBadge(company.subscriptionPlan)}</TableCell>
+                    <TableCell>
+                      {company.createdAt 
+                        ? new Date(company.createdAt).toLocaleDateString()
+                        : "N/A"
+                      }
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" className="h-8 w-8 p-0">
+                            <MoreHorizontal className="h-4 w-4" />
                           </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-blue-600 hover:text-blue-800"
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handleEdit(company)}>
+                            <Edit className="mr-2 h-4 w-4" />
+                            Editar
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
                             onClick={() => handleResendEmail(company)}
-                            disabled={resendEmailMutation.isPending}
-                            title="Reenviar invitación por email"
+                            disabled={!company.ownerEmail && !company.email}
                           >
-                            <Mail className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-red-600 hover:text-red-800"
+                            <Send className="mr-2 h-4 w-4" />
+                            Reenviar Invitación
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => toggleStatusMutation.mutate({
+                              id: company.id,
+                              isActive: !company.isActive
+                            })}
+                          >
+                            {company.isActive ? (
+                              <>
+                                <XCircle className="mr-2 h-4 w-4" />
+                                Desactivar
+                              </>
+                            ) : (
+                              <>
+                                <CheckCircle className="mr-2 h-4 w-4" />
+                                Activar
+                              </>
+                            )}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
                             onClick={() => {
-                              if (confirm("¿Estás seguro de que quieres eliminar esta empresa? Esta acción no se puede deshacer.")) {
+                              if (confirm("¿Estás seguro de eliminar esta empresa?")) {
                                 deleteCompanyMutation.mutate(company.id);
                               }
                             }}
-                            disabled={deleteCompanyMutation.isPending}
-                            title="Eliminar empresa"
+                            className="text-red-600"
                           >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-                </Table>
-              </div>
-            ) : (
-              <div className="text-center py-12">
-                <Building2 className="mx-auto h-12 w-12 text-gray-400" />
-                <h3 className="mt-4 text-lg font-medium text-gray-900 dark:text-gray-100">
-                  {searchTerm ? "No se encontraron empresas" : "No hay empresas registradas"}
-                </h3>
-                <p className="mt-2 text-gray-500 dark:text-gray-400">
-                  {searchTerm 
-                    ? "Intenta con otros términos de búsqueda."
-                    : "Comienza registrando la primera empresa en el sistema."
-                  }
-                </p>
-                {!searchTerm && (
-                  <Button className="mt-4" onClick={handleNewCompany}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Registrar Primera Empresa
-                  </Button>
-                )}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Eliminar
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+
+          {filteredCompanies?.length === 0 && (
+            <div className="text-center py-8">
+              <Building2 className="mx-auto h-12 w-12 text-muted-foreground" />
+              <h3 className="mt-2 text-sm font-medium">No hay empresas</h3>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {searchTerm || statusFilter !== "all" || planFilter !== "all"
+                  ? "No se encontraron empresas con los filtros aplicados."
+                  : "Comienza creando tu primera empresa."}
+              </p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
