@@ -218,9 +218,9 @@ export default function Calculator({ isOpen, onClose }: CalculatorProps) {
                         whileTap={{ scale: 0.95 }}
                         onClick={button.action}
                         className={`
-                          ${button.color} text-white font-semibold rounded-lg h-12
-                          col-span-2 transition-all duration-200 shadow-lg hover:shadow-xl
-                          border border-gray-600
+                          ${button.color} text-white font-semibold rounded-lg h-10 sm:h-12 text-sm sm:text-base
+                          col-span-2 transition-all duration-200 shadow-lg hover:shadow-xl active:scale-95
+                          border border-gray-600 touch-manipulation select-none
                         `}
                         style={{ gridColumn: "span 2" }}
                       >
