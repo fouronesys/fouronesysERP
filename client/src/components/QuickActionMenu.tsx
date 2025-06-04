@@ -31,6 +31,8 @@ export default function QuickActionMenu() {
   const { user } = useAuth();
   const menuRef = useRef<HTMLDivElement>(null);
 
+  console.log('QuickActionMenu rendered, user:', user ? 'authenticated' : 'not authenticated', 'isOpen:', isOpen);
+
   // Quick actions configuration
   const quickActions: QuickAction[] = [
     {
@@ -129,106 +131,80 @@ export default function QuickActionMenu() {
   if (!user) return null;
 
   const handleActionClick = (action: QuickAction) => {
+    console.log('Action clicked:', action.label);
     action.action();
     setIsOpen(false);
+  };
+
+  const toggleMenu = () => {
+    console.log('Toggle menu clicked, current state:', isOpen);
+    setIsOpen(!isOpen);
   };
 
   return (
     <div ref={menuRef} className="fixed bottom-6 right-6 z-50">
       {/* Action Buttons */}
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.8 }}
-            transition={{ duration: 0.2 }}
-            className="absolute bottom-16 right-0 mb-2"
-          >
-            <div className="flex flex-col space-y-2">
-              {quickActions.map((action, index) => (
-                <motion.div
-                  key={action.id}
-                  initial={{ opacity: 0, x: 50, scale: 0.8 }}
-                  animate={{ opacity: 1, x: 0, scale: 1 }}
-                  exit={{ opacity: 0, x: 50, scale: 0.8 }}
-                  transition={{ 
-                    duration: 0.2, 
-                    delay: index * 0.05,
-                    type: "spring",
-                    stiffness: 200,
-                    damping: 20
-                  }}
-                  className="flex items-center group"
-                >
-                  {/* Action Label */}
-                  <div className="mr-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                    <div className="bg-black/80 text-white px-3 py-2 rounded-lg text-sm whitespace-nowrap backdrop-blur-sm">
-                      <div className="font-medium">{action.label}</div>
-                      <div className="text-xs text-gray-300">{action.description}</div>
-                    </div>
+      {isOpen && (
+        <div className="absolute bottom-16 right-0 mb-2">
+          <div className="flex flex-col space-y-2">
+            {quickActions.map((action, index) => (
+              <div key={action.id} className="flex items-center group">
+                {/* Action Label */}
+                <div className="mr-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                  <div className="bg-black/80 text-white px-3 py-2 rounded-lg text-sm whitespace-nowrap backdrop-blur-sm">
+                    <div className="font-medium">{action.label}</div>
+                    <div className="text-xs text-gray-300">{action.description}</div>
                   </div>
-                  
-                  {/* Action Button */}
-                  <Button
-                    onClick={() => handleActionClick(action)}
-                    className={`
-                      w-12 h-12 rounded-full ${action.color} 
-                      shadow-lg hover:shadow-xl transform hover:scale-110 
-                      transition-all duration-200 border-2 border-white/20
-                      flex items-center justify-center
-                    `}
-                  >
-                    <action.icon className="w-5 h-5 text-white" />
-                  </Button>
-                </motion.div>
-              ))}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+                </div>
+                
+                {/* Action Button */}
+                <button
+                  onClick={() => handleActionClick(action)}
+                  className={`
+                    w-12 h-12 rounded-full ${action.color} 
+                    shadow-lg hover:shadow-xl transform hover:scale-110 
+                    transition-all duration-200 border-2 border-white/20
+                    flex items-center justify-center
+                  `}
+                >
+                  <action.icon className="w-5 h-5 text-white" />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Main Floating Button */}
-      <motion.div
-        whileHover={{ scale: 1.1 }}
-        whileTap={{ scale: 0.95 }}
-        className="relative"
+      <button
+        onClick={toggleMenu}
+        className={`
+          w-14 h-14 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 
+          hover:from-blue-700 hover:to-purple-700 shadow-xl hover:shadow-2xl
+          transform transition-all duration-300 border-2 border-white/20
+          flex items-center justify-center group
+          ${isOpen ? 'rotate-45' : 'rotate-0'}
+        `}
       >
-        <Button
-          onClick={() => setIsOpen(!isOpen)}
-          className={`
-            w-14 h-14 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 
-            hover:from-blue-700 hover:to-purple-700 shadow-xl hover:shadow-2xl
-            transform transition-all duration-300 border-2 border-white/20
-            flex items-center justify-center group
-            ${isOpen ? 'rotate-45' : 'rotate-0'}
-          `}
-        >
-          {isOpen ? (
-            <Plus className="w-6 h-6 text-white transition-transform duration-300" />
-          ) : (
-            <Zap className="w-6 h-6 text-white group-hover:animate-pulse" />
-          )}
-        </Button>
-
-        {/* Pulse Effect */}
-        {!isOpen && (
-          <div className="absolute inset-0 rounded-full bg-gradient-to-r from-blue-600/30 to-purple-600/30 animate-ping"></div>
+        {isOpen ? (
+          <Plus className="w-6 h-6 text-white transition-transform duration-300" />
+        ) : (
+          <Zap className="w-6 h-6 text-white group-hover:animate-pulse" />
         )}
-      </motion.div>
+      </button>
+
+      {/* Pulse Effect */}
+      {!isOpen && (
+        <div className="absolute inset-0 rounded-full bg-gradient-to-r from-blue-600/30 to-purple-600/30 animate-ping pointer-events-none"></div>
+      )}
 
       {/* Background Overlay */}
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/10 backdrop-blur-sm -z-10"
-            onClick={() => setIsOpen(false)}
-          />
-        )}
-      </AnimatePresence>
+      {isOpen && (
+        <div
+          className="fixed inset-0 bg-black/10 backdrop-blur-sm -z-10"
+          onClick={() => setIsOpen(false)}
+        />
+      )}
     </div>
   );
 }
