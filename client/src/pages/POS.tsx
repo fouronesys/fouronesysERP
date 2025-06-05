@@ -553,19 +553,30 @@ export default function POS() {
                     )}
                   </div>
 
-                  <Button
-                    onClick={processSale}
-                    disabled={cart.length === 0 || isProcessing || (paymentMethod === "cash" && (!cashReceived || parseFloat(cashReceived) < total))}
-                    className="w-full bg-green-600 hover:bg-green-700"
-                    size="lg"
-                  >
-                    {isProcessing ? (
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                    ) : (
-                      <Receipt className="h-4 w-4 mr-2" />
-                    )}
-                    {isProcessing ? "Procesando..." : "Procesar Venta"}
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={() => setShowCalculator(true)}
+                      variant="outline"
+                      size="lg"
+                      className="flex-1"
+                    >
+                      <Calculator className="h-4 w-4 mr-2" />
+                      Calculadora
+                    </Button>
+                    <Button
+                      onClick={processSale}
+                      disabled={cart.length === 0 || isProcessing || (paymentMethod === "cash" && (!cashReceived || parseFloat(cashReceived) < total))}
+                      className="flex-1 bg-green-600 hover:bg-green-700"
+                      size="lg"
+                    >
+                      {isProcessing ? (
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                      ) : (
+                        <Receipt className="h-4 w-4 mr-2" />
+                      )}
+                      {isProcessing ? "Procesando..." : "Procesar Venta"}
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             </div>
