@@ -868,6 +868,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/pos/sales", isAuthenticated, async (req: any, res) => {
     try {
+      console.log("Processing POS sale, user:", req.user);
       const userId = req.user.id;
       const company = await storage.getCompanyByUserId(userId);
       if (!company) {
