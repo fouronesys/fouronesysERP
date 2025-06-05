@@ -1787,6 +1787,25 @@ export class DatabaseStorage implements IStorage {
     return results;
   }
 
+  // RNC Registry operations
+  async getRNCFromRegistry(rnc: string): Promise<RNCRegistry | undefined> {
+    const [rncData] = await db
+      .select()
+      .from(rncRegistry)
+      .where(eq(rncRegistry.rnc, rnc))
+      .limit(1);
+    return rncData;
+  }
+
+  async bulkInsertRNCRegistry(data: InsertRNCRegistry[]): Promise<void> {
+    // Insert in batches to avoid memory issues
+    const batchSize = 1000;
+    for (let i = 0; i < data.length; i += batchSize) {
+      const batch = data.slice(i, i + batchSize);
+      await db.insert(rncRegistry).values(batch).onConflictDoNothing();
+    }
+  }
+
   // Comprobantes 606 (Ventas)
   async getComprobantes606(companyId: number, period: string): Promise<Comprobante606[]> {
     return await db
