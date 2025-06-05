@@ -256,6 +256,7 @@ export interface IStorage {
 
   // NCF Sequence operations for Fiscal Receipts
   getNextNCF(companyId: number, ncfType: string): Promise<string | null>;
+  getNCFSequences(companyId: number): Promise<NCFSequence[]>;
   createNCFSequence(ncfData: InsertNCFSequence): Promise<NCFSequence>;
   updateNCFSequence(id: number, sequence: number): Promise<void>;
   incrementNCFSequence(companyId: number, ncfType: string): Promise<void>;
@@ -1643,7 +1644,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // NCF Sequence operations for Fiscal Receipts
-  async getNextNCF(companyId: number, ncfType: string = "B01"): Promise<{ ncf: string; sequence: number }> {
+  async getNextNCF(companyId: number, ncfType: string = "B01"): Promise<string | null> {
     // Get the current NCF sequence for this company and type
     let [sequence] = await db
       .select()
@@ -1656,31 +1657,22 @@ export class DatabaseStorage implements IStorage {
         )
       );
 
-    // If no sequence exists, create one
+    // If no sequence exists, return null
     if (!sequence) {
-      const today = new Date();
-      const fiscalPeriod = today.getFullYear().toString() + 
-                          (today.getMonth() + 1).toString().padStart(2, '0') + 
-                          today.getDate().toString().padStart(2, '0');
-
-      sequence = await this.createNCFSequence({
-        companyId,
-        ncfType,
-        currentSequence: 1,
-        maxSequence: 50000000,
-        fiscalPeriod,
-        isActive: true
-      });
+      return null;
     }
 
-    // Increment sequence
-    const newSequence = sequence.currentSequence + 1;
+    // Get current sequence (default to 0 if null)
+    const currentSeq = sequence.currentSequence || 0;
+    const newSequence = currentSeq + 1;
+    
+    // Update sequence
     await this.updateNCFSequence(sequence.id, newSequence);
 
     // Format NCF: B01 + 8-digit sequence
     const ncf = `${ncfType}${newSequence.toString().padStart(8, '0')}`;
 
-    return { ncf, sequence: newSequence };
+    return ncf;
   }
 
   async createNCFSequence(data: InsertNCFSequence): Promise<NCFSequence> {
@@ -1691,35 +1683,14 @@ export class DatabaseStorage implements IStorage {
     return sequence;
   }
 
-  async getNextNCF(companyId: number, ncfType: string): Promise<string | null> {
-    const [sequence] = await db
-      .select()
-      .from(ncfSequences)
-      .where(and(
-        eq(ncfSequences.companyId, companyId),
-        eq(ncfSequences.ncfType, ncfType),
-        eq(ncfSequences.isActive, true)
-      ))
-      .limit(1);
-
-    if (!sequence) return null;
-
-    // Check if sequence is not expired
-    if (new Date(sequence.expirationDate) < new Date()) {
-      return null;
-    }
-
-    const nextSequence = sequence.currentSequence + 1;
-    const sequenceStr = nextSequence.toString().padStart(8, '0');
-    const ncf = `${ncfType}${sequenceStr}`;
-
-    // Update current sequence
+  async updateNCFSequence(id: number, sequence: number): Promise<void> {
     await db
       .update(ncfSequences)
-      .set({ currentSequence: nextSequence })
-      .where(eq(ncfSequences.id, sequence.id));
-
-    return ncf;
+      .set({ 
+        currentSequence: sequence,
+        updatedAt: new Date()
+      })
+      .where(eq(ncfSequences.id, id));
   }
 
   async incrementNCFSequence(companyId: number, ncfType: string): Promise<void> {
