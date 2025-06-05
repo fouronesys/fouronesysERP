@@ -457,10 +457,10 @@ export const posSales = pgTable("pos_sales", {
   customerPhone: varchar("customer_phone", { length: 20 }),
   customerRnc: varchar("customer_rnc", { length: 11 }), // Dominican RNC
   // Fiscal Receipt fields
-  ncf: varchar("ncf", { length: 20 }).notNull(), // Comprobante Fiscal
-  ncfType: varchar("ncf_type", { length: 3 }).default("B01"), // B01, B02, B04, etc.
-  ncfSequence: integer("ncf_sequence").notNull(),
-  fiscalPeriod: varchar("fiscal_period", { length: 8 }).notNull(), // YYYYMMDD
+  ncf: varchar("ncf", { length: 20 }), // Comprobante Fiscal
+  ncfType: varchar("ncf_type", { length: 3 }), // B01, B02, B04, etc.
+  ncfSequence: integer("ncf_sequence"),
+  fiscalPeriod: varchar("fiscal_period", { length: 8 }), // YYYYMMDD
   notes: text("notes"),
   status: varchar("status", { length: 20 }).default("completed"),
   // Restaurant-specific fields

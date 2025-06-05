@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import MobileCalculator from "@/components/MobileCalculator";
+import InvoicePrintModal from "@/components/InvoicePrintModal";
 import type { Product, Customer, POSPrintSettings, Company } from "@shared/schema";
 
 // Hook para detectar móvil
@@ -81,6 +82,9 @@ export default function POS() {
   const [showCalculator, setShowCalculator] = useState(false);
   const [useFiscalReceipt, setUseFiscalReceipt] = useState(false);
   const [selectedNCFType, setSelectedNCFType] = useState("B02");
+  const [showPrintModal, setShowPrintModal] = useState(false);
+  const [lastSaleId, setLastSaleId] = useState<number | null>(null);
+  const [lastSaleNumber, setLastSaleNumber] = useState("");
   
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
@@ -201,11 +205,20 @@ export default function POS() {
       const response = await apiRequest("POST", "/api/pos/sales", saleData);
       
       if (response.ok) {
+        const result = await response.json();
+        
+        // Guardar información para impresión
+        setLastSaleId(result.id);
+        setLastSaleNumber(result.saleNumber);
+        
         // Limpiar carrito después de venta exitosa
         clearCart();
         setCashReceived("");
         setCustomerName("");
         setCustomerPhone("");
+        
+        // Mostrar modal de impresión
+        setShowPrintModal(true);
         
         console.log("Venta procesada exitosamente");
       }
@@ -737,6 +750,15 @@ export default function POS() {
           isOpen={showCalculator} 
           onClose={() => setShowCalculator(false)} 
         />
+
+        {lastSaleId && (
+          <InvoicePrintModal
+            isOpen={showPrintModal}
+            onClose={() => setShowPrintModal(false)}
+            saleId={lastSaleId}
+            saleNumber={lastSaleNumber}
+          />
+        )}
       </div>
     </div>
   );
