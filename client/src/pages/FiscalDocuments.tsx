@@ -46,7 +46,7 @@ export default function FiscalDocuments() {
     ncfType: "B01",
     currentSequence: 1,
     maxSequence: 50000000,
-    fiscalPeriod: "",
+    fiscalPeriod: new Date().getFullYear().toString(),
     isActive: true
   });
   
@@ -70,7 +70,7 @@ export default function FiscalDocuments() {
   const createNCFSequenceMutation = useMutation({
     mutationFn: async (data: any) => {
       const response = await apiRequest("POST", "/api/fiscal/ncf-sequences", data);
-      return response;
+      return response.json();
     },
     onSuccess: () => {
       toast({
@@ -147,20 +147,20 @@ export default function FiscalDocuments() {
     setShowNewSequenceDialog(false);
   };
 
-  const filteredSequences = ncfSequences?.filter((seq: any) =>
-    seq.ncfType.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    seq.fiscalPeriod.includes(searchTerm)
-  ) || [];
+  const filteredSequences = Array.isArray(ncfSequences) ? ncfSequences.filter((seq: any) =>
+    seq.ncfType?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    seq.fiscalPeriod?.includes(searchTerm)
+  ) : [];
 
-  const filteredComprobantes606 = comprobantes606?.filter((comp: any) =>
+  const filteredComprobantes606 = Array.isArray(comprobantes606) ? comprobantes606.filter((comp: any) =>
     comp.ncf?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     comp.proveedor?.toLowerCase().includes(searchTerm.toLowerCase())
-  ) || [];
+  ) : [];
 
-  const filteredComprobantes607 = comprobantes607?.filter((comp: any) =>
+  const filteredComprobantes607 = Array.isArray(comprobantes607) ? comprobantes607.filter((comp: any) =>
     comp.ncf?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     comp.cliente?.toLowerCase().includes(searchTerm.toLowerCase())
-  ) || [];
+  ) : [];
 
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
@@ -561,12 +561,25 @@ export default function FiscalDocuments() {
               <Label htmlFor="fiscalPeriod">Período Fiscal</Label>
               <input
                 id="fiscalPeriod"
-                type="text"
-                value={newSequenceForm.fiscalPeriod}
-                onChange={(e) => setNewSequenceForm({...newSequenceForm, fiscalPeriod: e.target.value})}
+                type="month"
+                value={newSequenceForm.fiscalPeriod.length === 4 ? `${newSequenceForm.fiscalPeriod}-01` : newSequenceForm.fiscalPeriod}
+                onChange={(e) => {
+                  const [year, month] = e.target.value.split('-');
+                  setNewSequenceForm({...newSequenceForm, fiscalPeriod: `${year}-${month}`});
+                }}
                 className="w-full p-2 border rounded-md"
-                placeholder="YYYYMMDD"
               />
+            </div>
+            
+            {/* Vista previa del NCF */}
+            <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-md">
+              <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Vista Previa del NCF</Label>
+              <div className="mt-2 font-mono text-lg text-gray-900 dark:text-gray-100">
+                {newSequenceForm.ncfType}{String(newSequenceForm.currentSequence).padStart(8, '0')}
+              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                Formato: {newSequenceForm.ncfType} + secuencia de 8 dígitos
+              </p>
             </div>
             <div className="flex items-center space-x-2">
               <input
