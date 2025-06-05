@@ -153,8 +153,19 @@ export interface IStorage {
   deleteCustomer(id: number, companyId: number): Promise<void>;
   
   // Supplier operations
-  getSuppliers(companyId: number): Promise<Supplier[]>;
-  createSupplier(supplier: InsertSupplier): Promise<Supplier>;
+  getSuppliers(companyId: number): Promise<any[]>;
+  createSupplier(supplier: any): Promise<any>;
+  
+  // Purchase Orders operations
+  getPurchaseOrders(companyId: number): Promise<any[]>;
+  createPurchaseOrder(order: any): Promise<any>;
+  
+  // Purchase Invoices operations
+  getPurchaseInvoices(companyId: number): Promise<any[]>;
+  createPurchaseInvoice(invoice: any): Promise<any>;
+  
+  // Purchase Stats
+  getPurchasesStats(companyId: number): Promise<any>;
   
   // Product operations
   getProducts(companyId: number): Promise<Product[]>;

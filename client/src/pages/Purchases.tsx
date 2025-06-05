@@ -219,7 +219,7 @@ const PurchaseOrdersSection = () => {
         </div>
       ) : (
         <div className="space-y-4">
-          {orders.map((order: any) => (
+          {(orders as PurchaseOrder[]).map((order) => (
             <Card key={order.id} className="hover:shadow-md transition-shadow">
               <CardContent className="p-4">
                 <div className="flex justify-between items-start">

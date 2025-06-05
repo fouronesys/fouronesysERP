@@ -1546,6 +1546,115 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Purchases Module Routes
+  app.get("/api/suppliers", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+      const suppliers = await storage.getSuppliers(company.id);
+      res.json(suppliers);
+    } catch (error) {
+      console.error("Error fetching suppliers:", error);
+      res.status(500).json({ message: "Failed to fetch suppliers" });
+    }
+  });
+
+  app.post("/api/suppliers", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+      const supplierData = { ...req.body, companyId: company.id };
+      const supplier = await storage.createSupplier(supplierData);
+      res.json(supplier);
+    } catch (error) {
+      console.error("Error creating supplier:", error);
+      res.status(500).json({ message: "Failed to create supplier" });
+    }
+  });
+
+  app.get("/api/purchase-orders", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+      const orders = await storage.getPurchaseOrders(company.id);
+      res.json(orders);
+    } catch (error) {
+      console.error("Error fetching purchase orders:", error);
+      res.status(500).json({ message: "Failed to fetch purchase orders" });
+    }
+  });
+
+  app.post("/api/purchase-orders", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+      const orderData = { ...req.body, companyId: company.id };
+      const order = await storage.createPurchaseOrder(orderData);
+      res.json(order);
+    } catch (error) {
+      console.error("Error creating purchase order:", error);
+      res.status(500).json({ message: "Failed to create purchase order" });
+    }
+  });
+
+  app.get("/api/purchase-invoices", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+      const invoices = await storage.getPurchaseInvoices(company.id);
+      res.json(invoices);
+    } catch (error) {
+      console.error("Error fetching purchase invoices:", error);
+      res.status(500).json({ message: "Failed to fetch purchase invoices" });
+    }
+  });
+
+  app.post("/api/purchase-invoices", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+      const invoiceData = { ...req.body, companyId: company.id };
+      const invoice = await storage.createPurchaseInvoice(invoiceData);
+      res.json(invoice);
+    } catch (error) {
+      console.error("Error creating purchase invoice:", error);
+      res.status(500).json({ message: "Failed to create purchase invoice" });
+    }
+  });
+
+  app.get("/api/purchases/stats", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+      const stats = await storage.getPurchasesStats(company.id);
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching purchases stats:", error);
+      res.status(500).json({ message: "Failed to fetch purchases stats" });
+    }
+  });
+
   // Admin Analytics API
   app.get("/api/admin/analytics", isAuthenticated, async (req: any, res) => {
     try {
