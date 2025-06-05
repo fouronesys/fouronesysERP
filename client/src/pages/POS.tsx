@@ -79,6 +79,8 @@ export default function POS() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [activeTab, setActiveTab] = useState("products");
   const [showCalculator, setShowCalculator] = useState(false);
+  const [useFiscalReceipt, setUseFiscalReceipt] = useState(false);
+  const [selectedNCFType, setSelectedNCFType] = useState("B02");
   
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
@@ -95,6 +97,28 @@ export default function POS() {
   const { data: printSettings } = useQuery<POSPrintSettings>({
     queryKey: ["/api/pos/print-settings"],
   });
+
+  const { data: ncfSequences = [] } = useQuery({
+    queryKey: ["/api/fiscal/ncf-sequences"],
+  });
+
+  // Función para verificar secuencias agotándose
+  const checkLowSequences = () => {
+    const alerts: string[] = [];
+    ncfSequences.forEach((sequence: any) => {
+      if (sequence.isActive) {
+        const remaining = (sequence.maxSequence || 0) - (sequence.currentSequence || 0);
+        if (remaining <= 0) {
+          alerts.push(`Comprobantes ${sequence.ncfType} agotados`);
+        } else if (remaining <= 10) {
+          alerts.push(`Quedan ${remaining} comprobantes ${sequence.ncfType}`);
+        }
+      }
+    });
+    return alerts;
+  };
+
+  const sequenceAlerts = checkLowSequences();
 
   // Productos filtrados
   const filteredProducts = products.filter(product =>
@@ -161,6 +185,8 @@ export default function POS() {
         paymentMethod,
         cashReceived: paymentMethod === "cash" ? cashReceived : null,
         cashChange: paymentMethod === "cash" ? cashChange.toString() : "0",
+        useFiscalReceipt,
+        ncfType: useFiscalReceipt ? selectedNCFType : null,
         items: cart.map(item => ({
           productId: item.product.id,
           productName: item.product.name,
@@ -205,6 +231,26 @@ export default function POS() {
   return (
     <div className="w-full min-h-screen bg-gray-50 dark:bg-gray-900">
       <Header title="Punto de Venta" subtitle="Sistema POS integrado" />
+      
+      {/* Alertas de secuencias NCF agotándose */}
+      {sequenceAlerts.length > 0 && (
+        <div className="px-3 sm:px-6 max-w-screen-2xl mx-auto">
+          {sequenceAlerts.map((alert, index) => (
+            <div key={index} className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-md mb-4">
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <p className="text-sm font-medium">{alert}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
       
       <div className="p-3 sm:p-6 max-w-screen-2xl mx-auto">
         <div className="grid grid-cols-1 2xl:grid-cols-5 xl:grid-cols-4 gap-4 sm:gap-6 h-[calc(100vh-140px)]">
@@ -453,6 +499,39 @@ export default function POS() {
                           </SelectItem>
                         </SelectContent>
                       </Select>
+                    </div>
+
+                    {/* Opciones de Comprobante Fiscal */}
+                    <div className="space-y-3 border-t pt-3">
+                      <div className="flex items-center space-x-2">
+                        <input
+                          id="useFiscalReceipt"
+                          type="checkbox"
+                          checked={useFiscalReceipt}
+                          onChange={(e) => setUseFiscalReceipt(e.target.checked)}
+                          className="rounded"
+                        />
+                        <label htmlFor="useFiscalReceipt" className="text-sm font-medium">
+                          Generar Comprobante Fiscal
+                        </label>
+                      </div>
+
+                      {useFiscalReceipt && (
+                        <div>
+                          <label className="text-sm font-medium mb-2 block">Tipo de NCF</label>
+                          <Select value={selectedNCFType} onValueChange={setSelectedNCFType}>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="B01">B01 - Crédito Fiscal</SelectItem>
+                              <SelectItem value="B02">B02 - Consumidor Final</SelectItem>
+                              <SelectItem value="B03">B03 - Nota de Débito</SelectItem>
+                              <SelectItem value="B04">B04 - Nota de Crédito</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
                     </div>
 
                     {paymentMethod === "cash" && (
