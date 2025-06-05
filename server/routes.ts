@@ -1523,7 +1523,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/fiscal/download-606/:period", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.id;
+      const userId = req.user.claims.sub;
       const company = await storage.getCompanyByUserId(userId);
       if (!company) {
         return res.status(404).json({ message: "Company not found" });
@@ -1532,28 +1532,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { period } = req.params;
       const comprobantes = await storage.getComprobantes606(company.id, period);
       
-      // Generate DGII 606 format
+      // Generate DGII 606 format according to official specification
       let content = "";
       for (const comp of comprobantes) {
         const line = [
-          comp.rncCedula.padEnd(11, " "),
-          comp.tipoIdentificacion,
-          comp.tipoComprobante,
-          (comp.ncf || "").padEnd(11, " "),
-          comp.ncfModificado || "",
-          comp.fechaComprobante.toISOString().slice(0, 10).replace(/-/g, ""),
-          comp.fechaPago ? comp.fechaPago.toISOString().slice(0, 10).replace(/-/g, "") : "",
-          comp.servicioTipo || "",
-          comp.conceptoPago || "",
-          parseFloat(comp.montoFacturado).toFixed(2).padStart(12, "0"),
-          parseFloat(comp.itbisFacturado).toFixed(2).padStart(12, "0"),
-          parseFloat(comp.itbisRetenido).toFixed(2).padStart(12, "0"),
-          parseFloat(comp.itbisPercibido).toFixed(2).padStart(12, "0"),
-          parseFloat(comp.retencionRenta).toFixed(2).padStart(12, "0"),
-          parseFloat(comp.isrPercibido).toFixed(2).padStart(12, "0"),
-          parseFloat(comp.impuestoSelectivoConsumo).toFixed(2).padStart(12, "0"),
-          parseFloat(comp.otrosImpuestos).toFixed(2).padStart(12, "0"),
-          parseFloat(comp.montoTotal).toFixed(2).padStart(12, "0"),
+          (comp.rncCedula || "").padEnd(11, " "),                    // RNC o Cédula
+          comp.tipoIdentificacion || "1",                            // Tipo Id (1=RNC, 2=Cédula)
+          comp.tipoComprobante || "9",                               // Tipo de Bienes y Servicios
+          (comp.ncf || "").padEnd(13, " "),                         // NCF (11 o 13 posiciones)
+          comp.ncfModificado || "",                                  // NCF Modificado
+          comp.fechaComprobante?.toISOString().slice(0, 10).replace(/-/g, "") || "", // Fecha Comprobante AAAAMMDD
+          comp.fechaPago?.toISOString().slice(0, 10).replace(/-/g, "") || "",        // Fecha Pago AAAAMMDD
+          parseFloat(comp.montoFacturadoServicios || "0").toFixed(2).padStart(12, "0"), // Monto Facturado Servicios
+          parseFloat(comp.montoFacturadoBienes || "0").toFixed(2).padStart(12, "0"),   // Monto Facturado Bienes
+          parseFloat(comp.montoFacturado || "0").toFixed(2).padStart(12, "0"),        // Total Monto Facturado
+          parseFloat(comp.itbisFacturado || "0").toFixed(2).padStart(12, "0"),        // ITBIS Facturado
+          parseFloat(comp.itbisRetenido || "0").toFixed(2).padStart(12, "0"),          // ITBIS Retenido
+          parseFloat(comp.itbisProporcionalidad || "0").toFixed(2).padStart(12, "0"),  // ITBIS sujeto a Proporcionalidad
+          parseFloat(comp.itbisCosto || "0").toFixed(2).padStart(12, "0"),             // ITBIS llevado al Costo
+          parseFloat(comp.itbisAdelantar || "0").toFixed(2).padStart(12, "0"),         // ITBIS por Adelantar
+          parseFloat(comp.itbisPercibido || "0").toFixed(2).padStart(12, "0"),         // ITBIS percibido en compras
+          comp.tipoRetencionISR || "",                                                  // Tipo de Retención en ISR
+          parseFloat(comp.retencionRenta || "0").toFixed(2).padStart(12, "0"),         // Monto Retención Renta
+          parseFloat(comp.isrPercibido || "0").toFixed(2).padStart(12, "0"),           // ISR Percibido en compras
+          parseFloat(comp.impuestoSelectivoConsumo || "0").toFixed(2).padStart(12, "0"), // Impuesto Selectivo al Consumo
+          parseFloat(comp.otrosImpuestos || "0").toFixed(2).padStart(12, "0"),         // Otros Impuestos/Tasas
+          parseFloat(comp.montoPropina || "0").toFixed(2).padStart(12, "0"),           // Monto Propina Legal
+          comp.formaPago || "1"                                                         // Forma de Pago (1-7)
         ].join("|");
         content += line + "\n";
       }

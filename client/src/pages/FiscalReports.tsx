@@ -12,57 +12,65 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
 // Interfaces basadas en las plantillas oficiales DGII
-interface Report606Data {
-  rnc: string;
-  periodo: string;
-  secuencia: number;
+interface Report606Template {
+  // Encabezado del Formato 606
+  rncCedula: string;         // RNC o Cédula de la empresa
+  periodo: string;           // Período AAAAMM
+  cantidadRegistros: number; // Cantidad de Comprobantes Fiscales
+  
+  // Detalle de Compras (según Formato 606 oficial)
   compras: {
-    rncProveedor: string;
-    tipoId: string;
-    numeroFactura: string;
-    ncf: string;
-    fechaFactura: string;
-    fechaPago: string;
-    montoFacturado: number;
-    itbisFacturado: number;
-    itbisRetenido?: number;
-    itbisPercibido?: number;
-    retencionRenta?: number;
-    propina?: number;
-    efectivo?: number;
-    cheque?: number;
-    tarjeta?: number;
-    credito?: number;
-    bonos?: number;
-    permuta?: number;
-    otrasFormas?: number;
+    rncCedulaProveedor: string;      // RNC o Cédula del proveedor
+    tipoIdentificacion: string;      // 1=RNC, 2=Cédula
+    tipoBienesServicios: string;     // 1-11 según clasificación DGII
+    ncf: string;                     // NCF completo (11 o 13 posiciones)
+    ncfModificado?: string;          // NCF afectado por nota de crédito/débito
+    fechaComprobante: string;        // AAAAMMDD
+    fechaPago?: string;              // AAAAMMDD (si aplica)
+    montoFacturadoServicios: number; // Monto servicios sin impuestos
+    montoFacturadoBienes: number;    // Monto bienes sin impuestos
+    totalMontoFacturado: number;     // Total calculado automáticamente
+    itbisFacturado: number;          // ITBIS generado
+    itbisRetenido?: number;          // ITBIS retenido (si aplica)
+    itbisProporcionalidad?: number;  // ITBIS sujeto a proporcionalidad Art. 349
+    itbisCosto?: number;             // ITBIS llevado al costo
+    itbisAdelantar?: number;         // ITBIS por adelantar (calculado)
+    itbisPercibido?: number;         // ITBIS percibido por terceros
+    tipoRetencionISR?: string;       // 1-8 según clasificación
+    montoRetencionRenta?: number;    // Monto ISR retenido
+    isrPercibido?: number;           // ISR percibido por terceros
+    impuestoSelectivo?: number;      // Impuesto Selectivo al Consumo
+    otrosImpuestos?: number;         // Otros impuestos/tasas
+    montoPropina?: number;           // Propina legal 10%
+    formaPago: string;               // 1-7 según clasificación
   }[];
 }
 
-interface Report607Data {
-  rnc: string;
-  periodo: string;
-  secuencia: number;
+interface Report607Template {
+  // Encabezado del Formato 607
+  rncCedula: string;         // RNC o Cédula de la empresa
+  periodo: string;           // Período AAAAMM
+  cantidadRegistros: number; // Cantidad de Comprobantes Fiscales
+  
+  // Detalle de Ventas (según Formato 607 oficial)
   ventas: {
-    rncCliente: string;
-    tipoId: string;
-    numeroFactura: string;
-    ncf: string;
-    fechaFactura: string;
-    fechaVencimiento: string;
-    montoFacturado: number;
-    itbisFacturado: number;
-    itbisRetenido?: number;
-    retencionRenta?: number;
-    itbisPercibido?: number;
-    propina?: number;
-    efectivo?: number;
-    cheque?: number;
-    tarjeta?: number;
-    credito?: number;
-    bonos?: number;
-    permuta?: number;
-    otrasFormas?: number;
+    rncCedulaCliente: string;        // RNC o Cédula del cliente
+    fechaFactura: string;            // AAAAMMDD
+    fechaVencimiento: string;        // AAAAMMDD
+    montoFacturado: number;          // Monto facturado sin impuestos
+    itbisFacturado: number;          // ITBIS facturado
+    itbisRetenido?: number;          // ITBIS retenido por terceros
+    retencionRenta?: number;         // Retención ISR aplicada
+    itbisPercibido?: number;         // ITBIS percibido por la empresa
+    propina?: number;                // Propina legal (10%)
+    // Formas de pago según clasificación DGII
+    efectivo?: number;               // Pagos en efectivo
+    cheque?: number;                 // Pagos con cheque
+    tarjeta?: number;                // Pagos con tarjeta
+    credito?: number;                // Ventas a crédito
+    bonos?: number;                  // Pagos con bonos
+    permuta?: number;                // Operaciones de permuta
+    otrasFormas?: number;            // Otras formas de pago
   }[];
 }
 
@@ -84,11 +92,11 @@ export default function FiscalReportsPage() {
     queryKey: ["/api/fiscal-reports/stats"],
   });
 
-  const { data: reports606 = [], isLoading: loading606 } = useQuery<Report606Data[]>({
+  const { data: reports606 = [], isLoading: loading606 } = useQuery<Report606Template[]>({
     queryKey: ["/api/fiscal-reports/606"],
   });
 
-  const { data: reports607 = [], isLoading: loading607 } = useQuery<Report607Data[]>({
+  const { data: reports607 = [], isLoading: loading607 } = useQuery<Report607Template[]>({
     queryKey: ["/api/fiscal-reports/607"],
   });
 
