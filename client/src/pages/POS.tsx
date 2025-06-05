@@ -1348,6 +1348,11 @@ export default function POS() {
             )}
           </div>
         </div>
+
+        <MobileCalculator 
+          isOpen={showCalculator} 
+          onClose={() => setShowCalculator(false)} 
+        />
       </div>
     </div>
   );
