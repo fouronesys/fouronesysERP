@@ -178,8 +178,7 @@ function Router() {
           <Route path="/company-settings" component={CompanySettings} />
           <Route path="/movements" component={Movements} />
           <Route path="/recipes" component={Manufacturing} />
-          <Route path="/suppliers" component={Customers} />
-          <Route path="/purchase-orders" component={Dashboard} />
+          <Route path="/purchases" component={Purchases} />
           <Route path="/employees" component={Employees} />
           <Route path="/payroll" component={Payroll} />
           <Route path="/fiscal-documents" component={FiscalDocuments} />

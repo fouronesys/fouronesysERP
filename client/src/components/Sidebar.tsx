@@ -65,10 +65,10 @@ const navigation = [
     ],
   },
   {
-    category: "Logística",
+    category: "Compras",
     items: [
-      { name: "Proveedores", href: "/suppliers", icon: Truck },
-      { name: "Ventas POS", href: "/pos-sales", icon: ShoppingCart },
+      { name: "Módulo de Compras", href: "/purchases", icon: ShoppingCart },
+      { name: "Ventas POS", href: "/pos-sales", icon: Star },
     ],
   },
   {
