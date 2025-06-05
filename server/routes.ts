@@ -856,16 +856,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Company not found" });
       }
       
-      const { items, ...saleData } = req.body;
+      const { items, useFiscalReceipt, ncfType, ...saleData } = req.body;
       
       // Generate sale number
       const saleCount = await storage.getPOSSales(company.id);
       const saleNumber = `POS-${String(saleCount.length + 1).padStart(6, '0')}`;
       
+      let ncf = null;
+      
+      // Generate NCF if fiscal receipt is requested
+      if (useFiscalReceipt && ncfType) {
+        try {
+          const ncfSequence = await storage.getNextNCF(company.id, ncfType);
+          if (ncfSequence) {
+            ncf = ncfSequence;
+            // Update the sequence counter
+            await storage.incrementNCFSequence(company.id, ncfType);
+          }
+        } catch (ncfError) {
+          console.error("Error generating NCF:", ncfError);
+          // Continue without NCF if generation fails
+        }
+      }
+      
       const saleToCreate = insertPOSSaleSchema.parse({ 
         ...saleData, 
         companyId: company.id,
-        saleNumber 
+        saleNumber,
+        ncf 
       });
       
       const sale = await storage.createPOSSale(saleToCreate);
@@ -878,7 +896,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      res.json(sale);
+      res.json({ ...sale, ncf });
     } catch (error) {
       console.error("Error creating POS sale:", error);
       res.status(500).json({ message: "Failed to create POS sale" });

@@ -255,9 +255,10 @@ export interface IStorage {
   createRNCRegistry(rncData: InsertRNCRegistry): Promise<RNCRegistry>;
 
   // NCF Sequence operations for Fiscal Receipts
-  getNextNCF(companyId: number, ncfType: string): Promise<{ ncf: string; sequence: number }>;
+  getNextNCF(companyId: number, ncfType: string): Promise<string | null>;
   createNCFSequence(ncfData: InsertNCFSequence): Promise<NCFSequence>;
   updateNCFSequence(id: number, sequence: number): Promise<void>;
+  incrementNCFSequence(companyId: number, ncfType: string): Promise<void>;
 
   // POS Session operations for real-time synchronization
   createPOSSession(sessionData: InsertPOSSession): Promise<POSSession>;
@@ -1719,6 +1720,20 @@ export class DatabaseStorage implements IStorage {
       .where(eq(ncfSequences.id, sequence.id));
 
     return ncf;
+  }
+
+  async incrementNCFSequence(companyId: number, ncfType: string): Promise<void> {
+    await db
+      .update(ncfSequences)
+      .set({ 
+        currentSequence: sql`${ncfSequences.currentSequence} + 1`,
+        updatedAt: new Date()
+      })
+      .where(and(
+        eq(ncfSequences.companyId, companyId),
+        eq(ncfSequences.ncfType, ncfType),
+        eq(ncfSequences.isActive, true)
+      ));
   }
 
   // Comprobantes 605 (Compras)
