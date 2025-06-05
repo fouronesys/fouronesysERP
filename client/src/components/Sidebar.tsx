@@ -72,6 +72,12 @@ const navigation = [
     ],
   },
   {
+    category: "Fiscal",
+    items: [
+      { name: "Reportes 606/607", href: "/fiscal-reports", icon: FileText },
+    ],
+  },
+  {
     category: "Recursos Humanos",
     items: [
       { name: "Empleados", href: "/employees", icon: Users },

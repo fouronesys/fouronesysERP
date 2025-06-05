@@ -41,6 +41,7 @@ import AIInsights from "@/pages/AIInsights";
 import SubscriptionPlans from "@/pages/SubscriptionPlans";
 import CompanyAnalytics from "@/pages/CompanyAnalytics";
 import Purchases from "@/pages/Purchases";
+import FiscalReports from "@/pages/FiscalReports";
 import NotFound from "@/pages/not-found";
 import LoginAnimation from "@/components/LoginAnimation";
 
@@ -179,6 +180,7 @@ function Router() {
           <Route path="/movements" component={Movements} />
           <Route path="/recipes" component={Manufacturing} />
           <Route path="/purchases" component={Purchases} />
+          <Route path="/fiscal-reports" component={FiscalReports} />
           <Route path="/employees" component={Employees} />
           <Route path="/payroll" component={Payroll} />
           <Route path="/fiscal-documents" component={FiscalDocuments} />
