@@ -901,7 +901,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...saleData, 
         companyId: company.id,
         saleNumber,
-        ncf 
+        ncf,
+        createdBy: userId
       });
       
       const sale = await storage.createPOSSale(saleToCreate);
