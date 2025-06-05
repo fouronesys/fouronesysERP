@@ -814,6 +814,14 @@ export const insertRNCRegistrySchema = createInsertSchema(rncRegistry).omit({
 // Types
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
+export type NCFSequence = typeof ncfSequences.$inferSelect;
+export type InsertNCFSequence = z.infer<typeof insertNCFSequenceSchema>;
+export type Comprobante605 = typeof comprobantes605.$inferSelect;
+export type InsertComprobante605 = z.infer<typeof insertComprobante605Schema>;
+export type Comprobante606 = typeof comprobantes606.$inferSelect;
+export type InsertComprobante606 = z.infer<typeof insertComprobante606Schema>;
+export type RNCRegistry = typeof rncRegistry.$inferSelect;
+export type InsertRNCRegistry = z.infer<typeof insertRNCRegistrySchema>;
 
 // AI Chat Messages types
 export type AIChatMessage = typeof aiChatMessages.$inferSelect;

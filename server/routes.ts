@@ -1807,26 +1807,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Legacy RNC verification endpoint (fiscal module)
-  app.get("/api/fiscal/verify-rnc/:rnc", isAuthenticated, async (req: any, res) => {
+  // RNC verification endpoint (fiscal module)
+  app.get("/api/fiscal/verify-rnc", isAuthenticated, async (req: any, res) => {
     try {
-      const { rnc } = req.params;
-      const cleanRnc = rnc.replace(/\D/g, "");
+      const { rnc } = req.query;
       
-      if (cleanRnc.length < 9 || cleanRnc.length > 11) {
-        return res.status(400).json({ error: "RNC debe tener entre 9 y 11 dígitos" });
+      if (!rnc) {
+        return res.status(400).json({ 
+          isValid: false, 
+          message: "RNC parameter is required" 
+        });
       }
 
-      const rncData = await verifyRNCWithDGII(cleanRnc);
+      const cleanRnc = rnc.toString().replace(/\D/g, "");
       
-      if (rncData) {
-        return res.json(rncData);
-      } else {
-        return res.status(404).json({ error: "RNC no encontrado en los registros de la DGII" });
+      if (cleanRnc.length < 9 || cleanRnc.length > 11) {
+        return res.json({ 
+          isValid: false, 
+          message: "RNC debe tener entre 9 y 11 dígitos",
+          rnc: cleanRnc
+        });
       }
+
+      // Check local RNC registry first
+      const localRncData = await storage.getRNCFromRegistry(cleanRnc);
+      
+      if (localRncData) {
+        return res.json({
+          isValid: true,
+          rnc: cleanRnc,
+          razonSocial: localRncData.razonSocial,
+          nombreComercial: localRncData.nombreComercial,
+          estado: localRncData.estado || "ACTIVO",
+          tipo: localRncData.categoria || "CONTRIBUYENTE REGISTRADO",
+          source: "local"
+        });
+      }
+
+      // If not found locally, return not found
+      return res.json({
+        isValid: false,
+        rnc: cleanRnc,
+        message: "RNC no encontrado en el registro local de DGII",
+        source: "local"
+      });
+
     } catch (error) {
       console.error("Error verifying RNC:", error);
-      res.status(500).json({ message: "Failed to verify RNC" });
+      res.json({ 
+        isValid: false, 
+        message: "Error interno del servidor al verificar RNC" 
+      });
     }
   });
 
