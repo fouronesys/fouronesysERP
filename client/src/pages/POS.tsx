@@ -156,8 +156,11 @@ export default function POS() {
 
     // Update product stock in backend first
     try {
-      const response = await apiRequest("PATCH", `/api/products/${product.id}`, {
-        stock: (currentStock - 1).toString()
+      const response = await apiRequest(`/api/products/${product.id}`, {
+        method: "PATCH",
+        body: {
+          stock: (currentStock - 1).toString()
+        }
       });
       
       if (response.ok) {
