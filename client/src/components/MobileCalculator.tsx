@@ -143,15 +143,15 @@ export default function MobileCalculator({ isOpen, onClose }: MobileCalculatorPr
             </div>
 
             {/* Display */}
-            <div className="p-4 flex-shrink-0">
-              <div className="bg-black rounded-lg p-6 border border-gray-600">
+            <div className="p-4 sm:p-6 flex-shrink-0">
+              <div className="bg-black rounded-lg p-6 sm:p-8 border border-gray-600">
                 <div className="text-right">
                   {operation && previousValue !== null && (
-                    <div className="text-gray-400 text-lg mb-2">
+                    <div className="text-gray-400 text-lg sm:text-xl mb-2">
                       {formatDisplay(String(previousValue))} {operation}
                     </div>
                   )}
-                  <div className="text-white text-3xl font-mono leading-tight break-all">
+                  <div className="text-white text-3xl sm:text-4xl lg:text-5xl font-mono leading-tight break-all">
                     {formatDisplay(display)}
                   </div>
                 </div>
@@ -159,8 +159,8 @@ export default function MobileCalculator({ isOpen, onClose }: MobileCalculatorPr
             </div>
 
             {/* Button Grid */}
-            <div className="p-4 flex-1 flex flex-col">
-              <div className="grid grid-cols-4 gap-3 flex-1">
+            <div className="p-4 sm:p-6 flex-1 flex flex-col">
+              <div className="grid grid-cols-4 gap-3 sm:gap-4 flex-1">
                 {buttons.map((button, index) => (
                   <motion.button
                     key={index}
@@ -169,21 +169,21 @@ export default function MobileCalculator({ isOpen, onClose }: MobileCalculatorPr
                     onClick={button.action}
                     className={`
                       ${button.color} ${button.span || ""} text-white font-bold rounded-xl
-                      h-16 text-xl transition-all duration-200 shadow-lg hover:shadow-xl
+                      h-16 sm:h-20 lg:h-24 text-xl sm:text-2xl lg:text-3xl transition-all duration-200 shadow-lg hover:shadow-xl
                       border border-gray-600 flex items-center justify-center
                       touch-manipulation select-none active:scale-95
                     `}
                   >
                     {button.label === "⌫" ? (
-                      <Delete className="w-6 h-6" />
+                      <Delete className="w-6 h-6 sm:w-8 sm:h-8 lg:w-10 lg:h-10" />
                     ) : button.label === "/" ? (
-                      <Divide className="w-6 h-6" />
+                      <Divide className="w-6 h-6 sm:w-8 sm:h-8 lg:w-10 lg:h-10" />
                     ) : button.label === "-" ? (
-                      <Minus className="w-6 h-6" />
+                      <Minus className="w-6 h-6 sm:w-8 sm:h-8 lg:w-10 lg:h-10" />
                     ) : button.label === "+" ? (
-                      <Plus className="w-6 h-6" />
+                      <Plus className="w-6 h-6 sm:w-8 sm:h-8 lg:w-10 lg:h-10" />
                     ) : button.label === "=" ? (
-                      <Equal className="w-6 h-6" />
+                      <Equal className="w-6 h-6 sm:w-8 sm:h-8 lg:w-10 lg:h-10" />
                     ) : (
                       button.label
                     )}

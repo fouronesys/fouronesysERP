@@ -732,7 +732,7 @@ export default function POS() {
           </div>
 
           {/* Cart and Checkout Section */}
-          <div className={`2xl:col-span-2 xl:col-span-2 space-y-4 h-full flex flex-col ${isMobile ? 'hidden' : ''}`}>
+          <div className={`2xl:col-span-2 xl:col-span-2 space-y-4 h-full flex flex-col overflow-hidden ${isMobile ? 'hidden' : ''}`}>
             {/* Cart */}
             <Card className="flex-1 flex flex-col min-h-0">
               <CardHeader className="pb-3 flex-shrink-0">
@@ -813,8 +813,10 @@ export default function POS() {
               </CardContent>
             </Card>
 
-            {/* Customer Info */}
-            <Card>
+            {/* Checkout Section with Scroll */}
+            <div className="flex-1 overflow-y-auto space-y-4 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 min-h-0">
+              {/* Customer Info */}
+              <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
                   <Users className="h-4 w-4" />
@@ -1003,6 +1005,7 @@ export default function POS() {
                 </div>
               </CardContent>
             </Card>
+            </div>
           </div>
 
           {/* Live Receipt Preview Panel - Desktop Only */}
