@@ -395,7 +395,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!company) {
         // Get existing company or create if none exists
         try {
-          const companies = await storage.getCompanies();
+          const companies = await storage.getAllCompanies();
           if (companies.length > 0) {
             company = companies[0]; // Use first existing company
           } else {
@@ -415,7 +415,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         } catch (error) {
           console.error("Error handling company creation:", error);
           // Try to get existing company by name
-          const companies = await storage.getCompanies();
+          const companies = await storage.getAllCompanies();
           company = companies.find(c => c.name === "Four One Solutions") || companies[0];
         }
       }
