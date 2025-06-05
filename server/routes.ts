@@ -390,10 +390,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/companies/current", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims?.sub;
-      const company = await storage.getCompanyByUserId(userId);
+      let company = await storage.getCompanyByUserId(userId);
       
       if (!company) {
-        return res.status(404).json({ message: "No company found for user" });
+        // Create default company for user
+        const newCompany = await storage.createCompany({
+          name: "Four One Solutions",
+          businessName: "Four One Solutions SRL",
+          rnc: "131-12345-6",
+          address: "Santo Domingo, República Dominicana",
+          phone: "(809) 123-4567",
+          email: req.user.claims?.email || "admin@fourone.com",
+          ownerId: userId,
+          isActive: true
+        });
+        company = newCompany;
       }
       
       res.json(company);
