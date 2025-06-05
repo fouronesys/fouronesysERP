@@ -1647,6 +1647,47 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(ncfSequences).where(eq(ncfSequences.companyId, companyId));
   }
 
+  // NCF Sequence operations for Fiscal Receipts
+  async getNextNCF(companyId: number, ncfType: string = "B01"): Promise<{ ncf: string; sequence: number }> {
+    // Get the current NCF sequence for this company and type
+    let [sequence] = await db
+      .select()
+      .from(ncfSequences)
+      .where(
+        and(
+          eq(ncfSequences.companyId, companyId),
+          eq(ncfSequences.ncfType, ncfType),
+          eq(ncfSequences.isActive, true)
+        )
+      );
+
+    // If no sequence exists, create one
+    if (!sequence) {
+      const today = new Date();
+      const fiscalPeriod = today.getFullYear().toString() + 
+                          (today.getMonth() + 1).toString().padStart(2, '0') + 
+                          today.getDate().toString().padStart(2, '0');
+
+      sequence = await this.createNCFSequence({
+        companyId,
+        ncfType,
+        currentSequence: 1,
+        maxSequence: 50000000,
+        fiscalPeriod,
+        isActive: true
+      });
+    }
+
+    // Increment sequence
+    const newSequence = sequence.currentSequence + 1;
+    await this.updateNCFSequence(sequence.id, newSequence);
+
+    // Format NCF: B01 + 8-digit sequence
+    const ncf = `${ncfType}${newSequence.toString().padStart(8, '0')}`;
+
+    return { ncf, sequence: newSequence };
+  }
+
   async createNCFSequence(data: InsertNCFSequence): Promise<NCFSequence> {
     const [sequence] = await db
       .insert(ncfSequences)
