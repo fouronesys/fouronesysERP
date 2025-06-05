@@ -3,7 +3,7 @@ import express from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated } from "./auth";
+import { setupAuth, isAuthenticated } from "./replitAuth";
 import { AIProductService, AIBusinessService, AIChatService, AIDocumentService } from "./ai-services-fixed";
 import { InvoiceTemplateService, type ThermalPrintOptions, type PDFPrintOptions } from "./invoice-template-service";
 import multer from 'multer';
@@ -95,7 +95,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/user', isAuthenticated, async (req: any, res) => {
     try {
       const user = req.user;
-      const userId = user.id;
+      const userId = user.claims?.sub;
       
       // Incluir información de rol y empresas
       if (user) {
@@ -389,7 +389,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Company routes
   app.get("/api/companies/current", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.id;
+      const userId = req.user.claims?.sub;
       const company = await storage.getCompanyByUserId(userId);
       
       if (!company) {
@@ -634,7 +634,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Product routes
   app.get("/api/products", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.id;
+      const userId = req.user.claims?.sub;
       const company = await storage.getCompanyByUserId(userId);
       if (!company) {
         return res.status(404).json({ message: "Company not found" });
@@ -868,7 +868,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/pos/sales", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.id;
+      const userId = req.user.claims?.sub;
       const company = await storage.getCompanyByUserId(userId);
       if (!company) {
         return res.status(404).json({ message: "Company not found" });
