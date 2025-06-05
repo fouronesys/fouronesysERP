@@ -208,7 +208,7 @@ const PurchaseOrdersSection = () => {
             </Card>
           ))}
         </div>
-      ) : orders.length === 0 ? (
+      ) : (orders as PurchaseOrder[]).length === 0 ? (
         <div className="text-center py-12">
           <ShoppingCart className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
           <p className="text-muted-foreground mb-4">No hay órdenes de compra</p>
@@ -297,7 +297,7 @@ const PurchaseInvoicesSection = () => {
             </Card>
           ))}
         </div>
-      ) : invoices.length === 0 ? (
+      ) : (invoices as PurchaseInvoice[]).length === 0 ? (
         <div className="text-center py-12">
           <Receipt className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
           <p className="text-muted-foreground mb-4">No hay facturas de compra</p>
@@ -308,7 +308,7 @@ const PurchaseInvoicesSection = () => {
         </div>
       ) : (
         <div className="space-y-4">
-          {invoices.map((invoice: any) => (
+          {(invoices as PurchaseInvoice[]).map((invoice) => (
             <Card key={invoice.id} className="hover:shadow-md transition-shadow">
               <CardContent className="p-4">
                 <div className="flex justify-between items-start">
@@ -381,10 +381,10 @@ export default function PurchasesPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {statsLoading ? "..." : stats?.totalSuppliers || 0}
+              {statsLoading ? "..." : (stats as Stats)?.totalSuppliers || 0}
             </div>
             <p className="text-xs text-muted-foreground">
-              +{statsLoading ? "..." : stats?.newSuppliersThisMonth || 0} este mes
+              +{statsLoading ? "..." : (stats as Stats)?.newSuppliersThisMonth || 0} este mes
             </p>
           </CardContent>
         </Card>
