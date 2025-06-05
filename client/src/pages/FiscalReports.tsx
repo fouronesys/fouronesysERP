@@ -83,7 +83,10 @@ interface FiscalReportStats {
 }
 
 export default function FiscalReportsPage() {
-  const [selectedPeriod, setSelectedPeriod] = useState("");
+  const [selectedPeriod, setSelectedPeriod] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}`;
+  });
   const [reportType, setReportType] = useState<"606" | "607">("606");
   const [isGenerating, setIsGenerating] = useState(false);
 
@@ -92,12 +95,14 @@ export default function FiscalReportsPage() {
     queryKey: ["/api/fiscal-reports/stats"],
   });
 
-  const { data: reports606 = [], isLoading: loading606 } = useQuery<Report606Template[]>({
-    queryKey: ["/api/fiscal-reports/606"],
+  const { data: reports606 = [], isLoading: loading606 } = useQuery({
+    queryKey: ["/api/fiscal/comprobantes-606", selectedPeriod],
+    enabled: !!selectedPeriod,
   });
 
-  const { data: reports607 = [], isLoading: loading607 } = useQuery<Report607Template[]>({
-    queryKey: ["/api/fiscal-reports/607"],
+  const { data: reports607 = [], isLoading: loading607 } = useQuery({
+    queryKey: ["/api/fiscal/comprobantes-607", selectedPeriod],
+    enabled: !!selectedPeriod,
   });
 
   const generateReport = async () => {

@@ -757,22 +757,28 @@ export const comprobantes606 = pgTable("comprobantes_606", {
   period: varchar("period", { length: 7 }).notNull(), // YYYY-MM
   rncCedula: varchar("rnc_cedula", { length: 11 }).notNull(),
   tipoIdentificacion: varchar("tipo_identificacion", { length: 1 }).notNull(), // 1=RNC, 2=Cedula
-  tipoComprobante: varchar("tipo_comprobante", { length: 2 }).notNull(),
-  ncf: varchar("ncf", { length: 11 }),
-  ncfModificado: varchar("ncf_modificado", { length: 11 }),
+  tipoComprobante: varchar("tipo_comprobante", { length: 2 }).notNull(), // Tipo de bienes y servicios (1-11)
+  ncf: varchar("ncf", { length: 13 }), // NCF completo (11 o 13 posiciones)
+  ncfModificado: varchar("ncf_modificado", { length: 13 }),
   fechaComprobante: timestamp("fecha_comprobante").notNull(),
   fechaPago: timestamp("fecha_pago"),
-  servicioTipo: varchar("servicio_tipo", { length: 2 }),
-  conceptoPago: text("concepto_pago"),
-  montoFacturado: decimal("monto_facturado", { precision: 12, scale: 2 }).notNull(),
+  // Campos según formato oficial DGII 606
+  montoFacturadoServicios: decimal("monto_facturado_servicios", { precision: 12, scale: 2 }).default("0"),
+  montoFacturadoBienes: decimal("monto_facturado_bienes", { precision: 12, scale: 2 }).default("0"),
+  montoFacturado: decimal("monto_facturado", { precision: 12, scale: 2 }).notNull(), // Total monto facturado
   itbisFacturado: decimal("itbis_facturado", { precision: 12, scale: 2 }).notNull(),
   itbisRetenido: decimal("itbis_retenido", { precision: 12, scale: 2 }).default("0"),
+  itbisProporcionalidad: decimal("itbis_proporcionalidad", { precision: 12, scale: 2 }).default("0"), // Art. 349
+  itbisCosto: decimal("itbis_costo", { precision: 12, scale: 2 }).default("0"), // ITBIS llevado al costo
+  itbisAdelantar: decimal("itbis_adelantar", { precision: 12, scale: 2 }).default("0"), // ITBIS por adelantar
   itbisPercibido: decimal("itbis_percibido", { precision: 12, scale: 2 }).default("0"),
+  tipoRetencionISR: varchar("tipo_retencion_isr", { length: 1 }), // 1-8 según clasificación
   retencionRenta: decimal("retencion_renta", { precision: 12, scale: 2 }).default("0"),
   isrPercibido: decimal("isr_percibido", { precision: 12, scale: 2 }).default("0"),
   impuestoSelectivoConsumo: decimal("impuesto_selectivo_consumo", { precision: 12, scale: 2 }).default("0"),
   otrosImpuestos: decimal("otros_impuestos", { precision: 12, scale: 2 }).default("0"),
-  montoTotal: decimal("monto_total", { precision: 12, scale: 2 }).notNull(),
+  montoPropina: decimal("monto_propina", { precision: 12, scale: 2 }).default("0"), // Propina legal 10%
+  formaPago: varchar("forma_pago", { length: 1 }).notNull().default("1"), // 1-7 según clasificación
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
