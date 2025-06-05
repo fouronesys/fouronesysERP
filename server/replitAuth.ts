@@ -138,9 +138,14 @@ export const isAuthenticated: RequestHandler = async (req, res, next) => {
     now: Math.floor(Date.now() / 1000)
   });
 
-  if (!req.isAuthenticated() || !user?.expires_at) {
-    console.log("Auth failed: not authenticated or no expires_at");
+  if (!req.isAuthenticated()) {
+    console.log("Auth failed: not authenticated");
     return res.status(401).json({ message: "Unauthorized" });
+  }
+  
+  if (!user?.expires_at) {
+    console.log("Auth warning: no expires_at, allowing access");
+    return next();
   }
 
   const now = Math.floor(Date.now() / 1000);
