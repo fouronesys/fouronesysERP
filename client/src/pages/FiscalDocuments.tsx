@@ -41,6 +41,14 @@ export default function FiscalDocuments() {
   const [rncVerificationResult, setRncVerificationResult] = useState<any>(null);
   const [selectedComprobante, setSelectedComprobante] = useState<any>(null);
   const [showComprobanteDialog, setShowComprobanteDialog] = useState(false);
+  const [showNewSequenceDialog, setShowNewSequenceDialog] = useState(false);
+  const [newSequenceForm, setNewSequenceForm] = useState({
+    ncfType: "B01",
+    currentSequence: 1,
+    maxSequence: 50000000,
+    fiscalPeriod: "",
+    isActive: true
+  });
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -123,6 +131,22 @@ export default function FiscalDocuments() {
     setShowComprobanteDialog(true);
   };
 
+  const handleCreateSequence = () => {
+    const currentDate = new Date();
+    const fiscalPeriod = `${currentDate.getFullYear()}${String(currentDate.getMonth() + 1).padStart(2, '0')}${String(currentDate.getDate()).padStart(2, '0')}`;
+    
+    setNewSequenceForm({
+      ...newSequenceForm,
+      fiscalPeriod
+    });
+    setShowNewSequenceDialog(true);
+  };
+
+  const handleSubmitNewSequence = () => {
+    createNCFSequenceMutation.mutate(newSequenceForm);
+    setShowNewSequenceDialog(false);
+  };
+
   const filteredSequences = ncfSequences?.filter((seq: any) =>
     seq.ncfType.toLowerCase().includes(searchTerm.toLowerCase()) ||
     seq.fiscalPeriod.includes(searchTerm)
@@ -186,7 +210,7 @@ export default function FiscalDocuments() {
                 Secuencias de Numeración de Comprobantes Fiscales (NCF)
               </CardTitle>
               <div className="flex items-center gap-2">
-                <Button size="sm">
+                <Button size="sm" onClick={handleCreateSequence}>
                   <Plus className="h-4 w-4 mr-2" />
                   Nueva Secuencia
                 </Button>
@@ -481,6 +505,98 @@ export default function FiscalDocuments() {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog: Nueva Secuencia NCF */}
+      <Dialog open={showNewSequenceDialog} onOpenChange={setShowNewSequenceDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Nueva Secuencia NCF</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="ncfType">Tipo de NCF</Label>
+              <select
+                id="ncfType"
+                value={newSequenceForm.ncfType}
+                onChange={(e) => setNewSequenceForm({...newSequenceForm, ncfType: e.target.value})}
+                className="w-full p-2 border rounded-md"
+              >
+                <option value="B01">B01 - Crédito Fiscal</option>
+                <option value="B02">B02 - Consumidor Final</option>
+                <option value="B03">B03 - Nota de Débito</option>
+                <option value="B04">B04 - Nota de Crédito</option>
+                <option value="B11">B11 - Compras Menores</option>
+                <option value="B12">B12 - Registro Único de Ingresos</option>
+                <option value="B13">B13 - Gastos Menores</option>
+                <option value="B14">B14 - Regímenes Especiales</option>
+                <option value="B15">B15 - Gubernamental</option>
+                <option value="B16">B16 - Exportaciones</option>
+              </select>
+            </div>
+            <div>
+              <Label htmlFor="currentSequence">Secuencia Inicial</Label>
+              <input
+                id="currentSequence"
+                type="number"
+                value={newSequenceForm.currentSequence}
+                onChange={(e) => setNewSequenceForm({...newSequenceForm, currentSequence: parseInt(e.target.value)})}
+                className="w-full p-2 border rounded-md"
+                min="1"
+              />
+            </div>
+            <div>
+              <Label htmlFor="maxSequence">Secuencia Máxima</Label>
+              <input
+                id="maxSequence"
+                type="number"
+                value={newSequenceForm.maxSequence}
+                onChange={(e) => setNewSequenceForm({...newSequenceForm, maxSequence: parseInt(e.target.value)})}
+                className="w-full p-2 border rounded-md"
+                min="1"
+              />
+            </div>
+            <div>
+              <Label htmlFor="fiscalPeriod">Período Fiscal</Label>
+              <input
+                id="fiscalPeriod"
+                type="text"
+                value={newSequenceForm.fiscalPeriod}
+                onChange={(e) => setNewSequenceForm({...newSequenceForm, fiscalPeriod: e.target.value})}
+                className="w-full p-2 border rounded-md"
+                placeholder="YYYYMMDD"
+              />
+            </div>
+            <div className="flex items-center space-x-2">
+              <input
+                id="isActive"
+                type="checkbox"
+                checked={newSequenceForm.isActive}
+                onChange={(e) => setNewSequenceForm({...newSequenceForm, isActive: e.target.checked})}
+                className="rounded"
+              />
+              <Label htmlFor="isActive">Secuencia Activa</Label>
+            </div>
+          </div>
+          <div className="flex justify-end space-x-2 pt-4">
+            <Button variant="outline" onClick={() => setShowNewSequenceDialog(false)}>
+              Cancelar
+            </Button>
+            <Button 
+              onClick={handleSubmitNewSequence}
+              disabled={createNCFSequenceMutation.isPending}
+            >
+              {createNCFSequenceMutation.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Creando...
+                </>
+              ) : (
+                "Crear Secuencia"
+              )}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
