@@ -869,8 +869,6 @@ export type Comprobante605 = typeof comprobantes605.$inferSelect;
 export type InsertComprobante605 = z.infer<typeof insertComprobante605Schema>;
 export type Comprobante606 = typeof comprobantes606.$inferSelect;
 export type InsertComprobante606 = z.infer<typeof insertComprobante606Schema>;
-export type RNCRegistry = typeof rncRegistry.$inferSelect;
-export type InsertRNCRegistry = z.infer<typeof insertRNCRegistrySchema>;
 
 // Chat Channels
 export const chatChannels = pgTable("chat_channels", {

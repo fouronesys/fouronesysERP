@@ -1390,16 +1390,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Company not found" });
       }
 
+      console.log("Creating NCF sequence with data:", req.body);
+
       const sequenceData = {
         ...req.body,
         companyId: company.id,
       };
 
       const sequence = await storage.createNCFSequence(sequenceData);
+      console.log("NCF sequence created:", sequence);
       res.json(sequence);
     } catch (error) {
       console.error("Error creating NCF sequence:", error);
-      res.status(500).json({ message: "Failed to create NCF sequence" });
+      res.status(500).json({ message: "Failed to create NCF sequence", error: error.message });
     }
   });
 
