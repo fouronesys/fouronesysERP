@@ -393,18 +393,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let company = await storage.getCompanyByUserId(userId);
       
       if (!company) {
-        // Create default company for user
-        const newCompany = await storage.createCompany({
-          name: "Four One Solutions",
-          businessName: "Four One Solutions SRL",
-          rnc: "131-12345-6",
-          address: "Santo Domingo, República Dominicana",
-          phone: "(809) 123-4567",
-          email: req.user.claims?.email || "admin@fourone.com",
-          ownerId: userId,
-          isActive: true
-        });
-        company = newCompany;
+        // Get existing company or create if none exists
+        try {
+          const companies = await storage.getCompanies();
+          if (companies.length > 0) {
+            company = companies[0]; // Use first existing company
+          } else {
+            // Create default company for user
+            const newCompany = await storage.createCompany({
+              name: "Four One Solutions",
+              businessName: "Four One Solutions SRL",
+              rnc: "131-12345-6",
+              address: "Santo Domingo, República Dominicana",
+              phone: "(809) 123-4567",
+              email: req.user.claims?.email || "admin@fourone.com",
+              ownerId: userId,
+              isActive: true
+            });
+            company = newCompany;
+          }
+        } catch (error) {
+          console.error("Error handling company creation:", error);
+          // Try to get existing company by name
+          const companies = await storage.getCompanies();
+          company = companies.find(c => c.name === "Four One Solutions") || companies[0];
+        }
       }
       
       res.json(company);
