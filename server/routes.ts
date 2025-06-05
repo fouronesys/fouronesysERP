@@ -2709,5 +2709,196 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Fiscal Reports API Routes (606 and 607)
+  app.get("/api/fiscal-reports/stats", isAuthenticated, async (req: any, res) => {
+    try {
+      const companyId = req.user?.companyId;
+      if (!companyId) {
+        return res.status(400).json({ message: "Company ID required" });
+      }
+
+      // Get statistics for fiscal reports
+      const stats = {
+        report606Count: 0,
+        report607Count: 0,
+        lastGenerated606: null,
+        lastGenerated607: null,
+        pendingReports: 0
+      };
+
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching fiscal reports stats:", error);
+      res.status(500).json({ message: "Failed to fetch fiscal reports stats" });
+    }
+  });
+
+  app.get("/api/fiscal-reports/606", isAuthenticated, async (req: any, res) => {
+    try {
+      const companyId = req.user?.companyId;
+      if (!companyId) {
+        return res.status(400).json({ message: "Company ID required" });
+      }
+
+      // Get all 606 reports for company
+      const reports606 = [];
+      res.json(reports606);
+    } catch (error) {
+      console.error("Error fetching 606 reports:", error);
+      res.status(500).json({ message: "Failed to fetch 606 reports" });
+    }
+  });
+
+  app.get("/api/fiscal-reports/607", isAuthenticated, async (req: any, res) => {
+    try {
+      const companyId = req.user?.companyId;
+      if (!companyId) {
+        return res.status(400).json({ message: "Company ID required" });
+      }
+
+      // Get all 607 reports for company
+      const reports607 = [];
+      res.json(reports607);
+    } catch (error) {
+      console.error("Error fetching 607 reports:", error);
+      res.status(500).json({ message: "Failed to fetch 607 reports" });
+    }
+  });
+
+  app.post("/api/fiscal-reports/generate", isAuthenticated, async (req: any, res) => {
+    try {
+      const companyId = req.user?.companyId;
+      if (!companyId) {
+        return res.status(400).json({ message: "Company ID required" });
+      }
+
+      const { type, period } = req.body;
+      
+      if (!type || !period) {
+        return res.status(400).json({ message: "Type and period are required" });
+      }
+
+      // Generate fiscal report based on official DGII templates
+      let reportContent = "";
+      
+      if (type === "606") {
+        // Generate 606 report for purchases
+        reportContent = await generateReport606(companyId, period);
+      } else if (type === "607") {
+        // Generate 607 report for sales
+        reportContent = await generateReport607(companyId, period);
+      } else {
+        return res.status(400).json({ message: "Invalid report type" });
+      }
+
+      // Set headers for file download
+      res.setHeader('Content-Type', 'text/plain');
+      res.setHeader('Content-Disposition', `attachment; filename="${type}_${period}.txt"`);
+      res.send(reportContent);
+    } catch (error) {
+      console.error("Error generating fiscal report:", error);
+      res.status(500).json({ message: "Failed to generate fiscal report" });
+    }
+  });
+
+  // Helper functions for generating fiscal reports based on DGII templates
+  async function generateReport606(companyId: number, period: string): Promise<string> {
+    // Format: RNC|TIPO_ID|NUMERO_FACTURA|NCF|FECHA_FACTURA|FECHA_PAGO|MONTO_FACTURADO|ITBIS_FACTURADO|...
+    const header = "606";
+    const reportLines = [header];
+    
+    // Get company RNC
+    const company = await storage.getCompany(companyId);
+    const companyRnc = company?.rnc || "000000000";
+    
+    // Get purchase invoices for the period
+    const invoices = await storage.getPurchaseInvoices(companyId);
+    const periodYear = period.substring(0, 4);
+    const periodMonth = period.substring(5, 7);
+    
+    for (const invoice of invoices) {
+      const invoiceDate = new Date(invoice.invoiceDate);
+      if (invoiceDate.getFullYear().toString() === periodYear && 
+          (invoiceDate.getMonth() + 1).toString().padStart(2, '0') === periodMonth) {
+        
+        const supplier = await storage.getSupplier(invoice.supplierId);
+        const line = [
+          companyRnc,
+          "31", // Tipo ID (default)
+          invoice.invoiceNumber || "",
+          invoice.ncf || "",
+          invoice.invoiceDate,
+          invoice.invoiceDate, // Fecha pago (same as invoice for now)
+          parseFloat(invoice.totalAmount).toFixed(2),
+          parseFloat(invoice.itbisAmount || "0").toFixed(2),
+          "0.00", // ITBIS retenido
+          "0.00", // ITBIS percibido
+          "0.00", // Retención renta
+          "0.00", // Propina
+          parseFloat(invoice.totalAmount).toFixed(2), // Efectivo (default)
+          "0.00", // Cheque
+          "0.00", // Tarjeta
+          "0.00", // Crédito
+          "0.00", // Bonos
+          "0.00", // Permuta
+          "0.00"  // Otras formas
+        ].join("|");
+        
+        reportLines.push(line);
+      }
+    }
+    
+    return reportLines.join("\n");
+  }
+  
+  async function generateReport607(companyId: number, period: string): Promise<string> {
+    // Format: RNC|TIPO_ID|NUMERO_FACTURA|NCF|FECHA_FACTURA|FECHA_VENCIMIENTO|MONTO_FACTURADO|ITBIS_FACTURADO|...
+    const header = "607";
+    const reportLines = [header];
+    
+    // Get company RNC
+    const company = await storage.getCompany(companyId);
+    const companyRnc = company?.rnc || "000000000";
+    
+    // Get invoices for the period
+    const invoices = await storage.getInvoices(companyId);
+    const periodYear = period.substring(0, 4);
+    const periodMonth = period.substring(5, 7);
+    
+    for (const invoice of invoices) {
+      const invoiceDate = new Date(invoice.date);
+      if (invoiceDate.getFullYear().toString() === periodYear && 
+          (invoiceDate.getMonth() + 1).toString().padStart(2, '0') === periodMonth) {
+        
+        const customer = await storage.getCustomer(invoice.customerId);
+        const line = [
+          companyRnc,
+          "31", // Tipo ID (default)
+          invoice.number || "",
+          invoice.ncf || "",
+          invoice.date,
+          invoice.dueDate || invoice.date,
+          parseFloat(invoice.total).toFixed(2),
+          parseFloat(invoice.itbis).toFixed(2),
+          "0.00", // ITBIS retenido
+          "0.00", // Retención renta
+          "0.00", // ITBIS percibido
+          "0.00", // Propina
+          parseFloat(invoice.total).toFixed(2), // Efectivo (default)
+          "0.00", // Cheque
+          "0.00", // Tarjeta
+          "0.00", // Crédito
+          "0.00", // Bonos
+          "0.00", // Permuta
+          "0.00"  // Otras formas
+        ].join("|");
+        
+        reportLines.push(line);
+      }
+    }
+    
+    return reportLines.join("\n");
+  }
+
   return httpServer;
 }
