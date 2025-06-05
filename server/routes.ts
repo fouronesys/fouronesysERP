@@ -680,6 +680,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.patch("/api/products/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+      const id = parseInt(req.params.id);
+      const updateData = req.body;
+      const product = await storage.updateProduct(id, updateData, company.id);
+      res.json(product);
+    } catch (error) {
+      console.error("Error updating product:", error);
+      res.status(500).json({ message: "Failed to update product" });
+    }
+  });
+
   app.delete("/api/products/:id", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.id;

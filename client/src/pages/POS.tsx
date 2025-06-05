@@ -25,6 +25,7 @@ import {
   X
 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import MobileCalculator from "@/components/MobileCalculator";
 import InvoicePrintModal from "@/components/InvoicePrintModal";
 import type { Product, Customer, POSPrintSettings, Company } from "@shared/schema";
@@ -86,6 +87,7 @@ export default function POS() {
   const [lastSaleId, setLastSaleId] = useState<number | null>(null);
   const [lastSaleNumber, setLastSaleNumber] = useState("");
   
+  const { toast } = useToast();
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
 
@@ -137,9 +139,21 @@ export default function POS() {
   const cashChange = cashReceived ? parseFloat(cashReceived) - total : 0;
 
   // Funciones del carrito
-  const addToCart = (product: Product) => {
+  const addToCart = async (product: Product) => {
+    // Check if there's enough stock
+    const currentStock = parseInt(product.stock || "0");
     const existingItem = cart.find(item => item.product.id === product.id);
+    const currentCartQuantity = existingItem ? existingItem.quantity : 0;
     
+    if (currentCartQuantity >= currentStock) {
+      toast({
+        title: "Stock insuficiente",
+        description: `Solo hay ${currentStock} unidades disponibles de ${product.name}`,
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (existingItem) {
       updateQuantity(product.id, existingItem.quantity + 1);
     } else {
@@ -149,6 +163,23 @@ export default function POS() {
         subtotal: parseFloat(product.price)
       };
       setCart([...cart, newItem]);
+    }
+
+    // Update product stock in backend
+    try {
+      await apiRequest("PATCH", `/api/products/${product.id}`, {
+        stock: (currentStock - 1).toString()
+      });
+      
+      // Refresh products to show updated stock
+      queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+    } catch (error) {
+      console.error("Error updating stock:", error);
+      toast({
+        title: "Error actualizando stock",
+        description: "No se pudo actualizar el inventario",
+        variant: "destructive",
+      });
     }
   };
 
