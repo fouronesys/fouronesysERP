@@ -2825,8 +2825,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const companyId = userCompany.id;
 
-      // Get all 607 reports for company
-      const reports607 = [];
+      // Get all 607 reports for company (sales data)
+      const sales = await storage.getPOSSales(companyId);
+      const invoices = await storage.getInvoices(companyId);
+      
+      const reports607 = [
+        ...sales.map((sale: any) => ({
+          id: sale.id,
+          period: new Date(sale.date).toISOString().substring(0, 7).replace('-', ''),
+          rncCedula: sale.customer?.rnc || sale.customer?.cedula || "000000000",
+          tipoIdentificacion: sale.customer?.rnc ? "1" : "2",
+          ncf: sale.ncf || "",
+          fechaComprobante: new Date(sale.date),
+          montoFacturado: sale.subtotal,
+          itbisFacturado: sale.tax,
+          total: sale.total,
+          efectivo: sale.paymentMethod === "cash" ? sale.total : "0",
+          tarjeta: sale.paymentMethod === "card" ? sale.total : "0",
+          credito: sale.paymentMethod === "credit" ? sale.total : "0"
+        })),
+        ...invoices.map((invoice: any) => ({
+          id: invoice.id,
+          period: new Date(invoice.date).toISOString().substring(0, 7).replace('-', ''),
+          rncCedula: invoice.customer?.rnc || invoice.customer?.cedula || "000000000",
+          tipoIdentificacion: invoice.customer?.rnc ? "1" : "2",
+          ncf: invoice.ncf || "",
+          fechaComprobante: new Date(invoice.date),
+          montoFacturado: invoice.subtotal,
+          itbisFacturado: invoice.itbis,
+          total: invoice.total
+        }))
+      ];
+      
       res.json(reports607);
     } catch (error) {
       console.error("Error fetching 607 reports:", error);
@@ -2925,42 +2955,81 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }
   
   async function generateReport607(companyId: number, period: string): Promise<string> {
-    // Format: RNC|TIPO_ID|NUMERO_FACTURA|NCF|FECHA_FACTURA|FECHA_VENCIMIENTO|MONTO_FACTURADO|ITBIS_FACTURADO|...
-    const header = "607";
-    const reportLines = [header];
+    // Formato 607 oficial DGII para ventas
+    const reportLines: string[] = [];
     
-    // Get company RNC
+    // Get company data
     const company = await storage.getCompany(companyId);
     const companyRnc = company?.rnc || "000000000";
     
-    // Get invoices for the period
+    // Get sales data for the period
+    const sales = await storage.getPOSSales(companyId);
     const invoices = await storage.getInvoices(companyId);
     const periodYear = period.substring(0, 4);
-    const periodMonth = period.substring(5, 7);
+    const periodMonth = period.substring(4, 6);
     
+    // Process POS sales
+    for (const sale of sales) {
+      const saleDate = new Date(sale.date);
+      if (saleDate.getFullYear().toString() === periodYear && 
+          (saleDate.getMonth() + 1).toString().padStart(2, '0') === periodMonth) {
+        
+        const customer = sale.customerId ? await storage.getCustomer(sale.customerId) : null;
+        
+        // Formato según especificación DGII 607
+        const line = [
+          customer?.rnc || customer?.cedula || "000000000",
+          customer?.rnc ? "1" : "2", // 1=RNC, 2=Cédula
+          sale.ncf || "",
+          "", // NCF modificado
+          "", // Tipo ingreso modificado
+          saleDate.toISOString().split('T')[0].replace(/-/g, ''),
+          "", // Fecha vencimiento
+          parseFloat(sale.subtotal || "0").toFixed(2),
+          parseFloat(sale.tax || "0").toFixed(2),
+          "0.00", // ITBIS retenido
+          "0.00", // Retención renta
+          "0.00", // ITBIS percibido
+          "0.00", // Propina
+          sale.paymentMethod === "cash" ? parseFloat(sale.total || "0").toFixed(2) : "0.00",
+          "0.00", // Cheque
+          sale.paymentMethod === "card" ? parseFloat(sale.total || "0").toFixed(2) : "0.00",
+          sale.paymentMethod === "credit" ? parseFloat(sale.total || "0").toFixed(2) : "0.00",
+          "0.00", // Bonos
+          "0.00", // Permuta
+          "0.00"  // Otras formas
+        ].join("|");
+        
+        reportLines.push(line);
+      }
+    }
+    
+    // Process invoices
     for (const invoice of invoices) {
       const invoiceDate = new Date(invoice.date);
       if (invoiceDate.getFullYear().toString() === periodYear && 
           (invoiceDate.getMonth() + 1).toString().padStart(2, '0') === periodMonth) {
         
         const customer = await storage.getCustomer(invoice.customerId);
+        
         const line = [
-          companyRnc,
-          "31", // Tipo ID (default)
-          invoice.number || "",
+          customer?.rnc || customer?.cedula || "000000000",
+          customer?.rnc ? "1" : "2",
           invoice.ncf || "",
-          invoice.date,
-          invoice.dueDate || invoice.date,
-          parseFloat(invoice.total).toFixed(2),
-          parseFloat(invoice.itbis).toFixed(2),
+          "", // NCF modificado
+          "", // Tipo ingreso modificado
+          invoiceDate.toISOString().split('T')[0].replace(/-/g, ''),
+          invoice.dueDate ? new Date(invoice.dueDate).toISOString().split('T')[0].replace(/-/g, '') : "",
+          parseFloat(invoice.subtotal || "0").toFixed(2),
+          parseFloat(invoice.itbis || "0").toFixed(2),
           "0.00", // ITBIS retenido
           "0.00", // Retención renta
           "0.00", // ITBIS percibido
           "0.00", // Propina
-          parseFloat(invoice.total).toFixed(2), // Efectivo (default)
+          "0.00", // Efectivo
           "0.00", // Cheque
           "0.00", // Tarjeta
-          "0.00", // Crédito
+          parseFloat(invoice.total || "0").toFixed(2), // Crédito
           "0.00", // Bonos
           "0.00", // Permuta
           "0.00"  // Otras formas

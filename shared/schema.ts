@@ -783,6 +783,36 @@ export const comprobantes606 = pgTable("comprobantes_606", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+export const comprobantes607 = pgTable("comprobantes_607", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull().references(() => companies.id),
+  period: varchar("period", { length: 7 }).notNull(), // YYYY-MM
+  rncCedula: varchar("rnc_cedula", { length: 11 }).notNull(),
+  tipoIdentificacion: varchar("tipo_identificacion", { length: 1 }).notNull(), // 1=RNC, 2=Cedula
+  ncf: varchar("ncf", { length: 13 }), // NCF completo (11 o 13 posiciones)
+  ncfModificado: varchar("ncf_modificado", { length: 13 }),
+  tipoIngresoModificado: varchar("tipo_ingreso_modificado", { length: 2 }),
+  fechaComprobante: timestamp("fecha_comprobante").notNull(),
+  fechaVencimiento: timestamp("fecha_vencimiento"),
+  // Campos según formato oficial DGII 607
+  montoFacturado: decimal("monto_facturado", { precision: 12, scale: 2 }).notNull(), // Monto facturado sin impuestos
+  itbisFacturado: decimal("itbis_facturado", { precision: 12, scale: 2 }).notNull(),
+  itbisRetenido: decimal("itbis_retenido", { precision: 12, scale: 2 }).default("0"), // ITBIS retenido por terceros
+  retencionRenta: decimal("retencion_renta", { precision: 12, scale: 2 }).default("0"), // Retención ISR aplicada
+  itbisPercibido: decimal("itbis_percibido", { precision: 12, scale: 2 }).default("0"), // ITBIS percibido por la empresa
+  propina: decimal("propina", { precision: 12, scale: 2 }).default("0"), // Propina legal (10%)
+  // Formas de pago según clasificación DGII
+  efectivo: decimal("efectivo", { precision: 12, scale: 2 }).default("0"), // Pagos en efectivo
+  cheque: decimal("cheque", { precision: 12, scale: 2 }).default("0"), // Pagos con cheque
+  tarjeta: decimal("tarjeta", { precision: 12, scale: 2 }).default("0"), // Pagos con tarjeta
+  credito: decimal("credito", { precision: 12, scale: 2 }).default("0"), // Ventas a crédito
+  bonos: decimal("bonos", { precision: 12, scale: 2 }).default("0"), // Pagos con bonos
+  permuta: decimal("permuta", { precision: 12, scale: 2 }).default("0"), // Operaciones de permuta
+  otrasFormas: decimal("otras_formas", { precision: 12, scale: 2 }).default("0"), // Otras formas de pago
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 export const rncRegistry = pgTable("rnc_registry", {
   id: serial("id").primaryKey(),
   rnc: varchar("rnc", { length: 11 }).notNull().unique(),
@@ -807,6 +837,12 @@ export const insertComprobante605Schema = createInsertSchema(comprobantes605).om
 });
 
 export const insertComprobante606Schema = createInsertSchema(comprobantes606).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertComprobante607Schema = createInsertSchema(comprobantes607).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
@@ -875,6 +911,8 @@ export type Comprobante605 = typeof comprobantes605.$inferSelect;
 export type InsertComprobante605 = z.infer<typeof insertComprobante605Schema>;
 export type Comprobante606 = typeof comprobantes606.$inferSelect;
 export type InsertComprobante606 = z.infer<typeof insertComprobante606Schema>;
+export type Comprobante607 = typeof comprobantes607.$inferSelect;
+export type InsertComprobante607 = z.infer<typeof insertComprobante607Schema>;
 
 // Chat Channels
 export const chatChannels = pgTable("chat_channels", {
