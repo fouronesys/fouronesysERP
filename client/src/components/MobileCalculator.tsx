@@ -126,7 +126,7 @@ export default function MobileCalculator({ isOpen, onClose }: MobileCalculatorPr
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="w-full h-full sm:w-auto sm:h-auto sm:max-w-md lg:max-w-lg xl:max-w-xl bg-gray-900 sm:rounded-2xl shadow-2xl border border-gray-700 flex flex-col"
+            className="w-full h-full sm:w-80 sm:h-auto bg-gray-900 sm:rounded-2xl shadow-2xl border border-gray-700 flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
@@ -169,21 +169,21 @@ export default function MobileCalculator({ isOpen, onClose }: MobileCalculatorPr
                     onClick={button.action}
                     className={`
                       ${button.color} ${button.span || ""} text-white font-bold rounded-xl
-                      h-16 sm:h-20 lg:h-24 text-xl sm:text-2xl lg:text-3xl transition-all duration-200 shadow-lg hover:shadow-xl
+                      h-12 sm:h-14 text-lg sm:text-xl transition-all duration-200 shadow-lg hover:shadow-xl
                       border border-gray-600 flex items-center justify-center
                       touch-manipulation select-none active:scale-95
                     `}
                   >
                     {button.label === "⌫" ? (
-                      <Delete className="w-6 h-6 sm:w-8 sm:h-8 lg:w-10 lg:h-10" />
+                      <Delete className="w-5 h-5 sm:w-6 sm:h-6" />
                     ) : button.label === "/" ? (
-                      <Divide className="w-6 h-6 sm:w-8 sm:h-8 lg:w-10 lg:h-10" />
+                      <Divide className="w-5 h-5 sm:w-6 sm:h-6" />
                     ) : button.label === "-" ? (
-                      <Minus className="w-6 h-6 sm:w-8 sm:h-8 lg:w-10 lg:h-10" />
+                      <Minus className="w-5 h-5 sm:w-6 sm:h-6" />
                     ) : button.label === "+" ? (
-                      <Plus className="w-6 h-6 sm:w-8 sm:h-8 lg:w-10 lg:h-10" />
+                      <Plus className="w-5 h-5 sm:w-6 sm:h-6" />
                     ) : button.label === "=" ? (
-                      <Equal className="w-6 h-6 sm:w-8 sm:h-8 lg:w-10 lg:h-10" />
+                      <Equal className="w-5 h-5 sm:w-6 sm:h-6" />
                     ) : (
                       button.label
                     )}
