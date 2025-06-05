@@ -1368,7 +1368,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // NCF Sequences
   app.get("/api/fiscal/ncf-sequences", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const company = await storage.getCompanyByUserId(userId);
       if (!company) {
         return res.status(404).json({ message: "Company not found" });
@@ -1384,7 +1384,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/fiscal/ncf-sequences", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const company = await storage.getCompanyByUserId(userId);
       if (!company) {
         return res.status(404).json({ message: "Company not found" });
@@ -1523,7 +1523,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/fiscal/download-606/:period", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const company = await storage.getCompanyByUserId(userId);
       if (!company) {
         return res.status(404).json({ message: "Company not found" });
@@ -2990,7 +2990,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           "0.00", // ITBIS retenido
           "0.00", // Retención renta
           "0.00", // ITBIS percibido
-          "0.00", // Propina
+          "0.00", // Propina (solo para restaurantes)
           sale.paymentMethod === "cash" ? parseFloat(sale.total || "0").toFixed(2) : "0.00",
           "0.00", // Cheque
           sale.paymentMethod === "card" ? parseFloat(sale.total || "0").toFixed(2) : "0.00",
@@ -3025,7 +3025,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           "0.00", // ITBIS retenido
           "0.00", // Retención renta
           "0.00", // ITBIS percibido
-          "0.00", // Propina
+          "0.00", // Propina (solo para restaurantes)
           "0.00", // Efectivo
           "0.00", // Cheque
           "0.00", // Tarjeta
