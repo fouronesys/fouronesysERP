@@ -2,6 +2,25 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Theme initialization script to prevent FOUC (Flash of Unstyled Content) */
+html {
+  /* Default to light theme */
+  color-scheme: light;
+}
+
+html.dark {
+  color-scheme: dark;
+}
+
+/* Prevent theme flash by setting initial state */
+html:not([data-theme-initialized]) {
+  visibility: hidden;
+}
+
+html[data-theme-initialized] {
+  visibility: visible;
+}
+
 /* Line clamp utility for text truncation */
 .line-clamp-2 {
   display: -webkit-box;
