@@ -5,6 +5,7 @@ import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./auth";
 import { AIProductService, AIBusinessService, AIChatService, AIDocumentService } from "./ai-services-fixed";
+import { InvoiceTemplateService, type ThermalPrintOptions, type PDFPrintOptions } from "./invoice-template-service";
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
@@ -3041,6 +3042,130 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     return reportLines.join("\n");
   }
+
+  // Invoice Printing Routes
+  app.post("/api/pos/print-thermal/:saleId", isAuthenticated, async (req: any, res) => {
+    try {
+      const { saleId } = req.params;
+      const { width = '80mm', showLogo = true, showNCF = true, showQR = true, paperCut = true, cashDrawer = false } = req.body;
+      const companyId = req.user.companyId;
+
+      // Get sale data
+      const sale = await storage.getPOSSale(parseInt(saleId), companyId);
+      if (!sale) {
+        return res.status(404).json({ message: "Sale not found" });
+      }
+
+      const items = await storage.getPOSSaleItems(sale.id);
+      const company = await storage.getCompany(companyId);
+      
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      // Prepare customer info
+      const customerInfo = {
+        name: sale.customerName,
+        phone: sale.customerPhone,
+        rnc: sale.customerRnc
+      };
+
+      const printOptions: ThermalPrintOptions = {
+        width: width as '80mm' | '56mm',
+        showLogo,
+        showNCF,
+        showQR,
+        paperCut,
+        cashDrawer
+      };
+
+      // Generate thermal receipt
+      const result = await InvoiceTemplateService.generateThermalReceipt(
+        { sale, items, company, customerInfo },
+        printOptions
+      );
+
+      res.json({
+        success: true,
+        printData: result.printData,
+        previewUrl: result.previewUrl,
+        width: printOptions.width
+      });
+
+    } catch (error) {
+      console.error("Error generating thermal receipt:", error);
+      res.status(500).json({ message: "Failed to generate thermal receipt" });
+    }
+  });
+
+  app.post("/api/pos/print-pdf/:saleId", isAuthenticated, async (req: any, res) => {
+    try {
+      const { saleId } = req.params;
+      const { 
+        format = 'letter', 
+        orientation = 'portrait', 
+        showLogo = true, 
+        showNCF = true, 
+        showQR = true,
+        watermark 
+      } = req.body;
+      const companyId = req.user.companyId;
+
+      // Get sale data
+      const sale = await storage.getPOSSale(parseInt(saleId), companyId);
+      if (!sale) {
+        return res.status(404).json({ message: "Sale not found" });
+      }
+
+      const items = await storage.getPOSSaleItems(sale.id);
+      const company = await storage.getCompany(companyId);
+      
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      // Prepare customer info
+      const customerInfo = {
+        name: sale.customerName,
+        phone: sale.customerPhone,
+        rnc: sale.customerRnc
+      };
+
+      const pdfOptions: PDFPrintOptions = {
+        format: format as 'letter' | 'a4' | 'legal',
+        orientation: orientation as 'portrait' | 'landscape',
+        showLogo,
+        showNCF,
+        showQR,
+        watermark
+      };
+
+      // Generate PDF invoice
+      const result = await InvoiceTemplateService.generatePDFInvoice(
+        { sale, items, company, customerInfo },
+        pdfOptions
+      );
+
+      res.json({
+        success: true,
+        pdfUrl: result.pdfUrl,
+        downloadUrl: result.downloadUrl,
+        format: pdfOptions.format
+      });
+
+    } catch (error) {
+      console.error("Error generating PDF invoice:", error);
+      res.status(500).json({ message: "Failed to generate PDF invoice" });
+    }
+  });
+
+  // Get available print formats
+  app.get("/api/pos/print-formats", isAuthenticated, (req, res) => {
+    res.json({
+      thermal: InvoiceTemplateService.getThermalSizes(),
+      pdf: InvoiceTemplateService.getPDFFormats()
+    });
+  });
 
   return httpServer;
 }
