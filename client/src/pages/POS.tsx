@@ -141,7 +141,7 @@ export default function POS() {
   // Funciones del carrito
   const addToCart = async (product: Product) => {
     // Check if there's enough stock
-    const currentStock = parseInt(product.stock || "0");
+    const currentStock = parseInt(product.stock?.toString() || "0");
     const existingItem = cart.find(item => item.product.id === product.id);
     const currentCartQuantity = existingItem ? existingItem.quantity : 0;
     
