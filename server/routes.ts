@@ -869,6 +869,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/pos/sales", isAuthenticated, async (req: any, res) => {
     try {
       console.log("Processing POS sale, user:", req.user);
+      console.log("Request body:", JSON.stringify(req.body, null, 2));
       const userId = req.user.id;
       const company = await storage.getCompanyByUserId(userId);
       if (!company) {
@@ -919,7 +920,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ ...sale, ncf });
     } catch (error) {
       console.error("Error creating POS sale:", error);
-      res.status(500).json({ message: "Failed to create POS sale" });
+      console.error("Error details:", JSON.stringify(error, null, 2));
+      res.status(500).json({ message: "Failed to create POS sale", error: error.message });
     }
   });
 
