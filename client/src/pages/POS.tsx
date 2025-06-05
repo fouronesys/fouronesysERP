@@ -253,10 +253,10 @@ export default function POS() {
       )}
       
       <div className="p-3 sm:p-6 max-w-screen-2xl mx-auto">
-        <div className="grid grid-cols-1 2xl:grid-cols-5 xl:grid-cols-4 gap-4 sm:gap-6 h-[calc(100vh-140px)]">
+        <div className="grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 sm:gap-6 h-[calc(100vh-140px)]">
           
           {/* Sección de Productos */}
-          <div className="2xl:col-span-3 xl:col-span-2 space-y-4 h-full overflow-hidden flex flex-col">
+          <div className="2xl:col-span-3 xl:col-span-2 lg:col-span-2 space-y-4 h-full overflow-hidden flex flex-col">
             
             {/* Tabs móviles */}
             {isMobile && (
@@ -343,7 +343,7 @@ export default function POS() {
           </div>
 
           {/* Sección de Carrito y Checkout */}
-          <div className={`2xl:col-span-2 xl:col-span-2 space-y-4 h-full flex flex-col overflow-hidden ${isMobile ? 'hidden' : ''}`}>
+          <div className={`2xl:col-span-2 xl:col-span-2 lg:col-span-1 space-y-4 h-full flex flex-col overflow-hidden ${isMobile ? 'hidden' : ''}`}>
             
             {/* Carrito */}
             <Card className="flex-1 flex flex-col min-h-0">
