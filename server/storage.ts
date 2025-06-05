@@ -66,8 +66,7 @@ import {
   type InsertWarehouse,
   type Customer,
   type InsertCustomer,
-  type Supplier,
-  type InsertSupplier,
+  // Supplier types moved to purchases module
   type Product,
   type InsertProduct,
   type Invoice,
@@ -674,22 +673,7 @@ export class DatabaseStorage implements IStorage {
       .where(and(eq(customers.id, id), eq(customers.companyId, companyId)));
   }
 
-  // Supplier operations
-  async getSuppliers(companyId: number): Promise<Supplier[]> {
-    return await db
-      .select()
-      .from(suppliers)
-      .where(eq(suppliers.companyId, companyId))
-      .orderBy(desc(suppliers.createdAt));
-  }
-
-  async createSupplier(supplierData: InsertSupplier): Promise<Supplier> {
-    const [supplier] = await db
-      .insert(suppliers)
-      .values(supplierData)
-      .returning();
-    return supplier;
-  }
+  // Supplier operations moved to purchases module
 
   // Product operations
   async getProducts(companyId: number): Promise<Product[]> {

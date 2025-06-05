@@ -18,12 +18,58 @@ import {
   DollarSign
 } from "lucide-react";
 
+// Tipos para evitar errores de TypeScript
+interface Supplier {
+  id: number;
+  name: string;
+  rnc?: string;
+  category?: string;
+  contactPerson?: string;
+  email?: string;
+  phone?: string;
+  currentBalance?: string;
+  isActive: boolean;
+}
+
+interface PurchaseOrder {
+  id: number;
+  orderNumber: string;
+  status: string;
+  supplier?: { name: string };
+  orderDate: string;
+  totalAmount: string;
+  currency: string;
+}
+
+interface PurchaseInvoice {
+  id: number;
+  invoiceNumber: string;
+  paymentStatus: string;
+  type: string;
+  supplier?: { name: string };
+  ncf?: string;
+  invoiceDate: string;
+  totalAmount: string;
+  paidAmount?: string;
+}
+
+interface Stats {
+  totalSuppliers?: number;
+  newSuppliersThisMonth?: number;
+  pendingOrders?: number;
+  pendingOrdersValue?: string;
+  pendingInvoices?: number;
+  pendingPayments?: string;
+  monthlyExpenses?: string;
+  expenseChange?: string;
+}
+
 // Componentes para cada sección del módulo
 const SuppliersSection = () => {
   const [searchTerm, setSearchTerm] = useState("");
 
-  const { data: suppliers = [], isLoading } = useQuery({
-    queryKey: ["/api/purchase-suppliers"],
+  const { data: suppliers = [], isLoading } = useQuery<Supplier[]>({
+    queryKey: ["/api/suppliers"],
   });
 
   return (

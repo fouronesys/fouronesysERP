@@ -103,7 +103,19 @@ export const customers = pgTable("customers", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// Esta tabla será reemplazada por la nueva tabla de suppliers del módulo de compras
+// Suppliers (manteniendo la tabla original para compatibilidad)
+export const suppliers = pgTable("suppliers", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  email: varchar("email", { length: 255 }),
+  phone: varchar("phone", { length: 20 }),
+  address: text("address"),
+  rnc: varchar("rnc", { length: 20 }),
+  contactPerson: varchar("contact_person", { length: 255 }),
+  companyId: integer("company_id").notNull().references(() => companies.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
 
 // Warehouses
 export const warehouses = pgTable("warehouses", {
@@ -385,7 +397,11 @@ export const insertCustomerSchema = createInsertSchema(customers).omit({
   updatedAt: true,
 });
 
-// Schema movido al módulo de compras
+export const insertSupplierSchema = createInsertSchema(suppliers).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
 
 export const insertProductSchema = createInsertSchema(products).omit({
   id: true,
@@ -806,7 +822,8 @@ export type Company = typeof companies.$inferSelect;
 export type InsertCompany = z.infer<typeof insertCompanySchema>;
 export type Customer = typeof customers.$inferSelect;
 export type InsertCustomer = z.infer<typeof insertCustomerSchema>;
-// Tipos de Supplier movidos a purchases-schema.ts
+export type Supplier = typeof suppliers.$inferSelect;
+export type InsertSupplier = z.infer<typeof insertSupplierSchema>;
 export type Product = typeof products.$inferSelect;
 export type InsertProduct = z.infer<typeof insertProductSchema>;
 export type Invoice = typeof invoices.$inferSelect;
