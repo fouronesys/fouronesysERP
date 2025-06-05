@@ -236,10 +236,15 @@ export default function POS() {
         }))
       };
 
+      console.log("Enviando datos de venta:", saleData);
       const response = await apiRequest("POST", "/api/pos/sales", saleData);
+      
+      console.log("Response status:", response.status);
+      console.log("Response headers:", response.headers);
       
       if (response.ok) {
         const result = await response.json();
+        console.log("Venta creada:", result);
         
         // Guardar información para impresión
         setLastSaleId(result.id);
@@ -255,9 +260,14 @@ export default function POS() {
         setShowPrintModal(true);
         
         console.log("Venta procesada exitosamente");
+      } else {
+        const errorText = await response.text();
+        console.error("Error response:", errorText);
+        throw new Error(`Server error: ${response.status} - ${errorText}`);
       }
     } catch (error) {
       console.error("Error procesando venta:", error);
+      console.error("Error stack:", error.stack);
     } finally {
       setIsProcessing(false);
     }
