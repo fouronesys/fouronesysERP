@@ -343,7 +343,7 @@ const PurchaseInvoicesSection = () => {
                       ${parseFloat(invoice.totalAmount).toLocaleString()}
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      Pagado: ${parseFloat(invoice.paidAmount || 0).toLocaleString()}
+                      Pagado: {invoice.paidAmount || "$0.00"}
                     </p>
                   </div>
                 </div>
@@ -396,10 +396,10 @@ export default function PurchasesPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {statsLoading ? "..." : stats?.pendingOrders || 0}
+              {statsLoading ? "..." : (stats as Stats)?.pendingOrders || 0}
             </div>
             <p className="text-xs text-muted-foreground">
-              ${statsLoading ? "..." : parseFloat(stats?.pendingOrdersValue || 0).toLocaleString()}
+              {statsLoading ? "..." : (stats as Stats)?.pendingOrdersValue || "$0.00"}
             </p>
           </CardContent>
         </Card>
@@ -411,10 +411,10 @@ export default function PurchasesPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {statsLoading ? "..." : stats?.pendingInvoices || 0}
+              {statsLoading ? "..." : (stats as Stats)?.pendingInvoices || 0}
             </div>
             <p className="text-xs text-muted-foreground">
-              ${statsLoading ? "..." : parseFloat(stats?.pendingPayments || 0).toLocaleString()}
+              {statsLoading ? "..." : (stats as Stats)?.pendingPayments || "$0.00"}
             </p>
           </CardContent>
         </Card>
@@ -426,10 +426,10 @@ export default function PurchasesPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              ${statsLoading ? "..." : parseFloat(stats?.monthlyExpenses || 0).toLocaleString()}
+              {statsLoading ? "..." : (stats as Stats)?.monthlyExpenses || "$0.00"}
             </div>
             <p className="text-xs text-muted-foreground">
-              {statsLoading ? "..." : stats?.expenseChange || 0}% vs mes anterior
+              {statsLoading ? "..." : (stats as Stats)?.expenseChange || "0"}% vs mes anterior
             </p>
           </CardContent>
         </Card>
