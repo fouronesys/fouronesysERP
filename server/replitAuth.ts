@@ -60,7 +60,6 @@ async function upsertUser(
   await storage.upsertUser({
     id: claims["sub"],
     email: claims["email"],
-    password: "", // Replit auth doesn't use passwords
     firstName: claims["first_name"],
     lastName: claims["last_name"],
     profileImageUrl: claims["profile_image_url"],
@@ -131,21 +130,8 @@ export async function setupAuth(app: Express) {
 export const isAuthenticated: RequestHandler = async (req, res, next) => {
   const user = req.user as any;
 
-  console.log("Auth check:", {
-    isAuthenticated: req.isAuthenticated(),
-    hasUser: !!user,
-    userExpiresAt: user?.expires_at,
-    now: Math.floor(Date.now() / 1000)
-  });
-
-  if (!req.isAuthenticated()) {
-    console.log("Auth failed: not authenticated");
+  if (!req.isAuthenticated() || !user.expires_at) {
     return res.status(401).json({ message: "Unauthorized" });
-  }
-  
-  if (!user?.expires_at) {
-    console.log("Auth warning: no expires_at, allowing access");
-    return next();
   }
 
   const now = Math.floor(Date.now() / 1000);

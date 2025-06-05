@@ -3,7 +3,7 @@ import express from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated } from "./replitAuth";
+import { setupAuth, isAuthenticated } from "./auth";
 import { AIProductService, AIBusinessService, AIChatService, AIDocumentService } from "./ai-services-fixed";
 import { InvoiceTemplateService, type ThermalPrintOptions, type PDFPrintOptions } from "./invoice-template-service";
 import multer from 'multer';
@@ -95,7 +95,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/user', isAuthenticated, async (req: any, res) => {
     try {
       const user = req.user;
-      const userId = user.claims?.sub;
+      const userId = user.id;
       
       // Incluir información de rol y empresas
       if (user) {
@@ -389,35 +389,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Company routes
   app.get("/api/companies/current", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims?.sub;
-      let company = await storage.getCompanyByUserId(userId);
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
       
       if (!company) {
-        // Get existing company or create if none exists
-        try {
-          const companies = await storage.getAllCompanies();
-          if (companies.length > 0) {
-            company = companies[0]; // Use first existing company
-          } else {
-            // Create default company for user
-            const newCompany = await storage.createCompany({
-              name: "Four One Solutions",
-              businessName: "Four One Solutions SRL",
-              rnc: "131-12345-6",
-              address: "Santo Domingo, República Dominicana",
-              phone: "(809) 123-4567",
-              email: req.user.claims?.email || "admin@fourone.com",
-              ownerId: userId,
-              isActive: true
-            });
-            company = newCompany;
-          }
-        } catch (error) {
-          console.error("Error handling company creation:", error);
-          // Try to get existing company by name
-          const companies = await storage.getAllCompanies();
-          company = companies.find(c => c.name === "Four One Solutions") || companies[0];
-        }
+        return res.status(404).json({ message: "No company found for user" });
       }
       
       res.json(company);
@@ -658,7 +634,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Product routes
   app.get("/api/products", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims?.sub;
+      const userId = req.user.id;
       const company = await storage.getCompanyByUserId(userId);
       if (!company) {
         return res.status(404).json({ message: "Company not found" });
@@ -706,7 +682,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/products/:id", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims?.sub;
+      const userId = req.user.id;
       const company = await storage.getCompanyByUserId(userId);
       if (!company) {
         return res.status(404).json({ message: "Company not found" });
@@ -892,7 +868,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/pos/sales", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims?.sub;
+      const userId = req.user.id;
       const company = await storage.getCompanyByUserId(userId);
       if (!company) {
         return res.status(404).json({ message: "Company not found" });

@@ -254,27 +254,10 @@ export default function POS() {
         // Mostrar modal de impresión
         setShowPrintModal(true);
         
-        toast({
-          title: "Venta procesada",
-          description: `Venta ${result.saleNumber} completada exitosamente`,
-          variant: "default",
-        });
-      } else {
-        const errorText = await response.text();
-        console.error("Sale processing failed:", errorText);
-        toast({
-          title: "Error en la venta",
-          description: "No se pudo procesar la venta. Verifica tu conexión.",
-          variant: "destructive",
-        });
+        console.log("Venta procesada exitosamente");
       }
     } catch (error) {
       console.error("Error procesando venta:", error);
-      toast({
-        title: "Error en la venta",
-        description: "Error inesperado al procesar la venta",
-        variant: "destructive",
-      });
     } finally {
       setIsProcessing(false);
     }
