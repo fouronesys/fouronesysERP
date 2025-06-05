@@ -237,7 +237,10 @@ export default function POS() {
       };
 
       console.log("Enviando datos de venta:", saleData);
-      const response = await apiRequest("POST", "/api/pos/sales", saleData);
+      const response = await apiRequest("/api/pos/sales", {
+        method: "POST",
+        body: saleData
+      });
       
       console.log("Response status:", response.status);
       console.log("Response headers:", response.headers);
