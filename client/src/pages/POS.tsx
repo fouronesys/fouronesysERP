@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Header } from "@/components/Header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import MobileCalculator from "@/components/MobileCalculator";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -28,13 +29,65 @@ import {
   RotateCcw,
   FileText
 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { useIsMobile } from "@/hooks/use-mobile";
 import { apiRequest } from "@/lib/queryClient";
 import { formatDOP, calculateITBIS, ITBIS_RATE, generateNCF } from "@/lib/dominican";
 import { PrintReceipt } from "@/components/PrintReceipt";
 import { EnhancedPrintReceipt } from "@/components/EnhancedPrintReceipt";
 import type { Product, Customer, POSPrintSettings, Company, POSSale, POSSaleItem } from "@shared/schema";
+
+// Hook personalizado para detectar móvil
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(false);
+  
+  useEffect(() => {
+    const checkIsMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkIsMobile();
+    window.addEventListener('resize', checkIsMobile);
+    
+    return () => window.removeEventListener('resize', checkIsMobile);
+  }, []);
+  
+  return isMobile;
+}
+
+// Función de impresión de recibos
+function printReceipt(sale: any, isCommand = false) {
+  const printWindow = window.open('', '_blank');
+  if (!printWindow) return;
+  
+  printWindow.document.write(`
+    <html>
+      <head>
+        <title>${isCommand ? 'Comanda' : 'Recibo'}</title>
+        <style>
+          body { font-family: monospace; margin: 0; padding: 20px; }
+          .receipt { max-width: 300px; margin: 0 auto; }
+          .center { text-align: center; }
+          .bold { font-weight: bold; }
+          .line { border-top: 1px dashed #000; margin: 10px 0; }
+          table { width: 100%; }
+          .right { text-align: right; }
+        </style>
+      </head>
+      <body>
+        <div class="receipt">
+          <div class="center bold">${isCommand ? 'COMANDA DE COCINA' : 'RECIBO DE VENTA'}</div>
+          <div class="center">#{sale.saleNumber || 'TEMP'}</div>
+          <div class="line"></div>
+          <div>${new Date().toLocaleString('es-DO')}</div>
+          ${sale.customerName ? `<div>Cliente: ${sale.customerName}</div>` : ''}
+          ${sale.customerPhone ? `<div>Tel: ${sale.customerPhone}</div>` : ''}
+          <div class="line"></div>
+          <div class="center">¡Gracias por su compra!</div>
+        </div>
+        <script>window.print(); window.close();</script>
+      </body>
+    </html>
+  `);
+}
 
 interface CartItem {
   product: Product;
@@ -59,6 +112,7 @@ export default function POS() {
   const [cashReceived, setCashReceived] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showCalculator, setShowCalculator] = useState(false);
   const [activeTab, setActiveTab] = useState("products");
   const [showPreview, setShowPreview] = useState(false);
   const [previewAsCommand, setPreviewAsCommand] = useState(false);
@@ -266,9 +320,11 @@ export default function POS() {
           saleId: sale.id,
           productId: item.product.id,
           productName: item.product.name,
+          productCode: item.product.code || "",
           quantity: item.quantity.toString(),
           unitPrice: item.product.price,
           subtotal: item.subtotal.toString(),
+          discount: "0"
         });
         const saleItem = await itemResponse.json();
         saleItems.push(saleItem);
@@ -401,7 +457,7 @@ export default function POS() {
       paymentMethod: paymentMethod,
       cashReceived: cashReceived,
       cashChange: cashChange.toString(),
-      ncf: generateNCF(),
+      ncf: printSettings?.showNCF ? generateNCF("B01", 1) : null,
       customerName: customerName || "Cliente General",
       customerPhone: customerPhone,
     };
@@ -1061,7 +1117,7 @@ export default function POS() {
                             {printSettings.showNCF && (
                               <div className="flex justify-between">
                                 <span>NCF:</span>
-                                <span>{generateNCF()}</span>
+                                <span>{generateNCF("B01", 1)}</span>
                               </div>
                             )}
                           </div>
