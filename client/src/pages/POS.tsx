@@ -424,13 +424,13 @@ export default function POS() {
   }
 
   return (
-    <div className="w-full">
+    <div className="w-full min-h-screen bg-gray-50 dark:bg-gray-900">
       <Header title="Punto de Venta" subtitle="Sistema POS integrado" />
       
-      <div className="p-3 sm:p-6">
-        <div className="grid grid-cols-1 xl:grid-cols-4 gap-4 sm:gap-6">
+      <div className="p-3 sm:p-6 max-w-screen-2xl mx-auto">
+        <div className="grid grid-cols-1 2xl:grid-cols-5 xl:grid-cols-4 gap-4 sm:gap-6 h-[calc(100vh-140px)]">
           {/* Products Section with Enhanced Layout */}
-          <div className="xl:col-span-2 space-y-4 h-[calc(100vh-200px)] overflow-hidden">
+          <div className="2xl:col-span-3 xl:col-span-2 space-y-4 h-full overflow-hidden flex flex-col">
             {/* Mobile Tabs for Products/Cart */}
             {isMobile && (
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -488,8 +488,8 @@ export default function POS() {
                   </div>
 
                   {/* Products Grid - Enhanced Layout with Scroll */}
-                  <div className="max-h-[70vh] overflow-y-auto pr-2">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="flex-1 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-2 2xl:grid-cols-3 gap-3">
                     {filteredProducts.map((product) => (
                       <Card key={product.id} className="overflow-hidden hover:shadow-lg transition-all duration-300 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
                         <CardContent className="p-0">
@@ -732,10 +732,10 @@ export default function POS() {
           </div>
 
           {/* Cart and Checkout Section */}
-          <div className={`space-y-4 ${isMobile ? 'hidden' : ''}`}>
+          <div className={`2xl:col-span-2 xl:col-span-2 space-y-4 h-full flex flex-col ${isMobile ? 'hidden' : ''}`}>
             {/* Cart */}
-            <Card>
-              <CardHeader className="pb-3">
+            <Card className="flex-1 flex flex-col min-h-0">
+              <CardHeader className="pb-3 flex-shrink-0">
                 <CardTitle className="text-base flex items-center justify-between">
                   <span className="flex items-center gap-2">
                     <ShoppingCart className="h-4 w-4" />
@@ -753,7 +753,7 @@ export default function POS() {
                   )}
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3 max-h-64 overflow-y-auto">
+              <CardContent className="space-y-3 flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 min-h-0">
                 {cart.length === 0 ? (
                   <p className="text-gray-500 dark:text-gray-400 text-center py-8">
                     Carrito vacío

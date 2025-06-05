@@ -120,13 +120,13 @@ export default function MobileCalculator({ isOpen, onClose }: MobileCalculatorPr
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <motion.div
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="w-full h-full sm:w-auto sm:h-auto sm:max-w-sm bg-gray-900 sm:rounded-2xl shadow-2xl border border-gray-700 flex flex-col"
+            className="w-full h-full sm:w-auto sm:h-auto sm:max-w-md lg:max-w-lg xl:max-w-xl bg-gray-900 sm:rounded-2xl shadow-2xl border border-gray-700 flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
