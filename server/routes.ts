@@ -682,7 +682,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/products/:id", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.id;
+      const userId = req.user.claims?.sub;
       const company = await storage.getCompanyByUserId(userId);
       if (!company) {
         return res.status(404).json({ message: "Company not found" });
