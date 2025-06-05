@@ -103,19 +103,7 @@ export const customers = pgTable("customers", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// Suppliers
-export const suppliers = pgTable("suppliers", {
-  id: serial("id").primaryKey(),
-  name: varchar("name", { length: 255 }).notNull(),
-  email: varchar("email", { length: 255 }),
-  phone: varchar("phone", { length: 20 }),
-  address: text("address"),
-  rnc: varchar("rnc", { length: 20 }),
-  contactPerson: varchar("contact_person", { length: 255 }),
-  companyId: integer("company_id").notNull().references(() => companies.id),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-});
+// Esta tabla será reemplazada por la nueva tabla de suppliers del módulo de compras
 
 // Warehouses
 export const warehouses = pgTable("warehouses", {
@@ -397,11 +385,7 @@ export const insertCustomerSchema = createInsertSchema(customers).omit({
   updatedAt: true,
 });
 
-export const insertSupplierSchema = createInsertSchema(suppliers).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+// Schema movido al módulo de compras
 
 export const insertProductSchema = createInsertSchema(products).omit({
   id: true,
@@ -966,6 +950,178 @@ export const userRoleAssignments = pgTable("user_role_assignments", {
   assignedAt: timestamp("assigned_at").defaultNow(),
 });
 
+// === MÓDULO DE COMPRAS ===
+
+// Suppliers (Proveedores)
+export const suppliers = pgTable("suppliers", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull().references(() => companies.id),
+  code: varchar("code", { length: 20 }).notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  businessName: varchar("business_name", { length: 255 }),
+  rnc: varchar("rnc", { length: 20 }),
+  cedula: varchar("cedula", { length: 20 }),
+  contactPerson: varchar("contact_person", { length: 255 }),
+  email: varchar("email", { length: 255 }),
+  phone: varchar("phone", { length: 20 }),
+  mobile: varchar("mobile", { length: 20 }),
+  website: varchar("website", { length: 255 }),
+  address: text("address"),
+  city: varchar("city", { length: 100 }),
+  country: varchar("country", { length: 100 }).default("República Dominicana"),
+  paymentTerms: varchar("payment_terms", { length: 100 }), // 30 días, contado, etc.
+  creditLimit: decimal("credit_limit", { precision: 12, scale: 2 }),
+  currentBalance: decimal("current_balance", { precision: 12, scale: 2 }).default("0"),
+  category: varchar("category", { length: 100 }), // Servicios, Materiales, Equipos, etc.
+  taxId: varchar("tax_id", { length: 50 }),
+  notes: text("notes"),
+  isActive: boolean("is_active").default(true),
+  createdBy: varchar("created_by").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Purchase Orders (Órdenes de Compra)
+export const purchaseOrders = pgTable("purchase_orders", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull().references(() => companies.id),
+  orderNumber: varchar("order_number", { length: 50 }).notNull(),
+  supplierId: integer("supplier_id").notNull().references(() => suppliers.id),
+  orderDate: date("order_date").notNull(),
+  expectedDeliveryDate: date("expected_delivery_date"),
+  status: varchar("status", { length: 20 }).default("draft"), // draft, sent, confirmed, received, cancelled
+  subtotal: decimal("subtotal", { precision: 12, scale: 2 }).notNull(),
+  taxAmount: decimal("tax_amount", { precision: 12, scale: 2 }).default("0"),
+  discountAmount: decimal("discount_amount", { precision: 12, scale: 2 }).default("0"),
+  totalAmount: decimal("total_amount", { precision: 12, scale: 2 }).notNull(),
+  currency: varchar("currency", { length: 3 }).default("DOP"),
+  paymentTerms: varchar("payment_terms", { length: 100 }),
+  deliveryAddress: text("delivery_address"),
+  notes: text("notes"),
+  internalNotes: text("internal_notes"),
+  createdBy: varchar("created_by").notNull().references(() => users.id),
+  approvedBy: varchar("approved_by").references(() => users.id),
+  approvedAt: timestamp("approved_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Purchase Order Items
+export const purchaseOrderItems = pgTable("purchase_order_items", {
+  id: serial("id").primaryKey(),
+  purchaseOrderId: integer("purchase_order_id").notNull().references(() => purchaseOrders.id),
+  productId: integer("product_id").references(() => products.id),
+  description: text("description").notNull(),
+  quantity: decimal("quantity", { precision: 10, scale: 2 }).notNull(),
+  unitPrice: decimal("unit_price", { precision: 10, scale: 2 }).notNull(),
+  totalPrice: decimal("total_price", { precision: 12, scale: 2 }).notNull(),
+  receivedQuantity: decimal("received_quantity", { precision: 10, scale: 2 }).default("0"),
+  unit: varchar("unit", { length: 20 }).default("unidad"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Purchase Receipts (Recepciones de Compra)
+export const purchaseReceipts = pgTable("purchase_receipts", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull().references(() => companies.id),
+  receiptNumber: varchar("receipt_number", { length: 50 }).notNull(),
+  purchaseOrderId: integer("purchase_order_id").references(() => purchaseOrders.id),
+  supplierId: integer("supplier_id").notNull().references(() => suppliers.id),
+  receiptDate: date("receipt_date").notNull(),
+  supplierInvoiceNumber: varchar("supplier_invoice_number", { length: 50 }),
+  status: varchar("status", { length: 20 }).default("pending"), // pending, completed, cancelled
+  notes: text("notes"),
+  receivedBy: varchar("received_by").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Purchase Receipt Items
+export const purchaseReceiptItems = pgTable("purchase_receipt_items", {
+  id: serial("id").primaryKey(),
+  purchaseReceiptId: integer("purchase_receipt_id").notNull().references(() => purchaseReceipts.id),
+  purchaseOrderItemId: integer("purchase_order_item_id").references(() => purchaseOrderItems.id),
+  productId: integer("product_id").references(() => products.id),
+  description: text("description").notNull(),
+  quantityOrdered: decimal("quantity_ordered", { precision: 10, scale: 2 }),
+  quantityReceived: decimal("quantity_received", { precision: 10, scale: 2 }).notNull(),
+  unitPrice: decimal("unit_price", { precision: 10, scale: 2 }).notNull(),
+  totalPrice: decimal("total_price", { precision: 12, scale: 2 }).notNull(),
+  unit: varchar("unit", { length: 20 }).default("unidad"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Purchase Invoices (Facturas de Compra)
+export const purchaseInvoices = pgTable("purchase_invoices", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull().references(() => companies.id),
+  invoiceNumber: varchar("invoice_number", { length: 50 }).notNull(),
+  supplierInvoiceNumber: varchar("supplier_invoice_number", { length: 50 }).notNull(),
+  supplierId: integer("supplier_id").notNull().references(() => suppliers.id),
+  purchaseOrderId: integer("purchase_order_id").references(() => purchaseOrders.id),
+  invoiceDate: date("invoice_date").notNull(),
+  dueDate: date("due_date"),
+  ncf: varchar("ncf", { length: 20 }), // Número de Comprobante Fiscal
+  ncfType: varchar("ncf_type", { length: 10 }), // B01, B02, B03, B04, etc.
+  subtotal: decimal("subtotal", { precision: 12, scale: 2 }).notNull(),
+  taxAmount: decimal("tax_amount", { precision: 12, scale: 2 }).default("0"),
+  itbisAmount: decimal("itbis_amount", { precision: 12, scale: 2 }).default("0"),
+  withholdingAmount: decimal("withholding_amount", { precision: 12, scale: 2 }).default("0"),
+  discountAmount: decimal("discount_amount", { precision: 12, scale: 2 }).default("0"),
+  totalAmount: decimal("total_amount", { precision: 12, scale: 2 }).notNull(),
+  currency: varchar("currency", { length: 3 }).default("DOP"),
+  exchangeRate: decimal("exchange_rate", { precision: 10, scale: 4 }).default("1"),
+  paymentStatus: varchar("payment_status", { length: 20 }).default("pending"), // pending, partial, paid, overdue
+  paidAmount: decimal("paid_amount", { precision: 12, scale: 2 }).default("0"),
+  type: varchar("type", { length: 20 }).default("goods"), // goods, services, expenses
+  category: varchar("category", { length: 100 }), // Para clasificar gastos
+  notes: text("notes"),
+  attachmentUrl: text("attachment_url"),
+  createdBy: varchar("created_by").notNull().references(() => users.id),
+  approvedBy: varchar("approved_by").references(() => users.id),
+  approvedAt: timestamp("approved_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Purchase Invoice Items
+export const purchaseInvoiceItems = pgTable("purchase_invoice_items", {
+  id: serial("id").primaryKey(),
+  purchaseInvoiceId: integer("purchase_invoice_id").notNull().references(() => purchaseInvoices.id),
+  productId: integer("product_id").references(() => products.id),
+  description: text("description").notNull(),
+  quantity: decimal("quantity", { precision: 10, scale: 2 }).notNull(),
+  unitPrice: decimal("unit_price", { precision: 10, scale: 2 }).notNull(),
+  totalPrice: decimal("total_price", { precision: 12, scale: 2 }).notNull(),
+  taxRate: decimal("tax_rate", { precision: 5, scale: 2 }).default("18"), // % ITBIS
+  taxAmount: decimal("tax_amount", { precision: 12, scale: 2 }).default("0"),
+  unit: varchar("unit", { length: 20 }).default("unidad"),
+  accountCode: varchar("account_code", { length: 20 }), // Código contable
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Purchase Payments (Pagos a Proveedores)
+export const purchasePayments = pgTable("purchase_payments", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull().references(() => companies.id),
+  paymentNumber: varchar("payment_number", { length: 50 }).notNull(),
+  supplierId: integer("supplier_id").notNull().references(() => suppliers.id),
+  purchaseInvoiceId: integer("purchase_invoice_id").references(() => purchaseInvoices.id),
+  paymentDate: date("payment_date").notNull(),
+  amount: decimal("amount", { precision: 12, scale: 2 }).notNull(),
+  paymentMethod: varchar("payment_method", { length: 50 }).notNull(), // transferencia, cheque, efectivo, etc.
+  bankAccount: varchar("bank_account", { length: 100 }),
+  checkNumber: varchar("check_number", { length: 50 }),
+  reference: varchar("reference", { length: 100 }),
+  notes: text("notes"),
+  status: varchar("status", { length: 20 }).default("completed"), // pending, completed, cancelled
+  createdBy: varchar("created_by").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Chat Channel Relations
 export const chatChannelRelations = relations(chatChannels, ({ one, many }) => ({
   company: one(companies, {
@@ -1093,3 +1249,42 @@ export type UserRole = typeof userRoles.$inferSelect;
 export type InsertUserRole = z.infer<typeof insertUserRoleSchema>;
 export type UserRoleAssignment = typeof userRoleAssignments.$inferSelect;
 export type InsertUserRoleAssignment = z.infer<typeof insertUserRoleAssignmentSchema>;
+
+// === TIPOS DEL MÓDULO DE COMPRAS ===
+
+// Suppliers
+export const insertSupplierSchema = createInsertSchema(suppliers);
+export type Supplier = typeof suppliers.$inferSelect;
+export type InsertSupplier = z.infer<typeof insertSupplierSchema>;
+
+// Purchase Orders
+export const insertPurchaseOrderSchema = createInsertSchema(purchaseOrders);
+export type PurchaseOrder = typeof purchaseOrders.$inferSelect;
+export type InsertPurchaseOrder = z.infer<typeof insertPurchaseOrderSchema>;
+
+export const insertPurchaseOrderItemSchema = createInsertSchema(purchaseOrderItems);
+export type PurchaseOrderItem = typeof purchaseOrderItems.$inferSelect;
+export type InsertPurchaseOrderItem = z.infer<typeof insertPurchaseOrderItemSchema>;
+
+// Purchase Receipts
+export const insertPurchaseReceiptSchema = createInsertSchema(purchaseReceipts);
+export type PurchaseReceipt = typeof purchaseReceipts.$inferSelect;
+export type InsertPurchaseReceipt = z.infer<typeof insertPurchaseReceiptSchema>;
+
+export const insertPurchaseReceiptItemSchema = createInsertSchema(purchaseReceiptItems);
+export type PurchaseReceiptItem = typeof purchaseReceiptItems.$inferSelect;
+export type InsertPurchaseReceiptItem = z.infer<typeof insertPurchaseReceiptItemSchema>;
+
+// Purchase Invoices
+export const insertPurchaseInvoiceSchema = createInsertSchema(purchaseInvoices);
+export type PurchaseInvoice = typeof purchaseInvoices.$inferSelect;
+export type InsertPurchaseInvoice = z.infer<typeof insertPurchaseInvoiceSchema>;
+
+export const insertPurchaseInvoiceItemSchema = createInsertSchema(purchaseInvoiceItems);
+export type PurchaseInvoiceItem = typeof purchaseInvoiceItems.$inferSelect;
+export type InsertPurchaseInvoiceItem = z.infer<typeof insertPurchaseInvoiceItemSchema>;
+
+// Purchase Payments
+export const insertPurchasePaymentSchema = createInsertSchema(purchasePayments);
+export type PurchasePayment = typeof purchasePayments.$inferSelect;
+export type InsertPurchasePayment = z.infer<typeof insertPurchasePaymentSchema>;
