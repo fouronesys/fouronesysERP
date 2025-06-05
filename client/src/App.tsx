@@ -40,6 +40,7 @@ import FiscalDocuments from "@/pages/FiscalDocuments";
 import AIInsights from "@/pages/AIInsights";
 import SubscriptionPlans from "@/pages/SubscriptionPlans";
 import CompanyAnalytics from "@/pages/CompanyAnalytics";
+import Purchases from "@/pages/Purchases";
 import NotFound from "@/pages/not-found";
 import LoginAnimation from "@/components/LoginAnimation";
 

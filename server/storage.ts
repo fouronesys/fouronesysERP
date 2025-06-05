@@ -4,7 +4,6 @@ import {
   companyUsers,
   warehouses,
   customers,
-  suppliers,
   products,
   invoices,
   invoiceItems,
