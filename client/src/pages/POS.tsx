@@ -154,25 +154,28 @@ export default function POS() {
       return;
     }
 
-    if (existingItem) {
-      updateQuantity(product.id, existingItem.quantity + 1);
-    } else {
-      const newItem: CartItem = {
-        product,
-        quantity: 1,
-        subtotal: parseFloat(product.price)
-      };
-      setCart([...cart, newItem]);
-    }
-
-    // Update product stock in backend
+    // Update product stock in backend first
     try {
-      await apiRequest("PATCH", `/api/products/${product.id}`, {
+      const response = await apiRequest("PATCH", `/api/products/${product.id}`, {
         stock: (currentStock - 1).toString()
       });
       
-      // Refresh products to show updated stock
-      queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+      if (response.ok) {
+        // If stock update successful, then add to cart
+        if (existingItem) {
+          updateQuantity(product.id, existingItem.quantity + 1);
+        } else {
+          const newItem: CartItem = {
+            product: { ...product, stock: currentStock - 1 },
+            quantity: 1,
+            subtotal: parseFloat(product.price)
+          };
+          setCart([...cart, newItem]);
+        }
+        
+        // Refresh products to show updated stock
+        queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+      }
     } catch (error) {
       console.error("Error updating stock:", error);
       toast({
