@@ -6,6 +6,14 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
+// Debug middleware to log all requests
+app.use((req, res, next) => {
+  if (req.path.startsWith('/api/')) {
+    console.log(`[DEBUG] ${req.method} ${req.path} - Body:`, req.body);
+  }
+  next();
+});
+
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
