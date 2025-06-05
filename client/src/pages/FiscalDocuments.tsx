@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,791 +13,276 @@ import { Header } from "@/components/Header";
 import { 
   FileText, 
   Download, 
-  Upload, 
-  Plus, 
-  Search, 
   Calendar,
   AlertTriangle,
   CheckCircle,
-  Settings,
-  Building2
+  Building2,
+  TrendingUp
 } from "lucide-react";
-import type { NCFSequence, Comprobante605, Comprobante606 } from "@shared/schema";
 
 export default function FiscalDocuments() {
-  const [activeTab, setActiveTab] = useState("ncf-sequences");
-  const [searchTerm, setSearchTerm] = useState("");
+  const [activeTab, setActiveTab] = useState("reports");
   const [selectedPeriod, setSelectedPeriod] = useState(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   });
-  const [rncToVerify, setRncToVerify] = useState("");
-  const [isVerifyingRNC, setIsVerifyingRNC] = useState(false);
-  const [rncVerificationResult, setRncVerificationResult] = useState<any>(null);
+  const [generateType, setGenerateType] = useState<"606" | "607">("606");
   
   const { toast } = useToast();
-  const queryClient = useQueryClient();
 
-  // Queries
-  const { data: ncfSequences, isLoading: ncfLoading } = useQuery<NCFSequence[]>({
-    queryKey: ["/api/fiscal/ncf-sequences"],
+  // Queries para reportes fiscales
+  const { data: fiscalStats, isLoading: statsLoading } = useQuery({
+    queryKey: ["/api/fiscal-reports/stats"],
   });
 
-  const { data: comprobantes605, isLoading: loading605 } = useQuery<Comprobante605[]>({
-    queryKey: ["/api/fiscal/comprobantes-605", selectedPeriod],
+  const { data: reports606, isLoading: loading606 } = useQuery({
+    queryKey: ["/api/fiscal-reports/606"],
   });
 
-  const { data: comprobantes606, isLoading: loading606 } = useQuery<Comprobante606[]>({
-    queryKey: ["/api/fiscal/comprobantes-606", selectedPeriod],
+  const { data: reports607, isLoading: loading607 } = useQuery({
+    queryKey: ["/api/fiscal-reports/607"],
   });
 
-  // RNC Verification function
-  const handleRNCVerification = async () => {
-    if (!rncToVerify || rncToVerify.length < 9) {
-      toast({
-        title: "RNC Inválido",
-        description: "Por favor ingresa un RNC válido de al menos 9 dígitos",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsVerifyingRNC(true);
-    try {
-      const response = await fetch(`/api/verify-rnc/${rncToVerify}`);
-      const result = await response.json();
-      
-      setRncVerificationResult(result);
-      
-      if (result.valid && result.data) {
-        toast({
-          title: "RNC Verificado",
-          description: `Empresa encontrada: ${result.data.razonSocial}`,
-        });
-      } else {
-        toast({
-          title: "RNC No Encontrado",
-          description: result.message || "No se pudo verificar el RNC en la DGII",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      console.error("Error verifying RNC:", error);
-      toast({
-        title: "Error de Verificación",
-        description: "No se pudo conectar con el servicio de verificación",
-        variant: "destructive",
-      });
-    } finally {
-      setIsVerifyingRNC(false);
-    }
-  };
-
-  // Mutations
-  const createSequenceMutation = useMutation({
-    mutationFn: async (data: any) => 
-      await apiRequest("/api/fiscal/ncf-sequences", {
-        method: "POST",
-        body: JSON.stringify(data),
-      }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/fiscal/ncf-sequences"] });
-      toast({
-        title: "Secuencia NCF creada",
-        description: "La secuencia de NCF ha sido registrada exitosamente",
-      });
-    },
-  });
-
-  const generate605Mutation = useMutation({
-    mutationFn: async (period: string) => 
-      await apiRequest(`/api/fiscal/generate-605/${period}`, {
-        method: "POST",
-      }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/fiscal/comprobantes-605"] });
-      toast({
-        title: "Reporte 605 generado",
-        description: "Se ha generado el reporte de compras exitosamente",
-      });
-    },
-  });
-
-  const generate606Mutation = useMutation({
-    mutationFn: async (period: string) => 
-      await apiRequest(`/api/fiscal/generate-606/${period}`, {
-        method: "POST",
-      }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/fiscal/comprobantes-606"] });
-      toast({
-        title: "Reporte 606 generado",
-        description: "Se ha generado el reporte de ventas exitosamente",
-      });
-    },
-  });
-
-  const downloadReportMutation = useMutation({
+  // Mutation para generar reportes
+  const generateReportMutation = useMutation({
     mutationFn: async ({ type, period }: { type: string; period: string }) => {
-      const response = await fetch(`/api/fiscal/download-${type}/${period}`);
-      const blob = await response.blob();
+      const response = await apiRequest("POST", "/api/fiscal-reports/generate", { type, period });
+      
+      // Create download link for the generated file
+      const blob = new Blob([response], { type: 'text/plain' });
       const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${type}_${period}.txt`;
-      document.body.appendChild(a);
-      a.click();
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `reporte_${type}_${period}.txt`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
       window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+      
+      return response;
     },
     onSuccess: () => {
       toast({
-        title: "Descarga completa",
-        description: "El archivo ha sido descargado exitosamente",
+        title: "Reporte generado",
+        description: "El archivo se ha descargado correctamente",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error al generar reporte",
+        description: error.message || "No se pudo generar el reporte",
+        variant: "destructive",
       });
     },
   });
 
-  // Filter functions
-  const filteredSequences = ncfSequences?.filter(seq =>
-    seq.ncfType.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    seq.authorizedFrom.includes(searchTerm) ||
-    seq.authorizedTo.includes(searchTerm)
-  ) || [];
-
-  const activeSequences = filteredSequences.filter(seq => seq.isActive);
-  const expiredSequences = filteredSequences.filter(seq => 
-    new Date(seq.expirationDate) < new Date()
-  );
-
-  return (
-    <div className="w-full">
-      <Header 
-        title="Comprobantes Fiscales" 
-        subtitle="Gestión de NCF y reportes 605/606 DGII" 
-      />
-      
-      <div className="p-4 sm:p-6 space-y-6">
-        {/* Quick Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-2">
-                <CheckCircle className="h-5 w-5 text-green-600" />
-                <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">NCF Activos</p>
-                  <p className="text-xl font-bold">{activeSequences.length}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-2">
-                <AlertTriangle className="h-5 w-5 text-orange-600" />
-                <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">NCF Vencidos</p>
-                  <p className="text-xl font-bold">{expiredSequences.length}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-2">
-                <FileText className="h-5 w-5 text-blue-600" />
-                <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Comprobantes 605</p>
-                  <p className="text-xl font-bold">{comprobantes605?.length || 0}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-2">
-                <FileText className="h-5 w-5 text-purple-600" />
-                <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Comprobantes 606</p>
-                  <p className="text-xl font-bold">{comprobantes606?.length || 0}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Main Content */}
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid grid-cols-4 w-full">
-            <TabsTrigger value="ncf-sequences">
-              <Settings className="h-4 w-4 mr-2" />
-              Secuencias NCF
-            </TabsTrigger>
-            <TabsTrigger value="report-605">
-              <FileText className="h-4 w-4 mr-2" />
-              Reporte 605
-            </TabsTrigger>
-            <TabsTrigger value="report-606">
-              <FileText className="h-4 w-4 mr-2" />
-              Reporte 606
-            </TabsTrigger>
-            <TabsTrigger value="rnc-verification">
-              <Building2 className="h-4 w-4 mr-2" />
-              Verificación RNC
-            </TabsTrigger>
-          </TabsList>
-
-          {/* NCF Sequences Tab */}
-          <TabsContent value="ncf-sequences" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <div className="flex justify-between items-center">
-                  <CardTitle>Secuencias de NCF Autorizadas</CardTitle>
-                  <NCFSequenceForm onSubmit={createSequenceMutation.mutate} />
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                    <Input
-                      placeholder="Buscar secuencias..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    {filteredSequences.map((sequence) => (
-                      <div
-                        key={sequence.id}
-                        className="flex items-center justify-between p-4 border rounded-lg"
-                      >
-                        <div className="space-y-1">
-                          <div className="flex items-center space-x-2">
-                            <Badge variant={sequence.isActive ? "default" : "secondary"}>
-                              {sequence.ncfType}
-                            </Badge>
-                            <span className="font-medium">
-                              {sequence.authorizedFrom} - {sequence.authorizedTo}
-                            </span>
-                          </div>
-                          <p className="text-sm text-gray-500">
-                            Secuencia actual: {sequence.currentSequence.toLocaleString()}
-                          </p>
-                          <p className="text-sm text-gray-500">
-                            Vence: {new Date(sequence.expirationDate).toLocaleDateString()}
-                          </p>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          {new Date(sequence.expirationDate) < new Date() && (
-                            <AlertTriangle className="h-5 w-5 text-orange-500" />
-                          )}
-                          {sequence.isActive && (
-                            <CheckCircle className="h-5 w-5 text-green-500" />
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Report 605 Tab */}
-          <TabsContent value="report-605" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <div className="flex justify-between items-center">
-                  <CardTitle>Reporte 605 - Compras y Servicios</CardTitle>
-                  <div className="flex space-x-2">
-                    <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
-                      <SelectTrigger className="w-40">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {generatePeriodOptions().map((period) => (
-                          <SelectItem key={period.value} value={period.value}>
-                            {period.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Button
-                      onClick={() => generate605Mutation.mutate(selectedPeriod)}
-                      disabled={generate605Mutation.isPending}
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Generar
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() => downloadReportMutation.mutate({ type: "605", period: selectedPeriod })}
-                      disabled={!comprobantes605?.length}
-                    >
-                      <Download className="h-4 w-4 mr-2" />
-                      Descargar
-                    </Button>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <ComprobantesTable 
-                  data={comprobantes605 || []} 
-                  type="605" 
-                  isLoading={loading605}
-                />
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Report 606 Tab */}
-          <TabsContent value="report-606" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <div className="flex justify-between items-center">
-                  <CardTitle>Reporte 606 - Ventas</CardTitle>
-                  <div className="flex space-x-2">
-                    <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
-                      <SelectTrigger className="w-40">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {generatePeriodOptions().map((period) => (
-                          <SelectItem key={period.value} value={period.value}>
-                            {period.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Button
-                      onClick={() => generate606Mutation.mutate(selectedPeriod)}
-                      disabled={generate606Mutation.isPending}
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Generar
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() => downloadReportMutation.mutate({ type: "606", period: selectedPeriod })}
-                      disabled={!comprobantes606?.length}
-                    >
-                      <Download className="h-4 w-4 mr-2" />
-                      Descargar
-                    </Button>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <ComprobantesTable 
-                  data={comprobantes606 || []} 
-                  type="606" 
-                  isLoading={loading606}
-                />
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* RNC Verification Tab */}
-          <TabsContent value="rnc-verification" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Building2 className="mr-2 h-5 w-5" />
-                  Verificación de RNC en DGII
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="rncInput">RNC a Verificar</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      id="rncInput"
-                      placeholder="Ej: 131-12345-6"
-                      value={rncToVerify}
-                      onChange={(e) => setRncToVerify(e.target.value)}
-                      className={rncVerificationResult?.valid === true ? "border-green-500" : 
-                                rncVerificationResult?.valid === false ? "border-red-500" : ""}
-                    />
-                    <Button
-                      onClick={handleRNCVerification}
-                      disabled={isVerifyingRNC || !rncToVerify}
-                    >
-                      {isVerifyingRNC ? "Verificando..." : "Verificar"}
-                    </Button>
-                  </div>
-                </div>
-
-                {rncVerificationResult && (
-                  <div className={`p-4 rounded-lg border ${
-                    rncVerificationResult.valid 
-                      ? "bg-green-50 text-green-700 border-green-200" 
-                      : "bg-red-50 text-red-700 border-red-200"
-                  }`}>
-                    {rncVerificationResult.valid ? (
-                      <div className="space-y-2">
-                        <h3 className="font-medium flex items-center">
-                          <CheckCircle className="h-4 w-4 mr-2" />
-                          RNC Verificado en DGII
-                        </h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                          <div>
-                            <p><strong>RNC:</strong> {rncVerificationResult.data?.rnc}</p>
-                            <p><strong>Razón Social:</strong> {rncVerificationResult.data?.razonSocial}</p>
-                          </div>
-                          <div>
-                            {rncVerificationResult.data?.categoria && (
-                              <p><strong>Categoría:</strong> {rncVerificationResult.data.categoria}</p>
-                            )}
-                            {rncVerificationResult.data?.estado && (
-                              <p><strong>Estado:</strong> {rncVerificationResult.data.estado}</p>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="flex items-center">
-                        <AlertTriangle className="h-4 w-4 mr-2" />
-                        <p>{rncVerificationResult.message}</p>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
-                  <h4 className="font-medium text-blue-800 dark:text-blue-200 mb-2">
-                    Información sobre la Verificación RNC
-                  </h4>
-                  <ul className="text-sm text-blue-700 dark:text-blue-300 space-y-1">
-                    <li>• La verificación se realiza directamente en los servidores de la DGII</li>
-                    <li>• Los datos se actualizan en tiempo real</li>
-                    <li>• Se valida el formato y existencia del RNC</li>
-                    <li>• Los resultados se guardan en cache por 24 horas para optimizar consultas</li>
-                  </ul>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-      </div>
-    </div>
-  );
-}
-
-// Helper Components
-function NCFSequenceForm({ onSubmit }: { onSubmit: (data: any) => void }) {
-  const [open, setOpen] = useState(false);
-  const [formData, setFormData] = useState({
-    ncfType: "",
-    fromNumber: "",
-    toNumber: "",
-    expirationDate: "",
-  });
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Generate full NCF numbers from simplified range input
-    const authorizedFrom = `${formData.ncfType}${String(formData.fromNumber).padStart(8, '0')}`;
-    const authorizedTo = `${formData.ncfType}${String(formData.toNumber).padStart(8, '0')}`;
-    
-    const submitData = {
-      ...formData,
-      authorizedFrom,
-      authorizedTo,
-    };
-    
-    onSubmit(submitData);
-    setOpen(false);
-    setFormData({
-      ncfType: "",
-      fromNumber: "",
-      toNumber: "",
-      expirationDate: "",
+  const handleGenerateReport = () => {
+    generateReportMutation.mutate({
+      type: generateType,
+      period: selectedPeriod
     });
   };
 
-  if (!open) {
-    return (
-      <Button onClick={() => setOpen(true)}>
-        <Plus className="h-4 w-4 mr-2" />
-        Agregar Secuencia
-      </Button>
-    );
-  }
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle>Nueva Secuencia NCF</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <Label htmlFor="ncfType">Tipo de NCF</Label>
-              <Select
-                value={formData.ncfType}
-                onValueChange={(value) => setFormData({ ...formData, ncfType: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar tipo" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="B01">B01 - Crédito Fiscal</SelectItem>
-                  <SelectItem value="B02">B02 - Consumidor Final</SelectItem>
-                  <SelectItem value="B03">B03 - Nota de Débito</SelectItem>
-                  <SelectItem value="B04">B04 - Nota de Crédito</SelectItem>
-                  <SelectItem value="B11">B11 - Compras</SelectItem>
-                  <SelectItem value="B14">B14 - Régimen Especial</SelectItem>
-                  <SelectItem value="B15">B15 - Gubernamental</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="fromNumber">Desde (Número)</Label>
-                <Input
-                  id="fromNumber"
-                  type="number"
-                  value={formData.fromNumber}
-                  onChange={(e) => setFormData({ ...formData, fromNumber: e.target.value })}
-                  placeholder="1"
-                  min="1"
-                  required
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="toNumber">Hasta (Número)</Label>
-                <Input
-                  id="toNumber"
-                  type="number"
-                  value={formData.toNumber}
-                  onChange={(e) => setFormData({ ...formData, toNumber: e.target.value })}
-                  placeholder="1000"
-                  min="1"
-                  required
-                />
-              </div>
-            </div>
-            
-            <div className="text-sm text-gray-600 bg-blue-50 p-3 rounded">
-              <p><strong>Vista previa:</strong></p>
-              <p>Del: {formData.ncfType}{String(formData.fromNumber || 1).padStart(8, '0')}</p>
-              <p>Al: {formData.ncfType}{String(formData.toNumber || 1000).padStart(8, '0')}</p>
-            </div>
-            
-            <div>
-              <Label htmlFor="expirationDate">Fecha de Vencimiento</Label>
-              <Input
-                id="expirationDate"
-                type="date"
-                value={formData.expirationDate}
-                onChange={(e) => setFormData({ ...formData, expirationDate: e.target.value })}
-                required
-              />
-            </div>
-            
-            <div className="flex space-x-2">
-              <Button type="submit" className="flex-1">
-                Crear Secuencia
-              </Button>
-              <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-                Cancelar
-              </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
-function ComprobantesTable({ data, type, isLoading }: { 
-  data: any[], 
-  type: "605" | "606", 
-  isLoading: boolean 
-}) {
-  if (isLoading) {
-    return (
-      <div className="text-center py-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-        <p className="mt-2 text-gray-500">Cargando comprobantes...</p>
-      </div>
-    );
-  }
-
-  if (!data.length) {
-    return (
-      <div className="text-center py-8 text-gray-500">
-        No hay comprobantes registrados para este período
-      </div>
-    );
-  }
-
-  return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b">
-            <th className="text-left p-2">RNC/Cédula</th>
-            <th className="text-left p-2">Tipo ID</th>
-            <th className="text-left p-2">NCF</th>
-            <th className="text-left p-2">Fecha</th>
-            <th className="text-right p-2">Monto</th>
-            <th className="text-right p-2">ITBIS</th>
-            <th className="text-right p-2">Total</th>
-          </tr>
-        </thead>
-        <tbody>
-          {data.map((item, index) => (
-            <tr key={index} className="border-b hover:bg-gray-50 dark:hover:bg-gray-800">
-              <td className="p-2 font-mono">{item.rncCedula}</td>
-              <td className="p-2">{item.tipoIdentificacion === "1" ? "RNC" : "Cédula"}</td>
-              <td className="p-2 font-mono">{item.ncf || "N/A"}</td>
-              <td className="p-2">{new Date(item.fechaComprobante).toLocaleDateString()}</td>
-              <td className="p-2 text-right">RD${parseFloat(item.montoFacturado).toLocaleString()}</td>
-              <td className="p-2 text-right">RD${parseFloat(item.itbisFacturado).toLocaleString()}</td>
-              <td className="p-2 text-right font-medium">RD${parseFloat(item.montoTotal).toLocaleString()}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
-function RNCVerificationCard() {
-  const [rnc, setRnc] = useState("");
-  const [result, setResult] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(false);
-
-  const verifyRNC = async () => {
-    if (!rnc.trim()) return;
-    
-    setIsLoading(true);
-    try {
-      const response = await apiRequest(`/api/fiscal/verify-rnc/${rnc.trim()}`);
-      setResult(response);
-    } catch (error) {
-      setResult({ error: "RNC no encontrado o no válido" });
-    } finally {
-      setIsLoading(false);
-    }
+  const stats = fiscalStats || {
+    report606Count: 0,
+    report607Count: 0,
+    lastGenerated606: null,
+    lastGenerated607: null,
+    pendingReports: 0
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Verificación de RNC</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="flex space-x-2">
-          <Input
-            placeholder="Ingrese RNC o cédula (ej: 101234567)"
-            value={rnc}
-            onChange={(e) => setRnc(e.target.value)}
-            className="flex-1"
-          />
-          <Button onClick={verifyRNC} disabled={isLoading || !rnc.trim()}>
-            {isLoading ? "Verificando..." : "Verificar"}
-          </Button>
-        </div>
-        
-        {result && (
-          <div className="mt-4 p-4 border rounded-lg">
-            {result.error ? (
-              <div className="text-red-600">
-                <AlertTriangle className="h-5 w-5 inline mr-2" />
-                {result.error}
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <div className="flex items-center text-green-600 mb-4">
-                  <CheckCircle className="h-5 w-5 mr-2" />
-                  <span className="font-semibold">RNC Verificado - DGII</span>
-                </div>
-                
-                {/* Información Principal */}
-                <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg">
-                  <h4 className="font-semibold text-blue-800 dark:text-blue-200 mb-3">Información de la Empresa</h4>
-                  <div className="grid grid-cols-1 gap-3">
-                    <div className="flex flex-col">
-                      <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">RNC</span>
-                      <span className="font-mono text-lg font-semibold">{result.rnc}</span>
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Razón Social</span>
-                      <span className="font-semibold text-gray-900 dark:text-gray-100">{result.razonSocial}</span>
-                    </div>
-                    {result.nombreComercial && (
-                      <div className="flex flex-col">
-                        <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Nombre Comercial</span>
-                        <span className="text-gray-700 dark:text-gray-300">{result.nombreComercial}</span>
-                      </div>
-                    )}
-                  </div>
+    <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
+      <Header 
+        title="Documentos Fiscales"
+        subtitle="Generación de reportes 606 y 607 según formatos oficiales DGII"
+      />
+
+      {/* Estadísticas */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Reportes 606</CardTitle>
+            <FileText className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.report606Count}</div>
+            <p className="text-xs text-muted-foreground">
+              Compras registradas
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Reportes 607</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.report607Count}</div>
+            <p className="text-xs text-muted-foreground">
+              Ventas registradas
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Último 606</CardTitle>
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {stats.lastGenerated606 ? new Date(stats.lastGenerated606).toLocaleDateString() : "-"}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Fecha generación
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Último 607</CardTitle>
+            <CheckCircle className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {stats.lastGenerated607 ? new Date(stats.lastGenerated607).toLocaleDateString() : "-"}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Fecha generación
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="reports">Generar Reportes</TabsTrigger>
+          <TabsTrigger value="history">Historial</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="reports" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Building2 className="h-5 w-5" />
+                Generación de Reportes Fiscales DGII
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Genere reportes 606 (compras) y 607 (ventas) en formato oficial de la DGII
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid gap-4 md:grid-cols-3">
+                <div className="space-y-2">
+                  <Label htmlFor="report-type">Tipo de Reporte</Label>
+                  <Select value={generateType} onValueChange={(value: "606" | "607") => setGenerateType(value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccionar tipo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="606">606 - Compras</SelectItem>
+                      <SelectItem value="607">607 - Ventas</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
-                {/* Información Fiscal */}
-                <div className="bg-green-50 dark:bg-green-950/20 p-4 rounded-lg">
-                  <h4 className="font-semibold text-green-800 dark:text-green-200 mb-3">Información Fiscal</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div className="flex flex-col">
-                      <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Estado</span>
-                      <span className={`font-semibold ${result.estado === 'ACTIVO' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                        {result.estado}
-                      </span>
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Categoría</span>
-                      <span className="text-gray-700 dark:text-gray-300">{result.categoria || "N/A"}</span>
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Régimen</span>
-                      <span className="text-gray-700 dark:text-gray-300">{result.regimen || "N/A"}</span>
-                    </div>
-                    {result.lastUpdated && (
-                      <div className="flex flex-col">
-                        <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Última Actualización</span>
-                        <span className="text-gray-700 dark:text-gray-300 text-sm">
-                          {new Date(result.lastUpdated).toLocaleDateString('es-DO')}
-                        </span>
-                      </div>
-                    )}
-                  </div>
+                <div className="space-y-2">
+                  <Label htmlFor="period">Período</Label>
+                  <Input
+                    id="period"
+                    type="month"
+                    value={selectedPeriod}
+                    onChange={(e) => setSelectedPeriod(e.target.value)}
+                  />
                 </div>
 
-                {/* Información DGII */}
-                <div className="text-xs text-gray-500 dark:text-gray-400 italic border-t pt-2">
-                  Información verificada con la Dirección General de Impuestos Internos (DGII)
+                <div className="space-y-2">
+                  <Label>&nbsp;</Label>
+                  <Button 
+                    onClick={handleGenerateReport}
+                    disabled={generateReportMutation.isPending}
+                    className="w-full"
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    {generateReportMutation.isPending ? "Generando..." : "Generar Reporte"}
+                  </Button>
                 </div>
               </div>
-            )}
+
+              <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5" />
+                  <div className="space-y-1">
+                    <h4 className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                      Información sobre los reportes
+                    </h4>
+                    <div className="text-sm text-blue-700 dark:text-blue-300 space-y-1">
+                      <p><strong>Reporte 606:</strong> Compras realizadas en el período seleccionado</p>
+                      <p><strong>Reporte 607:</strong> Ventas realizadas en el período seleccionado</p>
+                      <p>Los archivos se generan en formato TXT según especificaciones oficiales de la DGII</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="history" className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle>Reportes 606 Generados</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {loading606 ? (
+                  <div className="text-center py-4">Cargando...</div>
+                ) : reports606 && reports606.length > 0 ? (
+                  <div className="space-y-2">
+                    {reports606.map((report: any, index: number) => (
+                      <div key={index} className="flex items-center justify-between p-2 border rounded">
+                        <span className="text-sm">{report.period}</span>
+                        <Badge variant="secondary">606</Badge>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-4 text-muted-foreground">
+                    No hay reportes 606 generados
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Reportes 607 Generados</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {loading607 ? (
+                  <div className="text-center py-4">Cargando...</div>
+                ) : reports607 && reports607.length > 0 ? (
+                  <div className="space-y-2">
+                    {reports607.map((report: any, index: number) => (
+                      <div key={index} className="flex items-center justify-between p-2 border rounded">
+                        <span className="text-sm">{report.period}</span>
+                        <Badge variant="secondary">607</Badge>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-4 text-muted-foreground">
+                    No hay reportes 607 generados
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
-        )}
-      </CardContent>
-    </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
   );
-}
-
-function generatePeriodOptions() {
-  const options = [];
-  const currentDate = new Date();
-  
-  for (let i = 0; i < 12; i++) {
-    const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
-    const value = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-    const label = date.toLocaleDateString('es-DO', { year: 'numeric', month: 'long' });
-    options.push({ value, label });
-  }
-  
-  return options;
 }

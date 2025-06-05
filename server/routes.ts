@@ -2712,10 +2712,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Fiscal Reports API Routes (606 and 607)
   app.get("/api/fiscal-reports/stats", isAuthenticated, async (req: any, res) => {
     try {
-      const companyId = req.user?.companyId;
-      if (!companyId) {
-        return res.status(400).json({ message: "Company ID required" });
+      const userId = req.user.id;
+      const userCompany = await storage.getCompanyByUserId(userId);
+      
+      if (!userCompany) {
+        return res.status(400).json({ message: "Company not found" });
       }
+      
+      const companyId = userCompany.id;
 
       // Get statistics for fiscal reports
       const stats = {
@@ -2735,10 +2739,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/fiscal-reports/606", isAuthenticated, async (req: any, res) => {
     try {
-      const companyId = req.user?.companyId;
-      if (!companyId) {
-        return res.status(400).json({ message: "Company ID required" });
+      const userId = req.user.id;
+      const userCompany = await storage.getCompanyByUserId(userId);
+      
+      if (!userCompany) {
+        return res.status(400).json({ message: "Company not found" });
       }
+      
+      const companyId = userCompany.id;
 
       // Get all 606 reports for company
       const reports606 = [];
@@ -2751,10 +2759,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/fiscal-reports/607", isAuthenticated, async (req: any, res) => {
     try {
-      const companyId = req.user?.companyId;
-      if (!companyId) {
-        return res.status(400).json({ message: "Company ID required" });
+      const userId = req.user.id;
+      const userCompany = await storage.getCompanyByUserId(userId);
+      
+      if (!userCompany) {
+        return res.status(400).json({ message: "Company not found" });
       }
+      
+      const companyId = userCompany.id;
 
       // Get all 607 reports for company
       const reports607 = [];
@@ -2767,10 +2779,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/fiscal-reports/generate", isAuthenticated, async (req: any, res) => {
     try {
-      const companyId = req.user?.companyId;
-      if (!companyId) {
-        return res.status(400).json({ message: "Company ID required" });
+      const userId = req.user.id;
+      const userCompany = await storage.getCompanyByUserId(userId);
+      
+      if (!userCompany) {
+        return res.status(400).json({ message: "Company not found" });
       }
+      
+      const companyId = userCompany.id;
 
       const { type, period } = req.body;
       
