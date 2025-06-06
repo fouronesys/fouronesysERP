@@ -110,22 +110,29 @@ export default function InvoicePrintModal({ isOpen, onClose, saleId, saleNumber 
         watermark: pdfWatermark || undefined
       });
 
-      if (response.ok) {
-        const result = await response.json();
-        
-        // Open PDF in new tab
-        if (result.pdfUrl) {
-          window.open(result.pdfUrl, '_blank');
+      const result = await response.json();
+      
+      if (result.success) {
+        // Create a new window/tab with the HTML content for printing as PDF
+        const printWindow = window.open('', '_blank');
+        if (printWindow) {
+          printWindow.document.write(result.htmlContent);
+          printWindow.document.close();
+          
+          // Auto-print after a short delay
+          setTimeout(() => {
+            printWindow.print();
+          }, 500);
         }
 
         toast({
           title: "PDF generado",
-          description: `Factura en formato ${pdfFormat.toUpperCase()} generada correctamente`,
+          description: result.message || `Factura en formato ${pdfFormat.toUpperCase()} generada correctamente`,
         });
 
         onClose();
       } else {
-        throw new Error("Failed to generate PDF");
+        throw new Error(result.message || "Failed to generate PDF");
       }
     } catch (error) {
       toast({
