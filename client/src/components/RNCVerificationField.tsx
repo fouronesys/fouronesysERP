@@ -28,6 +28,7 @@ export function RNCVerificationField({ field, onVerificationResult }: RNCVerific
   const { toast } = useToast();
 
   const handleVerification = async (rnc: string) => {
+    const originalInput = rnc;
     const cleanRnc = rnc?.replace(/\D/g, '') || '';
     
     if (!cleanRnc || cleanRnc.length < 9) {
@@ -37,7 +38,8 @@ export function RNCVerificationField({ field, onVerificationResult }: RNCVerific
 
     setIsVerifying(true);
     try {
-      const response = await fetch(`/api/customers/verify-rnc/${cleanRnc}`, {
+      // Send original input to server for better error reporting
+      const response = await fetch(`/api/customers/verify-rnc/${encodeURIComponent(originalInput)}`, {
         credentials: 'include'
       });
       const data = await response.json();

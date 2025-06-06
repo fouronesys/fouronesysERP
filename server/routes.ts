@@ -728,15 +728,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { rnc } = req.params;
       
-      // Clean RNC by removing non-digits
+      // Clean RNC by removing all non-digits (including hyphens, spaces, etc.)
       const cleanRnc = rnc.toString().replace(/\D/g, "");
       
       // Basic RNC validation - Dominican RNCs can be 9, 10, or 11 digits
       if (!cleanRnc || cleanRnc.length < 9 || cleanRnc.length > 11) {
         return res.json({ 
           isValid: false,
-          message: "RNC debe tener entre 9 y 11 dígitos",
-          rnc: cleanRnc
+          message: `RNC debe tener entre 9 y 11 dígitos. RNC procesado: ${cleanRnc} (${cleanRnc.length} dígitos)`,
+          rnc: cleanRnc,
+          originalInput: rnc
         });
       }
 
@@ -2256,8 +2257,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (cleanRnc.length < 9 || cleanRnc.length > 11) {
         return res.json({
           isValid: false,
-          message: "RNC debe tener entre 9 y 11 dígitos",
+          message: `RNC debe tener entre 9 y 11 dígitos. RNC procesado: ${cleanRnc} (${cleanRnc.length} dígitos)`,
           rnc: cleanRnc,
+          originalInput: rnc
         });
       }
 
