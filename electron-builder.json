@@ -1,0 +1,81 @@
+{
+  "appId": "com.fourone.solutions",
+  "productName": "Four One Solutions",
+  "copyright": "Copyright © 2025 Four One Solutions",
+  "directories": {
+    "output": "dist-electron"
+  },
+  "files": [
+    "electron/**/*",
+    "dist/**/*",
+    "node_modules/**/*",
+    "package.json"
+  ],
+  "extraResources": [
+    {
+      "from": "electron/assets",
+      "to": "assets"
+    }
+  ],
+  "win": {
+    "target": [
+      {
+        "target": "nsis",
+        "arch": ["x64", "ia32"]
+      },
+      {
+        "target": "portable",
+        "arch": ["x64", "ia32"]
+      }
+    ],
+    "icon": "electron/assets/icon.ico",
+    "artifactName": "${productName}-Setup-${version}-${arch}.${ext}",
+    "publisherName": "Four One Solutions",
+    "verifyUpdateCodeSignature": false
+  },
+  "nsis": {
+    "oneClick": false,
+    "allowToChangeInstallationDirectory": true,
+    "allowElevation": true,
+    "installerIcon": "electron/assets/icon.ico",
+    "uninstallerIcon": "electron/assets/icon.ico",
+    "installerHeader": "electron/assets/installer-header.bmp",
+    "installerHeaderIcon": "electron/assets/icon.ico",
+    "createDesktopShortcut": true,
+    "createStartMenuShortcut": true,
+    "shortcutName": "Four One Solutions",
+    "include": "electron/installer.nsh",
+    "script": "electron/installer.nsh"
+  },
+  "portable": {
+    "artifactName": "${productName}-Portable-${version}-${arch}.${ext}"
+  },
+  "mac": {
+    "target": [
+      {
+        "target": "dmg",
+        "arch": ["x64", "arm64"]
+      }
+    ],
+    "icon": "electron/assets/icon.icns",
+    "category": "public.app-category.business"
+  },
+  "linux": {
+    "target": [
+      {
+        "target": "AppImage",
+        "arch": ["x64"]
+      },
+      {
+        "target": "deb",
+        "arch": ["x64"]
+      }
+    ],
+    "icon": "electron/assets/icon.png",
+    "category": "Office"
+  },
+  "publish": {
+    "provider": "generic",
+    "url": "https://releases.fourone.solutions/"
+  }
+}
