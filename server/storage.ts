@@ -585,14 +585,7 @@ export class DatabaseStorage implements IStorage {
     return company;
   }
 
-  async updateCompanyStatus(id: number, isActive: boolean): Promise<Company> {
-    const [company] = await db
-      .update(companies)
-      .set({ isActive, updatedAt: new Date() })
-      .where(eq(companies.id, id))
-      .returning();
-    return company;
-  }
+
 
   async createCompanyForUser(companyData: InsertCompany, userId: string): Promise<Company> {
     const [company] = await db
@@ -1790,10 +1783,10 @@ export class DatabaseStorage implements IStorage {
     const invoicesData = await db
       .select({
         invoice: invoices,
-        supplier: suppliers
+        customer: customers
       })
       .from(invoices)
-      .leftJoin(suppliers, eq(invoices.customerId, suppliers.id))
+      .leftJoin(customers, eq(invoices.customerId, customers.id))
       .where(and(
         eq(invoices.companyId, companyId),
         gte(invoices.createdAt, startDate),
@@ -1839,14 +1832,7 @@ export class DatabaseStorage implements IStorage {
     return rncData;
   }
 
-  async bulkInsertRNCRegistry(data: InsertRNCRegistry[]): Promise<void> {
-    // Insert in batches to avoid memory issues
-    const batchSize = 1000;
-    for (let i = 0; i < data.length; i += batchSize) {
-      const batch = data.slice(i, i + batchSize);
-      await db.insert(rncRegistry).values(batch).onConflictDoNothing();
-    }
-  }
+
 
   // Comprobantes 606 (Ventas)
   async getComprobantes606(companyId: number, period: string): Promise<Comprobante606[]> {
