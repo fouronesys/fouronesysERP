@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Check, Shield, Star } from "lucide-react";
+import { InstallButton } from "@/components/InstallButton";
 import logoImage from "@assets/Four One Solutions Logo_20250603_002341_0000.png";
 
 export default function Landing() {
@@ -19,6 +20,7 @@ export default function Landing() {
           </div>
           
           <div className="flex items-center space-x-3">
+            <InstallButton />
             <Button 
               variant="outline"
               onClick={() => window.location.href = "/auth"}

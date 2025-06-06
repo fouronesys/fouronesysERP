@@ -55,10 +55,41 @@
       {
         "target": "dmg",
         "arch": ["x64", "arm64"]
+      },
+      {
+        "target": "zip",
+        "arch": ["x64", "arm64"]
       }
     ],
     "icon": "electron/assets/icon.icns",
-    "category": "public.app-category.business"
+    "category": "public.app-category.business",
+    "artifactName": "${productName}-${version}-${arch}.${ext}",
+    "hardenedRuntime": true,
+    "gatekeeperAssess": false,
+    "entitlements": "electron/assets/entitlements.mac.plist",
+    "entitlementsInherit": "electron/assets/entitlements.mac.plist"
+  },
+  "dmg": {
+    "title": "${productName} ${version}",
+    "icon": "electron/assets/volume.icns",
+    "background": "electron/assets/dmg-background.png",
+    "contents": [
+      {
+        "x": 410,
+        "y": 150,
+        "type": "link",
+        "path": "/Applications"
+      },
+      {
+        "x": 130,
+        "y": 150,
+        "type": "file"
+      }
+    ],
+    "window": {
+      "width": 540,
+      "height": 380
+    }
   },
   "linux": {
     "target": [
@@ -69,10 +100,35 @@
       {
         "target": "deb",
         "arch": ["x64"]
+      },
+      {
+        "target": "rpm",
+        "arch": ["x64"]
+      },
+      {
+        "target": "tar.gz",
+        "arch": ["x64"]
       }
     ],
     "icon": "electron/assets/icon.png",
-    "category": "Office"
+    "category": "Office",
+    "artifactName": "${productName}-${version}-${arch}.${ext}",
+    "desktop": {
+      "StartupWMClass": "four-one-solutions",
+      "MimeType": "x-scheme-handler/fourone"
+    }
+  },
+  "appImage": {
+    "artifactName": "${productName}-${version}-${arch}.AppImage"
+  },
+  "deb": {
+    "packageCategory": "office",
+    "priority": "optional",
+    "artifactName": "${productName}-${version}-${arch}.deb"
+  },
+  "rpm": {
+    "packageCategory": "Office/Finance",
+    "artifactName": "${productName}-${version}-${arch}.rpm"
   },
   "publish": {
     "provider": "generic",

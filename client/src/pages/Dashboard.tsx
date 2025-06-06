@@ -2,6 +2,7 @@ import { Header } from "@/components/Header";
 import { DashboardMetrics } from "@/components/DashboardMetrics";
 import { RecentInvoices } from "@/components/RecentInvoices";
 import { QuickActions } from "@/components/QuickActions";
+import { InstallButton } from "@/components/InstallButton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BarChart3, TrendingUp, Users, ShoppingCart, DollarSign } from "lucide-react";
@@ -144,6 +145,33 @@ export default function Dashboard() {
                     </p>
                   </div>
                 </div>
+              </CardContent>
+            </Card>
+
+            {/* Install App Card */}
+            <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-blue-200 dark:border-blue-800">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg text-blue-900 dark:text-blue-100 flex items-center gap-2">
+                  <DollarSign className="h-5 w-5" />
+                  Instalar Aplicación
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <p className="text-sm text-blue-700 dark:text-blue-200">
+                  Instala Four One Solutions en tu dispositivo para acceso offline completo
+                </p>
+                <div className="space-y-2">
+                  <div className="text-xs text-blue-600 dark:text-blue-300">
+                    ✓ Funcionalidad offline completa
+                  </div>
+                  <div className="text-xs text-blue-600 dark:text-blue-300">
+                    ✓ Sincronización automática
+                  </div>
+                  <div className="text-xs text-blue-600 dark:text-blue-300">
+                    ✓ Disponible para Windows, Mac y Linux
+                  </div>
+                </div>
+                <InstallButton />
               </CardContent>
             </Card>
 
