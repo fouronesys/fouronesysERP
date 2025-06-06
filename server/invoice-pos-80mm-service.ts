@@ -66,12 +66,13 @@ export class InvoicePOS80mmService {
             font-family: 'Courier New', monospace;
             font-size: 11px;
             line-height: 1.2;
-            color: #000;
+            color: #000000;
             background: white;
             width: 80mm;
             max-width: 80mm;
             margin: 0 auto;
             padding: 2mm;
+            font-weight: bold;
         }
         
         .receipt-container {
@@ -97,11 +98,14 @@ export class InvoicePOS80mmService {
             font-weight: bold;
             margin-bottom: 2px;
             text-transform: uppercase;
+            color: #000000;
         }
         
         .company-info {
             font-size: 9px;
             line-height: 1.1;
+            color: #000000;
+            font-weight: bold;
         }
         
         .receipt-title {
@@ -110,18 +114,22 @@ export class InvoicePOS80mmService {
             text-align: center;
             margin: 6px 0;
             text-transform: uppercase;
+            color: #000000;
         }
         
         .receipt-number {
             text-align: center;
             font-weight: bold;
             margin-bottom: 4px;
+            color: #000000;
         }
         
         .date-time {
             text-align: center;
             font-size: 10px;
             margin-bottom: 8px;
+            color: #000000;
+            font-weight: bold;
         }
         
         .customer-section {
@@ -162,12 +170,15 @@ export class InvoicePOS80mmService {
         .item-name {
             font-weight: bold;
             margin-bottom: 1px;
+            color: #000000;
         }
         
         .item-details {
             display: flex;
             justify-content: space-between;
             font-size: 10px;
+            color: #000000;
+            font-weight: bold;
         }
         
         .totals-section {
@@ -180,6 +191,8 @@ export class InvoicePOS80mmService {
             display: flex;
             justify-content: space-between;
             margin-bottom: 1px;
+            color: #000000;
+            font-weight: bold;
         }
         
         .total-line.final {
@@ -189,21 +202,26 @@ export class InvoicePOS80mmService {
             border-bottom: 1px solid #000;
             padding: 2px 0;
             margin-top: 2px;
+            color: #000000;
         }
         
         .payment-section {
             margin-bottom: 8px;
             text-align: center;
+            color: #000000;
         }
         
         .payment-method {
             font-weight: bold;
             text-transform: uppercase;
+            color: #000000;
         }
         
         .cash-details {
             font-size: 10px;
             margin-top: 2px;
+            color: #000000;
+            font-weight: bold;
         }
         
         .qr-section {
@@ -223,6 +241,8 @@ export class InvoicePOS80mmService {
             font-size: 8px;
             text-transform: uppercase;
             margin-top: 2px;
+            color: #000000;
+            font-weight: bold;
         }
         
         .footer {
@@ -231,15 +251,19 @@ export class InvoicePOS80mmService {
             border-top: 1px dashed #000;
             padding-top: 4px;
             margin-top: 8px;
+            color: #000000;
         }
         
         .thank-you {
             font-weight: bold;
             margin-bottom: 2px;
+            color: #000000;
         }
         
         .website {
             font-style: italic;
+            color: #000000;
+            font-weight: bold;
         }
         
         .cut-line {

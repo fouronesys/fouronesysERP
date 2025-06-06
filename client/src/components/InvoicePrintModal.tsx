@@ -89,28 +89,34 @@ export default function InvoicePrintModal({ isOpen, onClose, saleId, saleNumber 
         // Wait for progress animation to complete
         await new Promise(resolve => setTimeout(resolve, 4500));
         
-        // Use download method directly since popups are consistently blocked
+        // Create data URL and open in new window
         const blob = new Blob([htmlContent], { type: 'text/html' });
         const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.target = '_blank';
-        link.download = `Recibo-POS-80mm-${new Date().toISOString().slice(0,10)}-${Date.now()}.html`;
-        link.style.display = 'none';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
         
-        // Clean up the URL
-        setTimeout(() => {
-          URL.revokeObjectURL(url);
-        }, 1000);
+        // Open in new window
+        const printWindow = window.open(url, '_blank', 'width=400,height=800,scrollbars=yes,resizable=yes');
         
-        console.log('POS receipt downloaded as HTML file');
+        if (printWindow) {
+          printWindow.focus();
+          console.log('POS receipt window opened successfully');
+          
+          // Clean up the URL after window is opened
+          setTimeout(() => {
+            URL.revokeObjectURL(url);
+          }, 3000);
+        } else {
+          // Fallback: navigate to the URL directly
+          window.open(url, '_blank');
+          console.log('POS receipt opened in new tab');
+          
+          setTimeout(() => {
+            URL.revokeObjectURL(url);
+          }, 3000);
+        }
 
         toast({
           title: "Recibo POS generado",
-          description: "Recibo descargado como archivo HTML - ábrelo para imprimir",
+          description: "Recibo de 80mm abierto en nueva ventana",
         });
 
         // Reset states and close modal
