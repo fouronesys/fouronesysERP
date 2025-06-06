@@ -19,42 +19,51 @@ export class ThermalLogoProcessor {
       const ctx = canvas.getContext('2d');
       const img = await loadImage(logoPath);
       
-      // Resize image to fit receipt width (200px for 80mm paper)
-      const ratio = Math.min(200 / img.width, 100 / img.height);
+      // Resize image to fit receipt width (48 chars for thermal receipt)
+      const targetWidth = 48;
+      const targetHeight = 24;
+      const ratio = Math.min(targetWidth / img.width, targetHeight / img.height);
       const width = Math.floor(img.width * ratio);
       const height = Math.floor(img.height * ratio);
       
-      // Center the image on canvas
-      const offsetX = Math.floor((200 - width) / 2);
-      const offsetY = Math.floor((100 - height) / 2);
+      // Create smaller canvas for better results
+      const smallCanvas = createCanvas(width, height);
+      const smallCtx = smallCanvas.getContext('2d');
       
       // Clear canvas with white background
-      ctx.fillStyle = 'white';
-      ctx.fillRect(0, 0, 200, 100);
+      smallCtx.fillStyle = 'white';
+      smallCtx.fillRect(0, 0, width, height);
       
-      ctx.drawImage(img, offsetX, offsetY, width, height);
+      smallCtx.drawImage(img, 0, 0, width, height);
       
       // Convert to 1-bit depth (black and white) for thermal printing
-      const imageData = ctx.getImageData(0, 0, 200, 100);
+      const imageData = smallCtx.getImageData(0, 0, width, height);
       const binaryData = [];
       
       for (let i = 0; i < imageData.data.length; i += 4) {
         const r = imageData.data[i];
         const g = imageData.data[i + 1];
         const b = imageData.data[i + 2];
-        // Convert to grayscale and apply threshold
-        const grayscale = (r + g + b) / 3;
-        const value = grayscale > 128 ? 0 : 1; // 0 = white, 1 = black
-        binaryData.push(value);
+        const alpha = imageData.data[i + 3];
+        
+        // Handle transparency as white
+        if (alpha < 128) {
+          binaryData.push(0); // Transparent = white
+        } else {
+          // Convert to grayscale and apply threshold
+          const grayscale = (r + g + b) / 3;
+          const value = grayscale < 128 ? 1 : 0; // Invert: dark = 1, light = 0
+          binaryData.push(value);
+        }
       }
       
       // Convert to thermal printer compatible format using block characters
       const lines = [];
-      for (let y = 0; y < 100; y += 2) { // Process 2 rows at a time
+      for (let y = 0; y < height; y += 2) { // Process 2 rows at a time
         let line = '';
-        for (let x = 0; x < 200; x++) {
-          const topPixel = binaryData[y * 200 + x] || 0;
-          const bottomPixel = binaryData[(y + 1) * 200 + x] || 0;
+        for (let x = 0; x < width; x++) {
+          const topPixel = binaryData[y * width + x] || 0;
+          const bottomPixel = ((y + 1) < height) ? (binaryData[(y + 1) * width + x] || 0) : 0;
           
           // Use Unicode block characters for better thermal printing
           if (topPixel && bottomPixel) {
@@ -67,9 +76,7 @@ export class ThermalLogoProcessor {
             line += ' '; // Space
           }
         }
-        if (line.trim()) { // Only add non-empty lines
-          lines.push(line);
-        }
+        lines.push(line); // Include all lines, even empty ones for proper spacing
       }
       
       return lines.join('\n');
