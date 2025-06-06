@@ -86,38 +86,56 @@ export default function InvoicePrintModal({ isOpen, onClose, saleId, saleNumber 
         const htmlContent = await response.text();
         console.log('POS receipt HTML received, length:', htmlContent.length);
         
-        // Wait for progress animation to complete
-        await new Promise(resolve => setTimeout(resolve, 4500));
-        
-        // Create data URL and open in new window
+        // Create data URL immediately
         const blob = new Blob([htmlContent], { type: 'text/html' });
         const url = URL.createObjectURL(blob);
         
-        // Open in new window
-        const printWindow = window.open(url, '_blank', 'width=400,height=800,scrollbars=yes,resizable=yes');
+        // Try to open window immediately to avoid popup blockers
+        const printWindow = window.open('', '_blank', 'width=400,height=800,scrollbars=yes,resizable=yes');
         
         if (printWindow) {
+          // Write content to the opened window
+          printWindow.document.write(htmlContent);
+          printWindow.document.close();
           printWindow.focus();
-          console.log('POS receipt window opened successfully');
+          console.log('POS receipt window opened and content written successfully');
           
-          // Clean up the URL after window is opened
-          setTimeout(() => {
-            URL.revokeObjectURL(url);
-          }, 3000);
+          // Wait for progress animation to complete
+          await new Promise(resolve => setTimeout(resolve, 4500));
+          
+          toast({
+            title: "Recibo POS generado",
+            description: "Recibo de 80mm abierto en nueva ventana",
+          });
         } else {
-          // Fallback: navigate to the URL directly
-          window.open(url, '_blank');
-          console.log('POS receipt opened in new tab');
+          console.log('Popup blocked, waiting for animation then trying alternative method');
           
-          setTimeout(() => {
-            URL.revokeObjectURL(url);
-          }, 3000);
+          // Wait for progress animation to complete
+          await new Promise(resolve => setTimeout(resolve, 4500));
+          
+          // Fallback: open with blob URL
+          const fallbackWindow = window.open(url, '_blank');
+          if (fallbackWindow) {
+            console.log('POS receipt opened in new tab via fallback');
+          } else {
+            // Last resort: download
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `Recibo-POS-80mm-${new Date().toISOString().slice(0,10)}-${Date.now()}.html`;
+            link.click();
+            console.log('POS receipt downloaded as HTML file');
+          }
+          
+          toast({
+            title: "Recibo POS generado",
+            description: "Si no se abrió automáticamente, verifica el bloqueador de ventanas emergentes",
+          });
         }
-
-        toast({
-          title: "Recibo POS generado",
-          description: "Recibo de 80mm abierto en nueva ventana",
-        });
+        
+        // Clean up the URL
+        setTimeout(() => {
+          URL.revokeObjectURL(url);
+        }, 5000);
 
         // Reset states and close modal
         setShowProgress(false);
