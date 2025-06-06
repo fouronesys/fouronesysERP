@@ -2,66 +2,28 @@ import QRCode from 'qrcode';
 
 export class ThermalQRProcessor {
   /**
-   * Generate real QR code for thermal printing following DeepSeek recommendations
-   * Returns the QR as printable block characters
+   * Generate real QR code as pure PNG data for thermal printing
+   * Returns the QR as image data without processing
    */
   static async generateQRCodeForThermal(data: string): Promise<string> {
     try {
-      // Generate QR code as data URL with appropriate size for thermal receipts
-      const qrDataURL = await QRCode.toDataURL(data, {
-        width: 120,
-        margin: 1,
+      // Generate QR code as PNG buffer
+      const qrBuffer = await QRCode.toBuffer(data, {
+        width: 200,
+        margin: 2,
         color: {
           dark: '#000000',
           light: '#ffffff'
         },
-        errorCorrectionLevel: 'L'
+        errorCorrectionLevel: 'M'
       });
       
-      // Import canvas dynamically to avoid startup issues
-      const { createCanvas, loadImage } = await import('canvas');
+      // Convert to base64 for thermal printer
+      const base64QR = qrBuffer.toString('base64');
       
-      // Create smaller QR for thermal receipts (30x30 characters)
-      const qrSize = 30;
-      const canvas = createCanvas(qrSize, qrSize);
-      const ctx = canvas.getContext('2d');
-      const img = await loadImage(qrDataURL);
-      ctx.drawImage(img, 0, 0, qrSize, qrSize);
-      
-      // Convert to thermal printer format
-      const imageData = ctx.getImageData(0, 0, qrSize, qrSize);
-      const binaryData = [];
-      
-      for (let i = 0; i < imageData.data.length; i += 4) {
-        const r = imageData.data[i];
-        const g = imageData.data[i + 1];
-        const b = imageData.data[i + 2];
-        const value = (r + g + b) / 3 < 128 ? 1 : 0; // Dark pixels = 1
-        binaryData.push(value);
-      }
-      
-      // Convert to block characters
-      const lines = [];
-      for (let y = 0; y < qrSize; y += 2) {
-        let line = '';
-        for (let x = 0; x < qrSize; x++) {
-          const topPixel = binaryData[y * qrSize + x] || 0;
-          const bottomPixel = ((y + 1) < qrSize) ? (binaryData[(y + 1) * qrSize + x] || 0) : 0;
-          
-          if (topPixel && bottomPixel) {
-            line += '█';
-          } else if (topPixel) {
-            line += '▀';
-          } else if (bottomPixel) {
-            line += '▄';
-          } else {
-            line += ' ';
-          }
-        }
-        lines.push(line);
-      }
-      
-      return lines.join('\n');
+      // Return QR as ESC/POS image command for thermal printers
+      // This preserves the original QR code without any processing
+      return `[QR:data:image/png;base64,${base64QR}]`;
       
     } catch (error) {
       console.error('QR generation error:', error);
