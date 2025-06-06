@@ -306,6 +306,34 @@ export default function POS() {
         }))
       };
 
+      // Guardar cliente si es nuevo y tiene datos
+      if (customerName && (!customersData || !customersData.find((c: any) => 
+        c.name === customerName && c.rnc === customerRnc
+      ))) {
+        try {
+          const customerData = {
+            name: customerName,
+            phone: customerPhone || null,
+            rnc: customerRnc || null,
+            address: customerAddress || null,
+            email: null,
+            type: "individual"
+          };
+          
+          console.log("Guardando nuevo cliente:", customerData);
+          await apiRequest("/api/pos/customers", {
+            method: "POST",
+            body: customerData
+          });
+          
+          // Refrescar lista de clientes
+          customersRefetch();
+        } catch (error) {
+          console.error("Error guardando cliente:", error);
+          // Continuar con la venta aunque falle guardar el cliente
+        }
+      }
+
       console.log("Enviando datos de venta:", saleData);
       const response = await apiRequest("/api/pos/sales", {
         method: "POST",
@@ -571,54 +599,107 @@ export default function POS() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  {/* Customer Selection */}
-                  <div className="space-y-3">
-                    <POSCustomerSelect
-                      selectedCustomer={null}
-                      onCustomerSelect={(customer) => {
-                        setCustomerName(customer.name || "");
-                        setCustomerPhone(customer.phone || "");
-                        setCustomerRnc(customer.rnc || "");
-                        setCustomerAddress(customer.address || "");
-                      }}
-                      requireFiscalCustomer={useFiscalReceipt}
+                  {/* Customer Selection Dropdown */}
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Seleccionar Cliente Existente</label>
+                    <Select onValueChange={(value) => {
+                      if (value && value !== "new") {
+                        const customer = customersData?.find((c: any) => c.id.toString() === value);
+                        if (customer) {
+                          setCustomerName(customer.name || "");
+                          setCustomerPhone(customer.phone || "");
+                          setCustomerRnc(customer.rnc || "");
+                          setCustomerAddress(customer.address || "");
+                        }
+                      } else {
+                        // Limpiar campos para crear nuevo cliente
+                        setCustomerName("");
+                        setCustomerPhone("");
+                        setCustomerRnc("");
+                        setCustomerAddress("");
+                      }
+                    }}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Buscar cliente existente o crear nuevo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="new">+ Crear nuevo cliente</SelectItem>
+                        {customersData && customersData.length > 0 && customersData.map((customer: any) => (
+                          <SelectItem key={customer.id} value={customer.id.toString()}>
+                            {customer.name} {customer.rnc ? `(${customer.rnc})` : ''}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="border-t pt-3 space-y-3">
+                    <Input
+                      placeholder={useFiscalReceipt ? "Nombre del cliente *" : "Nombre del cliente"}
+                      value={customerName}
+                      onChange={(e) => setCustomerName(e.target.value)}
+                      className={useFiscalReceipt && !customerName ? "border-red-300" : ""}
                     />
-                    
-                    {/* Manual customer fields for verification/editing */}
-                    <div className="space-y-2 pt-2 border-t">
-                      <Input
-                        placeholder={useFiscalReceipt ? "Nombre del cliente *" : "Nombre del cliente"}
-                        value={customerName}
-                        onChange={(e) => setCustomerName(e.target.value)}
-                        className={useFiscalReceipt && !customerName ? "border-red-300" : ""}
-                      />
-                      <Input
-                        placeholder="Teléfono"
-                        value={customerPhone}
-                        onChange={(e) => setCustomerPhone(e.target.value)}
-                      />
-                      
-                      {/* Fiscal fields when required */}
-                      {useFiscalReceipt && (
-                        <>
+                    <Input
+                      placeholder="Teléfono"
+                      value={customerPhone}
+                      onChange={(e) => setCustomerPhone(e.target.value)}
+                    />
+                  
+                    {/* Campos obligatorios para comprobante fiscal */}
+                    {useFiscalReceipt && (
+                      <>
+                        <div className="flex gap-2">
                           <Input
                             placeholder="RNC/Cédula *"
                             value={customerRnc}
                             onChange={(e) => setCustomerRnc(e.target.value)}
-                            className={!customerRnc ? "border-red-300" : ""}
+                            className={!customerRnc ? "border-red-300 flex-1" : "flex-1"}
                           />
-                          <Input
-                            placeholder="Dirección completa *"
-                            value={customerAddress}
-                            onChange={(e) => setCustomerAddress(e.target.value)}
-                            className={!customerAddress ? "border-red-300" : ""}
-                          />
-                          <div className="text-xs text-amber-600 bg-amber-50 dark:bg-amber-900/20 p-2 rounded">
-                            <strong>DGII:</strong> Los campos marcados con * son obligatorios para comprobantes fiscales
-                          </div>
-                        </>
-                      )}
-                    </div>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={async () => {
+                              if (!customerRnc || customerRnc.length < 9) return;
+                              
+                              try {
+                                const response = await apiRequest('/api/pos/customers/search-rnc', {
+                                  method: 'POST',
+                                  body: { rnc: customerRnc }
+                                });
+                                
+                                if (response.ok) {
+                                  const result = await response.json();
+                                  if (result.valid && result.data) {
+                                    setCustomerName(result.data.name || "");
+                                    setCustomerAddress(result.data.address || "");
+                                    alert("RNC validado exitosamente. Datos completados automáticamente.");
+                                  } else {
+                                    alert("RNC no encontrado en el registro DGII");
+                                  }
+                                }
+                              } catch (error) {
+                                console.error("Error validating RNC:", error);
+                              }
+                            }}
+                            disabled={!customerRnc || customerRnc.length < 9}
+                          >
+                            <Search className="h-4 w-4 mr-1" />
+                            Verificar
+                          </Button>
+                        </div>
+                        <Input
+                          placeholder="Dirección completa *"
+                          value={customerAddress}
+                          onChange={(e) => setCustomerAddress(e.target.value)}
+                          className={!customerAddress ? "border-red-300" : ""}
+                        />
+                        <div className="text-xs text-amber-600 bg-amber-50 dark:bg-amber-900/20 p-2 rounded">
+                          <strong>DGII:</strong> Los campos marcados con * son obligatorios para comprobantes fiscales
+                        </div>
+                      </>
+                    )}
                   </div>
                 </CardContent>
               </Card>
