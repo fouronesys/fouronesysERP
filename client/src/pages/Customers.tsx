@@ -81,7 +81,10 @@ export default function Customers() {
         rnc: data.type === "company" ? formatRNC(data.rnc || "") : undefined,
         cedula: data.type === "individual" ? formatCedula(data.cedula || "") : undefined,
       };
-      return await apiRequest("POST", "/api/customers", payload);
+      return await apiRequest("/api/customers", {
+        method: "POST",
+        body: payload
+      });
     },
     onSuccess: () => {
       toast({
@@ -110,7 +113,10 @@ export default function Customers() {
         rnc: data.type === "company" ? formatRNC(data.rnc || "") : undefined,
         cedula: data.type === "individual" ? formatCedula(data.cedula || "") : undefined,
       };
-      await apiRequest("PUT", `/api/customers/${editingCustomer.id}`, payload);
+      return await apiRequest(`/api/customers/${editingCustomer.id}`, {
+        method: "PUT",
+        body: payload
+      });
     },
     onSuccess: () => {
       toast({
@@ -133,7 +139,9 @@ export default function Customers() {
 
   const deleteCustomerMutation = useMutation({
     mutationFn: async (id: number) => {
-      await apiRequest("DELETE", `/api/customers/${id}`);
+      return await apiRequest(`/api/customers/${id}`, {
+        method: "DELETE"
+      });
     },
     onSuccess: () => {
       toast({
