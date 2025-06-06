@@ -65,11 +65,19 @@ export async function parseAndImportRNCFile(filePath: string) {
 
     console.log(`Found ${rncRecords.length} RNC records in file`);
     
-    // Import records to database in batches using bulk insert for efficiency
-    const batchSize = 1000;
-    let imported = 0;
+    // Check how many records are already imported to resume from correct position
+    const existingCount = await storage.getRNCRegistryCount();
+    console.log(`Found ${existingCount} existing records in database`);
     
-    for (let i = 0; i < rncRecords.length; i += batchSize) {
+    // Skip already imported records
+    const startIndex = existingCount;
+    console.log(`Resuming import from record ${startIndex + 1}`);
+    
+    // Import records to database in batches using bulk insert for efficiency
+    const batchSize = 2000; // Increased batch size for better performance
+    let imported = existingCount;
+    
+    for (let i = startIndex; i < rncRecords.length; i += batchSize) {
       const batch = rncRecords.slice(i, i + batchSize);
       
       try {

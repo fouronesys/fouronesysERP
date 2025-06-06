@@ -254,6 +254,7 @@ export interface IStorage {
   searchRNC(rnc: string): Promise<RNCRegistry | undefined>;
   createRNCRegistry(rncData: InsertRNCRegistry): Promise<RNCRegistry>;
   bulkCreateRNCRegistry(records: InsertRNCRegistry[]): Promise<{ inserted: number; skipped: number }>;
+  getRNCRegistryCount(): Promise<number>;
 
   // NCF Sequence operations for Fiscal Receipts
   getNextNCF(companyId: number, ncfType: string): Promise<string | null>;
