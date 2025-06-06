@@ -110,6 +110,11 @@ export default function POS() {
     queryKey: ["/api/fiscal/ncf-sequences"],
   });
 
+  // POS customers query
+  const { data: customersData = [], refetch: customersRefetch } = useQuery({
+    queryKey: ["/api/pos/customers"],
+  });
+
   // Persistent cart from database
   const { data: cartData = [], isLoading: cartLoading } = useQuery({
     queryKey: ["/api/pos/cart"],
