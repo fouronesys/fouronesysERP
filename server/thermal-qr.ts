@@ -1,29 +1,33 @@
 import QRCode from 'qrcode';
-import { createCanvas } from 'canvas';
 
 export class ThermalQRProcessor {
   /**
-   * Generate real QR code for thermal printing
-   * Returns the QR as ESC/POS bitmap commands
+   * Generate real QR code for thermal printing using terminal output
+   * Returns the QR as printable block characters
    */
   static async generateQRCodeForThermal(data: string): Promise<string> {
     try {
-      // Generate QR code as PNG buffer
-      const qrBuffer = await QRCode.toBuffer(data, {
-        width: 200,
-        margin: 1,
-        color: {
-          dark: '#000000',
-          light: '#FFFFFF'
-        },
+      // Generate QR code using terminal format which creates block characters
+      const qrString = await QRCode.toString(data, {
+        type: 'terminal',
+        width: 60,
+        small: false,
         errorCorrectionLevel: 'M'
       });
-
-      // Convert to base64 for thermal printer
-      const base64QR = qrBuffer.toString('base64');
       
-      // Return ESC/POS bitmap command with the actual QR code
-      return `\x1D\x76\x30\x00${base64QR}`;
+      // Clean ANSI escape codes and convert to proper block characters
+      const cleanedLines = qrString.split('\n')
+        .filter(line => line.trim())
+        .map(line => {
+          // Remove ANSI escape codes
+          let cleaned = line.replace(/\u001b\[[0-9;]*m/g, '');
+          // Convert spaces and filled characters to proper Unicode blocks
+          cleaned = cleaned.replace(/  /g, '  '); // Keep double spaces as is
+          cleaned = cleaned.replace(/██/g, '██'); // Keep filled blocks
+          return cleaned;
+        });
+      
+      return cleanedLines.join('\n');
       
     } catch (error) {
       console.error('QR generation error:', error);

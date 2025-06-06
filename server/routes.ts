@@ -3097,7 +3097,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         const logoPath = './attached_assets/Four One Solutions Logo_20250130_143011_0000_1749182433509.png';
         const thermalLogo = await ThermalLogoProcessor.convertPNGToThermal(logoPath);
-        lines.push(thermalLogo);
+        const logoLines = thermalLogo.split('\n');
+        logoLines.forEach(line => {
+          lines.push(centerText(line));
+        });
       } catch (error) {
         console.log('Logo processing error:', error);
         lines.push(centerText("FOUR ONE SOLUTIONS"));
@@ -3253,7 +3256,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Create authentic QR code using thermal processor
       const thermalQR = await ThermalQRProcessor.generateQRCodeForThermal(qrData);
-      lines.push(thermalQR);
+      const qrLines = thermalQR.split('\n');
+      qrLines.forEach(line => {
+        lines.push(centerText(line));
+      });
       
     } catch (error) {
       console.log('QR generation error:', error);
