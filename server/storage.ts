@@ -38,10 +38,17 @@ import {
   userPermissions,
   activityLogs,
   userRoleAssignments,
+  accounts,
+  accountTypes,
+  journalEntries,
+  journalEntryLines,
+  journals,
   type User,
   type UpsertUser,
   type Company,
   type InsertCompany,
+  type Account,
+  type JournalEntry,
   type ChatChannel,
   type InsertChatChannel,
   type ChatMessage,
@@ -109,7 +116,7 @@ import {
   type InsertAIChatMessage,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, desc, sql, gte, lte } from "drizzle-orm";
+import { eq, and, desc, sql, gte, lte, lt, count, sum, isNull, like, or, asc, inArray, ilike } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 
