@@ -85,14 +85,25 @@ export default function InvoicePrintModal({ isOpen, onClose, saleId, saleNumber 
       if (response.ok) {
         const htmlContent = await response.text();
         
+        console.log('POS receipt HTML received, length:', htmlContent.length);
+        
         // Wait for progress animation to complete before opening receipt
         await new Promise(resolve => setTimeout(resolve, 4500));
         
-        // Open in new window/tab for printing
-        const printWindow = window.open('', '_blank');
+        // Open in new window/tab for printing with specific window features
+        const printWindow = window.open('', '_blank', 'width=400,height=600,scrollbars=yes,resizable=yes');
         if (printWindow) {
+          printWindow.document.open();
           printWindow.document.write(htmlContent);
           printWindow.document.close();
+          
+          // Focus the new window
+          printWindow.focus();
+          
+          console.log('POS receipt window opened successfully');
+        } else {
+          console.error('Failed to open print window - popup blocked?');
+          throw new Error("No se pudo abrir la ventana del recibo");
         }
 
         toast({
@@ -105,12 +116,15 @@ export default function InvoicePrintModal({ isOpen, onClose, saleId, saleNumber 
         setIsGenerating(false);
         onClose();
       } else {
-        throw new Error("Failed to generate 80mm POS receipt");
+        const errorText = await response.text();
+        console.error('Error response:', response.status, errorText);
+        throw new Error(`Error del servidor: ${response.status}`);
       }
     } catch (error) {
+      console.error('Error generating POS receipt:', error);
       toast({
         title: "Error al generar recibo",
-        description: "No se pudo generar el recibo POS",
+        description: error instanceof Error ? error.message : "No se pudo generar el recibo POS",
         variant: "destructive",
       });
       setShowProgress(false);
