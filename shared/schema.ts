@@ -277,18 +277,7 @@ export const inventoryMovements = pgTable("inventory_movements", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-// POS Cart Items - For persistent cart across page reloads and devices
-export const posCartItems = pgTable("pos_cart_items", {
-  id: serial("id").primaryKey(),
-  companyId: integer("company_id").notNull().references(() => companies.id),
-  userId: varchar("user_id", { length: 50 }).notNull(),
-  productId: integer("product_id").notNull().references(() => products.id),
-  quantity: integer("quantity").notNull(),
-  unitPrice: decimal("unit_price", { precision: 10, scale: 2 }).notNull(),
-  subtotal: decimal("subtotal", { precision: 10, scale: 2 }).notNull(),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-});
+
 
 // Relations
 export const companiesRelations = relations(companies, ({ one, many }) => ({
@@ -501,6 +490,19 @@ export const posSaleItems = pgTable("pos_sale_items", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// POS Cart Items table for persistent cart storage
+export const posCartItems = pgTable("pos_cart_items", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").references(() => companies.id).notNull(),
+  userId: varchar("user_id").notNull(),
+  productId: integer("product_id").references(() => products.id).notNull(),
+  quantity: integer("quantity").notNull(),
+  unitPrice: varchar("unit_price").notNull(),
+  subtotal: varchar("subtotal").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // NCF Sequence Control for Fiscal Receipts
 export const ncfSequences = pgTable("ncf_sequences", {
   id: serial("id").primaryKey(),
@@ -591,6 +593,12 @@ export const insertPOSSaleItemSchema = createInsertSchema(posSaleItems).omit({
 });
 
 export const insertPOSPrintSettingsSchema = createInsertSchema(posPrintSettings).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertPOSCartItemSchema = createInsertSchema(posCartItems).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
@@ -856,12 +864,6 @@ export const insertComprobante606Schema = createInsertSchema(comprobantes606).om
 });
 
 export const insertComprobante607Schema = createInsertSchema(comprobantes607).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
-
-export const insertPOSCartItemSchema = createInsertSchema(posCartItems).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
