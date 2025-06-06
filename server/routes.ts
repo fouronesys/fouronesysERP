@@ -723,42 +723,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // RNC Verification route
-  app.get("/api/customers/verify-rnc/:rnc", isAuthenticated, async (req: any, res) => {
+  // RNC Verification route (no authentication required for public use)
+  app.get("/api/customers/verify-rnc/:rnc", async (req: any, res) => {
     try {
       const { rnc } = req.params;
       
-      // Basic RNC validation
-      if (!rnc || rnc.length !== 9) {
-        return res.status(400).json({ 
-          message: "RNC debe tener 9 dígitos",
-          isValid: false
+      // Clean RNC by removing non-digits
+      const cleanRnc = rnc.toString().replace(/\D/g, "");
+      
+      // Basic RNC validation - Dominican RNCs can be 9, 10, or 11 digits
+      if (!cleanRnc || cleanRnc.length < 9 || cleanRnc.length > 11) {
+        return res.json({ 
+          isValid: false,
+          message: "RNC debe tener entre 9 y 11 dígitos",
+          rnc: cleanRnc
         });
       }
 
-      // Check in our RNC registry
-      const rncData = await storage.getRNCFromRegistry(rnc);
+      // Check in our authentic DGII RNC registry
+      const rncData = await storage.getRNCFromRegistry(cleanRnc);
       
       if (rncData) {
         res.json({
           isValid: true,
+          rnc: cleanRnc,
           companyName: rncData.razonSocial,
-          status: rncData.estado,
-          category: rncData.categoria,
-          message: "RNC válido encontrado en el registro de DGII"
+          businessName: rncData.nombreComercial || rncData.razonSocial,
+          status: rncData.estado || "ACTIVO",
+          category: rncData.categoria || "CONTRIBUYENTE REGISTRADO",
+          regime: rncData.regimen,
+          message: "RNC válido encontrado en el registro oficial de DGII",
+          source: "DGII"
         });
       } else {
         res.json({
           isValid: false,
-          message: "RNC no encontrado en el registro de DGII",
-          suggestion: "Verifique el número o consulte directamente con DGII"
+          rnc: cleanRnc,
+          message: "RNC no encontrado en el registro oficial de DGII",
+          suggestion: "Verifique el número o consulte directamente con DGII",
+          source: "DGII"
         });
       }
     } catch (error) {
       console.error("Error verifying RNC:", error);
-      res.status(500).json({ 
-        message: "Error al verificar RNC",
-        isValid: false
+      res.json({ 
+        isValid: false,
+        message: "Error interno del servidor al verificar RNC"
       });
     }
   });
