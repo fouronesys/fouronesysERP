@@ -80,7 +80,7 @@ export class InvoiceHTMLService {
             justify-content: space-between;
             align-items: flex-start;
             margin-bottom: 30px;
-            border-bottom: 2px solid #007acc;
+            border-bottom: 2px solid #000000;
             padding-bottom: 20px;
         }
         
@@ -97,7 +97,7 @@ export class InvoiceHTMLService {
         .company-name {
             font-size: 24px;
             font-weight: bold;
-            color: #007acc;
+            color: #000000;
             margin-bottom: 5px;
         }
         
@@ -109,7 +109,7 @@ export class InvoiceHTMLService {
         .invoice-number {
             font-size: 18px;
             font-weight: bold;
-            color: #007acc;
+            color: #000000;
             margin-bottom: 10px;
         }
         
@@ -122,7 +122,7 @@ export class InvoiceHTMLService {
         
         .section-title {
             font-weight: bold;
-            color: #007acc;
+            color: #000000;
             margin-bottom: 10px;
             font-size: 14px;
         }
@@ -138,7 +138,7 @@ export class InvoiceHTMLService {
         }
         
         .items-table th {
-            background: #007acc;
+            background: #000000;
             color: white;
             padding: 12px 8px;
             text-align: left;
@@ -180,8 +180,8 @@ export class InvoiceHTMLService {
         .totals-table .total-row {
             font-weight: bold;
             font-size: 16px;
-            background: #f0f8ff;
-            border-top: 2px solid #007acc;
+            background: #f0f0f0;
+            border-top: 2px solid #000000;
         }
         
         .footer-section {
@@ -241,7 +241,7 @@ export class InvoiceHTMLService {
             position: fixed;
             top: 20px;
             right: 20px;
-            background: #007acc;
+            background: #000000;
             color: white;
             border: none;
             padding: 12px 24px;
@@ -249,11 +249,11 @@ export class InvoiceHTMLService {
             cursor: pointer;
             font-size: 14px;
             font-weight: bold;
-            box-shadow: 0 2px 8px rgba(0,122,204,0.3);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
         }
         
         .print-button:hover {
-            background: #005a99;
+            background: #333333;
         }
     </style>
 </head>
