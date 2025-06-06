@@ -516,36 +516,38 @@ export default function POS() {
             
             {/* Carrito */}
             <Card className="flex-1 flex flex-col min-h-0">
-              <CardHeader className="pb-3 flex-shrink-0">
-                <CardTitle className="text-base flex items-center justify-between">
+              <CardHeader className="pb-2 px-3 sm:px-6 sm:pb-3 flex-shrink-0">
+                <CardTitle className="text-sm sm:text-base flex items-center justify-between">
                   <span className="flex items-center gap-2">
                     <ShoppingCart className="h-4 w-4" />
-                    Carrito ({cart.length})
+                    <span className="hidden sm:inline">Carrito</span> ({cart.length})
                   </span>
                   {cart.length > 0 && (
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={clearCart}
-                      className="text-red-600 hover:text-red-700"
+                      className="text-red-600 hover:text-red-700 h-8 px-2 text-xs sm:text-sm"
                     >
-                      <X className="h-4 w-4" />
+                      <X className="h-3 w-3 sm:h-4 sm:w-4" />
+                      <span className="hidden sm:inline ml-1">Limpiar</span>
                     </Button>
                   )}
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3 flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 min-h-0">
+              <CardContent className="space-y-2 sm:space-y-3 flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 min-h-0 px-3 sm:px-6">
                 {cart.length === 0 ? (
-                  <p className="text-gray-500 dark:text-gray-400 text-center py-8">
-                    Carrito vacío
-                  </p>
+                  <div className="flex flex-col items-center justify-center h-24 sm:h-32 text-gray-500 dark:text-gray-400">
+                    <ShoppingCart className="h-6 w-6 sm:h-8 sm:w-8 mb-2" />
+                    <p className="text-xs sm:text-sm">Carrito vacío</p>
+                  </div>
                 ) : (
                   cart.map((item) => (
-                    <div key={item.product.id} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                      <div className="flex justify-between items-start mb-2">
+                    <div key={item.product.id} className="p-2 sm:p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                      <div className="flex justify-between items-start mb-2 gap-2">
                         <div className="min-w-0 flex-1">
-                          <p className="font-medium text-sm truncate">{item.product.name}</p>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                          <p className="font-medium text-xs sm:text-sm leading-tight truncate">{item.product.name}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                             {formatDOP(parseFloat(item.product.price))} c/u
                           </p>
                         </div>
@@ -553,24 +555,24 @@ export default function POS() {
                           variant="ghost"
                           size="sm"
                           onClick={() => removeFromCart(item.product.id)}
-                          className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
+                          className="h-7 w-7 sm:h-6 sm:w-6 p-0 text-red-600 hover:text-red-700 flex-shrink-0"
                         >
                           <Trash2 className="h-3 w-3" />
                         </Button>
                       </div>
                       
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1 sm:gap-2">
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
-                            className="h-6 w-6 p-0"
+                            className="h-8 w-8 sm:h-6 sm:w-6 p-0 touch-manipulation"
                           >
                             <Minus className="h-3 w-3" />
                           </Button>
                           
-                          <span className="w-8 text-center text-sm font-medium">
+                          <span className="w-8 text-center text-sm font-medium px-2">
                             {item.quantity}
                           </span>
                           
@@ -578,13 +580,13 @@ export default function POS() {
                             variant="ghost"
                             size="sm"
                             onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
-                            className="h-6 w-6 p-0"
+                            className="h-8 w-8 sm:h-6 sm:w-6 p-0 touch-manipulation"
                           >
                             <Plus className="h-3 w-3" />
                           </Button>
                         </div>
                         
-                        <span className="font-bold text-green-600 dark:text-green-400">
+                        <span className="font-bold text-green-600 dark:text-green-400 text-sm sm:text-base">
                           {formatDOP(item.subtotal)}
                         </span>
                       </div>
@@ -898,16 +900,18 @@ export default function POS() {
                               variant="ghost"
                               size="sm"
                               onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
+                              className="h-10 w-10 p-0 touch-manipulation"
                             >
-                              <Minus className="h-3 w-3" />
+                              <Minus className="h-4 w-4" />
                             </Button>
-                            <span className="font-medium">{item.quantity}</span>
+                            <span className="font-medium text-base w-12 text-center">{item.quantity}</span>
                             <Button
                               variant="ghost"
                               size="sm"
                               onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
+                              className="h-10 w-10 p-0 touch-manipulation"
                             >
-                              <Plus className="h-3 w-3" />
+                              <Plus className="h-4 w-4" />
                             </Button>
                           </div>
                           <span className="font-bold text-green-600">
