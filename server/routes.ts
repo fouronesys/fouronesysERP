@@ -3067,7 +3067,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Enhanced receipt generation function with QR code, logo and improved design for 80mm paper
   async function generateSimpleReceipt(sale: any, items: any[], company: any, customerInfo: any, printOptions: any = {}): Promise<string> {
-    const LINE_WIDTH = 48; // Optimal for 80mm thermal paper
+    const LINE_WIDTH = 42; // Increased readability for 80mm thermal paper
     
     // Helper function to center text
     function centerText(text: string): string {
@@ -3089,25 +3089,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // Header with Four One Solutions ASCII logo
     lines.push("".padEnd(LINE_WIDTH, "="));
     
-    // Four One Solutions logo - simple and clean
-    lines.push(centerText("┌────────────────────────────────────────┐"));
-    lines.push(centerText("│                                        │"));
-    lines.push(centerText("│        ░██╗░░░██╗ ░██╗░░░██╗           │"));
-    lines.push(centerText("│        ░██║░░░██║ ░██║░░░██║           │"));
-    lines.push(centerText("│        ░███████║ ░███████║            │"));
-    lines.push(centerText("│        ░██╔═══╝  ░██╔═══╝             │"));
-    lines.push(centerText("│        ░██║      ░██║                 │"));
-    lines.push(centerText("│                                        │"));
-    lines.push(centerText("│             1 1 1 1                   │"));
-    lines.push(centerText("│                                        │"));
-    lines.push(centerText("│       FOUR ONE SOLUTIONS              │"));
-    lines.push(centerText("│                                        │"));
-    lines.push(centerText("└────────────────────────────────────────┘"));
+    // Company logo placeholder - logo will be inserted here for thermal printing
+    lines.push(centerText("[LOGO DE LA EMPRESA]"));
     lines.push("");
-    lines.push(centerText(company.name.toUpperCase()));
+    lines.push("");
+    
+    // Company name with enhanced formatting
+    lines.push(centerText("*** " + company.name.toUpperCase() + " ***"));
     if (company.slogan) {
       lines.push(centerText(company.slogan));
     }
+    lines.push("");
+    
+    // Company details section
     lines.push(centerText(`RNC: ${company.rnc || 'N/A'}`));
     if (company.address) {
       // Split long addresses into multiple lines
@@ -3132,13 +3126,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (company.email) {
       lines.push(centerText(company.email));
     }
+    lines.push("");
     lines.push("".padEnd(LINE_WIDTH, "="));
     lines.push("");
     
     // Receipt type and sale info
-    lines.push(centerText("COMPROBANTE DE VENTA"));
+    lines.push(centerText("*** COMPROBANTE DE VENTA ***"));
     lines.push("");
-    lines.push(alignRight("Factura #", sale.saleNumber));
+    lines.push(centerText(`Factura No. ${sale.saleNumber}`));
     
     const fecha = new Date(sale.createdAt);
     const fechaStr = fecha.toLocaleDateString("es-DO", {
@@ -3152,9 +3147,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       second: "2-digit"
     });
     
-    lines.push(alignRight("Fecha", fechaStr));
-    lines.push(alignRight("Hora", horaStr));
-    lines.push(alignRight("Cajero", sale.createdBy || 'Sistema'));
+    lines.push(centerText(`Fecha: ${fechaStr}`));
+    lines.push(centerText(`Hora: ${horaStr}`));
+    lines.push(centerText(`Cajero: ${sale.createdBy || 'Sistema'}`));
     
     if (customerInfo.name) {
       lines.push(alignRight("Cliente", customerInfo.name));
