@@ -65,26 +65,44 @@ export async function parseAndImportRNCFile(filePath: string) {
 
     console.log(`Found ${rncRecords.length} RNC records in file`);
     
-    // Import records to database in batches
-    const batchSize = 100;
+    // Import records to database in batches using bulk insert for efficiency
+    const batchSize = 1000;
     let imported = 0;
     
     for (let i = 0; i < rncRecords.length; i += batchSize) {
       const batch = rncRecords.slice(i, i + batchSize);
       
-      for (const record of batch) {
-        try {
-          const existing = await storage.searchRNC(record.rnc);
-          if (!existing) {
-            await storage.createRNCRegistry(record);
-            imported++;
+      try {
+        // Use bulk insert for better performance
+        const result = await storage.bulkCreateRNCRegistry(batch);
+        imported += result.inserted;
+        
+        const batchNumber = Math.floor(i/batchSize) + 1;
+        const totalBatches = Math.ceil(rncRecords.length / batchSize);
+        const percentage = ((i + batch.length) / rncRecords.length * 100).toFixed(1);
+        
+        console.log(`Batch ${batchNumber}/${totalBatches} (${percentage}%) - Imported: ${result.inserted}, Skipped: ${result.skipped}, Total: ${imported}`);
+        
+        // Small delay to prevent overwhelming the database
+        if (batchNumber % 10 === 0) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+      } catch (error) {
+        console.error(`Error importing batch ${Math.floor(i/batchSize) + 1}:`, error);
+        
+        // Fallback to individual inserts for this batch
+        for (const record of batch) {
+          try {
+            const existing = await storage.searchRNC(record.rnc);
+            if (!existing) {
+              await storage.createRNCRegistry(record);
+              imported++;
+            }
+          } catch (error) {
+            console.error(`Error importing RNC ${record.rnc}:`, error);
           }
-        } catch (error) {
-          console.error(`Error importing RNC ${record.rnc}:`, error);
         }
       }
-      
-      console.log(`Imported batch ${Math.floor(i/batchSize) + 1}, total imported: ${imported}`);
     }
     
     return { total: rncRecords.length, imported };

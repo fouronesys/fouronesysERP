@@ -253,6 +253,7 @@ export interface IStorage {
   // RNC Registry operations
   searchRNC(rnc: string): Promise<RNCRegistry | undefined>;
   createRNCRegistry(rncData: InsertRNCRegistry): Promise<RNCRegistry>;
+  bulkCreateRNCRegistry(records: InsertRNCRegistry[]): Promise<{ inserted: number; skipped: number }>;
 
   // NCF Sequence operations for Fiscal Receipts
   getNextNCF(companyId: number, ncfType: string): Promise<string | null>;
@@ -2249,6 +2250,55 @@ export class DatabaseStorage implements IStorage {
       })
       .returning();
     return result;
+  }
+
+  async bulkCreateRNCRegistry(records: InsertRNCRegistry[]): Promise<{ inserted: number; skipped: number }> {
+    if (records.length === 0) {
+      return { inserted: 0, skipped: 0 };
+    }
+
+    try {
+      // Use insert with onConflictDoUpdate for bulk operations
+      const result = await db
+        .insert(rncRegistry)
+        .values(records)
+        .onConflictDoUpdate({
+          target: rncRegistry.rnc,
+          set: {
+            razonSocial: sql`excluded.razon_social`,
+            nombreComercial: sql`excluded.nombre_comercial`,
+            categoria: sql`excluded.categoria`,
+            regimen: sql`excluded.regimen`,
+            estado: sql`excluded.estado`,
+            lastUpdated: new Date()
+          }
+        });
+
+      return { inserted: records.length, skipped: 0 };
+    } catch (error) {
+      console.error('Bulk insert failed, falling back to individual inserts:', error);
+      
+      // Fallback: process individually
+      let inserted = 0;
+      let skipped = 0;
+      
+      for (const record of records) {
+        try {
+          const existing = await this.searchRNC(record.rnc);
+          if (!existing) {
+            await this.createRNCRegistry(record);
+            inserted++;
+          } else {
+            skipped++;
+          }
+        } catch (error) {
+          console.error(`Failed to insert RNC ${record.rnc}:`, error);
+          skipped++;
+        }
+      }
+      
+      return { inserted, skipped };
+    }
   }
 
   // Purchases Module Implementation
