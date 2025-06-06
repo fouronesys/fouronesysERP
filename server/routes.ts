@@ -6,6 +6,7 @@ import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./auth";
 import { AIProductService, AIBusinessService, AIChatService, AIDocumentService } from "./ai-services-fixed";
 import { InvoiceTemplateService, type ThermalPrintOptions, type PDFPrintOptions } from "./invoice-template-service";
+import { LogoProcessor } from "./logo-processor";
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
@@ -3065,7 +3066,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }
 
   // Enhanced receipt generation function with QR code, logo and improved design for 80mm paper
-  function generateSimpleReceipt(sale: any, items: any[], company: any, customerInfo: any): string {
+  async function generateSimpleReceipt(sale: any, items: any[], company: any, customerInfo: any, printOptions: any = {}): Promise<string> {
     const LINE_WIDTH = 48; // Optimal for 80mm thermal paper
     
     // Helper function to center text
@@ -3088,25 +3089,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // Header with Four One Solutions ASCII logo
     lines.push("".padEnd(LINE_WIDTH, "="));
     
-    // Four One Solutions original logo in B&W ASCII
-    lines.push(centerText("██████████████████████████████████████████"));
-    lines.push(centerText("██                                      ██"));
-    lines.push(centerText("██      ████╗   ████████╗               ██"));
-    lines.push(centerText("██     ██╔══██╗ ██╔═════╝               ██"));
-    lines.push(centerText("██    ██║  ██║ ████████╗                ██"));
-    lines.push(centerText("██   ████████║ ██╔═════╝                ██"));
-    lines.push(centerText("██  ██╔═══██║  ████████╗                ██"));
-    lines.push(centerText("██ ██║   ██║   ╚═══════╝                ██"));
-    lines.push(centerText("██ ╚═╝   ╚═╝                            ██"));
-    lines.push(centerText("██                                      ██"));
-    lines.push(centerText("██          ██  ██  ██  ██              ██"));
-    lines.push(centerText("██          ██  ██  ██  ██              ██"));
-    lines.push(centerText("██          ██  ██  ██  ██              ██"));
-    lines.push(centerText("██          ██  ██  ██  ██              ██"));
-    lines.push(centerText("██                                      ██"));
-    lines.push(centerText("██        FOUR ONE SOLUTIONS           ██"));
-    lines.push(centerText("██                                      ██"));
-    lines.push(centerText("██████████████████████████████████████████"));
+    // Process and include company logo
+    if (printOptions.showLogo && company.logoUrl) {
+      try {
+        // Try to process the PNG logo from attached assets first
+        const logoPath = './attached_assets/Four One Solutions Logo_20250130_143011_0000_1749182433509.png';
+        
+        // Check if the logo file exists
+        try {
+          await LogoProcessor.validateLogoFile(logoPath);
+          const processedLogo = await LogoProcessor.processLogoForThermal(logoPath);
+          
+          // Add processed logo lines
+          processedLogo.forEach(logoLine => {
+            lines.push(centerText(logoLine));
+          });
+          
+        } catch (logoError) {
+          console.log('Using fallback logo due to processing error:', logoError);
+          // Use enhanced fallback logo
+          const fallbackLogo = LogoProcessor.getFallbackLogo();
+          fallbackLogo.forEach(logoLine => {
+            lines.push(centerText(logoLine));
+          });
+        }
+      } catch (error) {
+        console.error('Logo processing failed:', error);
+        // Simple text fallback
+        lines.push(centerText("██████████████████████████████████████████"));
+        lines.push(centerText("██        FOUR ONE SOLUTIONS           ██"));
+        lines.push(centerText("██████████████████████████████████████████"));
+      }
+    } else {
+      // Enhanced text logo when logo is disabled
+      lines.push(centerText("██████████████████████████████████████████"));
+      lines.push(centerText("██        FOUR ONE SOLUTIONS           ██"));
+      lines.push(centerText("██            SOLUCIONES 411           ██"));
+      lines.push(centerText("██████████████████████████████████████████"));
+    }
     lines.push("");
     lines.push(centerText(company.name.toUpperCase()));
     if (company.slogan) {
@@ -3417,7 +3437,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log("Sale data:", JSON.stringify(sale, null, 2));
         console.log("Print options:", JSON.stringify(printOptions, null, 2));
         
-        const receiptText = generateSimpleReceipt(sale, items, company, customerInfo);
+        const receiptText = await generateSimpleReceipt(sale, items, company, customerInfo, printOptions);
         
         console.log("=== RECEIPT OUTPUT PREVIEW ===");
         console.log("First 500 characters:");
