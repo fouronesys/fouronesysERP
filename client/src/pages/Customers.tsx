@@ -232,18 +232,28 @@ export default function Customers() {
   }
 
   return (
-    <div className="w-full">
+    <div className="w-full relative">
       <Header 
         title="Clientes" 
         subtitle="Gestiona tu base de clientes"
-        icon={<Users className="h-6 w-6" />}
-        action={
-          <Button onClick={handleNewCustomer} className="bg-blue-600 hover:bg-blue-700">
-            <Plus className="h-4 w-4 mr-2" />
-            Nuevo Cliente
-          </Button>
-        }
       />
+      
+      {/* Floating Action Button */}
+      <Button 
+        onClick={handleNewCustomer} 
+        className="fixed bottom-6 right-6 h-14 w-14 rounded-full bg-blue-600 hover:bg-blue-700 shadow-lg z-50 md:hidden"
+        size="icon"
+      >
+        <Plus className="h-6 w-6" />
+      </Button>
+      
+      {/* Desktop Action Button */}
+      <div className="hidden md:flex justify-end mb-6">
+        <Button onClick={handleNewCustomer} className="bg-blue-600 hover:bg-blue-700">
+          <Plus className="h-4 w-4 mr-2" />
+          Nuevo Cliente
+        </Button>
+      </div>
 
       <div className="mb-6">
         <div className="relative">
