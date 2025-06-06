@@ -62,7 +62,9 @@ export class InvoicePOS80mmService {
             box-sizing: border-box;
         }
         
-        body {
+        html, body {
+            margin: 0;
+            padding: 0;
             font-family: 'Courier New', monospace;
             font-size: 11px;
             line-height: 1.2;
@@ -70,9 +72,11 @@ export class InvoicePOS80mmService {
             background: white;
             width: 80mm;
             max-width: 80mm;
-            margin: 0 auto;
-            padding: 2mm;
             font-weight: bold;
+        }
+        
+        body {
+            padding: 1mm 2mm 2mm 2mm;
         }
         
         .receipt-container {
@@ -281,16 +285,34 @@ export class InvoicePOS80mmService {
         }
         
         @media print {
-            body {
+            @page {
+                margin: 0;
+                padding: 0;
+                size: 80mm auto;
+            }
+            
+            html, body {
                 print-color-adjust: exact;
                 -webkit-print-color-adjust: exact;
                 width: 80mm;
-                margin: 0;
-                padding: 2mm;
+                margin: 0 !important;
+                padding: 0 !important;
+                background: white !important;
+            }
+            
+            body {
+                padding: 0 2mm 2mm 2mm !important;
             }
             
             .receipt-container {
                 page-break-inside: avoid;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+            
+            .header {
+                margin-top: 0 !important;
+                padding-top: 0 !important;
             }
             
             .no-print {
