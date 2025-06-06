@@ -68,7 +68,7 @@ export default function InvoicePrintModal({ isOpen, onClose, saleId, saleNumber 
     }
   };
 
-  // 80mm POS receipt generation
+  // 80mm POS receipt generation with robust popup handling
   const handlePOS80mmReceipt = async () => {
     setIsGenerating(true);
     setShowProgress(true);
@@ -84,59 +84,33 @@ export default function InvoicePrintModal({ isOpen, onClose, saleId, saleNumber 
 
       if (response.ok) {
         const htmlContent = await response.text();
-        
         console.log('POS receipt HTML received, length:', htmlContent.length);
         
-        // Wait for progress animation to complete before opening receipt
+        // Wait for progress animation to complete
         await new Promise(resolve => setTimeout(resolve, 4500));
         
-        // Try to open in new window first, fallback to data URL
-        let windowOpened = false;
-        try {
-          const printWindow = window.open('', '_blank');
-          if (printWindow && !printWindow.closed && printWindow.location) {
-            printWindow.document.open();
-            printWindow.document.write(htmlContent);
-            printWindow.document.close();
-            printWindow.focus();
-            windowOpened = true;
-            console.log('POS receipt window opened successfully');
-          } else {
-            console.log('Window blocked or failed to open, using download method');
-          }
-        } catch (error) {
-          console.log('Window.open failed, using download method:', error);
-        }
+        // Use download method directly since popups are consistently blocked
+        const blob = new Blob([htmlContent], { type: 'text/html' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.target = '_blank';
+        link.download = `Recibo-POS-80mm-${new Date().toISOString().slice(0,10)}-${Date.now()}.html`;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
         
-        // Fallback: create blob and open as data URL
-        if (!windowOpened) {
-          try {
-            const blob = new Blob([htmlContent], { type: 'text/html' });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.target = '_blank';
-            link.download = `Recibo-POS-80mm-${Date.now()}.html`;
-            link.style.display = 'none';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            
-            // Clean up the URL after a short delay
-            setTimeout(() => {
-              URL.revokeObjectURL(url);
-            }, 1000);
-            
-            console.log('POS receipt downloaded as HTML file');
-          } catch (downloadError) {
-            console.error('Download method also failed:', downloadError);
-            throw new Error("No se pudo generar el recibo");
-          }
-        }
+        // Clean up the URL
+        setTimeout(() => {
+          URL.revokeObjectURL(url);
+        }, 1000);
+        
+        console.log('POS receipt downloaded as HTML file');
 
         toast({
           title: "Recibo POS generado",
-          description: windowOpened ? "Recibo de 80mm abierto en nueva ventana" : "Recibo descargado como archivo HTML",
+          description: "Recibo descargado como archivo HTML - ábrelo para imprimir",
         });
 
         // Reset states and close modal
