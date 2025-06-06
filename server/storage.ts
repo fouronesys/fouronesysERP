@@ -978,59 +978,69 @@ export class DatabaseStorage implements IStorage {
     productsInStock: number;
     productionOrders: number;
   }> {
-    // Get current month sales
-    const currentMonth = new Date();
-    const firstDayOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
-    
-    const [salesResult] = await db
-      .select({ total: sql<string>`COALESCE(SUM(${invoices.total}), 0)` })
-      .from(invoices)
-      .where(
-        and(
-          eq(invoices.companyId, companyId),
-          sql`${invoices.date} >= ${firstDayOfMonth.toISOString().split('T')[0]}`
-        )
-      );
+    try {
+      // Get current month POS sales (primary sales data)
+      const currentMonth = new Date();
+      const firstDayOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
+      
+      const [posResult] = await db
+        .select({ total: sql<string>`COALESCE(SUM(${posSales.total}), 0)` })
+        .from(posSales)
+        .where(
+          and(
+            eq(posSales.companyId, companyId),
+            sql`${posSales.createdAt} >= ${firstDayOfMonth.toISOString()}`
+          )
+        );
 
-    // Get pending invoices count
-    const [pendingResult] = await db
-      .select({ count: sql<number>`COUNT(*)` })
-      .from(invoices)
-      .where(
-        and(
-          eq(invoices.companyId, companyId),
-          eq(invoices.status, "pending")
-        )
-      );
+      // Get pending invoices count
+      const [pendingResult] = await db
+        .select({ count: sql<number>`COUNT(*)` })
+        .from(invoices)
+        .where(
+          and(
+            eq(invoices.companyId, companyId),
+            eq(invoices.status, "pending")
+          )
+        );
 
-    // Get products in stock count
-    const [stockResult] = await db
-      .select({ count: sql<number>`COUNT(*)` })
-      .from(products)
-      .where(
-        and(
-          eq(products.companyId, companyId),
-          sql`${products.stock} > 0`
-        )
-      );
+      // Get products in stock count
+      const [stockResult] = await db
+        .select({ count: sql<number>`COUNT(*)` })
+        .from(products)
+        .where(
+          and(
+            eq(products.companyId, companyId),
+            sql`${products.stock} > 0`
+          )
+        );
 
-    // Get active production orders count
-    const [productionResult] = await db
-      .select({ count: sql<number>`COUNT(*)` })
-      .from(productionOrders)
-      .where(
-        and(
-          eq(productionOrders.companyId, companyId),
-          sql`${productionOrders.status} IN ('planned', 'in_progress')`
-        )
-      );
+      // Get active production orders count
+      const [productionResult] = await db
+        .select({ count: sql<number>`COUNT(*)` })
+        .from(productionOrders)
+        .where(
+          and(
+            eq(productionOrders.companyId, companyId),
+            sql`${productionOrders.status} IN ('planned', 'in_progress')`
+          )
+        );
 
-    return {
-      monthSales: salesResult?.total || "0",
-      pendingInvoices: pendingResult?.count || 0,
-      productsInStock: stockResult?.count || 0,
-      productionOrders: productionResult?.count || 0,
-    };
+      return {
+        monthSales: posResult?.total || "0",
+        pendingInvoices: pendingResult?.count || 0,
+        productsInStock: stockResult?.count || 0,
+        productionOrders: productionResult?.count || 0,
+      };
+    } catch (error) {
+      console.error('Error getting dashboard metrics:', error);
+      return {
+        monthSales: "0",
+        pendingInvoices: 0,
+        productsInStock: 0,
+        productionOrders: 0,
+      };
+    }
   }
 
   // Notification operations

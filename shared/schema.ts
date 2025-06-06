@@ -1072,7 +1072,7 @@ export const chatMessages = pgTable("chat_messages", {
   messageType: varchar("message_type", { length: 20 }).default("text"), // text, file, image, system
   fileUrl: text("file_url"),
   fileName: varchar("file_name", { length: 255 }),
-  replyToId: integer("reply_to_id").references(() => chatMessages.id),
+  replyToId: integer("reply_to_id"),
   isEdited: boolean("is_edited").default(false),
   editedAt: timestamp("edited_at"),
   isDeleted: boolean("is_deleted").default(false),
@@ -1159,7 +1159,7 @@ export const accounts = pgTable("accounts", {
   name: varchar("name", { length: 200 }).notNull(),
   description: text("description"),
   accountTypeId: integer("account_type_id").references(() => accountTypes.id),
-  parentAccountId: integer("parent_account_id").references(() => accounts.id),
+  parentAccountId: integer("parent_account_id"),
   level: integer("level").default(1),
   isParent: boolean("is_parent").default(false),
   allowTransactions: boolean("allow_transactions").default(true),
