@@ -1,0 +1,400 @@
+import fs from 'fs';
+import path from 'path';
+import QRCode from 'qrcode';
+
+export interface InvoiceData {
+  sale: any;
+  items: any[];
+  company: any;
+  customerInfo?: {
+    name?: string;
+    phone?: string;
+    rnc?: string;
+    address?: string;
+  };
+}
+
+export class InvoicePOS80mmService {
+  /**
+   * Generate 80mm POS receipt using HTML/CSS optimized for thermal printing
+   */
+  static async generatePOS80mmReceipt(invoiceData: InvoiceData): Promise<string> {
+    const { sale, items, company, customerInfo } = invoiceData;
+    
+    // Generate QR code for verification
+    const verificationUrl = `https://invoice-verify.com/v/${sale.saleNumber}`;
+    const qrCodeDataURL = await QRCode.toDataURL(verificationUrl, {
+      width: 80,
+      margin: 1,
+      color: {
+        dark: '#000000',
+        light: '#ffffff'
+      }
+    });
+
+    // Load company logo if available
+    let logoBase64 = '';
+    if (company.logo) {
+      try {
+        const logoPath = path.join(process.cwd(), 'uploads', 'logos', `${company.id}.png`);
+        if (fs.existsSync(logoPath)) {
+          const logoBuffer = fs.readFileSync(logoPath);
+          logoBase64 = `data:image/png;base64,${logoBuffer.toString('base64')}`;
+        }
+      } catch (error) {
+        console.log('Logo not found, using text header');
+      }
+    }
+
+    const html = `
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recibo POS ${sale.saleNumber}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            line-height: 1.2;
+            color: #000;
+            background: white;
+            width: 80mm;
+            max-width: 80mm;
+            margin: 0 auto;
+            padding: 2mm;
+        }
+        
+        .receipt-container {
+            width: 100%;
+            max-width: 76mm;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 8px;
+            border-bottom: 1px dashed #000;
+            padding-bottom: 8px;
+        }
+        
+        .company-logo {
+            max-width: 60mm;
+            max-height: 20mm;
+            margin-bottom: 4px;
+        }
+        
+        .company-name {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 2px;
+            text-transform: uppercase;
+        }
+        
+        .company-info {
+            font-size: 9px;
+            line-height: 1.1;
+        }
+        
+        .receipt-title {
+            font-size: 12px;
+            font-weight: bold;
+            text-align: center;
+            margin: 6px 0;
+            text-transform: uppercase;
+        }
+        
+        .receipt-number {
+            text-align: center;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+        
+        .date-time {
+            text-align: center;
+            font-size: 10px;
+            margin-bottom: 8px;
+        }
+        
+        .customer-section {
+            margin-bottom: 8px;
+            border-bottom: 1px dashed #000;
+            padding-bottom: 4px;
+        }
+        
+        .section-title {
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-bottom: 2px;
+        }
+        
+        .info-line {
+            margin-bottom: 1px;
+            font-size: 10px;
+        }
+        
+        .items-section {
+            margin-bottom: 8px;
+        }
+        
+        .items-header {
+            border-bottom: 1px solid #000;
+            border-top: 1px solid #000;
+            padding: 2px 0;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .item-row {
+            padding: 2px 0;
+            border-bottom: 1px dotted #ccc;
+        }
+        
+        .item-name {
+            font-weight: bold;
+            margin-bottom: 1px;
+        }
+        
+        .item-details {
+            display: flex;
+            justify-content: space-between;
+            font-size: 10px;
+        }
+        
+        .totals-section {
+            border-top: 1px solid #000;
+            padding-top: 4px;
+            margin-bottom: 8px;
+        }
+        
+        .total-line {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 1px;
+        }
+        
+        .total-line.final {
+            font-weight: bold;
+            font-size: 12px;
+            border-top: 1px solid #000;
+            border-bottom: 1px solid #000;
+            padding: 2px 0;
+            margin-top: 2px;
+        }
+        
+        .payment-section {
+            margin-bottom: 8px;
+            text-align: center;
+        }
+        
+        .payment-method {
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        
+        .cash-details {
+            font-size: 10px;
+            margin-top: 2px;
+        }
+        
+        .qr-section {
+            text-align: center;
+            margin-bottom: 8px;
+            border-top: 1px dashed #000;
+            padding-top: 6px;
+        }
+        
+        .qr-code {
+            width: 60px;
+            height: 60px;
+            margin: 4px auto;
+        }
+        
+        .qr-text {
+            font-size: 8px;
+            text-transform: uppercase;
+            margin-top: 2px;
+        }
+        
+        .footer {
+            text-align: center;
+            font-size: 9px;
+            border-top: 1px dashed #000;
+            padding-top: 4px;
+            margin-top: 8px;
+        }
+        
+        .thank-you {
+            font-weight: bold;
+            margin-bottom: 2px;
+        }
+        
+        .website {
+            font-style: italic;
+        }
+        
+        .cut-line {
+            text-align: center;
+            margin: 8px 0;
+            font-size: 8px;
+        }
+        
+        .text-right {
+            text-align: right;
+        }
+        
+        .text-center {
+            text-align: center;
+        }
+        
+        @media print {
+            body {
+                print-color-adjust: exact;
+                -webkit-print-color-adjust: exact;
+                width: 80mm;
+                margin: 0;
+                padding: 2mm;
+            }
+            
+            .receipt-container {
+                page-break-inside: avoid;
+            }
+            
+            .no-print {
+                display: none !important;
+            }
+        }
+        
+        .print-button {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: #000;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            z-index: 1000;
+        }
+        
+        .print-button:hover {
+            background: #333;
+        }
+    </style>
+</head>
+<body>
+    <button class="print-button no-print" onclick="window.print()">🖨️ Imprimir</button>
+    
+    <div class="receipt-container">
+        <!-- Header with logo and company info -->
+        <div class="header">
+            ${logoBase64 ? `<img src="${logoBase64}" alt="Logo" class="company-logo">` : ''}
+            <div class="company-name">${company.name}</div>
+            <div class="company-info">
+                RNC: ${company.rnc || 'N/A'}<br>
+                Tel: ${company.phone || 'N/A'}<br>
+                ${company.address || 'N/A'}
+            </div>
+        </div>
+        
+        <!-- Receipt title and number -->
+        <div class="receipt-title">*** RECIBO DE VENTA ***</div>
+        <div class="receipt-number"># ${sale.saleNumber}</div>
+        <div class="date-time">
+            ${new Date(sale.createdAt).toLocaleDateString('es-DO')}<br>
+            ${new Date(sale.createdAt).toLocaleTimeString('es-DO', { hour12: false })}
+        </div>
+        
+        <!-- Customer info -->
+        ${customerInfo?.name || customerInfo?.phone || customerInfo?.rnc ? `
+        <div class="customer-section">
+            <div class="section-title">CLIENTE:</div>
+            ${customerInfo?.name ? `<div class="info-line">Nombre: ${customerInfo.name}</div>` : ''}
+            ${customerInfo?.phone ? `<div class="info-line">Tel: ${customerInfo.phone}</div>` : ''}
+            ${customerInfo?.rnc ? `<div class="info-line">RNC: ${customerInfo.rnc}</div>` : ''}
+        </div>
+        ` : ''}
+        
+        <!-- Items -->
+        <div class="items-section">
+            <div class="items-header">
+                <span>DESCRIPCION</span>
+                <span>TOTAL</span>
+            </div>
+            
+            ${items.map(item => `
+            <div class="item-row">
+                <div class="item-name">${item.productName || item.name}</div>
+                <div class="item-details">
+                    <span>${item.quantity} x $${parseFloat(item.unitPrice || '0').toFixed(2)}</span>
+                    <span class="text-right">$${parseFloat(item.subtotal || '0').toFixed(2)}</span>
+                </div>
+            </div>
+            `).join('')}
+        </div>
+        
+        <!-- Totals -->
+        <div class="totals-section">
+            <div class="total-line">
+                <span>SUBTOTAL:</span>
+                <span>$${parseFloat(sale.subtotal || '0').toFixed(2)}</span>
+            </div>
+            <div class="total-line">
+                <span>ITBIS (18%):</span>
+                <span>$${parseFloat(sale.itbis || '0').toFixed(2)}</span>
+            </div>
+            <div class="total-line final">
+                <span>TOTAL:</span>
+                <span>$${parseFloat(sale.total || '0').toFixed(2)}</span>
+            </div>
+        </div>
+        
+        <!-- Payment info -->
+        <div class="payment-section">
+            <div class="payment-method">
+                PAGO: ${sale.paymentMethod === 'cash' ? 'EFECTIVO' : sale.paymentMethod === 'card' ? 'TARJETA' : 'TRANSFERENCIA'}
+            </div>
+            ${sale.paymentMethod === 'cash' ? `
+            <div class="cash-details">
+                Recibido: $${parseFloat(sale.cashReceived || '0').toFixed(2)}<br>
+                Cambio: $${parseFloat(sale.cashChange || '0').toFixed(2)}
+            </div>
+            ` : ''}
+        </div>
+        
+        <!-- QR Code -->
+        <div class="qr-section">
+            <img src="${qrCodeDataURL}" alt="QR Code" class="qr-code">
+            <div class="qr-text">
+                CODIGO QR DE VERIFICACION<br>
+                Escanea para verificar
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <div class="footer">
+            <div class="thank-you">¡GRACIAS POR SU COMPRA!</div>
+            <div>Este recibo fue generado electronicamente</div>
+            ${company.website ? `<div class="website">${company.website}</div>` : ''}
+        </div>
+        
+        <!-- Cut line -->
+        <div class="cut-line">
+            ✂ - - - - - - - - - - - - - - - - - - - - -
+        </div>
+    </div>
+</body>
+</html>`;
+
+    return html;
+  }
+}

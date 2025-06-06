@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileText } from "lucide-react";
+import { FileText, Receipt } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import AnimatedProgressIndicator from "./AnimatedProgressIndicator";
 
@@ -68,6 +68,56 @@ export default function InvoicePrintModal({ isOpen, onClose, saleId, saleNumber 
     }
   };
 
+  // 80mm POS receipt generation
+  const handlePOS80mmReceipt = async () => {
+    setIsGenerating(true);
+    setShowProgress(true);
+    
+    try {
+      // Start the progress animation
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      const response = await fetch(`/api/pos/print-pos-80mm/${saleId}`, {
+        method: "POST",
+        credentials: 'include'
+      });
+
+      if (response.ok) {
+        const htmlContent = await response.text();
+        
+        // Wait for progress animation to complete before opening receipt
+        await new Promise(resolve => setTimeout(resolve, 4500));
+        
+        // Open in new window/tab for printing
+        const printWindow = window.open('', '_blank');
+        if (printWindow) {
+          printWindow.document.write(htmlContent);
+          printWindow.document.close();
+        }
+
+        toast({
+          title: "Recibo POS generado",
+          description: "Recibo de 80mm abierto en nueva ventana",
+        });
+
+        // Reset states and close modal
+        setShowProgress(false);
+        setIsGenerating(false);
+        onClose();
+      } else {
+        throw new Error("Failed to generate 80mm POS receipt");
+      }
+    } catch (error) {
+      toast({
+        title: "Error al generar recibo",
+        description: "No se pudo generar el recibo POS",
+        variant: "destructive",
+      });
+      setShowProgress(false);
+      setIsGenerating(false);
+    }
+  };
+
   const handleProgressComplete = () => {
     // This will be called when the progress animation completes
     setShowProgress(false);
@@ -86,42 +136,77 @@ export default function InvoicePrintModal({ isOpen, onClose, saleId, saleNumber 
             onComplete={handleProgressComplete}
           />
         ) : (
-          <Card>
-            <CardHeader>
-              <CardTitle>Factura Profesional</CardTitle>
-              <CardDescription>
-                Genera una factura con diseño profesional que incluye logo, QR code y formato optimizado para impresión
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg animate-slide-up">
-                <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">Características incluidas:</h4>
-                <ul className="space-y-1 text-sm text-gray-700 dark:text-gray-300">
-                  <li>• Logo de la empresa en alta calidad</li>
-                  <li>• Código QR de verificación</li>
-                  <li>• Diseño negro profesional</li>
-                  <li>• Información completa del cliente y empresa</li>
-                  <li>• Formato listo para imprimir o guardar como PDF</li>
-                </ul>
-              </div>
+          <div className="space-y-4">
+            {/* Professional Invoice Option */}
+            <Card className="animate-slide-up">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <FileText className="w-5 h-5 mr-2" />
+                  Factura Profesional
+                </CardTitle>
+                <CardDescription>
+                  Genera una factura con diseño profesional que incluye logo, QR code y formato optimizado para impresión
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="bg-gray-50 dark:bg-gray-900 p-3 rounded-lg">
+                  <ul className="space-y-1 text-sm text-gray-700 dark:text-gray-300">
+                    <li>• Logo de la empresa en alta calidad</li>
+                    <li>• Código QR de verificación</li>
+                    <li>• Diseño negro profesional</li>
+                    <li>• Formato completo tamaño carta</li>
+                  </ul>
+                </div>
 
-              <div className="flex gap-2 animate-fade-in">
                 <Button 
                   onClick={handleHTMLInvoice} 
                   disabled={isGenerating}
-                  className="flex-1 bg-black hover:bg-gray-800 text-white transition-all duration-300 hover:scale-105"
+                  className="w-full bg-black hover:bg-gray-800 text-white transition-all duration-300 hover:scale-105"
                   size="lg"
                 >
                   <FileText className="w-4 h-4 mr-2" />
-                  {isGenerating ? "Iniciando..." : "Generar Factura"}
+                  {isGenerating ? "Iniciando..." : "Generar Factura Profesional"}
                 </Button>
-              </div>
+              </CardContent>
+            </Card>
 
-              <div className="text-xs text-muted-foreground mt-2 animate-fade-in">
-                La factura se abrirá en una nueva ventana lista para imprimir o guardar como PDF
-              </div>
-            </CardContent>
-          </Card>
+            {/* 80mm POS Receipt Option */}
+            <Card className="animate-slide-up animation-delay-200">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Receipt className="w-5 h-5 mr-2" />
+                  Recibo POS 80mm
+                </CardTitle>
+                <CardDescription>
+                  Genera un recibo optimizado para impresoras térmicas de 80mm con logo y diseño compacto
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="bg-gray-50 dark:bg-gray-900 p-3 rounded-lg">
+                  <ul className="space-y-1 text-sm text-gray-700 dark:text-gray-300">
+                    <li>• Logo en encabezado optimizado</li>
+                    <li>• Código QR de verificación</li>
+                    <li>• Formato 80mm para impresoras térmicas</li>
+                    <li>• Diseño compacto y legible</li>
+                  </ul>
+                </div>
+
+                <Button 
+                  onClick={handlePOS80mmReceipt} 
+                  disabled={isGenerating}
+                  className="w-full bg-gray-800 hover:bg-gray-700 text-white transition-all duration-300 hover:scale-105"
+                  size="lg"
+                >
+                  <Receipt className="w-4 h-4 mr-2" />
+                  {isGenerating ? "Iniciando..." : "Generar Recibo POS 80mm"}
+                </Button>
+              </CardContent>
+            </Card>
+
+            <div className="text-xs text-muted-foreground text-center animate-fade-in">
+              Los documentos se abrirán en una nueva ventana listos para imprimir o guardar como PDF
+            </div>
+          </div>
         )}
       </DialogContent>
     </Dialog>
