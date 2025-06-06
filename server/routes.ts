@@ -3390,16 +3390,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         cashDrawer
       };
 
-      // Generate simple thermal receipt
+      // Generate enhanced thermal receipt with QR code and improved design
       try {
+        console.log("=== GENERATING ENHANCED THERMAL RECEIPT ===");
+        console.log("Company data:", JSON.stringify(company, null, 2));
+        console.log("Sale data:", JSON.stringify(sale, null, 2));
+        console.log("Print options:", JSON.stringify(printOptions, null, 2));
+        
         const receiptText = generateSimpleReceipt(sale, items, company, customerInfo);
+        
+        console.log("=== RECEIPT OUTPUT PREVIEW ===");
+        console.log("First 500 characters:");
+        console.log(receiptText.substring(0, 500));
+        console.log("Receipt length:", receiptText.length);
+        console.log("=== END PREVIEW ===");
         
         res.json({
           success: true,
           printData: receiptText,
           previewUrl: null,
           width: printOptions.width,
-          message: "Recibo térmico generado correctamente"
+          message: "Recibo térmico mejorado generado correctamente"
         });
       } catch (receiptError) {
         console.error("Error in generateSimpleReceipt:", receiptError);
