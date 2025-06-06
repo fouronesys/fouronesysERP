@@ -84,9 +84,10 @@ export default function Customers() {
       });
     },
     onError: (error: Error) => {
+      console.error("Customer creation failed:", error);
       toast({
-        title: "Error",
-        description: error.message,
+        title: "Error al crear cliente",
+        description: error.message || "Error desconocido al crear el cliente",
         variant: "destructive",
       });
     },
