@@ -3234,15 +3234,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
 
       // Generate simple thermal receipt
-      const receiptText = generateSimpleReceipt(sale, items, company, customerInfo);
-
-      res.json({
-        success: true,
-        printData: receiptText,
-        previewUrl: null,
-        width: printOptions.width,
-        message: "Recibo térmico generado correctamente"
-      });
+      try {
+        const receiptText = generateSimpleReceipt(sale, items, company, customerInfo);
+        
+        res.json({
+          success: true,
+          printData: receiptText,
+          previewUrl: null,
+          width: printOptions.width,
+          message: "Recibo térmico generado correctamente"
+        });
+      } catch (receiptError) {
+        console.error("Error in generateSimpleReceipt:", receiptError);
+        throw receiptError;
+      }
 
     } catch (error) {
       console.error("Error generating thermal receipt:", error);
