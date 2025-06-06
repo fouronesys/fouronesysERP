@@ -149,21 +149,21 @@ export default function Landing() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
             {/* Plan Mensual */}
             <Card className="border-2 border-gray-600 bg-gray-800/70 backdrop-blur-sm">
-              <CardContent className="p-8">
-                <div className="text-center mb-6">
-                  <h3 className="text-2xl font-bold text-white">Plan Mensual</h3>
-                  <p className="text-gray-300 mt-2">Flexibilidad mes a mes</p>
-                  <div className="mt-4">
-                    <span className="text-4xl font-bold text-white">RD$ 25,000</span>
-                    <span className="text-gray-300"> instalación</span>
+              <CardContent className="p-4 sm:p-6 lg:p-8">
+                <div className="text-center mb-4 sm:mb-6">
+                  <h3 className="text-xl sm:text-2xl font-bold text-white">Plan Mensual</h3>
+                  <p className="text-gray-300 mt-1 sm:mt-2 text-sm sm:text-base">Flexibilidad mes a mes</p>
+                  <div className="mt-3 sm:mt-4">
+                    <span className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white">RD$ 25,000</span>
+                    <span className="text-gray-300 text-sm sm:text-base"> instalación</span>
                   </div>
-                  <div className="mt-2">
-                    <span className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">RD$ 2,500</span>
-                    <span className="text-gray-300">/mes</span>
+                  <div className="mt-1 sm:mt-2">
+                    <span className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">RD$ 2,500</span>
+                    <span className="text-gray-300 text-sm sm:text-base">/mes</span>
                   </div>
                 </div>
                 
-                <ul className="space-y-3 mb-8">
+                <ul className="space-y-2 sm:space-y-3 mb-6 sm:mb-8">
                   {[
                     "Facturación completa con NCF",
                     "Punto de venta (POS)",
@@ -173,23 +173,23 @@ export default function Landing() {
                     "Hasta 5 usuarios"
                   ].map((feature, index) => (
                     <li key={index} className="flex items-center">
-                      <Check className="h-5 w-5 text-green-500 mr-3" />
-                      <span className="text-white">{feature}</span>
+                      <Check className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 mr-2 sm:mr-3 flex-shrink-0" />
+                      <span className="text-white text-sm sm:text-base">{feature}</span>
                     </li>
                   ))}
                 </ul>
                 
-                <div className="space-y-3">
+                <div className="space-y-2 sm:space-y-3">
                   <Button 
                     onClick={() => window.location.href = "/api/login"}
-                    className="w-full bg-gradient-to-r from-gray-900 to-black hover:from-black hover:to-gray-900 text-white border-none"
+                    className="w-full bg-gradient-to-r from-gray-900 to-black hover:from-black hover:to-gray-900 text-white border-none text-sm sm:text-base py-2 sm:py-3"
                   >
                     Comenzar Prueba Gratuita
                   </Button>
                   <Button 
                     variant="outline"
                     onClick={() => window.location.href = "/register"}
-                    className="w-full border-gray-400 text-gray-300 bg-transparent hover:bg-gray-300 hover:text-black"
+                    className="w-full border-gray-400 text-gray-300 bg-transparent hover:bg-gray-300 hover:text-black text-sm sm:text-base py-2 sm:py-3"
                   >
                     Registrar Nueva Empresa
                   </Button>
