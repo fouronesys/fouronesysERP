@@ -1158,13 +1158,12 @@ export const accounts = pgTable("accounts", {
   code: varchar("code", { length: 20 }).notNull(),
   name: varchar("name", { length: 200 }).notNull(),
   description: text("description"),
-  accountTypeId: integer("account_type_id").notNull().references(() => accountTypes.id),
+  accountTypeId: integer("account_type_id").references(() => accountTypes.id),
   parentAccountId: integer("parent_account_id").references(() => accounts.id),
-  level: integer("level").notNull().default(1), // Hierarchy level
+  level: integer("level").default(1),
   isParent: boolean("is_parent").default(false),
   allowTransactions: boolean("allow_transactions").default(true),
   currentBalance: decimal("current_balance", { precision: 15, scale: 2 }).default("0.00"),
-  isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -1176,6 +1175,7 @@ export const journals = pgTable("journals", {
   name: varchar("name", { length: 100 }).notNull(),
   code: varchar("code", { length: 10 }).notNull(),
   description: text("description"),
+  journalType: varchar("journal_type", { length: 50 }),
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -1443,8 +1443,6 @@ export const accountsRelations = relations(accounts, ({ one, many }) => ({
     references: [accounts.id],
   }),
   childAccounts: many(accounts),
-  journalEntryLines: many(journalEntryLines),
-  budgetLines: many(budgetLines),
 }));
 
 export const journalsRelations = relations(journals, ({ one, many }) => ({
