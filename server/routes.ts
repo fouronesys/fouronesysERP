@@ -3069,20 +3069,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { saleId } = req.params;
       const { width = '80mm', showLogo = true, showNCF = true, showQR = true, paperCut = true, cashDrawer = false } = req.body;
-      const companyId = req.user.companyId;
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
 
       // Get sale data
-      const sale = await storage.getPOSSale(parseInt(saleId), companyId);
+      const sale = await storage.getPOSSale(parseInt(saleId), company.id);
       if (!sale) {
         return res.status(404).json({ message: "Sale not found" });
       }
 
       const items = await storage.getPOSSaleItems(sale.id);
-      const company = await storage.getCompany(companyId);
-      
-      if (!company) {
-        return res.status(404).json({ message: "Company not found" });
-      }
 
       // Prepare customer info
       const customerInfo = {
@@ -3130,20 +3129,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         showQR = true,
         watermark 
       } = req.body;
-      const companyId = req.user.companyId;
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
 
       // Get sale data
-      const sale = await storage.getPOSSale(parseInt(saleId), companyId);
+      const sale = await storage.getPOSSale(parseInt(saleId), company.id);
       if (!sale) {
         return res.status(404).json({ message: "Sale not found" });
       }
 
       const items = await storage.getPOSSaleItems(sale.id);
-      const company = await storage.getCompany(companyId);
-      
-      if (!company) {
-        return res.status(404).json({ message: "Company not found" });
-      }
 
       // Prepare customer info
       const customerInfo = {
