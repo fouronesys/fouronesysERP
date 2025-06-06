@@ -4333,11 +4333,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/downloads', express.static(path.join(process.cwd(), 'dist-electron')));
   
   // Installation API endpoint for available downloads
-  app.get('/api/downloads/available', (req, res) => {
-    const fs = require('fs');
-    const downloadsDir = path.join(process.cwd(), 'dist-electron');
-    
+  app.get('/api/downloads/available', async (req, res) => {
     try {
+      const fs = await import('fs');
+      const downloadsDir = path.join(process.cwd(), 'dist-electron');
+      
       const files = fs.existsSync(downloadsDir) ? fs.readdirSync(downloadsDir) : [];
       const availableDownloads = files
         .filter((file: string) => 
