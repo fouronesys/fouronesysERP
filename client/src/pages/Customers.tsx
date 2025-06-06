@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Search, Users, Edit, Trash2, Building2, User, Mail, Phone, MapPin } from "lucide-react";
+import { Plus, Search, Users, Edit, Trash2, Building2, User, Mail, Phone, MapPin, CheckCircle, AlertTriangle, Loader2 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -194,7 +194,7 @@ export default function Customers() {
     setIsDialogOpen(true);
   };
 
-  const verifyRNC = async (rnc: string) => {
+  const handleRNCVerification = async (rnc: string) => {
     if (!rnc || rnc.length < 9) {
       setRncVerification(null);
       return;
@@ -451,9 +451,75 @@ export default function Customers() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>RNC</FormLabel>
-                        <FormControl>
-                          <Input placeholder="000-00000-0" {...field} />
-                        </FormControl>
+                        <div className="flex gap-2">
+                          <FormControl>
+                            <Input 
+                              placeholder="101000013" 
+                              {...field}
+                              onBlur={(e) => {
+                                const rncValue = e.target.value?.replace(/\D/g, '');
+                                if (rncValue && rncValue.length >= 9) {
+                                  handleRNCVerification(rncValue);
+                                }
+                              }}
+                              className={
+                                rncVerification?.isValid === true 
+                                  ? "border-green-500 bg-green-50 dark:bg-green-950" 
+                                  : rncVerification?.isValid === false 
+                                  ? "border-red-500 bg-red-50 dark:bg-red-950" 
+                                  : ""
+                              }
+                            />
+                          </FormControl>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            disabled={isVerifyingRNC || !field.value}
+                            onClick={() => handleRNCVerification(field.value)}
+                            className="whitespace-nowrap"
+                          >
+                            {isVerifyingRNC ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Search className="h-4 w-4" />
+                            )}
+                            <span className="ml-1 hidden sm:inline">Verificar</span>
+                          </Button>
+                        </div>
+                        
+                        {/* RNC Verification Result */}
+                        {rncVerification && (
+                          <div className={`text-sm p-2 rounded-md mt-1 ${
+                            rncVerification.isValid 
+                              ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 border border-green-200 dark:border-green-800' 
+                              : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 border border-red-200 dark:border-red-800'
+                          }`}>
+                            <div className="flex items-start gap-2">
+                              {rncVerification.isValid ? (
+                                <CheckCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                              ) : (
+                                <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                              )}
+                              <div className="flex-1">
+                                <p className="font-medium">
+                                  {rncVerification.isValid ? 'RNC Válido' : 'RNC No Válido'}
+                                </p>
+                                {rncVerification.isValid && rncVerification.companyName && (
+                                  <p className="text-xs opacity-90 mt-1">
+                                    <strong>Empresa:</strong> {rncVerification.companyName}
+                                  </p>
+                                )}
+                                {!rncVerification.isValid && (
+                                  <p className="text-xs opacity-90 mt-1">
+                                    {rncVerification.message}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                        
                         <FormMessage />
                       </FormItem>
                     )}
