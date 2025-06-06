@@ -28,17 +28,6 @@ const customerSchema = z.object({
   type: z.enum(["individual", "company"]),
   rnc: z.string().optional(),
   cedula: z.string().optional(),
-}).refine((data) => {
-  if (data.type === "company" && data.rnc) {
-    return validateRNC(data.rnc);
-  }
-  if (data.type === "individual" && data.cedula) {
-    return validateCedula(data.cedula);
-  }
-  return true;
-}, {
-  message: "RNC o Cédula inválido",
-  path: ["rnc", "cedula"],
 });
 
 type CustomerFormData = z.infer<typeof customerSchema>;
