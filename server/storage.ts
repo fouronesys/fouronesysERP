@@ -1795,13 +1795,13 @@ export class DatabaseStorage implements IStorage {
 
     const comprobantes: InsertComprobante605[] = [];
 
-    for (const { invoice, supplier } of invoicesData) {
-      if (supplier) {
+    for (const { invoice, customer } of invoicesData) {
+      if (customer) {
         comprobantes.push({
           companyId,
           period,
-          rncCedula: supplier.rnc || "00000000000",
-          tipoIdentificacion: supplier.rnc ? "1" : "2",
+          rncCedula: customer.rnc || "00000000000",
+          tipoIdentificacion: customer.rnc ? "1" : "2",
           tipoComprobante: "01", // Factura
           ncf: invoice.ncf,
           fechaComprobante: invoice.createdAt || new Date(),
@@ -1883,7 +1883,6 @@ export class DatabaseStorage implements IStorage {
         fechaComprobante: sale.createdAt || new Date(),
         montoFacturado: sale.subtotal,
         itbisFacturado: sale.itbis,
-        montoTotal: sale.total,
       });
     }
 
@@ -1897,23 +1896,7 @@ export class DatabaseStorage implements IStorage {
     return results;
   }
 
-  // RNC Registry
-  async searchRNC(rnc: string): Promise<RNCRegistry | undefined> {
-    const [result] = await db
-      .select()
-      .from(rncRegistry)
-      .where(eq(rncRegistry.rnc, rnc))
-      .limit(1);
-    return result;
-  }
 
-  async createRNCRegistry(data: InsertRNCRegistry): Promise<RNCRegistry> {
-    const [registry] = await db
-      .insert(rncRegistry)
-      .values(data)
-      .returning();
-    return registry;
-  }
 
   async bulkInsertRNCRegistry(data: InsertRNCRegistry[]): Promise<void> {
     if (data.length === 0) return;
@@ -2268,6 +2251,8 @@ export class DatabaseStorage implements IStorage {
     await db.delete(companies).where(eq(companies.id, companyId));
   }
 
+
+
   // RNC Registry operations
   async searchRNC(rnc: string): Promise<RNCRegistry | undefined> {
     const [result] = await db.select().from(rncRegistry).where(eq(rncRegistry.rnc, rnc));
@@ -2419,8 +2404,8 @@ export class DatabaseStorage implements IStorage {
         .values({
           ...order,
           companyId: order.companyId,
-          issueDate: new Date(),
-          totalAmount: order.totalAmount || "0.00",
+          date: new Date().toISOString().split('T')[0],
+          total: order.totalAmount || "0.00",
           createdAt: new Date(),
           updatedAt: new Date()
         })
