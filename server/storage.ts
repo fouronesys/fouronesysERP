@@ -2361,7 +2361,6 @@ export class DatabaseStorage implements IStorage {
         .insert(customers)
         .values({
           ...supplier,
-          isActive: supplier.isActive ?? true,
           createdAt: new Date(),
           updatedAt: new Date()
         })
@@ -2387,8 +2386,8 @@ export class DatabaseStorage implements IStorage {
         orderNumber: `PO-${String(invoice.id).padStart(6, '0')}`,
         status: "pending",
         supplier: { name: "Proveedor Genérico" },
-        orderDate: invoice.issueDate?.toISOString().split('T')[0] || new Date().toISOString().split('T')[0],
-        totalAmount: invoice.totalAmount || "0.00",
+        orderDate: invoice.date || new Date().toISOString().split('T')[0],
+        totalAmount: invoice.total || "0.00",
         currency: "DOP"
       }));
     } catch (error) {
@@ -2415,8 +2414,8 @@ export class DatabaseStorage implements IStorage {
         orderNumber: `PO-${String(result.id).padStart(6, '0')}`,
         status: "pending",
         supplier: { name: "Proveedor Genérico" },
-        orderDate: result.issueDate?.toISOString().split('T')[0] || new Date().toISOString().split('T')[0],
-        totalAmount: result.totalAmount || "0.00",
+        orderDate: result.date || new Date().toISOString().split('T')[0],
+        totalAmount: result.total || "0.00",
         currency: "DOP"
       };
     } catch (error) {
@@ -2435,8 +2434,8 @@ export class DatabaseStorage implements IStorage {
         type: "purchase",
         supplier: { name: "Proveedor Genérico" },
         ncf: invoice.ncf,
-        invoiceDate: invoice.issueDate?.toISOString().split('T')[0] || new Date().toISOString().split('T')[0],
-        totalAmount: invoice.totalAmount || "0.00",
+        invoiceDate: invoice.date || new Date().toISOString().split('T')[0],
+        totalAmount: invoice.total || "0.00",
         paidAmount: "0.00"
       }));
     } catch (error) {
@@ -2465,8 +2464,8 @@ export class DatabaseStorage implements IStorage {
         type: "purchase",
         supplier: { name: "Proveedor Genérico" },
         ncf: result.ncf,
-        invoiceDate: result.issueDate?.toISOString().split('T')[0] || new Date().toISOString().split('T')[0],
-        totalAmount: result.totalAmount || "0.00",
+        invoiceDate: result.date || new Date().toISOString().split('T')[0],
+        totalAmount: result.total || "0.00",
         paidAmount: "0.00"
       };
     } catch (error) {
@@ -2816,10 +2815,10 @@ export class DatabaseStorage implements IStorage {
       return { 
         valid: true, 
         data: {
-          name: rncRecord.razonSocial || rncRecord.nombre,
+          name: rncRecord.razonSocial || rncRecord.nombreComercial,
           businessName: rncRecord.razonSocial,
-          status: rncRecord.estatus,
-          activity: rncRecord.actividad
+          status: rncRecord.estado,
+          activity: rncRecord.categoria
         }
       };
     }
