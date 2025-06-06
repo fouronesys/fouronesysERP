@@ -33,7 +33,7 @@ interface POSCustomerSelectProps {
 export default function POSCustomerSelect({ selectedCustomer, onCustomerSelect, requireFiscalCustomer = false }: POSCustomerSelectProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isValidatingRnc, setIsValidatingRnc] = useState(false);
-  const [rncValidation, setRncValidation] = useState<{ valid: boolean; rnc: string } | null>(null);
+  const [rncValidation, setRncValidation] = useState<{ valid: boolean; rnc: string; data?: any } | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -50,17 +50,18 @@ export default function POSCustomerSelect({ selectedCustomer, onCustomerSelect, 
   });
 
   // Fetch customers
-  const { data: customers } = useQuery({
+  const { data: customers = [] } = useQuery({
     queryKey: ['/api/pos/customers']
   });
 
   // Create customer mutation
   const createCustomerMutation = useMutation({
     mutationFn: async (data: CustomerForm) => {
-      return await apiRequest('/api/pos/customers', {
+      const response = await apiRequest('/api/pos/customers', {
         method: 'POST',
-        body: JSON.stringify(data)
+        body: data
       });
+      return await response.json();
     },
     onSuccess: (customer) => {
       toast({
@@ -92,25 +93,27 @@ export default function POSCustomerSelect({ selectedCustomer, onCustomerSelect, 
     try {
       const response = await apiRequest('/api/pos/customers/search-rnc', {
         method: 'POST',
-        body: JSON.stringify({ rnc })
+        body: { rnc }
       });
+      
+      const data = await response.json();
 
-      if (response.exists) {
+      if (data.exists) {
         // Customer already exists, select it
-        onCustomerSelect(response.customer);
+        onCustomerSelect(data.customer);
         setIsDialogOpen(false);
         toast({
           title: "Cliente encontrado",
-          description: `Cliente ${response.customer.name} seleccionado`
+          description: `Cliente ${data.customer.name} seleccionado`
         });
-      } else if (response.validation?.valid) {
+      } else if (data.validation?.valid) {
         // RNC is valid, auto-fill form data
-        const { data } = response.validation;
-        form.setValue('name', data.name || '');
-        if (data.businessName) {
-          form.setValue('name', data.businessName);
+        const { data: rncData } = data.validation;
+        form.setValue('name', rncData.name || '');
+        if (rncData.businessName) {
+          form.setValue('name', rncData.businessName);
         }
-        setRncValidation({ valid: true, rnc, data });
+        setRncValidation({ valid: true, rnc, data: rncData });
         toast({
           title: "RNC válido",
           description: "Datos del cliente rellenados automáticamente"
@@ -153,7 +156,7 @@ export default function POSCustomerSelect({ selectedCustomer, onCustomerSelect, 
   };
 
   const handleCustomerSelect = (customerId: string) => {
-    const customer = customers?.find((c: any) => c.id.toString() === customerId);
+    const customer = Array.isArray(customers) ? customers.find((c: any) => c.id.toString() === customerId) : null;
     if (customer) {
       // Validate fiscal requirements
       if (requireFiscalCustomer && !customer.rnc) {
@@ -168,7 +171,7 @@ export default function POSCustomerSelect({ selectedCustomer, onCustomerSelect, 
     }
   };
 
-  const fiscalCustomers = customers?.filter((c: any) => c.rnc && c.isValidatedRnc) || [];
+  const fiscalCustomers = Array.isArray(customers) ? customers.filter((c: any) => c.rnc && c.isValidatedRnc) : [];
 
   return (
     <div className="space-y-2">
@@ -201,7 +204,7 @@ export default function POSCustomerSelect({ selectedCustomer, onCustomerSelect, 
                 )}
               </>
             ) : (
-              customers?.map((customer: any) => (
+              Array.isArray(customers) ? customers.map((customer: any) => (
                 <SelectItem key={customer.id} value={customer.id.toString()}>
                   <div className="flex items-center gap-2">
                     <span>{customer.name}</span>
@@ -212,7 +215,7 @@ export default function POSCustomerSelect({ selectedCustomer, onCustomerSelect, 
                     )}
                   </div>
                 </SelectItem>
-              ))
+              )) : null
             )}
           </SelectContent>
         </Select>
