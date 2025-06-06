@@ -353,7 +353,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Company operations
-  async createCompany(companyData: InsertCompany): Promise<Company> {
+  async createCompany(companyData: InsertCompany & { ownerId: string }): Promise<Company> {
     // Validate company name uniqueness
     const existingCompanyByName = await db
       .select()
@@ -385,7 +385,7 @@ export class DatabaseStorage implements IStorage {
     }
 
     // Set trial expiry date for trial companies
-    const dataToInsert: InsertCompany = { 
+    const dataToInsert = { 
       ...companyData,
       rnc: companyData.rnc?.trim() || null // Store null if empty
     };
@@ -397,7 +397,10 @@ export class DatabaseStorage implements IStorage {
     
     const [company] = await db
       .insert(companies)
-      .values(dataToInsert)
+      .values({
+        ...dataToInsert,
+        ownerId: companyData.ownerId
+      })
       .returning();
     return company;
   }
