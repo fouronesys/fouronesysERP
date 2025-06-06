@@ -27,7 +27,7 @@ const customerSchema = z.object({
 type CustomerForm = z.infer<typeof customerSchema>;
 
 interface POSCustomerSelectProps {
-  selectedCustomer: any;
+  selectedCustomer?: any;
   onCustomerSelect: (customer: any) => void;
   requireFiscalCustomer?: boolean;
 }
