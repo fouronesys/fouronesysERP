@@ -245,6 +245,9 @@ export function InstallButton() {
         setPwaPrompt(null);
         setIsOpen(false);
       }
+    } else {
+      // Fallback: provide instructions for manual installation
+      alert('Para instalar como PWA:\n\n1. En Chrome/Edge: Busca el ícono "Instalar" en la barra de direcciones\n2. En Firefox: Menú → "Instalar esta aplicación"\n3. En Safari (iOS): Compartir → "Agregar a pantalla de inicio"');
     }
   };
 

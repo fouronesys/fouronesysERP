@@ -106,6 +106,24 @@ export default function Dashboard() {
               <QuickActions />
             </div>
 
+            {/* Installation Options */}
+            <Card className="bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-900/20 dark:to-indigo-900/20 border-blue-200 dark:border-blue-800">
+              <CardHeader className="border-b border-blue-200 dark:border-blue-800 pb-3">
+                <CardTitle className="text-lg text-blue-900 dark:text-blue-100 flex items-center gap-2">
+                  <ShoppingCart className="h-5 w-5" />
+                  Instalar Four One Solutions
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-4">
+                <div className="space-y-3">
+                  <p className="text-sm text-blue-700 dark:text-blue-200">
+                    Accede a Four One Solutions desde cualquier dispositivo con funcionalidad offline completa.
+                  </p>
+                  <InstallButton />
+                </div>
+              </CardContent>
+            </Card>
+
             {/* Recent Activity */}
             <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
               <CardHeader className="border-b border-gray-200 dark:border-gray-700 pb-3">
