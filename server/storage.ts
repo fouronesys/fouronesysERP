@@ -2544,7 +2544,7 @@ export class DatabaseStorage implements IStorage {
       throw new Error('Producto no encontrado');
     }
 
-    const currentStock = parseFloat(product.stock || '0');
+    const currentStock = parseFloat(String(product.stock || 0));
     
     // Check if item already exists in cart
     const existingItem = await db
@@ -2607,7 +2607,7 @@ export class DatabaseStorage implements IStorage {
       throw new Error('Producto no encontrado');
     }
 
-    const currentStock = parseFloat(product.stock || '0');
+    const currentStock = parseFloat(String(product.stock || 0));
     if (currentStock < quantity) {
       throw new Error(`Stock insuficiente. Disponible: ${currentStock}, solicitado: ${quantity}`);
     }
@@ -2629,14 +2629,14 @@ export class DatabaseStorage implements IStorage {
 
   async removePOSCartItem(id: number): Promise<boolean> {
     const result = await db.delete(posCartItems).where(eq(posCartItems.id, id));
-    return result.rowCount > 0;
+    return (result.rowCount || 0) > 0;
   }
 
   async clearPOSCart(companyId: number, userId: string): Promise<boolean> {
     const result = await db
       .delete(posCartItems)
       .where(and(eq(posCartItems.companyId, companyId), eq(posCartItems.userId, userId)));
-    return result.rowCount > 0;
+    return (result.rowCount || 0) > 0;
   }
 
   // POS Multi-Station Implementation
@@ -2683,8 +2683,6 @@ export class DatabaseStorage implements IStorage {
       ));
     
     if (employee) {
-      // Update last login
-      await this.updatePOSEmployee(employee.id, { lastLogin: new Date() }, companyId);
       return employee;
     }
     return null;
@@ -2723,13 +2721,15 @@ export class DatabaseStorage implements IStorage {
 
   // Cash session management methods
   async getPOSCashSessions(companyId: number, stationId?: number): Promise<POSCashSession[]> {
-    let query = db.select().from(posCashSessions).where(eq(posCashSessions.companyId, companyId));
+    const whereConditions = stationId 
+      ? and(eq(posCashSessions.companyId, companyId), eq(posCashSessions.stationId, stationId))
+      : eq(posCashSessions.companyId, companyId);
     
-    if (stationId) {
-      query = query.where(eq(posCashSessions.stationId, stationId));
-    }
-    
-    return await query.orderBy(desc(posCashSessions.openedAt));
+    return await db
+      .select()
+      .from(posCashSessions)
+      .where(whereConditions)
+      .orderBy(desc(posCashSessions.openedAt));
   }
 
   async getPOSCashSession(id: number, companyId: number): Promise<POSCashSession | undefined> {
@@ -2858,7 +2858,7 @@ export class DatabaseStorage implements IStorage {
 
   async cleanExpiredReservations(): Promise<void> {
     const expirationTime = new Date(Date.now() - 30 * 60 * 1000); // 30 minutes ago
-    await db.delete(stockReservations).where(lt(stockReservations.createdAt, expirationTime));
+    await db.delete(stockReservations).where(lt(stockReservations.reservedAt, expirationTime));
   }
 
   // ACCOUNTING MODULE METHODS
