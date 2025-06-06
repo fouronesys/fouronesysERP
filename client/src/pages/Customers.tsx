@@ -167,7 +167,7 @@ export default function Customers() {
       email: customer.email || "",
       phone: customer.phone || "",
       address: customer.address || "",
-      type: customer.type,
+      type: customer.type as "individual" | "company",
       rnc: customer.rnc || "",
       cedula: customer.cedula || "",
     });
@@ -229,7 +229,6 @@ export default function Customers() {
         <Header 
           title="Clientes" 
           subtitle="Gestiona tu base de clientes"
-          icon={<Users className="h-6 w-6" />}
         />
         <div className="flex items-center justify-center min-h-[400px]">
           <Loader2 className="h-8 w-8 animate-spin text-border" />
