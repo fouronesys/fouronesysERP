@@ -311,7 +311,7 @@ export interface IStorage {
   createPOSCustomer(customer: InsertPOSCustomer): Promise<POSCustomer>;
   updatePOSCustomer(id: number, customer: Partial<InsertPOSCustomer>, companyId: number): Promise<POSCustomer | undefined>;
   deletePOSCustomer(id: number, companyId: number): Promise<void>;
-  validateCustomerRNC(rnc: string, companyId: number): Promise<boolean>;
+  validateCustomerRNC(rnc: string, companyId: number): Promise<{ valid: boolean; data?: any }>;
 
   // Stock Reservation operations for cart synchronization
   createStockReservation(reservationData: InsertStockReservation): Promise<StockReservation>;
@@ -2217,17 +2217,11 @@ export class DatabaseStorage implements IStorage {
 
     const currentUserCount = await this.getCompanyUserCount(companyId);
     
-    // Monthly plan allows 5 users, annual allows unlimited
-    if (company.plan === "monthly") {
-      return currentUserCount < 5;
-    } else if (company.plan === "annual") {
-      return true; // Unlimited users
-    }
-    
-    return false; // Default: no more users allowed
+    // Default plan allows 5 users
+    return currentUserCount < 5;
   }
 
-  async updateCompanyStatus(companyId: number, isActive: boolean): Promise<Company | undefined> {
+  async updateCompanyStatus(companyId: number, isActive: boolean): Promise<Company> {
     const [company] = await db
       .update(companies)
       .set({ 
@@ -2236,6 +2230,11 @@ export class DatabaseStorage implements IStorage {
       })
       .where(eq(companies.id, companyId))
       .returning();
+    
+    if (!company) {
+      throw new Error(`Company with ID ${companyId} not found`);
+    }
+    
     return company;
   }
 
@@ -2344,7 +2343,7 @@ export class DatabaseStorage implements IStorage {
         rnc: customer.rnc,
         email: customer.email,
         phone: customer.phone,
-        isActive: customer.isActive || true,
+        isActive: true,
         category: "Proveedor",
         contactPerson: customer.name,
         currentBalance: "0.00"
