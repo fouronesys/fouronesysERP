@@ -90,25 +90,40 @@ export default function InvoicePrintModal({ isOpen, onClose, saleId, saleNumber 
         // Wait for progress animation to complete before opening receipt
         await new Promise(resolve => setTimeout(resolve, 4500));
         
-        // Open in new window/tab for printing with specific window features
-        const printWindow = window.open('', '_blank', 'width=400,height=600,scrollbars=yes,resizable=yes');
-        if (printWindow) {
-          printWindow.document.open();
-          printWindow.document.write(htmlContent);
-          printWindow.document.close();
-          
-          // Focus the new window
-          printWindow.focus();
-          
-          console.log('POS receipt window opened successfully');
-        } else {
-          console.error('Failed to open print window - popup blocked?');
-          throw new Error("No se pudo abrir la ventana del recibo");
+        // Try to open in new window first, fallback to data URL
+        let windowOpened = false;
+        try {
+          const printWindow = window.open('', '_blank', 'width=400,height=600,scrollbars=yes,resizable=yes');
+          if (printWindow && !printWindow.closed) {
+            printWindow.document.open();
+            printWindow.document.write(htmlContent);
+            printWindow.document.close();
+            printWindow.focus();
+            windowOpened = true;
+            console.log('POS receipt window opened successfully');
+          }
+        } catch (error) {
+          console.log('Window.open failed, trying alternative method');
+        }
+        
+        // Fallback: create blob and open as data URL
+        if (!windowOpened) {
+          const blob = new Blob([htmlContent], { type: 'text/html' });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.target = '_blank';
+          link.download = `Recibo-POS-80mm-${Date.now()}.html`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+          console.log('POS receipt downloaded as HTML file');
         }
 
         toast({
           title: "Recibo POS generado",
-          description: "Recibo de 80mm abierto en nueva ventana",
+          description: windowOpened ? "Recibo de 80mm abierto en nueva ventana" : "Recibo descargado como archivo HTML",
         });
 
         // Reset states and close modal
