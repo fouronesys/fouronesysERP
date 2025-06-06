@@ -85,6 +85,12 @@ const navigation = [
     ],
   },
   {
+    category: "Contabilidad",
+    items: [
+      { name: "Módulo Contable", href: "/accounting", icon: Calculator },
+    ],
+  },
+  {
     category: "Cumplimiento Fiscal",
     items: [
       { name: "Comprobantes Fiscales", href: "/fiscal-documents", icon: FileText },

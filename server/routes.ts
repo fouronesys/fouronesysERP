@@ -1088,6 +1088,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
+      // Generate automatic journal entry for the sale
+      try {
+        await accountingService.generatePOSJournalEntry(sale.id, company.id, userId);
+        console.log(`Journal entry generated for POS sale ${sale.saleNumber}`);
+      } catch (journalError) {
+        console.error("Error generating journal entry for POS sale:", journalError);
+        // Continue even if journal entry fails - the sale is already recorded
+      }
+
       res.json({ ...sale, ncf });
     } catch (error) {
       console.error("Error creating POS sale:", error);
@@ -2655,6 +2664,189 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     },
   );
+
+  // ACCOUNTING MODULE ROUTES
+
+  // Initialize Chart of Accounts
+  app.post("/api/accounting/initialize", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+      
+      const result = await accountingService.initializeChartOfAccounts(company.id, userId);
+      res.json(result);
+    } catch (error) {
+      console.error("Error initializing chart of accounts:", error);
+      res.status(500).json({ message: "Failed to initialize chart of accounts" });
+    }
+  });
+
+  // Get Chart of Accounts
+  app.get("/api/accounting/accounts", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+      
+      const accounts = await storage.getAccounts(company.id);
+      res.json(accounts);
+    } catch (error) {
+      console.error("Error fetching accounts:", error);
+      res.status(500).json({ message: "Failed to fetch accounts" });
+    }
+  });
+
+  // Create Account
+  app.post("/api/accounting/accounts", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+      
+      const accountData = insertAccountSchema.parse({ ...req.body, companyId: company.id });
+      const account = await storage.createAccount(accountData);
+      res.json(account);
+    } catch (error) {
+      console.error("Error creating account:", error);
+      res.status(500).json({ message: "Failed to create account" });
+    }
+  });
+
+  // Get Journal Entries
+  app.get("/api/accounting/journal-entries", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+      
+      const entries = await storage.getJournalEntries(company.id);
+      res.json(entries);
+    } catch (error) {
+      console.error("Error fetching journal entries:", error);
+      res.status(500).json({ message: "Failed to fetch journal entries" });
+    }
+  });
+
+  // Create Manual Journal Entry
+  app.post("/api/accounting/journal-entries", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+      
+      const entryData = insertJournalEntrySchema.parse({ ...req.body, companyId: company.id, createdBy: userId });
+      const entry = await storage.createJournalEntry(entryData);
+      res.json(entry);
+    } catch (error) {
+      console.error("Error creating journal entry:", error);
+      res.status(500).json({ message: "Failed to create journal entry" });
+    }
+  });
+
+  // Generate Trial Balance
+  app.get("/api/accounting/trial-balance", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+      
+      const { asOfDate } = req.query;
+      const endDate = asOfDate ? new Date(asOfDate as string) : undefined;
+      
+      const trialBalance = await accountingService.generateTrialBalance(company.id, endDate);
+      res.json(trialBalance);
+    } catch (error) {
+      console.error("Error generating trial balance:", error);
+      res.status(500).json({ message: "Failed to generate trial balance" });
+    }
+  });
+
+  // Generate Income Statement
+  app.get("/api/accounting/income-statement", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+      
+      const { startDate, endDate } = req.query;
+      if (!startDate || !endDate) {
+        return res.status(400).json({ message: "Start date and end date are required" });
+      }
+      
+      const incomeStatement = await accountingService.generateIncomeStatement(
+        company.id,
+        new Date(startDate as string),
+        new Date(endDate as string)
+      );
+      res.json(incomeStatement);
+    } catch (error) {
+      console.error("Error generating income statement:", error);
+      res.status(500).json({ message: "Failed to generate income statement" });
+    }
+  });
+
+  // Generate Balance Sheet
+  app.get("/api/accounting/balance-sheet", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+      
+      const { asOfDate } = req.query;
+      const endDate = asOfDate ? new Date(asOfDate as string) : undefined;
+      
+      const balanceSheet = await accountingService.generateBalanceSheet(company.id, endDate);
+      res.json(balanceSheet);
+    } catch (error) {
+      console.error("Error generating balance sheet:", error);
+      res.status(500).json({ message: "Failed to generate balance sheet" });
+    }
+  });
+
+  // Get General Ledger for Account
+  app.get("/api/accounting/general-ledger/:accountId", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+      
+      const { accountId } = req.params;
+      const { startDate, endDate } = req.query;
+      
+      const startDateObj = startDate ? new Date(startDate as string) : undefined;
+      const endDateObj = endDate ? new Date(endDate as string) : undefined;
+      
+      const ledger = await accountingService.getGeneralLedger(
+        company.id,
+        parseInt(accountId),
+        startDateObj,
+        endDateObj
+      );
+      res.json(ledger);
+    } catch (error) {
+      console.error("Error fetching general ledger:", error);
+      res.status(500).json({ message: "Failed to fetch general ledger" });
+    }
+  });
 
   // AI Chat Assistant
   app.post("/api/ai/chat", isAuthenticated, async (req: any, res) => {
