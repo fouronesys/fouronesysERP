@@ -20,7 +20,7 @@ interface InvoicePrintModalProps {
 
 export default function InvoicePrintModal({ isOpen, onClose, saleId, saleNumber }: InvoicePrintModalProps) {
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState("thermal");
+  const [activeTab, setActiveTab] = useState("html");
   const [isPrinting, setIsPrinting] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
 
