@@ -3064,6 +3064,140 @@ export async function registerRoutes(app: Express): Promise<Server> {
     return reportLines.join("\n");
   }
 
+  // Simple receipt generation function
+  function generateSimpleReceipt(sale: any, items: any[], company: any, customerInfo: any): string {
+    const lines = [];
+    
+    // Header
+    lines.push("=====================================");
+    lines.push(`         ${company.name}`);
+    lines.push(`    RNC: ${company.rnc || 'N/A'}`);
+    lines.push(`    Tel: ${company.phone || 'N/A'}`);
+    lines.push("=====================================");
+    lines.push("");
+    
+    // Sale info
+    lines.push(`Factura #: ${sale.saleNumber}`);
+    lines.push(`Fecha: ${new Date(sale.createdAt).toLocaleDateString('es-DO')}`);
+    lines.push(`Hora: ${new Date(sale.createdAt).toLocaleTimeString('es-DO')}`);
+    
+    if (customerInfo.name) {
+      lines.push(`Cliente: ${customerInfo.name}`);
+    }
+    if (customerInfo.rnc) {
+      lines.push(`RNC Cliente: ${customerInfo.rnc}`);
+    }
+    
+    lines.push("-------------------------------------");
+    
+    // Items
+    items.forEach(item => {
+      lines.push(`${item.productName}`);
+      lines.push(`  ${item.quantity} x RD$${parseFloat(item.unitPrice).toFixed(2)} = RD$${parseFloat(item.subtotal).toFixed(2)}`);
+    });
+    
+    lines.push("-------------------------------------");
+    
+    // Totals
+    lines.push(`Subtotal:      RD$${parseFloat(sale.subtotal).toFixed(2)}`);
+    lines.push(`ITBIS (18%):   RD$${parseFloat(sale.itbis).toFixed(2)}`);
+    lines.push(`TOTAL:         RD$${parseFloat(sale.total).toFixed(2)}`);
+    
+    // Payment info
+    lines.push("");
+    lines.push(`Método: ${sale.paymentMethod === 'cash' ? 'Efectivo' : sale.paymentMethod}`);
+    if (sale.cashReceived) {
+      lines.push(`Recibido:      RD$${parseFloat(sale.cashReceived).toFixed(2)}`);
+      lines.push(`Cambio:        RD$${parseFloat(sale.cashChange || '0').toFixed(2)}`);
+    }
+    
+    lines.push("");
+    lines.push("=====================================");
+    lines.push("      ¡Gracias por su compra!      ");
+    lines.push("=====================================");
+    
+    return lines.join("\n");
+  }
+
+  // Simple HTML receipt generation function
+  function generateSimpleReceiptHTML(sale: any, items: any[], company: any, customerInfo: any): string {
+    return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <title>Factura ${sale.saleNumber}</title>
+      <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .header { text-align: center; border-bottom: 2px solid #333; padding-bottom: 20px; margin-bottom: 20px; }
+        .company-name { font-size: 24px; font-weight: bold; margin-bottom: 10px; }
+        .sale-info { margin-bottom: 20px; }
+        .items-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        .items-table th, .items-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        .items-table th { background-color: #f2f2f2; }
+        .totals { text-align: right; margin-bottom: 20px; }
+        .totals div { margin: 5px 0; }
+        .total-final { font-weight: bold; font-size: 18px; }
+        .footer { text-align: center; margin-top: 30px; border-top: 1px solid #333; padding-top: 20px; }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <div class="company-name">${company.name}</div>
+        <div>RNC: ${company.rnc || 'N/A'}</div>
+        <div>Tel: ${company.phone || 'N/A'}</div>
+        ${company.address ? `<div>${company.address}</div>` : ''}
+      </div>
+      
+      <div class="sale-info">
+        <div><strong>Factura #:</strong> ${sale.saleNumber}</div>
+        <div><strong>Fecha:</strong> ${new Date(sale.createdAt).toLocaleDateString('es-DO')}</div>
+        <div><strong>Hora:</strong> ${new Date(sale.createdAt).toLocaleTimeString('es-DO')}</div>
+        ${customerInfo.name ? `<div><strong>Cliente:</strong> ${customerInfo.name}</div>` : ''}
+        ${customerInfo.rnc ? `<div><strong>RNC Cliente:</strong> ${customerInfo.rnc}</div>` : ''}
+      </div>
+      
+      <table class="items-table">
+        <thead>
+          <tr>
+            <th>Producto</th>
+            <th>Cantidad</th>
+            <th>Precio Unit.</th>
+            <th>Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${items.map(item => `
+            <tr>
+              <td>${item.productName}</td>
+              <td>${item.quantity}</td>
+              <td>RD$${parseFloat(item.unitPrice).toFixed(2)}</td>
+              <td>RD$${parseFloat(item.subtotal).toFixed(2)}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+      
+      <div class="totals">
+        <div>Subtotal: RD$${parseFloat(sale.subtotal).toFixed(2)}</div>
+        <div>ITBIS (18%): RD$${parseFloat(sale.itbis).toFixed(2)}</div>
+        <div class="total-final">TOTAL: RD$${parseFloat(sale.total).toFixed(2)}</div>
+      </div>
+      
+      <div class="sale-info">
+        <div><strong>Método de Pago:</strong> ${sale.paymentMethod === 'cash' ? 'Efectivo' : sale.paymentMethod}</div>
+        ${sale.cashReceived ? `<div><strong>Recibido:</strong> RD$${parseFloat(sale.cashReceived).toFixed(2)}</div>` : ''}
+        ${sale.cashChange ? `<div><strong>Cambio:</strong> RD$${parseFloat(sale.cashChange).toFixed(2)}</div>` : ''}
+      </div>
+      
+      <div class="footer">
+        <div>¡Gracias por su compra!</div>
+      </div>
+    </body>
+    </html>
+    `;
+  }
+
   // Invoice Printing Routes
   app.post("/api/pos/print-thermal/:saleId", isAuthenticated, async (req: any, res) => {
     try {
@@ -3085,9 +3219,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Prepare customer info
       const customerInfo = {
-        name: sale.customerName,
-        phone: sale.customerPhone,
-        rnc: sale.customerRnc
+        name: sale.customerName || undefined,
+        phone: sale.customerPhone || undefined,
+        rnc: sale.customerRnc || undefined
       };
 
       const printOptions: ThermalPrintOptions = {
@@ -3099,17 +3233,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         cashDrawer
       };
 
-      // Generate thermal receipt
-      const result = await InvoiceTemplateService.generateThermalReceipt(
-        { sale, items, company, customerInfo },
-        printOptions
-      );
+      // Generate simple thermal receipt
+      const receiptText = generateSimpleReceipt(sale, items, company, customerInfo);
 
       res.json({
         success: true,
-        printData: result.printData,
-        previewUrl: result.previewUrl,
-        width: printOptions.width
+        printData: receiptText,
+        previewUrl: null,
+        width: printOptions.width,
+        message: "Recibo térmico generado correctamente"
       });
 
     } catch (error) {
@@ -3145,9 +3277,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Prepare customer info
       const customerInfo = {
-        name: sale.customerName,
-        phone: sale.customerPhone,
-        rnc: sale.customerRnc
+        name: sale.customerName || undefined,
+        phone: sale.customerPhone || undefined,
+        rnc: sale.customerRnc || undefined
       };
 
       const pdfOptions: PDFPrintOptions = {
@@ -3159,17 +3291,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         watermark
       };
 
-      // Generate PDF invoice
-      const result = await InvoiceTemplateService.generatePDFInvoice(
-        { sale, items, company, customerInfo },
-        pdfOptions
-      );
+      // Generate simple HTML invoice for PDF
+      const receiptHtml = generateSimpleReceiptHTML(sale, items, company, customerInfo);
 
       res.json({
         success: true,
-        pdfUrl: result.pdfUrl,
-        downloadUrl: result.downloadUrl,
-        format: pdfOptions.format
+        htmlContent: receiptHtml,
+        format: pdfOptions.format,
+        message: "Factura PDF lista para imprimir"
       });
 
     } catch (error) {

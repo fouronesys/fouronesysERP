@@ -52,23 +52,40 @@ export default function InvoicePrintModal({ isOpen, onClose, saleId, saleNumber 
         cashDrawer: thermalCashDrawer
       });
 
-      if (response.ok) {
-        const result = await response.json();
-        
-        // For thermal printing, we would typically send to a thermal printer
-        // For now, show preview and print data
-        if (result.previewUrl) {
-          window.open(result.previewUrl, '_blank');
+      const result = await response.json();
+      
+      if (result.success) {
+        // Create a new window/tab with the receipt text for printing
+        const printWindow = window.open('', '_blank');
+        if (printWindow) {
+          printWindow.document.write(`
+            <html>
+              <head>
+                <title>Recibo Térmico</title>
+                <style>
+                  body { font-family: 'Courier New', monospace; font-size: 12px; margin: 20px; white-space: pre-line; }
+                  @media print { body { margin: 0; } }
+                </style>
+              </head>
+              <body>${result.printData}</body>
+            </html>
+          `);
+          printWindow.document.close();
+          
+          // Auto-print after a short delay
+          setTimeout(() => {
+            printWindow.print();
+          }, 500);
         }
 
         toast({
           title: "Recibo térmico generado",
-          description: `Recibo de ${thermalWidth} generado correctamente`,
+          description: result.message || `Recibo de ${thermalWidth} generado correctamente`,
         });
 
         onClose();
       } else {
-        throw new Error("Failed to generate thermal receipt");
+        throw new Error(result.message || "Failed to generate thermal receipt");
       }
     } catch (error) {
       toast({
