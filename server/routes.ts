@@ -2728,7 +2728,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Company not found" });
       }
       
-      const entries = await storage.getJournalEntries(company.id);
+      const entries = await simpleAccountingService.getJournalEntries(company.id);
       res.json(entries);
     } catch (error) {
       console.error("Error fetching journal entries:", error);
