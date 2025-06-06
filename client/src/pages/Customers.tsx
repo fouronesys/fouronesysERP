@@ -69,7 +69,10 @@ export default function Customers() {
 
   const createCustomerMutation = useMutation({
     mutationFn: async (data: CustomerFormData) => {
-      const response = await apiRequest("POST", "/api/customers", data);
+      const response = await apiRequest("/api/customers", {
+        method: "POST",
+        body: data
+      });
       return response.json();
     },
     onSuccess: () => {
@@ -96,7 +99,10 @@ export default function Customers() {
   const updateCustomerMutation = useMutation({
     mutationFn: async (data: CustomerFormData) => {
       if (!editingCustomer) throw new Error("No customer selected");
-      const response = await apiRequest("PUT", `/api/customers/${editingCustomer.id}`, data);
+      const response = await apiRequest(`/api/customers/${editingCustomer.id}`, {
+        method: "PUT",
+        body: data
+      });
       return response.json();
     },
     onSuccess: () => {
@@ -139,7 +145,7 @@ export default function Customers() {
     },
   });
 
-  const filteredCustomers = customers.filter((customer: Customer) =>
+  const filteredCustomers = (customers as Customer[]).filter((customer: Customer) =>
     customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     customer.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     customer.rnc?.includes(searchTerm) ||
