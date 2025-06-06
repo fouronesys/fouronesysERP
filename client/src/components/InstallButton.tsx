@@ -274,10 +274,10 @@ export function InstallButton() {
         </Button>
       </DialogTrigger>
       
-      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto" aria-describedby="install-description">
         <DialogHeader>
           <DialogTitle className="text-2xl">Instalar Four One Solutions</DialogTitle>
-          <p className="text-muted-foreground">
+          <p id="install-description" className="text-muted-foreground">
             Elige la mejor opción de instalación para tu dispositivo y necesidades
           </p>
         </DialogHeader>
@@ -378,9 +378,15 @@ export function InstallButton() {
         <div className="text-center text-sm text-muted-foreground mt-6">
           <p>
             ¿Necesitas ayuda con la instalación? 
-            <a href="/help/installation" className="text-blue-600 hover:underline ml-1">
+            <button 
+              onClick={() => {
+                setIsOpen(false);
+                window.location.href = '/help/installation';
+              }}
+              className="text-blue-600 hover:underline ml-1 cursor-pointer"
+            >
               Ver guía completa
-            </a>
+            </button>
           </p>
         </div>
       </DialogContent>

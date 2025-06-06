@@ -402,7 +402,7 @@ export function PrintReceipt({
               #{invoice ? invoice.number : sale?.id}
             </div>
             <div style={{ fontSize: "10px", opacity: 0.9 }}>
-              {formatDate(invoice ? invoice.date : sale?.createdAt)}
+              {formatDate((invoice ? invoice.date : sale?.createdAt) || new Date())}
             </div>
           </div>
 
@@ -515,20 +515,22 @@ export function PrintReceipt({
           {/* Totals */}
           <div className="total-section">
             <table>
-              <tr>
-                <td>Subtotal:</td>
-                <td className="right">{formatDOP(totals.subtotal)}</td>
-              </tr>
-              <tr>
-                <td>ITBIS (18%):</td>
-                <td className="right">{formatDOP(totals.itbis)}</td>
-              </tr>
-              <tr style={{ borderTop: "1px solid #4a6cf7", paddingTop: "4px" }}>
-                <td className="bold">TOTAL:</td>
-                <td className="right total-amount">
-                  {formatDOP(totals.total)}
-                </td>
-              </tr>
+              <tbody>
+                <tr>
+                  <td>Subtotal:</td>
+                  <td className="right">{formatDOP(totals.subtotal)}</td>
+                </tr>
+                <tr>
+                  <td>ITBIS (18%):</td>
+                  <td className="right">{formatDOP(totals.itbis)}</td>
+                </tr>
+                <tr style={{ borderTop: "1px solid #4a6cf7", paddingTop: "4px" }}>
+                  <td className="bold">TOTAL:</td>
+                  <td className="right total-amount">
+                    {formatDOP(totals.total)}
+                  </td>
+                </tr>
+              </tbody>
             </table>
           </div>
 
@@ -548,28 +550,30 @@ export function PrintReceipt({
                   INFORMACIÓN DE PAGO
                 </div>
                 <table>
-                  <tr>
-                    <td>Método de pago:</td>
-                    <td className="right bold">
-                      {sale.paymentMethod === "cash" ? "Efectivo" : "Tarjeta"}
-                    </td>
-                  </tr>
-                  {sale.paymentMethod === "cash" && sale.cashReceived && (
-                    <>
-                      <tr>
-                        <td>Efectivo recibido:</td>
-                        <td className="right">
-                          {formatDOP(parseFloat(sale.cashReceived))}
-                        </td>
-                      </tr>
-                      <tr>
-                        <td>Cambio:</td>
-                        <td className="right bold">
-                          {formatDOP(parseFloat(sale.cashChange || "0"))}
-                        </td>
-                      </tr>
-                    </>
-                  )}
+                  <tbody>
+                    <tr>
+                      <td>Método de pago:</td>
+                      <td className="right bold">
+                        {sale.paymentMethod === "cash" ? "Efectivo" : "Tarjeta"}
+                      </td>
+                    </tr>
+                    {sale.paymentMethod === "cash" && sale.cashReceived && (
+                      <>
+                        <tr>
+                          <td>Efectivo recibido:</td>
+                          <td className="right">
+                            {formatDOP(parseFloat(sale.cashReceived))}
+                          </td>
+                        </tr>
+                        <tr>
+                          <td>Cambio:</td>
+                          <td className="right bold">
+                            {formatDOP(parseFloat(sale.cashChange || "0"))}
+                          </td>
+                        </tr>
+                      </>
+                    )}
+                  </tbody>
                 </table>
               </div>
             </>

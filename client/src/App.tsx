@@ -42,6 +42,7 @@ import SubscriptionPlans from "@/pages/SubscriptionPlans";
 import CompanyAnalytics from "@/pages/CompanyAnalytics";
 import Purchases from "@/pages/Purchases";
 import FiscalReports from "@/pages/FiscalReports";
+import InstallationGuide from "@/pages/InstallationGuide";
 import NotFound from "@/pages/not-found";
 import LoginAnimation from "@/components/LoginAnimation";
 
@@ -193,6 +194,7 @@ function Router() {
           <Route path="/profile" component={Profile} />
           <Route path="/notifications" component={Notifications} />
           <Route path="/settings" component={Settings} />
+          <Route path="/help/installation" component={InstallationGuide} />
           <Route component={NotFound} />
         </Switch>
       </div>
