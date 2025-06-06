@@ -1,0 +1,43 @@
+OST https://7ce310d6-f7c4-4f33-acdc-ca701d08f86e-00-zimm1kwfhzmx.kirk.replit.dev/api/pos/sales 500 (Internal Server Error)
+apiRequest @ queryClient.ts:20
+processSale @ POS.tsx:243
+callCallback2 @ chunk-RPCDYKBN.js?v=2c800790:3674
+invokeGuardedCallbackDev @ chunk-RPCDYKBN.js?v=2c800790:3699
+invokeGuardedCallback @ chunk-RPCDYKBN.js?v=2c800790:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-RPCDYKBN.js?v=2c800790:3736
+executeDispatch @ chunk-RPCDYKBN.js?v=2c800790:7014
+processDispatchQueueItemsInOrder @ chunk-RPCDYKBN.js?v=2c800790:7034
+processDispatchQueue @ chunk-RPCDYKBN.js?v=2c800790:7043
+dispatchEventsForPlugins @ chunk-RPCDYKBN.js?v=2c800790:7051
+(anonymous) @ chunk-RPCDYKBN.js?v=2c800790:7174
+batchedUpdates$1 @ chunk-RPCDYKBN.js?v=2c800790:18913
+batchedUpdates @ chunk-RPCDYKBN.js?v=2c800790:3579
+dispatchEventForPluginEventSystem @ chunk-RPCDYKBN.js?v=2c800790:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-RPCDYKBN.js?v=2c800790:5478
+dispatchEvent @ chunk-RPCDYKBN.js?v=2c800790:5472
+dispatchDiscreteEvent @ chunk-RPCDYKBN.js?v=2c800790:5449
+POS.tsx:275 Error procesando venta: Error: 500: {"message":"Failed to create POS sale","error":"column \"discount\" of relation \"pos_sale_items\" does not exist"}
+    at throwIfResNotOk (queryClient.ts:6:11)
+    at async apiRequest (queryClient.ts:27:3)
+    at async processSale (POS.tsx:243:24)
+processSale @ POS.tsx:275
+await in processSale
+callCallback2 @ chunk-RPCDYKBN.js?v=2c800790:3674
+invokeGuardedCallbackDev @ chunk-RPCDYKBN.js?v=2c800790:3699
+invokeGuardedCallback @ chunk-RPCDYKBN.js?v=2c800790:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-RPCDYKBN.js?v=2c800790:3736
+executeDispatch @ chunk-RPCDYKBN.js?v=2c800790:7014
+processDispatchQueueItemsInOrder @ chunk-RPCDYKBN.js?v=2c800790:7034
+processDispatchQueue @ chunk-RPCDYKBN.js?v=2c800790:7043
+dispatchEventsForPlugins @ chunk-RPCDYKBN.js?v=2c800790:7051
+(anonymous) @ chunk-RPCDYKBN.js?v=2c800790:7174
+batchedUpdates$1 @ chunk-RPCDYKBN.js?v=2c800790:18913
+batchedUpdates @ chunk-RPCDYKBN.js?v=2c800790:3579
+dispatchEventForPluginEventSystem @ chunk-RPCDYKBN.js?v=2c800790:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-RPCDYKBN.js?v=2c800790:5478
+dispatchEvent @ chunk-RPCDYKBN.js?v=2c800790:5472
+dispatchDiscreteEvent @ chunk-RPCDYKBN.js?v=2c800790:5449
+POS.tsx:276 Error stack: Error: 500: {"message":"Failed to create POS sale","error":"column \"discount\" of relation \"pos_sale_items\" does not exist"}
+    at throwIfResNotOk (https://7ce310d6-f7c4-4f33-acdc-ca701d08f86e-00-zimm1kwfhzmx.kirk.replit.dev/src/lib/queryClient.ts:5:11)
+    at async apiRequest (https://7ce310d6-f7c4-4f33-acdc-ca701d08f86e-00-zimm1kwfhzmx.kirk.replit.dev/src/lib/queryClient.ts:17:3)
+    at async processSale (https://7ce310d6-f7c4-4f33-acdc-ca701d08f86e-00-zimm1kwfhzmx.kirk.replit.dev/src/pages/POS.tsx:207:24)
