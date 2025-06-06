@@ -4371,5 +4371,316 @@ export async function registerRoutes(app: Express): Promise<Server> {
     return 'Unknown';
   }
 
+  // POS Multi-Station API Routes
+  
+  // Employee management routes
+  app.get("/api/pos/employees", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      const employees = await storage.getPOSEmployees(company.id);
+      res.json(employees);
+    } catch (error) {
+      console.error("Error fetching POS employees:", error);
+      res.status(500).json({ message: "Failed to fetch employees" });
+    }
+  });
+
+  app.post("/api/pos/employees", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      const employeeData = {
+        ...req.body,
+        companyId: company.id,
+        createdBy: userId
+      };
+
+      const employee = await storage.createPOSEmployee(employeeData);
+      res.json(employee);
+    } catch (error) {
+      console.error("Error creating POS employee:", error);
+      res.status(500).json({ message: "Failed to create employee" });
+    }
+  });
+
+  app.patch("/api/pos/employees/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      const employee = await storage.updatePOSEmployee(parseInt(id), req.body, company.id);
+      if (!employee) {
+        return res.status(404).json({ message: "Employee not found" });
+      }
+
+      res.json(employee);
+    } catch (error) {
+      console.error("Error updating POS employee:", error);
+      res.status(500).json({ message: "Failed to update employee" });
+    }
+  });
+
+  app.delete("/api/pos/employees/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      await storage.deletePOSEmployee(parseInt(id), company.id);
+      res.json({ message: "Employee deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting POS employee:", error);
+      res.status(500).json({ message: "Failed to delete employee" });
+    }
+  });
+
+  // Employee authentication route
+  app.post("/api/pos/auth", async (req, res) => {
+    try {
+      const { employeeCode, pin, companyId } = req.body;
+      
+      const employee = await storage.authenticatePOSEmployee(employeeCode, pin, companyId);
+      
+      if (!employee) {
+        return res.status(401).json({ message: "Invalid credentials" });
+      }
+
+      res.json({
+        employee: {
+          id: employee.id,
+          name: employee.name,
+          employeeCode: employee.employeeCode,
+          role: employee.role,
+          permissions: employee.permissions
+        }
+      });
+    } catch (error) {
+      console.error("Error authenticating POS employee:", error);
+      res.status(500).json({ message: "Authentication failed" });
+    }
+  });
+
+  // Station management routes
+  app.get("/api/pos/stations", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      const stations = await storage.getPOSStations(company.id);
+      res.json(stations);
+    } catch (error) {
+      console.error("Error fetching POS stations:", error);
+      res.status(500).json({ message: "Failed to fetch stations" });
+    }
+  });
+
+  app.post("/api/pos/stations", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      const stationData = {
+        ...req.body,
+        companyId: company.id
+      };
+
+      const station = await storage.createPOSStation(stationData);
+      res.json(station);
+    } catch (error) {
+      console.error("Error creating POS station:", error);
+      res.status(500).json({ message: "Failed to create station" });
+    }
+  });
+
+  app.patch("/api/pos/stations/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      const station = await storage.updatePOSStation(parseInt(id), req.body, company.id);
+      if (!station) {
+        return res.status(404).json({ message: "Station not found" });
+      }
+
+      res.json(station);
+    } catch (error) {
+      console.error("Error updating POS station:", error);
+      res.status(500).json({ message: "Failed to update station" });
+    }
+  });
+
+  // Cash session management routes
+  app.get("/api/pos/cash-sessions", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      const { stationId } = req.query;
+      const sessions = await storage.getPOSCashSessions(company.id, stationId ? parseInt(stationId) : undefined);
+      res.json(sessions);
+    } catch (error) {
+      console.error("Error fetching cash sessions:", error);
+      res.status(500).json({ message: "Failed to fetch cash sessions" });
+    }
+  });
+
+  app.post("/api/pos/cash-sessions", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      const sessionData = {
+        ...req.body,
+        companyId: company.id,
+        sessionNumber: `CS-${Date.now()}`
+      };
+
+      const session = await storage.createPOSCashSession(sessionData);
+      res.json(session);
+    } catch (error) {
+      console.error("Error creating cash session:", error);
+      res.status(500).json({ message: "Failed to create cash session" });
+    }
+  });
+
+  app.patch("/api/pos/cash-sessions/:id/close", isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      const session = await storage.closePOSCashSession(parseInt(id), req.body, company.id);
+      if (!session) {
+        return res.status(404).json({ message: "Cash session not found" });
+      }
+
+      res.json(session);
+    } catch (error) {
+      console.error("Error closing cash session:", error);
+      res.status(500).json({ message: "Failed to close cash session" });
+    }
+  });
+
+  // Customer management with RNC validation routes
+  app.get("/api/pos/customers", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      const customers = await storage.getPOSCustomers(company.id);
+      res.json(customers);
+    } catch (error) {
+      console.error("Error fetching POS customers:", error);
+      res.status(500).json({ message: "Failed to fetch customers" });
+    }
+  });
+
+  app.post("/api/pos/customers", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      const customerData = {
+        ...req.body,
+        companyId: company.id,
+        createdBy: userId
+      };
+
+      // Validate RNC if provided
+      if (customerData.rnc) {
+        const isValidRnc = await storage.validateCustomerRNC(customerData.rnc, company.id);
+        customerData.isValidatedRnc = isValidRnc;
+        if (isValidRnc) {
+          customerData.rncValidationDate = new Date();
+        }
+      }
+
+      const customer = await storage.createPOSCustomer(customerData);
+      res.json(customer);
+    } catch (error) {
+      console.error("Error creating POS customer:", error);
+      res.status(500).json({ message: "Failed to create customer" });
+    }
+  });
+
+  app.patch("/api/pos/customers/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      const customer = await storage.updatePOSCustomer(parseInt(id), req.body, company.id);
+      if (!customer) {
+        return res.status(404).json({ message: "Customer not found" });
+      }
+
+      res.json(customer);
+    } catch (error) {
+      console.error("Error updating POS customer:", error);
+      res.status(500).json({ message: "Failed to update customer" });
+    }
+  });
+
+  app.post("/api/pos/customers/validate-rnc", isAuthenticated, async (req: any, res) => {
+    try {
+      const { rnc } = req.body;
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      const isValid = await storage.validateCustomerRNC(rnc, company.id);
+      res.json({ valid: isValid, rnc });
+    } catch (error) {
+      console.error("Error validating RNC:", error);
+      res.status(500).json({ message: "Failed to validate RNC" });
+    }
+  });
+
   return httpServer;
 }

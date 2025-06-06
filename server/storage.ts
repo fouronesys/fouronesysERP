@@ -87,8 +87,14 @@ import {
   type InsertPOSSaleItem,
   type POSPrintSettings,
   type InsertPOSPrintSettings,
-  type POSSession,
-  type InsertPOSSession,
+  type POSCashSession,
+  type InsertPOSCashSession,
+  type POSEmployee,
+  type InsertPOSEmployee,
+  type POSStation,
+  type InsertPOSStation,
+  type POSCustomer,
+  type InsertPOSCustomer,
   type StockReservation,
   type InsertStockReservation,
   type NCFSequence,
@@ -269,12 +275,36 @@ export interface IStorage {
   updateNCFSequence(id: number, sequence: number): Promise<void>;
   incrementNCFSequence(companyId: number, ncfType: string): Promise<void>;
 
-  // POS Session operations for real-time synchronization
-  createPOSSession(sessionData: InsertPOSSession): Promise<POSSession>;
-  updatePOSSession(sessionId: string, cartData: any): Promise<void>;
-  getPOSSession(sessionId: string): Promise<POSSession | undefined>;
-  getActivePOSSessions(companyId: number): Promise<POSSession[]>;
-  deactivatePOSSession(sessionId: string): Promise<void>;
+  // POS Multi-Station operations
+  // Employee management
+  getPOSEmployees(companyId: number): Promise<POSEmployee[]>;
+  getPOSEmployee(id: number, companyId: number): Promise<POSEmployee | undefined>;
+  createPOSEmployee(employee: InsertPOSEmployee): Promise<POSEmployee>;
+  updatePOSEmployee(id: number, employee: Partial<InsertPOSEmployee>, companyId: number): Promise<POSEmployee | undefined>;
+  deletePOSEmployee(id: number, companyId: number): Promise<void>;
+  authenticatePOSEmployee(employeeCode: string, pin: string, companyId: number): Promise<POSEmployee | null>;
+  
+  // Station management
+  getPOSStations(companyId: number): Promise<POSStation[]>;
+  getPOSStation(id: number, companyId: number): Promise<POSStation | undefined>;
+  createPOSStation(station: InsertPOSStation): Promise<POSStation>;
+  updatePOSStation(id: number, station: Partial<InsertPOSStation>, companyId: number): Promise<POSStation | undefined>;
+  deletePOSStation(id: number, companyId: number): Promise<void>;
+  
+  // Cash session management
+  getPOSCashSessions(companyId: number, stationId?: number): Promise<POSCashSession[]>;
+  getPOSCashSession(id: number, companyId: number): Promise<POSCashSession | undefined>;
+  createPOSCashSession(session: InsertPOSCashSession): Promise<POSCashSession>;
+  updatePOSCashSession(id: number, session: Partial<InsertPOSCashSession>, companyId: number): Promise<POSCashSession | undefined>;
+  closePOSCashSession(id: number, closingData: any, companyId: number): Promise<POSCashSession | undefined>;
+  
+  // Customer management with RNC validation
+  getPOSCustomers(companyId: number): Promise<POSCustomer[]>;
+  getPOSCustomer(id: number, companyId: number): Promise<POSCustomer | undefined>;
+  createPOSCustomer(customer: InsertPOSCustomer): Promise<POSCustomer>;
+  updatePOSCustomer(id: number, customer: Partial<InsertPOSCustomer>, companyId: number): Promise<POSCustomer | undefined>;
+  deletePOSCustomer(id: number, companyId: number): Promise<void>;
+  validateCustomerRNC(rnc: string, companyId: number): Promise<boolean>;
 
   // Stock Reservation operations for cart synchronization
   createStockReservation(reservationData: InsertStockReservation): Promise<StockReservation>;
@@ -2584,6 +2614,201 @@ export class DatabaseStorage implements IStorage {
       .delete(posCartItems)
       .where(and(eq(posCartItems.companyId, companyId), eq(posCartItems.userId, userId)));
     return result.rowCount > 0;
+  }
+
+  // POS Multi-Station Implementation
+  // Employee management methods
+  async getPOSEmployees(companyId: number): Promise<POSEmployee[]> {
+    return await db.select().from(posEmployees).where(eq(posEmployees.companyId, companyId));
+  }
+
+  async getPOSEmployee(id: number, companyId: number): Promise<POSEmployee | undefined> {
+    const [employee] = await db
+      .select()
+      .from(posEmployees)
+      .where(and(eq(posEmployees.id, id), eq(posEmployees.companyId, companyId)));
+    return employee;
+  }
+
+  async createPOSEmployee(employee: InsertPOSEmployee): Promise<POSEmployee> {
+    const [created] = await db.insert(posEmployees).values(employee).returning();
+    return created;
+  }
+
+  async updatePOSEmployee(id: number, employee: Partial<InsertPOSEmployee>, companyId: number): Promise<POSEmployee | undefined> {
+    const [updated] = await db
+      .update(posEmployees)
+      .set({ ...employee, updatedAt: new Date() })
+      .where(and(eq(posEmployees.id, id), eq(posEmployees.companyId, companyId)))
+      .returning();
+    return updated;
+  }
+
+  async deletePOSEmployee(id: number, companyId: number): Promise<void> {
+    await db.delete(posEmployees).where(and(eq(posEmployees.id, id), eq(posEmployees.companyId, companyId)));
+  }
+
+  async authenticatePOSEmployee(employeeCode: string, pin: string, companyId: number): Promise<POSEmployee | null> {
+    const [employee] = await db
+      .select()
+      .from(posEmployees)
+      .where(and(
+        eq(posEmployees.employeeCode, employeeCode),
+        eq(posEmployees.pin, pin),
+        eq(posEmployees.companyId, companyId),
+        eq(posEmployees.isActive, true)
+      ));
+    
+    if (employee) {
+      // Update last login
+      await this.updatePOSEmployee(employee.id, { lastLogin: new Date() }, companyId);
+      return employee;
+    }
+    return null;
+  }
+
+  // Station management methods
+  async getPOSStations(companyId: number): Promise<POSStation[]> {
+    return await db.select().from(posStations).where(eq(posStations.companyId, companyId));
+  }
+
+  async getPOSStation(id: number, companyId: number): Promise<POSStation | undefined> {
+    const [station] = await db
+      .select()
+      .from(posStations)
+      .where(and(eq(posStations.id, id), eq(posStations.companyId, companyId)));
+    return station;
+  }
+
+  async createPOSStation(station: InsertPOSStation): Promise<POSStation> {
+    const [created] = await db.insert(posStations).values(station).returning();
+    return created;
+  }
+
+  async updatePOSStation(id: number, station: Partial<InsertPOSStation>, companyId: number): Promise<POSStation | undefined> {
+    const [updated] = await db
+      .update(posStations)
+      .set({ ...station, updatedAt: new Date() })
+      .where(and(eq(posStations.id, id), eq(posStations.companyId, companyId)))
+      .returning();
+    return updated;
+  }
+
+  async deletePOSStation(id: number, companyId: number): Promise<void> {
+    await db.delete(posStations).where(and(eq(posStations.id, id), eq(posStations.companyId, companyId)));
+  }
+
+  // Cash session management methods
+  async getPOSCashSessions(companyId: number, stationId?: number): Promise<POSCashSession[]> {
+    let query = db.select().from(posCashSessions).where(eq(posCashSessions.companyId, companyId));
+    
+    if (stationId) {
+      query = query.where(eq(posCashSessions.stationId, stationId));
+    }
+    
+    return await query.orderBy(desc(posCashSessions.openedAt));
+  }
+
+  async getPOSCashSession(id: number, companyId: number): Promise<POSCashSession | undefined> {
+    const [session] = await db
+      .select()
+      .from(posCashSessions)
+      .where(and(eq(posCashSessions.id, id), eq(posCashSessions.companyId, companyId)));
+    return session;
+  }
+
+  async createPOSCashSession(session: InsertPOSCashSession): Promise<POSCashSession> {
+    const [created] = await db.insert(posCashSessions).values(session).returning();
+    return created;
+  }
+
+  async updatePOSCashSession(id: number, session: Partial<InsertPOSCashSession>, companyId: number): Promise<POSCashSession | undefined> {
+    const [updated] = await db
+      .update(posCashSessions)
+      .set(session)
+      .where(and(eq(posCashSessions.id, id), eq(posCashSessions.companyId, companyId)))
+      .returning();
+    return updated;
+  }
+
+  async closePOSCashSession(id: number, closingData: any, companyId: number): Promise<POSCashSession | undefined> {
+    const [updated] = await db
+      .update(posCashSessions)
+      .set({
+        ...closingData,
+        status: 'closed',
+        closedAt: new Date()
+      })
+      .where(and(eq(posCashSessions.id, id), eq(posCashSessions.companyId, companyId)))
+      .returning();
+    return updated;
+  }
+
+  // Customer management with RNC validation
+  async getPOSCustomers(companyId: number): Promise<POSCustomer[]> {
+    return await db.select().from(posCustomers).where(eq(posCustomers.companyId, companyId));
+  }
+
+  async getPOSCustomer(id: number, companyId: number): Promise<POSCustomer | undefined> {
+    const [customer] = await db
+      .select()
+      .from(posCustomers)
+      .where(and(eq(posCustomers.id, id), eq(posCustomers.companyId, companyId)));
+    return customer;
+  }
+
+  async createPOSCustomer(customer: InsertPOSCustomer): Promise<POSCustomer> {
+    const [created] = await db.insert(posCustomers).values(customer).returning();
+    return created;
+  }
+
+  async updatePOSCustomer(id: number, customer: Partial<InsertPOSCustomer>, companyId: number): Promise<POSCustomer | undefined> {
+    const [updated] = await db
+      .update(posCustomers)
+      .set({ ...customer, updatedAt: new Date() })
+      .where(and(eq(posCustomers.id, id), eq(posCustomers.companyId, companyId)))
+      .returning();
+    return updated;
+  }
+
+  async deletePOSCustomer(id: number, companyId: number): Promise<void> {
+    await db.delete(posCustomers).where(and(eq(posCustomers.id, id), eq(posCustomers.companyId, companyId)));
+  }
+
+  async validateCustomerRNC(rnc: string, companyId: number): Promise<boolean> {
+    // Check against DGII registry
+    const rncRecord = await this.searchRNC(rnc);
+    if (rncRecord) {
+      // Update customer record with validated RNC
+      await db
+        .update(posCustomers)
+        .set({ 
+          isValidatedRnc: true, 
+          rncValidationDate: new Date() 
+        })
+        .where(and(eq(posCustomers.rnc, rnc), eq(posCustomers.companyId, companyId)));
+      return true;
+    }
+    return false;
+  }
+
+  // Stock Reservation operations for cart synchronization
+  async createStockReservation(reservationData: InsertStockReservation): Promise<StockReservation> {
+    const [created] = await db.insert(stockReservations).values(reservationData).returning();
+    return created;
+  }
+
+  async releaseStockReservations(sessionId: string): Promise<void> {
+    await db.delete(stockReservations).where(eq(stockReservations.sessionId, sessionId));
+  }
+
+  async getStockReservations(productId: number): Promise<StockReservation[]> {
+    return await db.select().from(stockReservations).where(eq(stockReservations.productId, productId));
+  }
+
+  async cleanExpiredReservations(): Promise<void> {
+    const expirationTime = new Date(Date.now() - 30 * 60 * 1000); // 30 minutes ago
+    await db.delete(stockReservations).where(lt(stockReservations.createdAt, expirationTime));
   }
 }
 
