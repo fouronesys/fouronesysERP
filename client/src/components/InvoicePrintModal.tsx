@@ -43,13 +43,16 @@ export default function InvoicePrintModal({ isOpen, onClose, saleId, saleNumber 
   const handleThermalPrint = async () => {
     setIsPrinting(true);
     try {
-      const response = await apiRequest("POST", `/api/pos/print-thermal/${saleId}`, {
-        width: thermalWidth,
-        showLogo: thermalShowLogo,
-        showNCF: thermalShowNCF,
-        showQR: thermalShowQR,
-        paperCut: thermalPaperCut,
-        cashDrawer: thermalCashDrawer
+      const response = await apiRequest(`/api/pos/print-thermal/${saleId}`, {
+        method: "POST",
+        body: {
+          width: thermalWidth,
+          showLogo: thermalShowLogo,
+          showNCF: thermalShowNCF,
+          showQR: thermalShowQR,
+          paperCut: thermalPaperCut,
+          cashDrawer: thermalCashDrawer
+        }
       });
 
       const result = await response.json();
@@ -101,13 +104,16 @@ export default function InvoicePrintModal({ isOpen, onClose, saleId, saleNumber 
   const handlePDFGenerate = async () => {
     setIsGenerating(true);
     try {
-      const response = await apiRequest("POST", `/api/pos/print-pdf/${saleId}`, {
-        format: pdfFormat,
-        orientation: pdfOrientation,
-        showLogo: pdfShowLogo,
-        showNCF: pdfShowNCF,
-        showQR: pdfShowQR,
-        watermark: pdfWatermark || undefined
+      const response = await apiRequest(`/api/pos/print-pdf/${saleId}`, {
+        method: "POST",
+        body: {
+          format: pdfFormat,
+          orientation: pdfOrientation,
+          showLogo: pdfShowLogo,
+          showNCF: pdfShowNCF,
+          showQR: pdfShowQR,
+          watermark: pdfWatermark || undefined
+        }
       });
 
       const result = await response.json();
