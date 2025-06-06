@@ -454,10 +454,17 @@ export default function Customers() {
                         <div className="flex gap-2">
                           <FormControl>
                             <Input 
-                              placeholder="101000013" 
+                              placeholder="101000013 - Ingrese RNC para verificar" 
                               {...field}
+                              onChange={(e) => {
+                                field.onChange(e);
+                                // Reset verification when user types
+                                if (rncVerification) {
+                                  setRncVerification(null);
+                                }
+                              }}
                               onBlur={(e) => {
-                                const rncValue = e.target.value?.replace(/\D/g, '');
+                                const rncValue = e.target.value?.replace(/\D/g, '') || '';
                                 if (rncValue && rncValue.length >= 9) {
                                   handleRNCVerification(rncValue);
                                 }
@@ -474,17 +481,27 @@ export default function Customers() {
                           <Button
                             type="button"
                             variant="outline"
-                            size="sm"
-                            disabled={isVerifyingRNC || !field.value}
-                            onClick={() => handleRNCVerification(field.value)}
-                            className="whitespace-nowrap"
+                            size="default"
+                            disabled={isVerifyingRNC || !field.value?.trim()}
+                            onClick={() => {
+                              const cleanRnc = field.value?.replace(/\D/g, '');
+                              if (cleanRnc) {
+                                handleRNCVerification(cleanRnc);
+                              }
+                            }}
+                            className="whitespace-nowrap px-3"
                           >
                             {isVerifyingRNC ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
+                              <>
+                                <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                                <span className="hidden sm:inline">Verificando...</span>
+                              </>
                             ) : (
-                              <Search className="h-4 w-4" />
+                              <>
+                                <Search className="h-4 w-4 mr-1" />
+                                <span>Verificar RNC</span>
+                              </>
                             )}
-                            <span className="ml-1 hidden sm:inline">Verificar</span>
                           </Button>
                         </div>
                         
