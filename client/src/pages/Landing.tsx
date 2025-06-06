@@ -113,10 +113,10 @@ export default function Landing() {
                 </svg>
               </div>
               <h3 className="text-base sm:text-lg font-semibold text-white mb-2">
-                Generación de Imágenes IA
+                Búsqueda Inteligente de Imágenes
               </h3>
               <p className="text-sm sm:text-base text-gray-300">
-                Crea imágenes profesionales de productos automáticamente con inteligencia artificial
+                Encuentra automáticamente imágenes profesionales de productos desde Google Images y Unsplash
               </p>
             </CardContent>
           </Card>
@@ -241,6 +241,111 @@ export default function Landing() {
           </Card>
         </div>
 
+        {/* Advanced Features Section */}
+        <div className="max-w-6xl mx-auto mb-16 sm:mb-20">
+          <div className="text-center mb-8 sm:mb-12">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-4 sm:mb-6">
+              Características Avanzadas Incluidas
+            </h2>
+            <p className="text-lg sm:text-xl text-gray-300 max-w-3xl mx-auto">
+              Nuestro sistema incluye tecnologías de vanguardia para llevar tu negocio al siguiente nivel
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
+            {/* Verificación RNC DGII */}
+            <Card className="bg-gradient-to-br from-blue-900/60 to-indigo-900/60 border-blue-500/40 backdrop-blur-sm">
+              <CardContent className="p-6 sm:p-8">
+                <div className="flex items-center mb-4">
+                  <div className="w-12 h-12 bg-blue-500 rounded-lg flex items-center justify-center mr-4">
+                    <Shield className="w-6 h-6 text-white" />
+                  </div>
+                  <h3 className="text-xl font-bold text-white">Verificación RNC Oficial</h3>
+                </div>
+                <p className="text-gray-200 mb-4">
+                  Integración directa con la base de datos oficial de la DGII para validación automática de RNC en tiempo real.
+                </p>
+                <ul className="space-y-2 text-gray-300">
+                  <li className="flex items-center">
+                    <Check className="h-4 w-4 text-green-400 mr-2" />
+                    Validación instantánea de RNC
+                  </li>
+                  <li className="flex items-center">
+                    <Check className="h-4 w-4 text-green-400 mr-2" />
+                    Base de datos DGII actualizada
+                  </li>
+                  <li className="flex items-center">
+                    <Check className="h-4 w-4 text-green-400 mr-2" />
+                    Verificación de estado fiscal
+                  </li>
+                </ul>
+              </CardContent>
+            </Card>
+
+            {/* Búsqueda Inteligente de Imágenes */}
+            <Card className="bg-gradient-to-br from-purple-900/60 to-pink-900/60 border-purple-500/40 backdrop-blur-sm">
+              <CardContent className="p-6 sm:p-8">
+                <div className="flex items-center mb-4">
+                  <div className="w-12 h-12 bg-purple-500 rounded-lg flex items-center justify-center mr-4">
+                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-xl font-bold text-white">Búsqueda de Imágenes</h3>
+                </div>
+                <p className="text-gray-200 mb-4">
+                  Encuentra automáticamente imágenes profesionales de productos desde Google Images y Unsplash.
+                </p>
+                <ul className="space-y-2 text-gray-300">
+                  <li className="flex items-center">
+                    <Check className="h-4 w-4 text-green-400 mr-2" />
+                    Búsqueda automática en Google
+                  </li>
+                  <li className="flex items-center">
+                    <Check className="h-4 w-4 text-green-400 mr-2" />
+                    Imágenes de alta calidad Unsplash
+                  </li>
+                  <li className="flex items-center">
+                    <Check className="h-4 w-4 text-green-400 mr-2" />
+                    Optimización automática
+                  </li>
+                </ul>
+              </CardContent>
+            </Card>
+
+            {/* Asistente de IA */}
+            <Card className="bg-gradient-to-br from-emerald-900/60 to-teal-900/60 border-emerald-500/40 backdrop-blur-sm">
+              <CardContent className="p-6 sm:p-8">
+                <div className="flex items-center mb-4">
+                  <div className="w-12 h-12 bg-emerald-500 rounded-lg flex items-center justify-center mr-4">
+                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-xl font-bold text-white">Herramientas de IA</h3>
+                </div>
+                <p className="text-gray-200 mb-4">
+                  Asistente inteligente para análisis de ventas, optimización de inventario y generación de reportes.
+                </p>
+                <ul className="space-y-2 text-gray-300">
+                  <li className="flex items-center">
+                    <Check className="h-4 w-4 text-green-400 mr-2" />
+                    Análisis predictivo de ventas
+                  </li>
+                  <li className="flex items-center">
+                    <Check className="h-4 w-4 text-green-400 mr-2" />
+                    Optimización de inventario
+                  </li>
+                  <li className="flex items-center">
+                    <Check className="h-4 w-4 text-green-400 mr-2" />
+                    Reportes inteligentes
+                  </li>
+                </ul>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
         {/* Pricing */}
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-8 sm:mb-12">
@@ -272,9 +377,12 @@ export default function Landing() {
                 <ul className="space-y-2 sm:space-y-3 mb-6 sm:mb-8">
                   {[
                     "Facturación completa con NCF",
+                    "Verificación RNC automática DGII",
                     "Punto de venta (POS)",
                     "Gestión de inventario",
-                    "Clientes y proveedores",
+                    "Búsqueda automática de imágenes",
+                    "Herramientas básicas de IA",
+                    "Clientes y proveedores", 
                     "Reportes básicos",
                     "Hasta 5 usuarios"
                   ].map((feature, index) => (
@@ -332,12 +440,15 @@ export default function Landing() {
                 <ul className="space-y-3 mb-8">
                   {[
                     "Todo del plan mensual incluido",
+                    "✨ Herramientas IA avanzadas completas",
+                    "✨ Verificación RNC premium con historial",
+                    "✨ Búsqueda ilimitada de imágenes",
                     "Módulo de producción completo",
                     "Lista de materiales (BOM)",
                     "Gestión de recetas",
-                    "Reportes avanzados",
+                    "Reportes avanzados con IA",
                     "Usuarios ilimitados",
-                    "Soporte prioritario",
+                    "Soporte prioritario 24/7",
                     "2 meses gratis",
                     "Descuentos en hosting"
                   ].map((feature, index) => (
