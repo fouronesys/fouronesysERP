@@ -2873,6 +2873,42 @@ export class DatabaseStorage implements IStorage {
     const expirationTime = new Date(Date.now() - 30 * 60 * 1000); // 30 minutes ago
     await db.delete(stockReservations).where(lt(stockReservations.createdAt, expirationTime));
   }
+
+  // ACCOUNTING MODULE METHODS
+
+  async getAccounts(companyId: number) {
+    return await db.select({
+      id: accounts.id,
+      code: accounts.code,
+      name: accounts.name,
+      accountType: accountTypes.name,
+      currentBalance: accounts.currentBalance,
+      allowTransactions: accounts.allowTransactions,
+      level: accounts.level,
+      isParent: accounts.isParent,
+    })
+      .from(accounts)
+      .leftJoin(accountTypes, eq(accounts.accountTypeId, accountTypes.id))
+      .where(eq(accounts.companyId, companyId))
+      .orderBy(accounts.code);
+  }
+
+  async createAccount(accountData: any) {
+    const [account] = await db.insert(accounts).values(accountData).returning();
+    return account;
+  }
+
+  async getJournalEntries(companyId: number) {
+    return await db.select()
+      .from(journalEntries)
+      .where(eq(journalEntries.companyId, companyId))
+      .orderBy(desc(journalEntries.createdAt));
+  }
+
+  async createJournalEntry(entryData: any) {
+    const [entry] = await db.insert(journalEntries).values(entryData).returning();
+    return entry;
+  }
 }
 
 export const storage = new DatabaseStorage();
