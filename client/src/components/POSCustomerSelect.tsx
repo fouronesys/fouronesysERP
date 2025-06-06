@@ -12,6 +12,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { User, Plus, Check, X, Search } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
 
 const customerSchema = z.object({
   name: z.string().min(1, "Nombre requerido"),
@@ -239,6 +241,72 @@ export default function POSCustomerSelect({ selectedCustomer, onCustomerSelect, 
 
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                {/* Customer selection dropdown */}
+                <div className="space-y-2">
+                  <Label>Seleccionar cliente existente</Label>
+                  <Select 
+                    onValueChange={(value) => {
+                      if (value && value !== "new") {
+                        const customer = Array.isArray(customers) ? customers.find((c: any) => c.id.toString() === value) : null;
+                        if (customer) {
+                          form.setValue('name', customer.name || '');
+                          form.setValue('email', customer.email || '');
+                          form.setValue('phone', customer.phone || '');
+                          form.setValue('address', customer.address || '');
+                          form.setValue('rnc', customer.rnc || '');
+                          form.setValue('cedula', customer.cedula || '');
+                          if (customer.rnc) {
+                            setRncValidation({ valid: customer.isValidatedRnc || false, rnc: customer.rnc });
+                          }
+                        }
+                      } else if (value === "new") {
+                        form.reset({
+                          name: "",
+                          email: "",
+                          phone: "",
+                          address: "",
+                          rnc: "",
+                          cedula: ""
+                        });
+                        setRncValidation(null);
+                      }
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecciona un cliente existente o crea uno nuevo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="new">Crear nuevo cliente</SelectItem>
+                      {Array.isArray(customers) && customers.length > 0 && (
+                        <>
+                          <SelectItem value="" disabled>--- Clientes existentes ---</SelectItem>
+                          {customers.map((customer: any) => (
+                            <SelectItem key={customer.id} value={customer.id.toString()}>
+                              <div className="flex items-center justify-between w-full">
+                                <span>{customer.name}</span>
+                                <div className="flex gap-1">
+                                  {customer.rnc && (
+                                    <Badge variant="outline" className="text-xs">
+                                      RNC
+                                    </Badge>
+                                  )}
+                                  {customer.isValidatedRnc && (
+                                    <Badge variant="default" className="text-xs">
+                                      ✓
+                                    </Badge>
+                                  )}
+                                </div>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </>
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <Separator />
+
                 <FormField
                   control={form.control}
                   name="name"
@@ -307,16 +375,28 @@ export default function POSCustomerSelect({ selectedCustomer, onCustomerSelect, 
                           RNC {requireFiscalCustomer && "*"}
                           {isValidatingRnc && <Search className="h-3 w-3 animate-spin" />}
                         </FormLabel>
-                        <FormControl>
-                          <Input 
-                            placeholder="000000000" 
-                            {...field} 
-                            onChange={(e) => {
-                              field.onChange(e);
-                              searchByRnc(e.target.value);
-                            }}
-                          />
-                        </FormControl>
+                        <div className="flex gap-2">
+                          <FormControl>
+                            <Input 
+                              placeholder="000000000" 
+                              {...field} 
+                              className="flex-1"
+                            />
+                          </FormControl>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => searchByRnc(field.value || "")}
+                            disabled={isValidatingRnc || !field.value || field.value.length < 9}
+                          >
+                            {isValidatingRnc ? (
+                              <Search className="h-4 w-4 animate-spin" />
+                            ) : (
+                              "Verificar"
+                            )}
+                          </Button>
+                        </div>
                         {rncValidation && (
                           <div className="flex items-center gap-1 text-sm">
                             {rncValidation.valid ? (
