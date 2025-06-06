@@ -3,7 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Download, Monitor, Smartphone, Globe, CheckCircle, AlertCircle } from "lucide-react";
+import { Download, Monitor, Smartphone, Globe, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 
 interface InstallOption {
   platform: string;
@@ -24,6 +25,12 @@ export function InstallButton() {
   const [userPlatform, setUserPlatform] = useState<string>('unknown');
   const [canInstallPWA, setCanInstallPWA] = useState(false);
   const [pwaPrompt, setPwaPrompt] = useState<any>(null);
+
+  // Fetch available downloads from server
+  const { data: downloadsData, isLoading: downloadsLoading } = useQuery({
+    queryKey: ['/api/downloads/available'],
+    retry: false,
+  });
 
   useEffect(() => {
     // Detect user platform

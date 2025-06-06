@@ -4329,5 +4329,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  // Desktop installation file download routes
+  app.use('/downloads', express.static(path.join(process.cwd(), 'dist-electron')));
+  
+  // Installation API endpoint for available downloads
+  app.get('/api/downloads/available', (req, res) => {
+    const fs = require('fs');
+    const downloadsDir = path.join(process.cwd(), 'dist-electron');
+    
+    try {
+      const files = fs.existsSync(downloadsDir) ? fs.readdirSync(downloadsDir) : [];
+      const availableDownloads = files
+        .filter((file: string) => 
+          file.endsWith('.exe') || 
+          file.endsWith('.dmg') || 
+          file.endsWith('.AppImage') || 
+          file.endsWith('.deb') || 
+          file.endsWith('.rpm')
+        )
+        .map((file: string) => {
+          const stats = fs.statSync(path.join(downloadsDir, file));
+          return {
+            filename: file,
+            size: stats.size,
+            platform: getPlatformFromFilename(file),
+            downloadUrl: `/downloads/${file}`,
+            lastModified: stats.mtime
+          };
+        });
+      
+      res.json({ downloads: availableDownloads });
+    } catch (error) {
+      res.json({ downloads: [] });
+    }
+  });
+
+  function getPlatformFromFilename(filename: string): string {
+    if (filename.includes('win') || filename.endsWith('.exe')) return 'Windows';
+    if (filename.includes('mac') || filename.endsWith('.dmg')) return 'macOS';
+    if (filename.includes('linux') || filename.endsWith('.AppImage') || filename.endsWith('.deb') || filename.endsWith('.rpm')) return 'Linux';
+    return 'Unknown';
+  }
+
   return httpServer;
 }
