@@ -21,9 +21,9 @@ export class ThermalQRProcessor {
       // Convert to base64 for thermal printer
       const base64QR = qrBuffer.toString('base64');
       
-      // Return QR as ESC/POS image command for thermal printers
+      // Return QR as PNG data for thermal printers
       // This preserves the original QR code without any processing
-      return `[QR:data:image/png;base64,${base64QR}]`;
+      return `data:image/png;base64,${base64QR}`;
       
     } catch (error) {
       console.error('QR generation error:', error);

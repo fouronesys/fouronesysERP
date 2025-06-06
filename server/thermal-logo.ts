@@ -15,9 +15,9 @@ export class ThermalLogoProcessor {
       const logoBuffer = fs.readFileSync(logoPath);
       const base64Logo = logoBuffer.toString('base64');
       
-      // Return PNG as ESC/POS image command for thermal printers
+      // Return PNG data for thermal printers
       // This preserves the original PNG without any processing
-      return `[IMG:data:image/png;base64,${base64Logo}]`;
+      return `data:image/png;base64,${base64Logo}`;
       
     } catch (error) {
       console.error('Logo processing error:', error);
