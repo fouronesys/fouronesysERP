@@ -81,20 +81,56 @@ export default function POSCustomerSelect({ selectedCustomer, onCustomerSelect, 
     }
   });
 
-  // Validate RNC
-  const validateRnc = async (rnc: string) => {
-    if (!rnc || rnc.length < 9) return;
+  // Search customer by RNC with auto-fill
+  const searchByRnc = async (rnc: string) => {
+    if (!rnc || rnc.length < 9) {
+      setRncValidation(null);
+      return;
+    }
     
     setIsValidatingRnc(true);
     try {
-      const response = await apiRequest('/api/pos/customers/validate-rnc', {
+      const response = await apiRequest('/api/pos/customers/search-rnc', {
         method: 'POST',
         body: JSON.stringify({ rnc })
       });
-      setRncValidation(response);
+
+      if (response.exists) {
+        // Customer already exists, select it
+        onCustomerSelect(response.customer);
+        setIsDialogOpen(false);
+        toast({
+          title: "Cliente encontrado",
+          description: `Cliente ${response.customer.name} seleccionado`
+        });
+      } else if (response.validation?.valid) {
+        // RNC is valid, auto-fill form data
+        const { data } = response.validation;
+        form.setValue('name', data.name || '');
+        if (data.businessName) {
+          form.setValue('name', data.businessName);
+        }
+        setRncValidation({ valid: true, rnc, data });
+        toast({
+          title: "RNC válido",
+          description: "Datos del cliente rellenados automáticamente"
+        });
+      } else {
+        setRncValidation({ valid: false, rnc });
+        toast({
+          title: "RNC no válido",
+          description: "El RNC ingresado no existe en el registro DGII",
+          variant: "destructive"
+        });
+      }
     } catch (error) {
-      console.error('RNC validation error:', error);
+      console.error('RNC search error:', error);
       setRncValidation({ valid: false, rnc });
+      toast({
+        title: "Error de validación",
+        description: "No se pudo verificar el RNC",
+        variant: "destructive"
+      });
     } finally {
       setIsValidatingRnc(false);
     }
@@ -274,7 +310,7 @@ export default function POSCustomerSelect({ selectedCustomer, onCustomerSelect, 
                             {...field} 
                             onChange={(e) => {
                               field.onChange(e);
-                              validateRnc(e.target.value);
+                              searchByRnc(e.target.value);
                             }}
                           />
                         </FormControl>

@@ -2551,6 +2551,14 @@ export class DatabaseStorage implements IStorage {
   }
 
   async addToPOSCart(cartItem: InsertPOSCartItem): Promise<POSCartItem> {
+    // Check product availability and stock
+    const product = await this.getProduct(cartItem.productId, cartItem.companyId);
+    if (!product) {
+      throw new Error('Producto no encontrado');
+    }
+
+    const currentStock = parseFloat(product.stock || '0');
+    
     // Check if item already exists in cart
     const existingItem = await db
       .select()
@@ -2565,6 +2573,12 @@ export class DatabaseStorage implements IStorage {
     if (existingItem.length > 0) {
       // Update existing item quantity
       const newQuantity = existingItem[0].quantity + cartItem.quantity;
+      
+      // Validate stock availability
+      if (currentStock < newQuantity) {
+        throw new Error(`Stock insuficiente. Disponible: ${currentStock}, solicitado: ${newQuantity}`);
+      }
+      
       const newSubtotal = newQuantity * parseFloat(cartItem.unitPrice.toString());
       
       const [updated] = await db
@@ -2579,6 +2593,11 @@ export class DatabaseStorage implements IStorage {
       
       return updated;
     } else {
+      // Validate stock for new item
+      if (currentStock < cartItem.quantity) {
+        throw new Error(`Stock insuficiente. Disponible: ${currentStock}, solicitado: ${cartItem.quantity}`);
+      }
+      
       // Insert new item
       const [newItem] = await db.insert(posCartItems).values(cartItem).returning();
       return newItem;
@@ -2588,6 +2607,23 @@ export class DatabaseStorage implements IStorage {
   async updatePOSCartItem(id: number, quantity: number): Promise<POSCartItem | null> {
     const [item] = await db.select().from(posCartItems).where(eq(posCartItems.id, id)).limit(1);
     if (!item) return null;
+
+    // If quantity is 0, remove the item
+    if (quantity <= 0) {
+      await this.removePOSCartItem(id);
+      return null;
+    }
+
+    // Validate stock availability
+    const product = await this.getProduct(item.productId, item.companyId);
+    if (!product) {
+      throw new Error('Producto no encontrado');
+    }
+
+    const currentStock = parseFloat(product.stock || '0');
+    if (currentStock < quantity) {
+      throw new Error(`Stock insuficiente. Disponible: ${currentStock}, solicitado: ${quantity}`);
+    }
 
     const newSubtotal = quantity * parseFloat(item.unitPrice.toString());
     
@@ -2775,11 +2811,11 @@ export class DatabaseStorage implements IStorage {
     await db.delete(posCustomers).where(and(eq(posCustomers.id, id), eq(posCustomers.companyId, companyId)));
   }
 
-  async validateCustomerRNC(rnc: string, companyId: number): Promise<boolean> {
+  async validateCustomerRNC(rnc: string, companyId: number): Promise<{ valid: boolean; data?: any }> {
     // Check against DGII registry
     const rncRecord = await this.searchRNC(rnc);
     if (rncRecord) {
-      // Update customer record with validated RNC
+      // Update customer record with validated RNC if it exists
       await db
         .update(posCustomers)
         .set({ 
@@ -2787,9 +2823,36 @@ export class DatabaseStorage implements IStorage {
           rncValidationDate: new Date() 
         })
         .where(and(eq(posCustomers.rnc, rnc), eq(posCustomers.companyId, companyId)));
-      return true;
+      
+      return { 
+        valid: true, 
+        data: {
+          name: rncRecord.razonSocial || rncRecord.nombre,
+          businessName: rncRecord.razonSocial,
+          status: rncRecord.estatus,
+          activity: rncRecord.actividad
+        }
+      };
     }
-    return false;
+    return { valid: false };
+  }
+
+  // Enhanced customer search with RNC auto-fill
+  async searchCustomerByRNC(rnc: string, companyId: number): Promise<any> {
+    // First check if customer already exists
+    const [existingCustomer] = await db
+      .select()
+      .from(posCustomers)
+      .where(and(eq(posCustomers.rnc, rnc), eq(posCustomers.companyId, companyId)))
+      .limit(1);
+
+    if (existingCustomer) {
+      return { exists: true, customer: existingCustomer };
+    }
+
+    // If not exists, validate RNC and return data for auto-fill
+    const validation = await this.validateCustomerRNC(rnc, companyId);
+    return { exists: false, validation };
   }
 
   // Stock Reservation operations for cart synchronization

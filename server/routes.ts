@@ -4674,11 +4674,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Company not found" });
       }
 
-      const isValid = await storage.validateCustomerRNC(rnc, company.id);
-      res.json({ valid: isValid, rnc });
+      const validation = await storage.validateCustomerRNC(rnc, company.id);
+      res.json(validation);
     } catch (error) {
       console.error("Error validating RNC:", error);
       res.status(500).json({ message: "Failed to validate RNC" });
+    }
+  });
+
+  app.post("/api/pos/customers/search-rnc", isAuthenticated, async (req: any, res) => {
+    try {
+      const { rnc } = req.body;
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      const result = await storage.searchCustomerByRNC(rnc, company.id);
+      res.json(result);
+    } catch (error) {
+      console.error("Error searching customer by RNC:", error);
+      res.status(500).json({ message: "Failed to search customer" });
     }
   });
 
