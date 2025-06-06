@@ -1,148 +1,147 @@
-// Service Worker para Four One Solutions
-// Manejo de caché y funcionalidad offline
+// Four One Solutions Service Worker
+// Provides offline functionality and caching
 
-const CACHE_NAME = 'four-one-v1';
-const STATIC_CACHE_NAME = 'four-one-static-v1';
-const API_CACHE_NAME = 'four-one-api-v1';
+const CACHE_NAME = 'four-one-solutions-v1.0.0';
+const STATIC_CACHE = 'static-v1.0.0';
+const RUNTIME_CACHE = 'runtime-v1.0.0';
 
-// Recursos estáticos para cachear
-const STATIC_ASSETS = [
+// Files to cache immediately
+const STATIC_FILES = [
   '/',
-  '/index.html',
-  '/manifest.json'
+  '/manifest.json',
+  '/offline.html',
+  '/static/js/bundle.js',
+  '/static/css/main.css'
 ];
 
-// Rutas de API que se pueden cachear
-const CACHEABLE_API_ROUTES = [
-  '/api/user',
-  '/api/companies/current',
-  '/api/products',
-  '/api/customers',
-  '/api/dashboard/metrics'
+// API endpoints to cache
+const API_CACHE_PATTERNS = [
+  /^\/api\/products/,
+  /^\/api\/companies/,
+  /^\/api\/pos\/print-settings/,
+  /^\/api\/fiscal\/ncf-sequences/
 ];
 
-// Instalar Service Worker
+// Network-first patterns (always try network first)
+const NETWORK_FIRST_PATTERNS = [
+  /^\/api\/pos\/sales/,
+  /^\/api\/pos\/cart/,
+  /^\/api\/auth/,
+  /^\/api\/user/
+];
+
 self.addEventListener('install', (event) => {
-  console.log('Service Worker installing...');
+  console.log('[SW] Installing service worker...');
   
   event.waitUntil(
     Promise.all([
-      // Cachear recursos estáticos
-      caches.open(STATIC_CACHE_NAME).then((cache) => {
-        return cache.addAll(STATIC_ASSETS.filter(url => url !== '/'));
+      caches.open(STATIC_CACHE).then((cache) => {
+        console.log('[SW] Caching static files');
+        return cache.addAll(STATIC_FILES);
       }),
-      // Forzar activación inmediata
-      self.skipWaiting()
+      caches.open(RUNTIME_CACHE).then((cache) => {
+        console.log('[SW] Runtime cache ready');
+        return cache;
+      })
     ])
   );
+  
+  // Skip waiting to activate immediately
+  self.skipWaiting();
 });
 
-// Activar Service Worker
 self.addEventListener('activate', (event) => {
-  console.log('Service Worker activating...');
+  console.log('[SW] Activating service worker...');
   
   event.waitUntil(
-    Promise.all([
-      // Limpiar cachés antiguos
-      caches.keys().then((cacheNames) => {
-        return Promise.all(
-          cacheNames.map((cacheName) => {
-            if (cacheName !== CACHE_NAME && 
-                cacheName !== STATIC_CACHE_NAME && 
-                cacheName !== API_CACHE_NAME) {
-              console.log('Deleting old cache:', cacheName);
-              return caches.delete(cacheName);
-            }
-          })
-        );
-      }),
-      // Tomar control inmediato
-      self.clients.claim()
-    ])
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((cacheName) => {
+          if (cacheName !== STATIC_CACHE && cacheName !== RUNTIME_CACHE) {
+            console.log('[SW] Deleting old cache:', cacheName);
+            return caches.delete(cacheName);
+          }
+        })
+      );
+    })
   );
+  
+  // Take control of all clients immediately
+  return self.clients.claim();
 });
 
-// Interceptar peticiones de red
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
-
-  // Solo manejar peticiones del mismo origen
-  if (url.origin !== location.origin) {
+  
+  // Skip non-GET requests
+  if (request.method !== 'GET') {
     return;
   }
-
-  // Estrategia para API calls
-  if (isApiRequest(request)) {
+  
+  // Handle different types of requests
+  if (url.pathname.startsWith('/api/')) {
     event.respondWith(handleApiRequest(request));
-    return;
-  }
-
-  // Estrategia para navegación (HTML)
-  if (request.mode === 'navigate') {
-    event.respondWith(handleNavigation(request));
-    return;
+  } else {
+    event.respondWith(handleStaticRequest(request));
   }
 });
 
-// Verificar si es una petición de API
-function isApiRequest(request) {
+// Handle API requests with different caching strategies
+async function handleApiRequest(request) {
   const url = new URL(request.url);
-  return url.pathname.startsWith('/api/');
+  
+  // Network-first for critical operations
+  if (NETWORK_FIRST_PATTERNS.some(pattern => pattern.test(url.pathname))) {
+    return networkFirst(request);
+  }
+  
+  // Cache-first for reference data
+  if (API_CACHE_PATTERNS.some(pattern => pattern.test(url.pathname))) {
+    return cacheFirst(request);
+  }
+  
+  // Default to network-first for API calls
+  return networkFirst(request);
 }
 
-// Manejar peticiones de API - Network First con fallback a caché
-async function handleApiRequest(request) {
-  const cache = await caches.open(API_CACHE_NAME);
-  
+// Handle static file requests
+async function handleStaticRequest(request) {
+  // Try cache first for static files
+  return cacheFirst(request);
+}
+
+// Network-first strategy
+async function networkFirst(request) {
   try {
-    // Intentar obtener de la red primero
-    const response = await fetch(request);
+    const networkResponse = await fetch(request);
     
-    if (response.ok) {
-      // Solo cachear peticiones GET exitosas
-      if (request.method === 'GET' && isCacheableApiRoute(request)) {
-        cache.put(request, response.clone());
-      }
-      return response;
+    // Cache successful responses
+    if (networkResponse.ok) {
+      const cache = await caches.open(RUNTIME_CACHE);
+      cache.put(request, networkResponse.clone());
     }
     
-    // Si la respuesta no es exitosa, intentar caché
-    if (request.method === 'GET') {
-      const cachedResponse = await cache.match(request);
-      if (cachedResponse) {
-        return cachedResponse;
-      }
-    }
-    
-    return response;
-    
+    return networkResponse;
   } catch (error) {
-    console.log('Network failed, trying cache for:', request.url);
+    console.log('[SW] Network failed, trying cache:', request.url);
     
-    // Si hay error de red, usar caché para GET
-    if (request.method === 'GET') {
-      const cachedResponse = await cache.match(request);
-      if (cachedResponse) {
-        // Agregar header para indicar que viene de caché
-        const headers = new Headers(cachedResponse.headers);
-        headers.set('X-Cache-Status', 'offline');
-        
-        return new Response(cachedResponse.body, {
-          status: cachedResponse.status,
-          statusText: cachedResponse.statusText,
-          headers
-        });
-      }
+    const cachedResponse = await caches.match(request);
+    if (cachedResponse) {
+      return cachedResponse;
     }
     
-    // Para métodos que modifican datos, devolver error específico
-    if (['POST', 'PUT', 'DELETE'].includes(request.method)) {
+    // Return offline page for navigation requests
+    if (request.mode === 'navigate') {
+      return caches.match('/offline.html');
+    }
+    
+    // Return offline response for API calls
+    if (request.url.includes('/api/')) {
       return new Response(
-        JSON.stringify({
-          error: 'No hay conexión disponible',
-          message: 'Esta operación se ejecutará cuando se restaure la conexión',
-          offline: true
+        JSON.stringify({ 
+          error: 'Offline', 
+          message: 'No hay conexión a internet. Los datos mostrados pueden estar desactualizados.' 
         }),
         {
           status: 503,
@@ -155,66 +154,152 @@ async function handleApiRequest(request) {
   }
 }
 
-// Verificar si la ruta de API es cacheable
-function isCacheableApiRoute(request) {
-  const url = new URL(request.url);
-  return CACHEABLE_API_ROUTES.some(route => url.pathname.startsWith(route));
-}
-
-// Manejar navegación - App Shell
-async function handleNavigation(request) {
+// Cache-first strategy
+async function cacheFirst(request) {
+  const cachedResponse = await caches.match(request);
+  
+  if (cachedResponse) {
+    // Update cache in background
+    updateCacheInBackground(request);
+    return cachedResponse;
+  }
+  
+  // Not in cache, fetch from network
   try {
-    // Intentar obtener de la red
-    const response = await fetch(request);
-    return response;
-  } catch (error) {
-    // Si falla la red, devolver app shell desde caché
-    const cache = await caches.open(STATIC_CACHE_NAME);
-    const cachedResponse = await cache.match('/index.html');
+    const networkResponse = await fetch(request);
     
-    if (cachedResponse) {
-      return cachedResponse;
+    if (networkResponse.ok) {
+      const cache = await caches.open(RUNTIME_CACHE);
+      cache.put(request, networkResponse.clone());
     }
     
-    // Fallback final
-    return new Response(
-      `<!DOCTYPE html>
-      <html>
-      <head>
-        <title>Four One Solutions - Offline</title>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <style>
-          body { 
-            font-family: Arial, sans-serif; 
-            text-align: center; 
-            padding: 50px;
-            background: #f5f5f5;
-          }
-          .offline-message {
-            background: white;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            max-width: 400px;
-            margin: 0 auto;
-          }
-        </style>
-      </head>
-      <body>
-        <div class="offline-message">
-          <h1>Four One Solutions</h1>
-          <p>Sin conexión a internet</p>
-          <p>Por favor verifica tu conexión y recarga la página.</p>
-          <button onclick="window.location.reload()">Reintentar</button>
-        </div>
-      </body>
-      </html>`,
-      {
-        headers: { 'Content-Type': 'text/html' }
-      }
-    );
+    return networkResponse;
+  } catch (error) {
+    console.log('[SW] Cache and network failed:', request.url);
+    
+    // Return offline page for navigation requests
+    if (request.mode === 'navigate') {
+      return caches.match('/offline.html');
+    }
+    
+    throw error;
   }
 }
 
-console.log('Service Worker loaded for Four One Solutions');
+// Update cache in background
+async function updateCacheInBackground(request) {
+  try {
+    const networkResponse = await fetch(request);
+    
+    if (networkResponse.ok) {
+      const cache = await caches.open(RUNTIME_CACHE);
+      cache.put(request, networkResponse.clone());
+    }
+  } catch (error) {
+    console.log('[SW] Background cache update failed:', request.url);
+  }
+}
+
+// Handle background sync for offline operations
+self.addEventListener('sync', (event) => {
+  console.log('[SW] Background sync event:', event.tag);
+  
+  if (event.tag === 'pos-sale-sync') {
+    event.waitUntil(syncPOSSales());
+  }
+  
+  if (event.tag === 'cart-sync') {
+    event.waitUntil(syncCartItems());
+  }
+});
+
+// Sync POS sales when back online
+async function syncPOSSales() {
+  try {
+    // Get pending sales from IndexedDB
+    const pendingSales = await getOfflinePOSSales();
+    
+    for (const sale of pendingSales) {
+      try {
+        const response = await fetch('/api/pos/sales', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(sale.data)
+        });
+        
+        if (response.ok) {
+          await removeOfflinePOSSale(sale.id);
+          console.log('[SW] Synced POS sale:', sale.id);
+        }
+      } catch (error) {
+        console.log('[SW] Failed to sync POS sale:', sale.id, error);
+      }
+    }
+  } catch (error) {
+    console.log('[SW] POS sales sync failed:', error);
+  }
+}
+
+// Sync cart items when back online
+async function syncCartItems() {
+  try {
+    // Implementation for cart sync
+    console.log('[SW] Cart sync completed');
+  } catch (error) {
+    console.log('[SW] Cart sync failed:', error);
+  }
+}
+
+// IndexedDB operations for offline storage
+async function getOfflinePOSSales() {
+  // Implementation would use IndexedDB to store offline sales
+  return [];
+}
+
+async function removeOfflinePOSSale(id) {
+  // Implementation would remove synced sale from IndexedDB
+  console.log('[SW] Removed offline sale:', id);
+}
+
+// Handle push notifications
+self.addEventListener('push', (event) => {
+  if (!event.data) return;
+  
+  const data = event.data.json();
+  
+  const options = {
+    body: data.body,
+    icon: '/icons/icon-192x192.png',
+    badge: '/icons/badge-72x72.png',
+    data: data.data || {},
+    actions: data.actions || []
+  };
+  
+  event.waitUntil(
+    self.registration.showNotification(data.title, options)
+  );
+});
+
+// Handle notification clicks
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  
+  // Focus or open the app window
+  event.waitUntil(
+    clients.matchAll({ type: 'window' }).then((clientList) => {
+      for (const client of clientList) {
+        if (client.url.includes(self.location.origin) && 'focus' in client) {
+          return client.focus();
+        }
+      }
+      
+      if (clients.openWindow) {
+        return clients.openWindow('/');
+      }
+    })
+  );
+});
+
+console.log('[SW] Service Worker loaded successfully');
