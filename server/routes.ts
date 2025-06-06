@@ -4157,12 +4157,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         };
 
         // Generate 80mm POS receipt
+        console.log('Generating 80mm POS receipt for sale:', sale.saleNumber);
         const htmlContent = await InvoicePOS80mmService.generatePOS80mmReceipt({
           sale,
           items,
           company,
           customerInfo,
         });
+
+        console.log('80mm POS receipt HTML length:', htmlContent.length);
+        console.log('80mm POS receipt HTML preview:', htmlContent.substring(0, 200));
 
         res.setHeader('Content-Type', 'text/html; charset=utf-8');
         res.send(htmlContent);

@@ -34,16 +34,18 @@ export class InvoicePOS80mmService {
 
     // Load company logo if available
     let logoBase64 = '';
-    if (company.logo) {
-      try {
-        const logoPath = path.join(process.cwd(), 'uploads', 'logos', `${company.id}.png`);
-        if (fs.existsSync(logoPath)) {
-          const logoBuffer = fs.readFileSync(logoPath);
-          logoBase64 = `data:image/png;base64,${logoBuffer.toString('base64')}`;
-        }
-      } catch (error) {
-        console.log('Logo not found, using text header');
+    const defaultLogoPath = path.join(process.cwd(), 'attached_assets', 'Four One Solutions Logo_20250130_143011_0000_1749182433509.png');
+    
+    try {
+      if (fs.existsSync(defaultLogoPath)) {
+        const logoBuffer = fs.readFileSync(defaultLogoPath);
+        logoBase64 = `data:image/png;base64,${logoBuffer.toString('base64')}`;
+        console.log('Default logo loaded successfully for POS receipt');
+      } else {
+        console.log('Default logo not found, using text header only');
       }
+    } catch (error) {
+      console.log('Error loading logo:', error);
     }
 
     const html = `
