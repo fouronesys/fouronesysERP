@@ -3088,20 +3088,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // Header with Four One Solutions ASCII logo
     lines.push("".padEnd(LINE_WIDTH, "="));
     
-    // Four One Solutions logo - optimized for thermal printer
-    lines.push(centerText("████████████████████████████████████████████████"));
-    lines.push(centerText("██                                            ██"));
-    lines.push(centerText("██         FOUR ONE SOLUTIONS               ██"));
-    lines.push(centerText("██                                            ██"));
-    lines.push(centerText("██      ███████   ██  ██  ██                ██"));
-    lines.push(centerText("██      ██        ██  ██  ██                ██"));
-    lines.push(centerText("██      █████     ██  ██  ██                ██"));
-    lines.push(centerText("██      ██        ██  ██  ██                ██"));
-    lines.push(centerText("██      ██         ████   ██                ██"));
-    lines.push(centerText("██                                            ██"));
-    lines.push(centerText("██              SOLUCIONES 411              ██"));
-    lines.push(centerText("██                                            ██"));
-    lines.push(centerText("████████████████████████████████████████████████"));
+    // Four One Solutions original logo in B&W ASCII
+    lines.push(centerText("██████████████████████████████████████████"));
+    lines.push(centerText("██                                      ██"));
+    lines.push(centerText("██      ████╗   ████████╗               ██"));
+    lines.push(centerText("██     ██╔══██╗ ██╔═════╝               ██"));
+    lines.push(centerText("██    ██║  ██║ ████████╗                ██"));
+    lines.push(centerText("██   ████████║ ██╔═════╝                ██"));
+    lines.push(centerText("██  ██╔═══██║  ████████╗                ██"));
+    lines.push(centerText("██ ██║   ██║   ╚═══════╝                ██"));
+    lines.push(centerText("██ ╚═╝   ╚═╝                            ██"));
+    lines.push(centerText("██                                      ██"));
+    lines.push(centerText("██          ██  ██  ██  ██              ██"));
+    lines.push(centerText("██          ██  ██  ██  ██              ██"));
+    lines.push(centerText("██          ██  ██  ██  ██              ██"));
+    lines.push(centerText("██          ██  ██  ██  ██              ██"));
+    lines.push(centerText("██                                      ██"));
+    lines.push(centerText("██        FOUR ONE SOLUTIONS           ██"));
+    lines.push(centerText("██                                      ██"));
+    lines.push(centerText("██████████████████████████████████████████"));
     lines.push("");
     lines.push(centerText(company.name.toUpperCase()));
     if (company.slogan) {
