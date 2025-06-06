@@ -3089,44 +3089,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // Header with Four One Solutions ASCII logo
     lines.push("".padEnd(LINE_WIDTH, "="));
     
-    // Process and include company logo
-    if (printOptions.showLogo && company.logoUrl) {
-      try {
-        // Try to process the PNG logo from attached assets first
-        const logoPath = './attached_assets/Four One Solutions Logo_20250130_143011_0000_1749182433509.png';
-        
-        // Check if the logo file exists
-        try {
-          await LogoProcessor.validateLogoFile(logoPath);
-          const processedLogo = await LogoProcessor.processLogoForThermal(logoPath);
-          
-          // Add processed logo lines
-          processedLogo.forEach(logoLine => {
-            lines.push(centerText(logoLine));
-          });
-          
-        } catch (logoError) {
-          console.log('Using fallback logo due to processing error:', logoError);
-          // Use enhanced fallback logo
-          const fallbackLogo = LogoProcessor.getFallbackLogo();
-          fallbackLogo.forEach(logoLine => {
-            lines.push(centerText(logoLine));
-          });
-        }
-      } catch (error) {
-        console.error('Logo processing failed:', error);
-        // Simple text fallback
-        lines.push(centerText("██████████████████████████████████████████"));
-        lines.push(centerText("██        FOUR ONE SOLUTIONS           ██"));
-        lines.push(centerText("██████████████████████████████████████████"));
-      }
-    } else {
-      // Enhanced text logo when logo is disabled
-      lines.push(centerText("██████████████████████████████████████████"));
-      lines.push(centerText("██        FOUR ONE SOLUTIONS           ██"));
-      lines.push(centerText("██            SOLUCIONES 411           ██"));
-      lines.push(centerText("██████████████████████████████████████████"));
-    }
+    // Four One Solutions logo - simple and clean
+    lines.push(centerText("┌────────────────────────────────────────┐"));
+    lines.push(centerText("│                                        │"));
+    lines.push(centerText("│        ░██╗░░░██╗ ░██╗░░░██╗           │"));
+    lines.push(centerText("│        ░██║░░░██║ ░██║░░░██║           │"));
+    lines.push(centerText("│        ░███████║ ░███████║            │"));
+    lines.push(centerText("│        ░██╔═══╝  ░██╔═══╝             │"));
+    lines.push(centerText("│        ░██║      ░██║                 │"));
+    lines.push(centerText("│                                        │"));
+    lines.push(centerText("│             1 1 1 1                   │"));
+    lines.push(centerText("│                                        │"));
+    lines.push(centerText("│       FOUR ONE SOLUTIONS              │"));
+    lines.push(centerText("│                                        │"));
+    lines.push(centerText("└────────────────────────────────────────┘"));
     lines.push("");
     lines.push(centerText(company.name.toUpperCase()));
     if (company.slogan) {
@@ -3265,15 +3241,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     lines.push(centerText("Escanea para verificar esta venta"));
     lines.push("");
     
-    // ASCII QR code representation (48 chars wide for 80mm paper)
+    // Simple QR code representation
     const qrLines = [
-      "████████████████████████████████████████████████",
-      "██    ██  ██████████  ████    ██████████  ██  ██",
-      "██████  ████  ████  ████  ██████  ████  ████████",
-      "██  ████    ██████    ████████  ██████    ██████",
-      "██████  ██████  ██████████  ████████  ██████████",
-      "██    ████  ████  ██  ████████  ██  ████  ██  ██",
-      "████████████████████████████████████████████████"
+      "┌─────────────────────────────────────┐",
+      "│ ██ ██  ██ ██    ██  ██ ██  ██ ██ │",
+      "│  ██  ██ ██ ██  ██  ██  ██ ██  ██ │", 
+      "│ ██  ██ ██  ██ ██ ██  ██ ██ ██  █ │",
+      "│  ██ ██  ██ ██  ██ ██ ██  ██ ██ █ │",
+      "│ ██  ██ ██ ██ ██  ██ ██  ██  ██ █ │",
+      "└─────────────────────────────────────┘"
     ];
     
     qrLines.forEach(line => {
