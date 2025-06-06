@@ -226,44 +226,57 @@ export default function Accounting() {
                   </Button>
                 </div>
               ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Código</TableHead>
-                      <TableHead>Nombre</TableHead>
-                      <TableHead>Tipo</TableHead>
-                      <TableHead>Saldo Actual</TableHead>
-                      <TableHead>Estado</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {accounts.map((account: Account) => (
-                      <TableRow 
-                        key={account.id}
-                        className={`${account.isParent ? 'font-semibold bg-muted/50' : ''}`}
-                        style={{ paddingLeft: `${account.level * 20}px` }}
-                      >
-                        <TableCell>
-                          <span className={account.level > 1 ? 'ml-4' : ''}>
-                            {account.code}
-                          </span>
-                        </TableCell>
-                        <TableCell>{account.name}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline">{account.accountType}</Badge>
-                        </TableCell>
-                        <TableCell>
-                          {account.allowTransactions && formatCurrency(account.currentBalance)}
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={account.allowTransactions ? "default" : "secondary"}>
-                            {account.allowTransactions ? "Operativa" : "Agrupación"}
-                          </Badge>
-                        </TableCell>
+                <div className="overflow-x-auto">
+                  <Table className="min-w-full">
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="min-w-[80px]">Código</TableHead>
+                        <TableHead className="min-w-[200px]">Nombre</TableHead>
+                        <TableHead className="hidden sm:table-cell min-w-[100px]">Tipo</TableHead>
+                        <TableHead className="hidden md:table-cell min-w-[120px] text-right">Saldo</TableHead>
+                        <TableHead className="hidden lg:table-cell min-w-[100px]">Estado</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {accounts.map((account: Account) => (
+                        <TableRow 
+                          key={account.id}
+                          className={`${account.isParent ? 'font-semibold bg-muted/50' : ''}`}
+                        >
+                          <TableCell className="font-mono text-xs sm:text-sm">
+                            <span className={account.level > 1 ? 'ml-2 sm:ml-4' : ''}>
+                              {account.code}
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-xs sm:text-sm">
+                            <div className="flex flex-col">
+                              <span>{account.name}</span>
+                              <div className="flex gap-2 mt-1 sm:hidden">
+                                <Badge variant="outline" className="text-xs">{account.accountType}</Badge>
+                                {account.allowTransactions && (
+                                  <span className="text-xs text-muted-foreground">
+                                    {formatCurrency(account.currentBalance)}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell className="hidden sm:table-cell">
+                            <Badge variant="outline" className="text-xs">{account.accountType}</Badge>
+                          </TableCell>
+                          <TableCell className="hidden md:table-cell text-right">
+                            {account.allowTransactions && formatCurrency(account.currentBalance)}
+                          </TableCell>
+                          <TableCell className="hidden lg:table-cell">
+                            <Badge variant={account.allowTransactions ? "default" : "secondary"} className="text-xs">
+                              {account.allowTransactions ? "Operativa" : "Agrupación"}
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
               )}
             </CardContent>
           </Card>
@@ -287,40 +300,49 @@ export default function Accounting() {
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                 </div>
               ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Número</TableHead>
-                      <TableHead>Fecha</TableHead>
-                      <TableHead>Referencia</TableHead>
-                      <TableHead>Descripción</TableHead>
-                      <TableHead>Débito</TableHead>
-                      <TableHead>Crédito</TableHead>
-                      <TableHead>Estado</TableHead>
-                      <TableHead>Origen</TableHead>
+                <div className="overflow-x-auto">
+                  <Table className="min-w-full">
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="min-w-[100px]">Número</TableHead>
+                        <TableHead className="hidden sm:table-cell min-w-[100px]">Fecha</TableHead>
+                        <TableHead className="min-w-[150px]">Descripción</TableHead>
+                        <TableHead className="hidden md:table-cell min-w-[100px] text-right">Débito</TableHead>
+                        <TableHead className="hidden md:table-cell min-w-[100px] text-right">Crédito</TableHead>
+                        <TableHead className="hidden lg:table-cell min-w-[100px]">Estado</TableHead>
+                        <TableHead className="hidden lg:table-cell min-w-[100px]">Origen</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {journalEntries.map((entry: JournalEntry) => (
                       <TableRow key={entry.id}>
-                        <TableCell className="font-medium">{entry.entryNumber}</TableCell>
-                        <TableCell>{formatDate(entry.entryDate)}</TableCell>
-                        <TableCell>{entry.reference}</TableCell>
-                        <TableCell>{entry.description}</TableCell>
-                        <TableCell>{formatCurrency(entry.totalDebit)}</TableCell>
-                        <TableCell>{formatCurrency(entry.totalCredit)}</TableCell>
-                        <TableCell>
-                          <Badge variant={entry.status === 'posted' ? 'default' : 'secondary'}>
+                        <TableCell className="font-medium text-xs sm:text-sm">{entry.entryNumber}</TableCell>
+                        <TableCell className="hidden sm:table-cell text-xs sm:text-sm">{formatDate(entry.entryDate)}</TableCell>
+                        <TableCell className="text-xs sm:text-sm">
+                          <div className="flex flex-col">
+                            <span>{entry.description}</span>
+                            <div className="flex gap-2 mt-1 sm:hidden text-xs text-muted-foreground">
+                              <span>{formatDate(entry.entryDate)}</span>
+                              <span>D: {formatCurrency(entry.totalDebit)}</span>
+                              <span>C: {formatCurrency(entry.totalCredit)}</span>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell text-right text-xs sm:text-sm">{formatCurrency(entry.totalDebit)}</TableCell>
+                        <TableCell className="hidden md:table-cell text-right text-xs sm:text-sm">{formatCurrency(entry.totalCredit)}</TableCell>
+                        <TableCell className="hidden lg:table-cell">
+                          <Badge variant={entry.status === 'posted' ? 'default' : 'secondary'} className="text-xs">
                             {entry.status === 'posted' ? 'Contabilizado' : 'Borrador'}
                           </Badge>
                         </TableCell>
-                        <TableCell>
-                          <Badge variant="outline">{entry.sourceModule || 'Manual'}</Badge>
+                        <TableCell className="hidden lg:table-cell">
+                          <Badge variant="outline" className="text-xs">{entry.sourceModule || 'Manual'}</Badge>
                         </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
-                </Table>
+                  </Table>
+                </div>
               )}
             </CardContent>
           </Card>
