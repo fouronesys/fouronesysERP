@@ -75,6 +75,8 @@ export default function POS() {
   const [searchTerm, setSearchTerm] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [customerName, setCustomerName] = useState("");
+  const [customerRnc, setCustomerRnc] = useState("");
+  const [customerAddress, setCustomerAddress] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<"cash" | "card">("cash");
   const [cashReceived, setCashReceived] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
@@ -263,12 +265,27 @@ export default function POS() {
   const processSale = async () => {
     if (cart.length === 0) return;
     
+    // Validar campos obligatorios para comprobante fiscal
+    if (useFiscalReceipt) {
+      if (!customerName || !customerRnc || !customerAddress) {
+        alert("Para generar un comprobante fiscal es obligatorio completar:\n- Nombre del cliente\n- RNC/Cédula\n- Dirección\n\nSegún normativas de la DGII");
+        return;
+      }
+      
+      if (!selectedNCFType) {
+        alert("Debe seleccionar un tipo de NCF para el comprobante fiscal");
+        return;
+      }
+    }
+    
     setIsProcessing(true);
     
     try {
       const saleData = {
         customerName: customerName || null,
         customerPhone: customerPhone || null,
+        customerRnc: useFiscalReceipt ? customerRnc : null,
+        customerAddress: useFiscalReceipt ? customerAddress : null,
         subtotal: subtotal.toString(),
         itbis: itbis.toString(),
         total: total.toString(),
@@ -545,20 +562,42 @@ export default function POS() {
                 <CardHeader className="pb-3">
                   <CardTitle className="text-base flex items-center gap-2">
                     <Users className="h-4 w-4" />
-                    Cliente (Opcional)
+                    {useFiscalReceipt ? "Datos del Cliente (Obligatorio)" : "Cliente (Opcional)"}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <Input
-                    placeholder="Nombre del cliente"
+                    placeholder={useFiscalReceipt ? "Nombre del cliente *" : "Nombre del cliente"}
                     value={customerName}
                     onChange={(e) => setCustomerName(e.target.value)}
+                    className={useFiscalReceipt && !customerName ? "border-red-300" : ""}
                   />
                   <Input
                     placeholder="Teléfono"
                     value={customerPhone}
                     onChange={(e) => setCustomerPhone(e.target.value)}
                   />
+                  
+                  {/* Campos obligatorios para comprobante fiscal */}
+                  {useFiscalReceipt && (
+                    <>
+                      <Input
+                        placeholder="RNC/Cédula *"
+                        value={customerRnc}
+                        onChange={(e) => setCustomerRnc(e.target.value)}
+                        className={!customerRnc ? "border-red-300" : ""}
+                      />
+                      <Input
+                        placeholder="Dirección completa *"
+                        value={customerAddress}
+                        onChange={(e) => setCustomerAddress(e.target.value)}
+                        className={!customerAddress ? "border-red-300" : ""}
+                      />
+                      <div className="text-xs text-amber-600 bg-amber-50 dark:bg-amber-900/20 p-2 rounded">
+                        <strong>DGII:</strong> Los campos marcados con * son obligatorios para comprobantes fiscales
+                      </div>
+                    </>
+                  )}
                 </CardContent>
               </Card>
 
