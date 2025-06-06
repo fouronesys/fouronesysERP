@@ -723,6 +723,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // RNC Verification route
+  app.get("/api/customers/verify-rnc/:rnc", isAuthenticated, async (req: any, res) => {
+    try {
+      const { rnc } = req.params;
+      
+      // Basic RNC validation
+      if (!rnc || rnc.length !== 9) {
+        return res.status(400).json({ 
+          message: "RNC debe tener 9 dígitos",
+          isValid: false
+        });
+      }
+
+      // Check in our RNC registry
+      const rncData = await storage.getRNCFromRegistry(rnc);
+      
+      if (rncData) {
+        res.json({
+          isValid: true,
+          companyName: rncData.razonSocial,
+          status: rncData.estado,
+          category: rncData.categoria,
+          message: "RNC válido encontrado en el registro de DGII"
+        });
+      } else {
+        res.json({
+          isValid: false,
+          message: "RNC no encontrado en el registro de DGII",
+          suggestion: "Verifique el número o consulte directamente con DGII"
+        });
+      }
+    } catch (error) {
+      console.error("Error verifying RNC:", error);
+      res.status(500).json({ 
+        message: "Error al verificar RNC",
+        isValid: false
+      });
+    }
+  });
+
   // Product routes
   app.get("/api/products", isAuthenticated, async (req: any, res) => {
     try {

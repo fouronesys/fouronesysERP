@@ -46,6 +46,12 @@ export default function Customers() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
+  const [isVerifyingRNC, setIsVerifyingRNC] = useState(false);
+  const [rncVerification, setRncVerification] = useState<{
+    isValid: boolean;
+    companyName?: string;
+    message: string;
+  } | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
@@ -75,7 +81,7 @@ export default function Customers() {
         rnc: data.type === "company" ? formatRNC(data.rnc || "") : undefined,
         cedula: data.type === "individual" ? formatCedula(data.cedula || "") : undefined,
       };
-      await apiRequest("POST", "/api/customers", payload);
+      return await apiRequest("POST", "/api/customers", payload);
     },
     onSuccess: () => {
       toast({
@@ -176,7 +182,49 @@ export default function Customers() {
   const handleNewCustomer = () => {
     setEditingCustomer(null);
     form.reset();
+    setRncVerification(null);
     setIsDialogOpen(true);
+  };
+
+  const verifyRNC = async (rnc: string) => {
+    if (!rnc || rnc.length < 9) {
+      setRncVerification(null);
+      return;
+    }
+
+    setIsVerifyingRNC(true);
+    try {
+      const response = await fetch(`/api/customers/verify-rnc/${rnc.replace(/\D/g, '')}`, {
+        credentials: 'include'
+      });
+      const data = await response.json();
+      
+      setRncVerification(data);
+      
+      if (data.isValid && data.companyName) {
+        // Auto-fill company name if RNC is valid
+        form.setValue('name', data.companyName);
+        toast({
+          title: "RNC Verificado",
+          description: `Empresa: ${data.companyName}`,
+        });
+      } else {
+        toast({
+          title: "RNC No Encontrado",
+          description: data.message,
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Error verifying RNC:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo verificar el RNC",
+        variant: "destructive",
+      });
+    } finally {
+      setIsVerifyingRNC(false);
+    }
   };
 
   if (isLoading) {
