@@ -911,7 +911,8 @@ export type POSSale = typeof posSales.$inferSelect;
 export type InsertPOSSale = z.infer<typeof insertPOSSaleSchema>;
 export type POSSaleItem = typeof posSaleItems.$inferSelect;
 export type InsertPOSSaleItem = z.infer<typeof insertPOSSaleItemSchema>;
-// NCF types removed as they are defined below
+export type POSCartItem = typeof posCartItems.$inferSelect;
+export type InsertPOSCartItem = z.infer<typeof insertPOSCartItemSchema>;
 export type POSSession = typeof posSessions.$inferSelect;
 export type InsertPOSSession = z.infer<typeof insertPOSSessionSchema>;
 export type StockReservation = typeof stockReservations.$inferSelect;
