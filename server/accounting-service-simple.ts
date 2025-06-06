@@ -65,15 +65,10 @@ export class SimpleAccountingService {
         { companyId, code: '5.2', name: 'Gastos Operacionales', accountTypeId: gastosType.id, level: 2, isParent: false, allowTransactions: true, currentBalance: '0.00' },
       ];
 
-      // Insert accounts with correct column names
+      // Insert accounts
       for (const account of defaultAccounts) {
-        const { parentAccountId, ...accountData } = account;
-        const finalAccountData = {
-          ...accountData,
-          ...(parentAccountId && { parentId: parentAccountId })
-        };
         await db.insert(accounts)
-          .values(finalAccountData)
+          .values(account)
           .onConflictDoNothing();
       }
 
