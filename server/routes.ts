@@ -45,7 +45,7 @@ import {
   insertFiscalPeriodSchema,
   insertBudgetSchema,
 } from "@shared/schema";
-import { accountingService } from "./accounting-service";
+import { simpleAccountingService } from "./accounting-service-simple";
 
 // Initialize with sample DGII RNC data for fast startup
 async function initializeRNCRegistry() {
@@ -2676,7 +2676,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Company not found" });
       }
       
-      const result = await accountingService.initializeChartOfAccounts(company.id, userId);
+      const result = await simpleAccountingService.initializeChartOfAccounts(company.id, userId);
       res.json(result);
     } catch (error) {
       console.error("Error initializing chart of accounts:", error);
@@ -2693,7 +2693,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Company not found" });
       }
       
-      const accounts = await storage.getAccounts(company.id);
+      const accounts = await simpleAccountingService.getAccounts(company.id);
       res.json(accounts);
     } catch (error) {
       console.error("Error fetching accounts:", error);

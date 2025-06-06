@@ -22,11 +22,11 @@ export class AccountingService {
   async initializeChartOfAccounts(companyId: number, userId: string) {
     // Create default account types
     const defaultAccountTypes = [
-      { code: 'ACTIVO', name: 'Activo', normalBalance: 'DEBIT' },
-      { code: 'PASIVO', name: 'Pasivo', normalBalance: 'CREDIT' },
-      { code: 'PATRIMONIO', name: 'Patrimonio', normalBalance: 'CREDIT' },
-      { code: 'INGRESOS', name: 'Ingresos', normalBalance: 'CREDIT' },
-      { code: 'GASTOS', name: 'Gastos', normalBalance: 'DEBIT' },
+      { code: 'ACTIVO', name: 'Activo', normalBalance: 'DEBIT', description: 'Activos de la empresa' },
+      { code: 'PASIVO', name: 'Pasivo', normalBalance: 'CREDIT', description: 'Pasivos de la empresa' },
+      { code: 'PATRIMONIO', name: 'Patrimonio', normalBalance: 'CREDIT', description: 'Patrimonio de la empresa' },
+      { code: 'INGRESOS', name: 'Ingresos', normalBalance: 'CREDIT', description: 'Ingresos de la empresa' },
+      { code: 'GASTOS', name: 'Gastos', normalBalance: 'DEBIT', description: 'Gastos de la empresa' },
     ];
 
     // Insert account types if they don't exist
