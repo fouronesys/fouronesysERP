@@ -451,55 +451,57 @@ export default function Customers() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>RNC</FormLabel>
-                        <div className="flex gap-2">
-                          <FormControl>
-                            <Input 
-                              placeholder="101000013 - Ingrese RNC para verificar" 
-                              {...field}
-                              onChange={(e) => {
-                                field.onChange(e);
-                                // Reset verification when user types
-                                if (rncVerification) {
-                                  setRncVerification(null);
+                        <div className="flex items-start gap-2 w-full">
+                          <div className="flex-1">
+                            <FormControl>
+                              <Input 
+                                placeholder="Ej: 101000013" 
+                                {...field}
+                                onChange={(e) => {
+                                  field.onChange(e);
+                                  // Reset verification when user types
+                                  if (rncVerification) {
+                                    setRncVerification(null);
+                                  }
+                                }}
+                                onBlur={(e) => {
+                                  const rncValue = e.target.value?.replace(/\D/g, '') || '';
+                                  if (rncValue && rncValue.length >= 9) {
+                                    handleRNCVerification(rncValue);
+                                  }
+                                }}
+                                className={
+                                  rncVerification?.isValid === true 
+                                    ? "border-green-500 bg-green-50 dark:bg-green-950" 
+                                    : rncVerification?.isValid === false 
+                                    ? "border-red-500 bg-red-50 dark:bg-red-950" 
+                                    : ""
                                 }
-                              }}
-                              onBlur={(e) => {
-                                const rncValue = e.target.value?.replace(/\D/g, '') || '';
-                                if (rncValue && rncValue.length >= 9) {
-                                  handleRNCVerification(rncValue);
-                                }
-                              }}
-                              className={
-                                rncVerification?.isValid === true 
-                                  ? "border-green-500 bg-green-50 dark:bg-green-950" 
-                                  : rncVerification?.isValid === false 
-                                  ? "border-red-500 bg-red-50 dark:bg-red-950" 
-                                  : ""
-                              }
-                            />
-                          </FormControl>
+                              />
+                            </FormControl>
+                          </div>
                           <Button
                             type="button"
                             variant="outline"
-                            size="default"
-                            disabled={isVerifyingRNC || !field.value?.trim()}
+                            size="sm"
+                            disabled={isVerifyingRNC}
                             onClick={() => {
-                              const cleanRnc = field.value?.replace(/\D/g, '');
-                              if (cleanRnc) {
+                              const cleanRnc = field.value?.replace(/\D/g, '') || '';
+                              if (cleanRnc.length >= 9) {
                                 handleRNCVerification(cleanRnc);
                               }
                             }}
-                            className="whitespace-nowrap px-3"
+                            className="shrink-0 min-w-[100px]"
                           >
                             {isVerifyingRNC ? (
                               <>
                                 <Loader2 className="h-4 w-4 animate-spin mr-1" />
-                                <span className="hidden sm:inline">Verificando...</span>
+                                Verificando
                               </>
                             ) : (
                               <>
                                 <Search className="h-4 w-4 mr-1" />
-                                <span>Verificar RNC</span>
+                                Verificar
                               </>
                             )}
                           </Button>
