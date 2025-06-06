@@ -448,7 +448,7 @@ export const posSales = pgTable("pos_sales", {
   id: serial("id").primaryKey(),
   companyId: integer("company_id").references(() => companies.id).notNull(),
   customerId: integer("customer_id").references(() => posCustomers.id),
-  sessionId: integer("session_id").references(() => posSessions.id),
+  sessionId: integer("session_id").references(() => posCashSessions.id),
   stationId: integer("station_id").references(() => posStations.id),
   employeeId: integer("employee_id").references(() => posEmployees.id),
   saleNumber: varchar("sale_number", { length: 50 }).notNull(),
@@ -678,11 +678,7 @@ export const insertPOSCartItemSchema = createInsertSchema(posCartItems).omit({
   updatedAt: true,
 });
 
-export const insertPOSSessionSchema = createInsertSchema(posSessions).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+// Removed old POS session schema - replaced with cash sessions
 
 export const insertStockReservationSchema = createInsertSchema(stockReservations).omit({
   id: true,
@@ -711,7 +707,7 @@ export const insertPOSStationSchema = createInsertSchema(posStations).omit({
   updatedAt: true,
 });
 
-export const insertPOSCashSessionSchema = createInsertSchema(posSessions).omit({
+export const insertPOSCashSessionSchema = createInsertSchema(posCashSessions).omit({
   id: true,
   closedAt: true,
   createdAt: true,
@@ -995,8 +991,6 @@ export type Supplier = typeof suppliers.$inferSelect;
 export type InsertSupplier = z.infer<typeof insertSupplierSchema>;
 export type Product = typeof products.$inferSelect;
 export type InsertProduct = z.infer<typeof insertProductSchema>;
-export type POSCartItem = typeof posCartItems.$inferSelect;
-export type InsertPOSCartItem = z.infer<typeof insertPOSCartItemSchema>;
 export type Invoice = typeof invoices.$inferSelect;
 export type InsertInvoice = z.infer<typeof insertInvoiceSchema>;
 export type InvoiceItem = typeof invoiceItems.$inferSelect;
@@ -1015,8 +1009,14 @@ export type POSSaleItem = typeof posSaleItems.$inferSelect;
 export type InsertPOSSaleItem = z.infer<typeof insertPOSSaleItemSchema>;
 export type POSCartItem = typeof posCartItems.$inferSelect;
 export type InsertPOSCartItem = z.infer<typeof insertPOSCartItemSchema>;
-export type POSSession = typeof posSessions.$inferSelect;
-export type InsertPOSSession = z.infer<typeof insertPOSSessionSchema>;
+export type POSCashSession = typeof posCashSessions.$inferSelect;
+export type InsertPOSCashSession = z.infer<typeof insertPOSCashSessionSchema>;
+export type POSEmployee = typeof posEmployees.$inferSelect;
+export type InsertPOSEmployee = z.infer<typeof insertPOSEmployeeSchema>;
+export type POSStation = typeof posStations.$inferSelect;
+export type InsertPOSStation = z.infer<typeof insertPOSStationSchema>;
+export type POSCustomer = typeof posCustomers.$inferSelect;
+export type InsertPOSCustomer = z.infer<typeof insertPOSCustomerSchema>;
 export type StockReservation = typeof stockReservations.$inferSelect;
 export type InsertStockReservation = z.infer<typeof insertStockReservationSchema>;
 export type POSPrintSettings = typeof posPrintSettings.$inferSelect;
