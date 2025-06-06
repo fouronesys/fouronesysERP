@@ -424,7 +424,7 @@ export default function Landing() {
                   <h3 className="text-2xl font-bold text-white">Plan Anual</h3>
                   <p className="text-gray-300 mt-2">2 meses gratis al pagar anual</p>
                   <div className="mt-4">
-                    <span className="text-4xl font-bold text-white">RD$ 35,000</span>
+                    <span className="text-4xl font-bold text-white">RD$ 45,000</span>
                     <span className="text-gray-300"> instalación</span>
                   </div>
                   <div className="mt-2">
