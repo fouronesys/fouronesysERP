@@ -339,7 +339,7 @@ export class InvoiceHTMLService {
         <div class="footer-section">
             <div class="payment-info">
                 <div class="amount-words">
-                    <strong>Total en letras:</strong> ${this.numberToWords(parseFloat(sale.total || '0'))} pesos dominicanos
+                    <strong>Total en letras:</strong> ${InvoiceHTMLService.numberToWords(parseFloat(sale.total || '0'))} pesos dominicanos
                 </div>
                 ${sale.notes ? `<div><strong>Notas:</strong> ${sale.notes}</div>` : ''}
                 <div style="margin-top: 20px; font-size: 11px; color: #666;">
