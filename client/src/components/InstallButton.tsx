@@ -56,6 +56,16 @@ export function InstallButton() {
       setCanInstallPWA(true);
     };
 
+    // Check if app is already installed as PWA
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+    const isInWebAppiOS = (window.navigator as any).standalone === true;
+    const isInstalled = isStandalone || isInWebAppiOS;
+
+    // Always enable PWA install option for browsers that support it
+    if (!isInstalled && ('serviceWorker' in navigator)) {
+      setCanInstallPWA(true);
+    }
+
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     
     return () => {
@@ -63,9 +73,34 @@ export function InstallButton() {
     };
   }, []);
 
+  // Generate install options dynamically
   const installOptions: InstallOption[] = [
+    // PWA Option - Always show if supported
     {
-      platform: 'windows',
+      platform: 'PWA',
+      type: 'pwa',
+      title: 'Instalar como App',
+      description: 'Instala Four One Solutions como aplicación en tu dispositivo',
+      size: '~5 MB',
+      features: [
+        'Funcionalidad offline',
+        'Sincronización automática',
+        'Acceso desde pantalla de inicio',
+        'Notificaciones push',
+        'Actualizaciones automáticas'
+      ],
+      installSteps: [
+        'Hacer clic en "Instalar PWA"',
+        'Confirmar instalación en el navegador',
+        'Acceder desde pantalla de inicio'
+      ],
+      icon: <Smartphone className="h-8 w-8" />,
+      available: canInstallPWA,
+      recommended: true
+    },
+    // Desktop options
+    {
+      platform: 'Windows',
       type: 'desktop',
       title: 'Four One Solutions Desktop',
       description: 'Aplicación nativa para Windows con funcionalidad offline completa',

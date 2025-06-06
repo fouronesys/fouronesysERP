@@ -1,147 +1,78 @@
 {
   "name": "Four One Solutions",
   "short_name": "Four One",
-  "description": "Sistema ERP empresarial para República Dominicana con funcionalidad offline",
+  "description": "Sistema ERP integral para empresas dominicanas con funcionalidad offline",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#2563eb",
+  "theme_color": "#3b82f6",
   "orientation": "portrait-primary",
   "scope": "/",
-  "lang": "es-DO",
   "categories": ["business", "productivity", "finance"],
+  "lang": "es-DO",
   "icons": [
     {
-      "src": "/icons/icon-72x72.png",
-      "sizes": "72x72",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "src": "/favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
     },
     {
-      "src": "/icons/icon-96x96.png",
-      "sizes": "96x96",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/icons/icon-128x128.png",
-      "sizes": "128x128",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/icons/icon-144x144.png",
-      "sizes": "144x144",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/icons/icon-152x152.png",
-      "sizes": "152x152",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/icons/icon-192x192.png",
+      "src": "/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/icons/icon-384x384.png",
-      "sizes": "384x384",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/icons/icon-512x512.png",
+      "src": "/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
     }
   ],
-  "screenshots": [
-    {
-      "src": "/screenshots/desktop-dashboard.png",
-      "sizes": "1280x720",
-      "type": "image/png",
-      "form_factor": "wide",
-      "label": "Dashboard principal con métricas de ventas"
-    },
-    {
-      "src": "/screenshots/mobile-pos.png",
-      "sizes": "390x844",
-      "type": "image/png",
-      "form_factor": "narrow",
-      "label": "Punto de venta móvil"
-    }
-  ],
   "shortcuts": [
     {
-      "name": "Punto de Venta",
+      "name": "POS",
       "short_name": "POS",
-      "description": "Acceso rápido al punto de venta",
+      "description": "Punto de Venta",
       "url": "/pos",
       "icons": [
         {
-          "src": "/icons/shortcut-pos.png",
-          "sizes": "96x96",
-          "type": "image/png"
+          "src": "/icon-192.png",
+          "sizes": "192x192"
         }
       ]
     },
     {
-      "name": "Productos",
-      "short_name": "Productos",
-      "description": "Gestión de inventario y productos",
-      "url": "/products",
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "description": "Panel Principal",
+      "url": "/dashboard",
       "icons": [
         {
-          "src": "/icons/shortcut-products.png",
-          "sizes": "96x96",
-          "type": "image/png"
+          "src": "/icon-192.png",
+          "sizes": "192x192"
         }
       ]
     },
     {
-      "name": "Reportes Fiscales",
-      "short_name": "Reportes",
-      "description": "Formularios 606 y 607",
-      "url": "/fiscal-reports",
+      "name": "Inventario",
+      "short_name": "Inventario",
+      "description": "Gestión de Inventario",
+      "url": "/inventory",
       "icons": [
         {
-          "src": "/icons/shortcut-reports.png",
-          "sizes": "96x96",
-          "type": "image/png"
+          "src": "/icon-192.png",
+          "sizes": "192x192"
         }
       ]
-    }
-  ],
-  "related_applications": [
-    {
-      "platform": "windows",
-      "url": "https://releases.fourone.solutions/Four-One-Solutions-Setup.exe",
-      "id": "com.fourone.solutions"
     }
   ],
   "prefer_related_applications": false,
-  "edge_side_panel": {
-    "preferred_width": 400
-  },
+  "related_applications": [],
   "protocol_handlers": [
     {
       "protocol": "web+fourone",
-      "url": "/handle?type=%s"
-    }
-  ],
-  "file_handlers": [
-    {
-      "action": "/import",
-      "accept": {
-        "application/vnd.ms-excel": [".xls", ".xlsx"],
-        "text/csv": [".csv"]
-      },
-      "launch_type": "single-client"
+      "url": "/?handler=%s"
     }
   ]
 }
