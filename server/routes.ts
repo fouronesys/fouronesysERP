@@ -3090,16 +3090,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // Header with Four One Solutions ASCII logo
     lines.push("".padEnd(LINE_WIDTH, "="));
     
-    // Company logo section
+    // Include actual PNG logo as base64 for thermal printing
     if (printOptions.showLogo) {
-      lines.push(centerText("┌─────────────────────────────────────┐"));
-      lines.push(centerText("│                                     │"));
-      lines.push(centerText("│           FOUR ONE                  │"));
-      lines.push(centerText("│          SOLUTIONS                  │"));
-      lines.push(centerText("│                                     │"));
-      lines.push(centerText("│         SOLUCIONES 411              │"));
-      lines.push(centerText("│                                     │"));
-      lines.push(centerText("└─────────────────────────────────────┘"));
+      try {
+        const logoPath = './attached_assets/Four One Solutions Logo_20250130_143011_0000_1749182433509.png';
+        if (fs.existsSync(logoPath)) {
+          const logoBuffer = fs.readFileSync(logoPath);
+          const logoBase64 = logoBuffer.toString('base64');
+          // Add logo as base64 data for thermal printer
+          lines.push(centerText(`[LOGO:${logoBase64}]`));
+        } else {
+          lines.push(centerText("FOUR ONE SOLUTIONS"));
+        }
+      } catch (error) {
+        lines.push(centerText("FOUR ONE SOLUTIONS"));
+      }
     }
     lines.push("");
     
@@ -3249,15 +3254,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const qrData = `https://${process.env.REPLIT_DOMAINS?.split(',')[0] || 'localhost'}/verify/${sale.id}`;
       
-      // Generate real QR code as ASCII art for thermal printer
+      // Generate clean QR code for thermal printer
       const qrString = await QRCode.toString(qrData, {
-        type: 'terminal',
+        type: 'utf8',
         small: true,
-        width: LINE_WIDTH - 4
+        width: 25,
+        margin: 1
       });
       
-      // Split QR into lines and center each line
-      const qrLines = qrString.split('\n').filter(line => line.trim());
+      // Clean QR code of escape sequences and center each line
+      const qrLines = qrString.split('\n')
+        .filter(line => line.trim())
+        .map(line => line.replace(/\u001b\[[0-9;]*m/g, '')); // Remove ANSI escape codes
+      
       qrLines.forEach(line => {
         lines.push(centerText(line));
       });
