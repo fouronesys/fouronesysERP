@@ -314,7 +314,7 @@ export default function POS() {
       };
 
       // Guardar cliente si es nuevo y tiene datos
-      if (customerName && (!customersData || !customersData.find((c: any) => 
+      if (customerName && (!Array.isArray(customersData) || !customersData.find((c: any) => 
         c.name === customerName && c.rnc === customerRnc
       ))) {
         try {
@@ -631,7 +631,7 @@ export default function POS() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="new">+ Crear nuevo cliente</SelectItem>
-                        {customersData && customersData.length > 0 && customersData.map((customer: any) => (
+                        {Array.isArray(customersData) && customersData.length > 0 && customersData.map((customer: any) => (
                           <SelectItem key={customer.id} value={customer.id.toString()}>
                             {customer.name} {customer.rnc ? `(${customer.rnc})` : ''}
                           </SelectItem>
