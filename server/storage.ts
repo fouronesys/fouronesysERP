@@ -385,7 +385,7 @@ export class DatabaseStorage implements IStorage {
     }
 
     // Set trial expiry date for trial companies
-    const dataToInsert = { 
+    const dataToInsert: InsertCompany = { 
       ...companyData,
       rnc: companyData.rnc?.trim() || null // Store null if empty
     };
@@ -573,9 +573,7 @@ export class DatabaseStorage implements IStorage {
     return company;
   }
 
-  async deleteCompany(id: number): Promise<void> {
-    await db.delete(companies).where(eq(companies.id, id));
-  }
+
 
   // Super Admin operations
   async getAllCompanies(): Promise<Company[]> {
@@ -752,9 +750,12 @@ export class DatabaseStorage implements IStorage {
 
   async createProduct(productData: InsertProduct): Promise<Product> {
     // Generate automatic image URL if not provided
+    const imageUrl = productData.imageUrl || this.generateProductImageUrl(productData.name);
+    const resolvedImageUrl = typeof imageUrl === 'string' ? imageUrl : await imageUrl;
+    
     const productWithImage = {
       ...productData,
-      imageUrl: productData.imageUrl || this.generateProductImageUrl(productData.name)
+      imageUrl: resolvedImageUrl
     };
     
     const [product] = await db

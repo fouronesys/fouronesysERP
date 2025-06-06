@@ -1572,9 +1572,6 @@ export const insertJournalSchema = createInsertSchema(journals).omit({
 export const insertJournalEntrySchema = createInsertSchema(journalEntries).omit({
   id: true,
   entryNumber: true,
-  isBalanced: true,
-  postedBy: true,
-  postedAt: true,
   createdAt: true,
   updatedAt: true,
 });
