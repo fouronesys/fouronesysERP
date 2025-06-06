@@ -39,7 +39,13 @@ import {
   insertChatMessageSchema,
   insertUserRoleSchema,
   insertUserPermissionSchema,
+  insertAccountSchema,
+  insertJournalEntrySchema,
+  insertJournalEntryLineSchema,
+  insertFiscalPeriodSchema,
+  insertBudgetSchema,
 } from "@shared/schema";
+import { accountingService } from "./accounting-service";
 
 // Initialize with sample DGII RNC data for fast startup
 async function initializeRNCRegistry() {

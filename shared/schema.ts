@@ -1138,6 +1138,164 @@ export const userRoleAssignments = pgTable("user_role_assignments", {
   assignedAt: timestamp("assigned_at").defaultNow(),
 });
 
+// ACCOUNTING MODULE - Complete accounting cycle management
+
+// Chart of Accounts - Plan de Cuentas
+export const accountTypes = pgTable("account_types", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 100 }).notNull(), // Activo, Pasivo, Patrimonio, Ingresos, Gastos
+  code: varchar("code", { length: 10 }).notNull().unique(),
+  description: text("description"),
+  normalBalance: varchar("normal_balance", { length: 10 }).notNull(), // DEBIT or CREDIT
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const accounts = pgTable("accounts", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull().references(() => companies.id),
+  code: varchar("code", { length: 20 }).notNull(),
+  name: varchar("name", { length: 200 }).notNull(),
+  description: text("description"),
+  accountTypeId: integer("account_type_id").notNull().references(() => accountTypes.id),
+  parentAccountId: integer("parent_account_id").references(() => accounts.id),
+  level: integer("level").notNull().default(1), // Hierarchy level
+  isParent: boolean("is_parent").default(false),
+  allowTransactions: boolean("allow_transactions").default(true),
+  currentBalance: decimal("current_balance", { precision: 15, scale: 2 }).default("0.00"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// General Ledger - Libro Mayor
+export const journals = pgTable("journals", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull().references(() => companies.id),
+  name: varchar("name", { length: 100 }).notNull(),
+  code: varchar("code", { length: 10 }).notNull(),
+  description: text("description"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Journal Entries - Asientos Contables
+export const journalEntries = pgTable("journal_entries", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull().references(() => companies.id),
+  journalId: integer("journal_id").notNull().references(() => journals.id),
+  entryNumber: varchar("entry_number", { length: 50 }).notNull(),
+  reference: varchar("reference", { length: 100 }),
+  description: text("description").notNull(),
+  entryDate: date("entry_date").notNull(),
+  totalDebit: decimal("total_debit", { precision: 15, scale: 2 }).notNull(),
+  totalCredit: decimal("total_credit", { precision: 15, scale: 2 }).notNull(),
+  isBalanced: boolean("is_balanced").default(false),
+  status: varchar("status", { length: 20 }).default("draft"), // draft, posted, cancelled
+  sourceModule: varchar("source_module", { length: 50 }), // POS, INVOICE, MANUAL, etc.
+  sourceId: integer("source_id"), // Reference to source transaction
+  createdBy: varchar("created_by").notNull().references(() => users.id),
+  postedBy: varchar("posted_by").references(() => users.id),
+  postedAt: timestamp("posted_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Journal Entry Lines - Líneas de Asientos
+export const journalEntryLines = pgTable("journal_entry_lines", {
+  id: serial("id").primaryKey(),
+  journalEntryId: integer("journal_entry_id").notNull().references(() => journalEntries.id),
+  accountId: integer("account_id").notNull().references(() => accounts.id),
+  description: text("description"),
+  debitAmount: decimal("debit_amount", { precision: 15, scale: 2 }).default("0.00"),
+  creditAmount: decimal("credit_amount", { precision: 15, scale: 2 }).default("0.00"),
+  lineNumber: integer("line_number").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Fiscal Periods - Períodos Fiscales
+export const fiscalPeriods = pgTable("fiscal_periods", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull().references(() => companies.id),
+  name: varchar("name", { length: 100 }).notNull(),
+  startDate: date("start_date").notNull(),
+  endDate: date("end_date").notNull(),
+  isClosed: boolean("is_closed").default(false),
+  closedBy: varchar("closed_by").references(() => users.id),
+  closedAt: timestamp("closed_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Financial Reports Configuration
+export const reportTemplates = pgTable("report_templates", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull().references(() => companies.id),
+  name: varchar("name", { length: 100 }).notNull(),
+  type: varchar("type", { length: 50 }).notNull(), // balance_sheet, income_statement, cash_flow
+  template: jsonb("template").notNull(), // Report structure and accounts
+  isDefault: boolean("is_default").default(false),
+  createdBy: varchar("created_by").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Budget Planning
+export const budgets = pgTable("budgets", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull().references(() => companies.id),
+  name: varchar("name", { length: 100 }).notNull(),
+  fiscalPeriodId: integer("fiscal_period_id").notNull().references(() => fiscalPeriods.id),
+  description: text("description"),
+  status: varchar("status", { length: 20 }).default("draft"), // draft, approved, active
+  totalBudget: decimal("total_budget", { precision: 15, scale: 2 }),
+  createdBy: varchar("created_by").notNull().references(() => users.id),
+  approvedBy: varchar("approved_by").references(() => users.id),
+  approvedAt: timestamp("approved_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const budgetLines = pgTable("budget_lines", {
+  id: serial("id").primaryKey(),
+  budgetId: integer("budget_id").notNull().references(() => budgets.id),
+  accountId: integer("account_id").notNull().references(() => accounts.id),
+  budgetedAmount: decimal("budgeted_amount", { precision: 15, scale: 2 }).notNull(),
+  actualAmount: decimal("actual_amount", { precision: 15, scale: 2 }).default("0.00"),
+  variance: decimal("variance", { precision: 15, scale: 2 }).default("0.00"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Cost Centers
+export const costCenters = pgTable("cost_centers", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull().references(() => companies.id),
+  code: varchar("code", { length: 20 }).notNull(),
+  name: varchar("name", { length: 100 }).notNull(),
+  description: text("description"),
+  managerId: varchar("manager_id").references(() => users.id),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Automatic Journal Entry Templates for POS Integration
+export const autoJournalTemplates = pgTable("auto_journal_templates", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull().references(() => companies.id),
+  name: varchar("name", { length: 100 }).notNull(),
+  triggerEvent: varchar("trigger_event", { length: 50 }).notNull(), // pos_sale, invoice_payment, etc.
+  description: text("description"),
+  template: jsonb("template").notNull(), // Account mappings and rules
+  isActive: boolean("is_active").default(true),
+  createdBy: varchar("created_by").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Módulo de compras movido a shared/purchases-schema.ts
 
 // Chat Channel Relations
@@ -1267,5 +1425,230 @@ export type UserRole = typeof userRoles.$inferSelect;
 export type InsertUserRole = z.infer<typeof insertUserRoleSchema>;
 export type UserRoleAssignment = typeof userRoleAssignments.$inferSelect;
 export type InsertUserRoleAssignment = z.infer<typeof insertUserRoleAssignmentSchema>;
+
+// ACCOUNTING MODULE RELATIONS
+export const accountTypesRelations = relations(accountTypes, ({ many }) => ({
+  accounts: many(accounts),
+}));
+
+export const accountsRelations = relations(accounts, ({ one, many }) => ({
+  accountType: one(accountTypes, {
+    fields: [accounts.accountTypeId],
+    references: [accountTypes.id],
+  }),
+  company: one(companies, {
+    fields: [accounts.companyId],
+    references: [companies.id],
+  }),
+  parentAccount: one(accounts, {
+    fields: [accounts.parentAccountId],
+    references: [accounts.id],
+  }),
+  childAccounts: many(accounts),
+  journalEntryLines: many(journalEntryLines),
+  budgetLines: many(budgetLines),
+}));
+
+export const journalsRelations = relations(journals, ({ one, many }) => ({
+  company: one(companies, {
+    fields: [journals.companyId],
+    references: [companies.id],
+  }),
+  journalEntries: many(journalEntries),
+}));
+
+export const journalEntriesRelations = relations(journalEntries, ({ one, many }) => ({
+  company: one(companies, {
+    fields: [journalEntries.companyId],
+    references: [companies.id],
+  }),
+  journal: one(journals, {
+    fields: [journalEntries.journalId],
+    references: [journals.id],
+  }),
+  createdByUser: one(users, {
+    fields: [journalEntries.createdBy],
+    references: [users.id],
+  }),
+  postedByUser: one(users, {
+    fields: [journalEntries.postedBy],
+    references: [users.id],
+  }),
+  lines: many(journalEntryLines),
+}));
+
+export const journalEntryLinesRelations = relations(journalEntryLines, ({ one }) => ({
+  journalEntry: one(journalEntries, {
+    fields: [journalEntryLines.journalEntryId],
+    references: [journalEntries.id],
+  }),
+  account: one(accounts, {
+    fields: [journalEntryLines.accountId],
+    references: [accounts.id],
+  }),
+}));
+
+export const fiscalPeriodsRelations = relations(fiscalPeriods, ({ one, many }) => ({
+  company: one(companies, {
+    fields: [fiscalPeriods.companyId],
+    references: [companies.id],
+  }),
+  closedByUser: one(users, {
+    fields: [fiscalPeriods.closedBy],
+    references: [users.id],
+  }),
+  budgets: many(budgets),
+}));
+
+export const reportTemplatesRelations = relations(reportTemplates, ({ one }) => ({
+  company: one(companies, {
+    fields: [reportTemplates.companyId],
+    references: [companies.id],
+  }),
+  createdByUser: one(users, {
+    fields: [reportTemplates.createdBy],
+    references: [users.id],
+  }),
+}));
+
+export const budgetsRelations = relations(budgets, ({ one, many }) => ({
+  company: one(companies, {
+    fields: [budgets.companyId],
+    references: [companies.id],
+  }),
+  fiscalPeriod: one(fiscalPeriods, {
+    fields: [budgets.fiscalPeriodId],
+    references: [fiscalPeriods.id],
+  }),
+  createdByUser: one(users, {
+    fields: [budgets.createdBy],
+    references: [users.id],
+  }),
+  approvedByUser: one(users, {
+    fields: [budgets.approvedBy],
+    references: [users.id],
+  }),
+  budgetLines: many(budgetLines),
+}));
+
+export const budgetLinesRelations = relations(budgetLines, ({ one }) => ({
+  budget: one(budgets, {
+    fields: [budgetLines.budgetId],
+    references: [budgets.id],
+  }),
+  account: one(accounts, {
+    fields: [budgetLines.accountId],
+    references: [accounts.id],
+  }),
+}));
+
+export const costCentersRelations = relations(costCenters, ({ one }) => ({
+  company: one(companies, {
+    fields: [costCenters.companyId],
+    references: [companies.id],
+  }),
+  manager: one(users, {
+    fields: [costCenters.managerId],
+    references: [users.id],
+  }),
+}));
+
+export const autoJournalTemplatesRelations = relations(autoJournalTemplates, ({ one }) => ({
+  company: one(companies, {
+    fields: [autoJournalTemplates.companyId],
+    references: [companies.id],
+  }),
+  createdByUser: one(users, {
+    fields: [autoJournalTemplates.createdBy],
+    references: [users.id],
+  }),
+}));
+
+// ACCOUNTING MODULE SCHEMAS
+export const insertAccountTypeSchema = createInsertSchema(accountTypes);
+export const insertAccountSchema = createInsertSchema(accounts).omit({
+  id: true,
+  currentBalance: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export const insertJournalSchema = createInsertSchema(journals).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export const insertJournalEntrySchema = createInsertSchema(journalEntries).omit({
+  id: true,
+  entryNumber: true,
+  isBalanced: true,
+  postedBy: true,
+  postedAt: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export const insertJournalEntryLineSchema = createInsertSchema(journalEntryLines).omit({
+  id: true,
+  createdAt: true,
+});
+export const insertFiscalPeriodSchema = createInsertSchema(fiscalPeriods).omit({
+  id: true,
+  closedBy: true,
+  closedAt: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export const insertReportTemplateSchema = createInsertSchema(reportTemplates).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export const insertBudgetSchema = createInsertSchema(budgets).omit({
+  id: true,
+  approvedBy: true,
+  approvedAt: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export const insertBudgetLineSchema = createInsertSchema(budgetLines).omit({
+  id: true,
+  actualAmount: true,
+  variance: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export const insertCostCenterSchema = createInsertSchema(costCenters).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export const insertAutoJournalTemplateSchema = createInsertSchema(autoJournalTemplates).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+// ACCOUNTING MODULE TYPES
+export type AccountType = typeof accountTypes.$inferSelect;
+export type InsertAccountType = z.infer<typeof insertAccountTypeSchema>;
+export type Account = typeof accounts.$inferSelect;
+export type InsertAccount = z.infer<typeof insertAccountSchema>;
+export type Journal = typeof journals.$inferSelect;
+export type InsertJournal = z.infer<typeof insertJournalSchema>;
+export type JournalEntry = typeof journalEntries.$inferSelect;
+export type InsertJournalEntry = z.infer<typeof insertJournalEntrySchema>;
+export type JournalEntryLine = typeof journalEntryLines.$inferSelect;
+export type InsertJournalEntryLine = z.infer<typeof insertJournalEntryLineSchema>;
+export type FiscalPeriod = typeof fiscalPeriods.$inferSelect;
+export type InsertFiscalPeriod = z.infer<typeof insertFiscalPeriodSchema>;
+export type ReportTemplate = typeof reportTemplates.$inferSelect;
+export type InsertReportTemplate = z.infer<typeof insertReportTemplateSchema>;
+export type Budget = typeof budgets.$inferSelect;
+export type InsertBudget = z.infer<typeof insertBudgetSchema>;
+export type BudgetLine = typeof budgetLines.$inferSelect;
+export type InsertBudgetLine = z.infer<typeof insertBudgetLineSchema>;
+export type CostCenter = typeof costCenters.$inferSelect;
+export type InsertCostCenter = z.infer<typeof insertCostCenterSchema>;
+export type AutoJournalTemplate = typeof autoJournalTemplates.$inferSelect;
+export type InsertAutoJournalTemplate = z.infer<typeof insertAutoJournalTemplateSchema>;
 
 // Tipos del módulo de compras movidos a shared/purchases-schema.ts
