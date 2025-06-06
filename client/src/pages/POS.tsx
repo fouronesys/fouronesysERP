@@ -927,18 +927,20 @@ export default function POS() {
               {/* Totales móvil */}
               <Card>
                 <CardContent className="p-4">
-                  <div className="space-y-2 mb-4">
-                    <div className="flex justify-between">
+                  <div className="space-y-3 mb-4">
+                    <div className="flex justify-between text-base">
                       <span>Subtotal:</span>
-                      <span>{formatDOP(subtotal)}</span>
+                      <span className="font-medium">{formatDOP(subtotal)}</span>
                     </div>
-                    <div className="flex justify-between">
+                    <div className="flex justify-between text-base">
                       <span>ITBIS:</span>
-                      <span>{formatDOP(itbis)}</span>
+                      <span className="font-medium">{formatDOP(itbis)}</span>
                     </div>
-                    <div className="flex justify-between font-bold text-lg">
-                      <span>Total:</span>
-                      <span className="text-green-600">{formatDOP(total)}</span>
+                    <div className="border-t pt-3">
+                      <div className="flex justify-between font-bold text-xl">
+                        <span>Total:</span>
+                        <span className="text-green-600 dark:text-green-400">{formatDOP(total)}</span>
+                      </div>
                     </div>
                   </div>
 
