@@ -3085,9 +3085,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     const lines = [];
     
-    // Header with company logo placeholder
+    // Header with Four One Solutions ASCII logo
     lines.push("".padEnd(LINE_WIDTH, "="));
-    lines.push(centerText("[★ LOGO ★]")); // Logo placeholder for thermal printer
+    
+    // Four One Solutions logo
+    lines.push(centerText("╔══════════════════════════════════════╗"));
+    lines.push(centerText("║        FOUR ONE SOLUTIONS           ║"));
+    lines.push(centerText("║                                      ║"));
+    lines.push(centerText("║    ███████╗  ██╗  ██╗   ██╗         ║"));
+    lines.push(centerText("║    ██╔════╝  ██║  ██║  ███║         ║"));
+    lines.push(centerText("║    █████╗    ██║  ██║  ╚██║         ║"));
+    lines.push(centerText("║    ██╔══╝    ██║  ██║   ██║         ║"));
+    lines.push(centerText("║    ██║       ╚═╝  ╚═╝   ██║         ║"));
+    lines.push(centerText("║    ╚═╝                  ╚═╝         ║"));
+    lines.push(centerText("║                                      ║"));
+    lines.push(centerText("║           SOLUCIONES 411            ║"));
+    lines.push(centerText("╚══════════════════════════════════════╝"));
+    lines.push("");
     lines.push(centerText(company.name.toUpperCase()));
     if (company.slogan) {
       lines.push(centerText(company.slogan));
