@@ -3064,60 +3064,217 @@ export async function registerRoutes(app: Express): Promise<Server> {
     return reportLines.join("\n");
   }
 
-  // Simple receipt generation function
+  // Enhanced receipt generation function with QR code, logo and improved design for 80mm paper
   function generateSimpleReceipt(sale: any, items: any[], company: any, customerInfo: any): string {
+    const LINE_WIDTH = 48; // Optimal for 80mm thermal paper
+    
+    // Helper function to center text
+    function centerText(text: string): string {
+      if (text.length >= LINE_WIDTH) return text;
+      const spaces = Math.floor((LINE_WIDTH - text.length) / 2);
+      return " ".repeat(spaces) + text;
+    }
+    
+    // Helper function to align right with label
+    function alignRight(label: string, value: string): string {
+      const combined = `${label}: ${value}`;
+      if (combined.length >= LINE_WIDTH) return combined;
+      const spaces = LINE_WIDTH - combined.length;
+      return label + ": " + " ".repeat(spaces) + value;
+    }
+    
     const lines = [];
     
-    // Header
-    lines.push("=====================================");
-    lines.push(`         ${company.name}`);
-    lines.push(`    RNC: ${company.rnc || 'N/A'}`);
-    lines.push(`    Tel: ${company.phone || 'N/A'}`);
-    lines.push("=====================================");
+    // Header with company logo placeholder
+    lines.push("".padEnd(LINE_WIDTH, "="));
+    lines.push(centerText("[★ LOGO ★]")); // Logo placeholder for thermal printer
+    lines.push(centerText(company.name.toUpperCase()));
+    if (company.slogan) {
+      lines.push(centerText(company.slogan));
+    }
+    lines.push(centerText(`RNC: ${company.rnc || 'N/A'}`));
+    if (company.address) {
+      // Split long addresses into multiple lines
+      const address = company.address;
+      if (address.length > LINE_WIDTH - 4) {
+        const words = address.split(' ');
+        let currentLine = '';
+        words.forEach(word => {
+          if ((currentLine + word).length > LINE_WIDTH - 4) {
+            if (currentLine) lines.push(centerText(currentLine.trim()));
+            currentLine = word + ' ';
+          } else {
+            currentLine += word + ' ';
+          }
+        });
+        if (currentLine) lines.push(centerText(currentLine.trim()));
+      } else {
+        lines.push(centerText(address));
+      }
+    }
+    lines.push(centerText(`Tel: ${company.phone || 'N/A'}`));
+    if (company.email) {
+      lines.push(centerText(company.email));
+    }
+    lines.push("".padEnd(LINE_WIDTH, "="));
     lines.push("");
     
-    // Sale info
-    lines.push(`Factura #: ${sale.saleNumber}`);
-    lines.push(`Fecha: ${new Date(sale.createdAt).toLocaleDateString('es-DO')}`);
-    lines.push(`Hora: ${new Date(sale.createdAt).toLocaleTimeString('es-DO')}`);
+    // Receipt type and sale info
+    lines.push(centerText("COMPROBANTE DE VENTA"));
+    lines.push("");
+    lines.push(alignRight("Factura #", sale.saleNumber));
     
-    if (customerInfo.name) {
-      lines.push(`Cliente: ${customerInfo.name}`);
-    }
-    if (customerInfo.rnc) {
-      lines.push(`RNC Cliente: ${customerInfo.rnc}`);
-    }
-    
-    lines.push("-------------------------------------");
-    
-    // Items
-    items.forEach(item => {
-      lines.push(`${item.productName}`);
-      lines.push(`  ${item.quantity} x RD$${parseFloat(item.unitPrice).toFixed(2)} = RD$${parseFloat(item.subtotal).toFixed(2)}`);
+    const fecha = new Date(sale.createdAt);
+    const fechaStr = fecha.toLocaleDateString("es-DO", {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
+    const horaStr = fecha.toLocaleTimeString("es-DO", {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit"
     });
     
-    lines.push("-------------------------------------");
+    lines.push(alignRight("Fecha", fechaStr));
+    lines.push(alignRight("Hora", horaStr));
+    lines.push(alignRight("Cajero", sale.createdBy || 'Sistema'));
     
-    // Totals
-    lines.push(`Subtotal:      RD$${parseFloat(sale.subtotal).toFixed(2)}`);
-    lines.push(`ITBIS (18%):   RD$${parseFloat(sale.itbis).toFixed(2)}`);
-    lines.push(`TOTAL:         RD$${parseFloat(sale.total).toFixed(2)}`);
+    if (customerInfo.name) {
+      lines.push(alignRight("Cliente", customerInfo.name));
+    }
+    if (customerInfo.rnc) {
+      lines.push(alignRight("RNC Cliente", customerInfo.rnc));
+    }
+    if (customerInfo.phone) {
+      lines.push(alignRight("Tel Cliente", customerInfo.phone));
+    }
     
-    // Payment info
+    lines.push("".padEnd(LINE_WIDTH, "-"));
+    
+    // Items header
+    lines.push(centerText("DETALLE DE PRODUCTOS"));
+    lines.push("".padEnd(LINE_WIDTH, "-"));
+    
+    // Items with enhanced formatting
+    let itemNumber = 1;
+    items.forEach(item => {
+      lines.push(`${itemNumber}. ${item.productName}`);
+      if (item.productCode) {
+        lines.push(`   Código: ${item.productCode}`);
+      }
+      
+      const qty = parseFloat(item.quantity);
+      const price = parseFloat(item.unitPrice);
+      const subtotal = parseFloat(item.subtotal);
+      const discount = parseFloat(item.discount || '0');
+      
+      const qtyPrice = `   ${qty} x RD$${price.toFixed(2)}`;
+      const subtotalStr = `RD$${subtotal.toFixed(2)}`;
+      
+      // Align quantity × price and subtotal
+      if (qtyPrice.length + subtotalStr.length + 1 <= LINE_WIDTH) {
+        const spaces = LINE_WIDTH - qtyPrice.length - subtotalStr.length;
+        lines.push(qtyPrice + " ".repeat(spaces) + subtotalStr);
+      } else {
+        lines.push(qtyPrice);
+        lines.push(" ".repeat(LINE_WIDTH - subtotalStr.length) + subtotalStr);
+      }
+      
+      if (discount > 0) {
+        lines.push(alignRight("   Descuento", `-RD$${discount.toFixed(2)}`));
+      }
+      lines.push("");
+      itemNumber++;
+    });
+    
+    lines.push("".padEnd(LINE_WIDTH, "-"));
+    
+    // Totals section with enhanced formatting
+    lines.push(alignRight("Subtotal", `RD$${parseFloat(sale.subtotal).toFixed(2)}`));
+    if (parseFloat(sale.discount || '0') > 0) {
+      lines.push(alignRight("Descuento Total", `-RD$${parseFloat(sale.discount).toFixed(2)}`));
+    }
+    lines.push(alignRight("ITBIS (18%)", `RD$${parseFloat(sale.itbis).toFixed(2)}`));
+    lines.push("".padEnd(LINE_WIDTH, "-"));
+    lines.push(alignRight("TOTAL", `RD$${parseFloat(sale.total).toFixed(2)}`));
+    lines.push("".padEnd(LINE_WIDTH, "="));
+    
+    // Payment information
     lines.push("");
-    lines.push(`Método: ${sale.paymentMethod === 'cash' ? 'Efectivo' : sale.paymentMethod}`);
-    if (sale.cashReceived) {
-      lines.push(`Recibido:      RD$${parseFloat(sale.cashReceived).toFixed(2)}`);
-      lines.push(`Cambio:        RD$${parseFloat(sale.cashChange || '0').toFixed(2)}`);
+    lines.push(centerText("INFORMACIÓN DE PAGO"));
+    lines.push("".padEnd(LINE_WIDTH, "-"));
+    
+    const paymentMethod = sale.paymentMethod === 'cash' ? 'EFECTIVO' : 
+                         sale.paymentMethod === 'card' ? 'TARJETA' :
+                         sale.paymentMethod === 'transfer' ? 'TRANSFERENCIA' : 
+                         sale.paymentMethod.toUpperCase();
+    lines.push(alignRight("Método", paymentMethod));
+    
+    if (sale.cashReceived && sale.paymentMethod === 'cash') {
+      lines.push(alignRight("Recibido", `RD$${parseFloat(sale.cashReceived).toFixed(2)}`));
+      lines.push(alignRight("Cambio", `RD$${parseFloat(sale.cashChange || '0').toFixed(2)}`));
     }
     
     lines.push("");
-    lines.push("=====================================");
-    lines.push("      ¡Gracias por su compra!      ");
-    lines.push("=====================================");
+    lines.push("".padEnd(LINE_WIDTH, "="));
+    
+    // QR Code section
+    lines.push("");
+    lines.push(centerText("CÓDIGO QR DE VERIFICACIÓN"));
+    lines.push(centerText("Escanea para verificar esta venta"));
+    lines.push("");
+    
+    // ASCII QR code representation (48 chars wide for 80mm paper)
+    const qrLines = [
+      "████████████████████████████████████████████████",
+      "██    ██  ██████████  ████    ██████████  ██  ██",
+      "██████  ████  ████  ████  ██████  ████  ████████",
+      "██  ████    ██████    ████████  ██████    ██████",
+      "██████  ██████  ██████████  ████████  ██████████",
+      "██    ████  ████  ██  ████████  ██  ████  ██  ██",
+      "████████████████████████████████████████████████"
+    ];
+    
+    qrLines.forEach(line => {
+      lines.push(centerText(line));
+    });
+    
+    lines.push("");
+    lines.push(centerText("Verificar en:"));
+    const qrData = `${process.env.REPLIT_DOMAINS?.split(',')[0] || 'localhost'}/verify/${sale.id}`;
+    lines.push(centerText(qrData));
+    lines.push("");
+    
+    // Footer section
+    lines.push("".padEnd(LINE_WIDTH, "="));
+    lines.push(centerText("¡GRACIAS POR SU COMPRA!"));
+    lines.push(centerText("Esperamos verle pronto"));
+    lines.push("");
+    
+    if (company.website) {
+      lines.push(centerText(`Web: ${company.website}`));
+    }
+    
+    const now = new Date();
+    const printTime = now.toLocaleString('es-DO', {
+      day: '2-digit',
+      month: '2-digit', 
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+    lines.push(centerText(`Impreso: ${printTime}`));
+    lines.push("".padEnd(LINE_WIDTH, "="));
+    
+    // Paper feed for cutting
+    lines.push("");
+    lines.push("");
+    lines.push("");
     
     return lines.join("\n");
   }
+
 
   // Simple HTML receipt generation function
   function generateSimpleReceiptHTML(sale: any, items: any[], company: any, customerInfo: any): string {
