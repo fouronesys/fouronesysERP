@@ -189,13 +189,31 @@ export default function Accounting() {
       </div>
 
       <Tabs defaultValue="accounts" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-6">
-          <TabsTrigger value="accounts">Plan de Cuentas</TabsTrigger>
-          <TabsTrigger value="entries">Asientos Contables</TabsTrigger>
-          <TabsTrigger value="trial-balance">Balanza de Comprobación</TabsTrigger>
-          <TabsTrigger value="income-statement">Estado de Resultados</TabsTrigger>
-          <TabsTrigger value="balance-sheet">Balance General</TabsTrigger>
-          <TabsTrigger value="ledger">Libro Mayor</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-6 gap-1">
+          <TabsTrigger value="accounts" className="text-xs sm:text-sm px-1 py-2">
+            <span className="hidden sm:inline">Plan de Cuentas</span>
+            <span className="sm:hidden">Cuentas</span>
+          </TabsTrigger>
+          <TabsTrigger value="entries" className="text-xs sm:text-sm px-1 py-2">
+            <span className="hidden sm:inline">Asientos Contables</span>
+            <span className="sm:hidden">Asientos</span>
+          </TabsTrigger>
+          <TabsTrigger value="trial-balance" className="text-xs sm:text-sm px-1 py-2">
+            <span className="hidden sm:inline">Balanza de Comprobación</span>
+            <span className="sm:hidden">Balanza</span>
+          </TabsTrigger>
+          <TabsTrigger value="income-statement" className="text-xs sm:text-sm px-1 py-2">
+            <span className="hidden sm:inline">Estado de Resultados</span>
+            <span className="sm:hidden">Resultados</span>
+          </TabsTrigger>
+          <TabsTrigger value="balance-sheet" className="text-xs sm:text-sm px-1 py-2">
+            <span className="hidden sm:inline">Balance General</span>
+            <span className="sm:hidden">Balance</span>
+          </TabsTrigger>
+          <TabsTrigger value="ledger" className="text-xs sm:text-sm px-1 py-2">
+            <span className="hidden sm:inline">Libro Mayor</span>
+            <span className="sm:hidden">Mayor</span>
+          </TabsTrigger>
         </TabsList>
 
         {/* Plan de Cuentas */}
