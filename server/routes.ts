@@ -7,6 +7,8 @@ import { setupAuth, isAuthenticated } from "./auth";
 import { AIProductService, AIBusinessService, AIChatService, AIDocumentService } from "./ai-services-fixed";
 import { InvoiceTemplateService, type ThermalPrintOptions, type PDFPrintOptions } from "./invoice-template-service";
 import { LogoProcessor } from "./logo-processor";
+import { ThermalLogoProcessor } from "./thermal-logo";
+import { ThermalQRProcessor } from "./thermal-qr";
 import QRCode from 'qrcode';
 import multer from 'multer';
 import path from 'path';
@@ -3090,21 +3092,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // Header with Four One Solutions ASCII logo
     lines.push("".padEnd(LINE_WIDTH, "="));
     
-    // Company logo for thermal printing
+    // Include real PNG logo for thermal printing
     if (printOptions.showLogo) {
-      lines.push(centerText("╔══════════════════════════════════════╗"));
-      lines.push(centerText("║                                      ║"));
-      lines.push(centerText("║         ███████   ███████            ║"));
-      lines.push(centerText("║         ██   ██   ██   ██            ║"));
-      lines.push(centerText("║         ███████   ███████            ║"));
-      lines.push(centerText("║         ██        ██                 ║"));
-      lines.push(centerText("║         ██        ██                 ║"));
-      lines.push(centerText("║                                      ║"));
-      lines.push(centerText("║             4  1  1  1               ║"));
-      lines.push(centerText("║                                      ║"));
-      lines.push(centerText("║       FOUR ONE SOLUTIONS             ║"));
-      lines.push(centerText("║                                      ║"));
-      lines.push(centerText("╚══════════════════════════════════════╝"));
+      try {
+        const logoPath = './attached_assets/Four One Solutions Logo_20250130_143011_0000_1749182433509.png';
+        const thermalLogo = await ThermalLogoProcessor.convertPNGToThermal(logoPath);
+        lines.push(thermalLogo);
+      } catch (error) {
+        console.log('Logo processing error:', error);
+        lines.push(centerText("FOUR ONE SOLUTIONS"));
+      }
     }
     lines.push("");
     
@@ -3250,24 +3247,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     lines.push(centerText("Escanea para verificar esta venta"));
     lines.push("");
     
-    // Generate QR code for verification link
+    // Generate real QR code for thermal printing
     try {
       const qrData = `https://${process.env.REPLIT_DOMAINS?.split(',')[0] || 'localhost'}/verify/${sale.id}`;
       
-      // Create QR code as simple blocks for thermal printing
-      await QRCode.toDataURL(qrData, { width: 100, margin: 1 })
-        .then(url => {
-          // For thermal printers, we'll include the QR as data
-          lines.push(centerText(`[QR:${qrData}]`));
-        })
-        .catch(() => {
-          lines.push(centerText("QR: " + qrData));
-        });
+      // Create authentic QR code using thermal processor
+      const thermalQR = await ThermalQRProcessor.generateQRCodeForThermal(qrData);
+      lines.push(thermalQR);
       
     } catch (error) {
       console.log('QR generation error:', error);
-      const qrData = `https://${process.env.REPLIT_DOMAINS?.split(',')[0] || 'localhost'}/verify/${sale.id}`;
-      lines.push(centerText("QR: " + qrData));
+      // Fallback to ASCII QR if thermal fails
+      try {
+        const qrData = `https://${process.env.REPLIT_DOMAINS?.split(',')[0] || 'localhost'}/verify/${sale.id}`;
+        const asciiQRLines = await ThermalQRProcessor.generateASCIIQR(qrData);
+        asciiQRLines.forEach(line => {
+          lines.push(centerText(line));
+        });
+      } catch (fallbackError) {
+        console.log('ASCII QR fallback error:', fallbackError);
+        const qrData = `https://${process.env.REPLIT_DOMAINS?.split(',')[0] || 'localhost'}/verify/${sale.id}`;
+        lines.push(centerText("Verificar venta en:"));
+        lines.push(centerText(qrData));
+      }
     }
     
     lines.push("");
