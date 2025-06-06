@@ -277,6 +277,19 @@ export const inventoryMovements = pgTable("inventory_movements", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// POS Cart Items - For persistent cart across page reloads and devices
+export const posCartItems = pgTable("pos_cart_items", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull().references(() => companies.id),
+  userId: varchar("user_id", { length: 50 }).notNull(),
+  productId: integer("product_id").notNull().references(() => products.id),
+  quantity: integer("quantity").notNull(),
+  unitPrice: decimal("unit_price", { precision: 10, scale: 2 }).notNull(),
+  subtotal: decimal("subtotal", { precision: 10, scale: 2 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Relations
 export const companiesRelations = relations(companies, ({ one, many }) => ({
   owner: one(users, {
@@ -848,6 +861,12 @@ export const insertComprobante607Schema = createInsertSchema(comprobantes607).om
   updatedAt: true,
 });
 
+export const insertPOSCartItemSchema = createInsertSchema(posCartItems).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export const insertRNCRegistrySchema = createInsertSchema(rncRegistry).omit({
   id: true,
   lastUpdated: true,
@@ -872,6 +891,8 @@ export type Supplier = typeof suppliers.$inferSelect;
 export type InsertSupplier = z.infer<typeof insertSupplierSchema>;
 export type Product = typeof products.$inferSelect;
 export type InsertProduct = z.infer<typeof insertProductSchema>;
+export type POSCartItem = typeof posCartItems.$inferSelect;
+export type InsertPOSCartItem = z.infer<typeof insertPOSCartItemSchema>;
 export type Invoice = typeof invoices.$inferSelect;
 export type InsertInvoice = z.infer<typeof insertInvoiceSchema>;
 export type InvoiceItem = typeof invoiceItems.$inferSelect;
