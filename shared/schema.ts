@@ -447,7 +447,10 @@ export const insertCompanyUserSchema = createInsertSchema(companyUsers).omit({
 export const posSales = pgTable("pos_sales", {
   id: serial("id").primaryKey(),
   companyId: integer("company_id").references(() => companies.id).notNull(),
-  customerId: integer("customer_id").references(() => customers.id),
+  customerId: integer("customer_id").references(() => posCustomers.id),
+  sessionId: integer("session_id").references(() => posSessions.id),
+  stationId: integer("station_id").references(() => posStations.id),
+  employeeId: integer("employee_id").references(() => posEmployees.id),
   saleNumber: varchar("sale_number", { length: 50 }).notNull(),
   subtotal: varchar("subtotal").notNull(),
   itbis: varchar("itbis").notNull(),
@@ -496,10 +499,92 @@ export const posCartItems = pgTable("pos_cart_items", {
   id: serial("id").primaryKey(),
   companyId: integer("company_id").references(() => companies.id).notNull(),
   userId: varchar("user_id").notNull(),
+  sessionId: varchar("session_id"),
+  stationId: varchar("station_id"),
   productId: integer("product_id").references(() => products.id).notNull(),
   quantity: integer("quantity").notNull(),
   unitPrice: varchar("unit_price").notNull(),
   subtotal: varchar("subtotal").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// POS Employees table for multi-user sessions
+export const posEmployees = pgTable("pos_employees", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").references(() => companies.id).notNull(),
+  employeeCode: varchar("employee_code", { length: 20 }).notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  email: varchar("email", { length: 255 }),
+  phone: varchar("phone", { length: 20 }),
+  pin: varchar("pin", { length: 6 }).notNull(), // 4-6 digit PIN
+  role: varchar("role", { length: 50 }).notNull().default("cashier"), // cashier, supervisor, manager
+  permissions: jsonb("permissions").default([]),
+  isActive: boolean("is_active").default(true),
+  lastLogin: timestamp("last_login"),
+  createdBy: varchar("created_by").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// POS Stations table for multi-station support
+export const posStations = pgTable("pos_stations", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").references(() => companies.id).notNull(),
+  stationCode: varchar("station_code", { length: 20 }).notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  location: varchar("location", { length: 255 }),
+  ipAddress: varchar("ip_address", { length: 45 }),
+  currentEmployeeId: integer("current_employee_id").references(() => posEmployees.id),
+  currentSessionId: varchar("current_session_id"),
+  isActive: boolean("is_active").default(true),
+  printerSettings: jsonb("printer_settings").default({}),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// POS Cash Sessions table for cash register sessions
+export const posCashSessions = pgTable("pos_cash_sessions", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").references(() => companies.id).notNull(),
+  stationId: integer("station_id").references(() => posStations.id).notNull(),
+  employeeId: integer("employee_id").references(() => posEmployees.id).notNull(),
+  sessionNumber: varchar("session_number", { length: 50 }).notNull(),
+  openingCash: varchar("opening_cash").notNull().default("0"),
+  expectedCash: varchar("expected_cash").default("0"),
+  actualCash: varchar("actual_cash").default("0"),
+  totalSales: varchar("total_sales").default("0"),
+  totalTransactions: integer("total_transactions").default(0),
+  cashSales: varchar("cash_sales").default("0"),
+  cardSales: varchar("card_sales").default("0"),
+  transferSales: varchar("transfer_sales").default("0"),
+  notes: text("notes"),
+  status: varchar("status", { length: 20 }).notNull().default("open"), // open, closed
+  openedAt: timestamp("opened_at").defaultNow(),
+  closedAt: timestamp("closed_at"),
+  closedBy: integer("closed_by").references(() => posEmployees.id),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// POS Customers table with RNC validation
+export const posCustomers = pgTable("pos_customers", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").references(() => companies.id).notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  rnc: varchar("rnc", { length: 11 }).notNull(),
+  cedula: varchar("cedula", { length: 11 }),
+  email: varchar("email", { length: 255 }),
+  phone: varchar("phone", { length: 20 }),
+  address: text("address").notNull(),
+  city: varchar("city", { length: 100 }),
+  sector: varchar("sector", { length: 100 }),
+  isValidatedRnc: boolean("is_validated_rnc").default(false),
+  rncValidationDate: timestamp("rnc_validation_date"),
+  customerType: varchar("customer_type", { length: 20 }).default("individual"), // individual, company
+  creditLimit: varchar("credit_limit").default("0"),
+  isActive: boolean("is_active").default(true),
+  notes: text("notes"),
+  createdBy: varchar("created_by").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -517,19 +602,7 @@ export const ncfSequences = pgTable("ncf_sequences", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// POS Session for real-time synchronization
-export const posSessions = pgTable("pos_sessions", {
-  id: serial("id").primaryKey(),
-  sessionId: varchar("session_id", { length: 255 }).notNull().unique(),
-  companyId: integer("company_id").references(() => companies.id).notNull(),
-  userId: varchar("user_id").notNull(),
-  deviceInfo: text("device_info"),
-  cartData: jsonb("cart_data"), // Real-time cart sync
-  isActive: boolean("is_active").default(true),
-  lastActivity: timestamp("last_activity").defaultNow(),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-});
+// Removed duplicate posSessions table - using the one defined above for cash register sessions
 
 // Stock Reservations for cart items
 export const stockReservations = pgTable("stock_reservations", {
@@ -620,6 +693,34 @@ export const insertStockReservationSchema = createInsertSchema(stockReservations
 
 export const insertNotificationSchema = createInsertSchema(notifications).omit({
   id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+// POS Multi-Station Schema Types
+export const insertPOSEmployeeSchema = createInsertSchema(posEmployees).omit({
+  id: true,
+  lastLogin: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertPOSStationSchema = createInsertSchema(posStations).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertPOSCashSessionSchema = createInsertSchema(posSessions).omit({
+  id: true,
+  closedAt: true,
+  createdAt: true,
+});
+
+export const insertPOSCustomerSchema = createInsertSchema(posCustomers).omit({
+  id: true,
+  isValidatedRnc: true,
+  rncValidationDate: true,
   createdAt: true,
   updatedAt: true,
 });
