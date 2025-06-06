@@ -93,32 +93,45 @@ export default function InvoicePrintModal({ isOpen, onClose, saleId, saleNumber 
         // Try to open in new window first, fallback to data URL
         let windowOpened = false;
         try {
-          const printWindow = window.open('', '_blank', 'width=400,height=600,scrollbars=yes,resizable=yes');
-          if (printWindow && !printWindow.closed) {
+          const printWindow = window.open('', '_blank');
+          if (printWindow && !printWindow.closed && printWindow.location) {
             printWindow.document.open();
             printWindow.document.write(htmlContent);
             printWindow.document.close();
             printWindow.focus();
             windowOpened = true;
             console.log('POS receipt window opened successfully');
+          } else {
+            console.log('Window blocked or failed to open, using download method');
           }
         } catch (error) {
-          console.log('Window.open failed, trying alternative method');
+          console.log('Window.open failed, using download method:', error);
         }
         
         // Fallback: create blob and open as data URL
         if (!windowOpened) {
-          const blob = new Blob([htmlContent], { type: 'text/html' });
-          const url = URL.createObjectURL(blob);
-          const link = document.createElement('a');
-          link.href = url;
-          link.target = '_blank';
-          link.download = `Recibo-POS-80mm-${Date.now()}.html`;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          URL.revokeObjectURL(url);
-          console.log('POS receipt downloaded as HTML file');
+          try {
+            const blob = new Blob([htmlContent], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.target = '_blank';
+            link.download = `Recibo-POS-80mm-${Date.now()}.html`;
+            link.style.display = 'none';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            // Clean up the URL after a short delay
+            setTimeout(() => {
+              URL.revokeObjectURL(url);
+            }, 1000);
+            
+            console.log('POS receipt downloaded as HTML file');
+          } catch (downloadError) {
+            console.error('Download method also failed:', downloadError);
+            throw new Error("No se pudo generar el recibo");
+          }
         }
 
         toast({
