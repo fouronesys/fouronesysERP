@@ -254,8 +254,12 @@ export function InstallButton() {
   const handleDownload = (option: InstallOption) => {
     if (option.type === 'pwa') {
       handlePWAInstall();
+    } else if (option.type === 'web') {
+      // Already using the web app, show message
+      alert('Ya estás usando la aplicación web. Puedes crear un marcador para acceso rápido.');
     } else if (option.downloadUrl) {
-      window.open(option.downloadUrl, '_blank');
+      // For desktop downloads, show development notice
+      alert('Las descargas de aplicaciones de escritorio estarán disponibles próximamente. Por ahora, puedes usar la versión web o instalar como PWA.');
     }
   };
 
