@@ -7,6 +7,7 @@ import { setupAuth, isAuthenticated } from "./auth";
 import { AIProductService, AIBusinessService, AIChatService, AIDocumentService } from "./ai-services-fixed";
 import { InvoiceTemplateService, type ThermalPrintOptions, type PDFPrintOptions } from "./invoice-template-service";
 import { LogoProcessor } from "./logo-processor";
+import QRCode from 'qrcode';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
@@ -3089,9 +3090,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // Header with Four One Solutions ASCII logo
     lines.push("".padEnd(LINE_WIDTH, "="));
     
-    // Company logo placeholder - logo will be inserted here for thermal printing
-    lines.push(centerText("[LOGO DE LA EMPRESA]"));
-    lines.push("");
+    // Process real PNG logo for thermal printing
+    if (printOptions.showLogo) {
+      try {
+        const logoPath = './attached_assets/Four One Solutions Logo_20250130_143011_0000_1749182433509.png';
+        if (fs.existsSync(logoPath)) {
+          const logoData = await LogoProcessor.processLogoForThermal(logoPath);
+          logoData.forEach(line => {
+            lines.push(centerText(line));
+          });
+        } else {
+          lines.push(centerText("FOUR ONE SOLUTIONS"));
+        }
+      } catch (error) {
+        console.log('Logo processing error:', error);
+        lines.push(centerText("FOUR ONE SOLUTIONS"));
+      }
+    }
     lines.push("");
     
     // Company name with enhanced formatting
@@ -3236,20 +3251,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     lines.push(centerText("Escanea para verificar esta venta"));
     lines.push("");
     
-    // Simple QR code representation
-    const qrLines = [
-      "┌─────────────────────────────────────┐",
-      "│ ██ ██  ██ ██    ██  ██ ██  ██ ██ │",
-      "│  ██  ██ ██ ██  ██  ██  ██ ██  ██ │", 
-      "│ ██  ██ ██  ██ ██ ██  ██ ██ ██  █ │",
-      "│  ██ ██  ██ ██  ██ ██ ██  ██ ██ █ │",
-      "│ ██  ██ ██ ██ ██  ██ ██  ██  ██ █ │",
-      "└─────────────────────────────────────┘"
-    ];
-    
-    qrLines.forEach(line => {
-      lines.push(centerText(line));
-    });
+    // Generate real QR code using QRCode library
+    try {
+      const qrData = `https://${process.env.REPLIT_DOMAINS?.split(',')[0] || 'localhost'}/verify/${sale.id}`;
+      
+      // Generate real QR code as ASCII art for thermal printer
+      const qrString = await QRCode.toString(qrData, {
+        type: 'terminal',
+        small: true,
+        width: LINE_WIDTH - 4
+      });
+      
+      // Split QR into lines and center each line
+      const qrLines = qrString.split('\n').filter(line => line.trim());
+      qrLines.forEach(line => {
+        lines.push(centerText(line));
+      });
+      
+    } catch (error) {
+      console.log('QR generation error:', error);
+      lines.push(centerText("[ QR CODE ERROR ]"));
+    }
     
     lines.push("");
     lines.push(centerText("Verificar en:"));
