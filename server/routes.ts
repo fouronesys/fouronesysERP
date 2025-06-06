@@ -3250,8 +3250,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
     } catch (error) {
-      console.error("Error generating thermal receipt:", error);
-      res.status(500).json({ message: "Failed to generate thermal receipt" });
+      console.error("=== THERMAL RECEIPT ERROR ===");
+      console.error("Error details:", error);
+      console.error("Error message:", error.message);
+      console.error("Error stack:", error.stack);
+      console.error("Sale ID:", saleId);
+      res.status(500).json({ 
+        message: "Failed to generate thermal receipt",
+        error: error.message,
+        details: error.toString()
+      });
     }
   });
 
