@@ -2302,6 +2302,13 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  async getRNCRegistryCount(): Promise<number> {
+    const result = await db
+      .select({ count: sql`count(*)` })
+      .from(rncRegistry);
+    return Number(result[0].count);
+  }
+
   // Purchases Module Implementation
   async getSuppliers(companyId: number): Promise<any[]> {
     try {
