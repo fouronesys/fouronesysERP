@@ -3090,22 +3090,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // Header with Four One Solutions ASCII logo
     lines.push("".padEnd(LINE_WIDTH, "="));
     
-    // Process real PNG logo for thermal printing
+    // Company logo section
     if (printOptions.showLogo) {
-      try {
-        const logoPath = './attached_assets/Four One Solutions Logo_20250130_143011_0000_1749182433509.png';
-        if (fs.existsSync(logoPath)) {
-          const logoData = await LogoProcessor.processLogoForThermal(logoPath);
-          logoData.forEach(line => {
-            lines.push(centerText(line));
-          });
-        } else {
-          lines.push(centerText("FOUR ONE SOLUTIONS"));
-        }
-      } catch (error) {
-        console.log('Logo processing error:', error);
-        lines.push(centerText("FOUR ONE SOLUTIONS"));
-      }
+      lines.push(centerText("┌─────────────────────────────────────┐"));
+      lines.push(centerText("│                                     │"));
+      lines.push(centerText("│           FOUR ONE                  │"));
+      lines.push(centerText("│          SOLUTIONS                  │"));
+      lines.push(centerText("│                                     │"));
+      lines.push(centerText("│         SOLUCIONES 411              │"));
+      lines.push(centerText("│                                     │"));
+      lines.push(centerText("└─────────────────────────────────────┘"));
     }
     lines.push("");
     
