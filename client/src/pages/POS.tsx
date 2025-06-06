@@ -72,7 +72,6 @@ interface CartItem {
 
 export default function POS() {
   // Estados básicos
-  const [cart, setCart] = useState<CartItem[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [customerName, setCustomerName] = useState("");
@@ -108,6 +107,18 @@ export default function POS() {
     queryKey: ["/api/fiscal/ncf-sequences"],
   });
 
+  // Persistent cart from database
+  const { data: cartData = [], isLoading: cartLoading } = useQuery({
+    queryKey: ["/api/pos/cart"],
+  });
+
+  // Transform cart data to match CartItem interface
+  const cart: CartItem[] = cartData.map((item: any) => ({
+    product: item.product,
+    quantity: item.quantity,
+    subtotal: parseFloat(item.subtotal)
+  }));
+
   // Función para verificar secuencias agotándose
   const checkLowSequences = () => {
     const alerts: string[] = [];
@@ -138,9 +149,77 @@ export default function POS() {
   const total = subtotal + itbis;
   const cashChange = cashReceived ? parseFloat(cashReceived) - total : 0;
 
-  // Funciones del carrito
+  // Cart mutations for database persistence
+  const addToCartMutation = useMutation({
+    mutationFn: async (product: Product) => {
+      // Update product stock first
+      await apiRequest(`/api/products/${product.id}`, {
+        method: "PATCH",
+        body: {
+          stock: (parseInt(product.stock?.toString() || "0") - 1).toString()
+        }
+      });
+
+      // Add to persistent cart
+      return apiRequest("/api/pos/cart", {
+        method: "POST",
+        body: {
+          productId: product.id,
+          quantity: 1,
+          unitPrice: product.price,
+          subtotal: parseFloat(product.price)
+        }
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/pos/cart"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error agregando al carrito",
+        description: "No se pudo agregar el producto",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const updateCartMutation = useMutation({
+    mutationFn: async ({ cartId, quantity }: { cartId: number, quantity: number }) => {
+      return apiRequest(`/api/pos/cart/${cartId}`, {
+        method: "PATCH",
+        body: { quantity }
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/pos/cart"] });
+    }
+  });
+
+  const removeFromCartMutation = useMutation({
+    mutationFn: async (cartId: number) => {
+      return apiRequest(`/api/pos/cart/${cartId}`, {
+        method: "DELETE"
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/pos/cart"] });
+    }
+  });
+
+  const clearCartMutation = useMutation({
+    mutationFn: async () => {
+      return apiRequest("/api/pos/cart", {
+        method: "DELETE"
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/pos/cart"] });
+    }
+  });
+
+  // Cart functions using mutations
   const addToCart = async (product: Product) => {
-    // Check if there's enough stock
     const currentStock = parseInt(product.stock?.toString() || "0");
     const existingItem = cart.find(item => item.product.id === product.id);
     const currentCartQuantity = existingItem ? existingItem.quantity : 0;
@@ -154,39 +233,7 @@ export default function POS() {
       return;
     }
 
-    // Update product stock in backend first
-    try {
-      const response = await apiRequest(`/api/products/${product.id}`, {
-        method: "PATCH",
-        body: {
-          stock: (currentStock - 1).toString()
-        }
-      });
-      
-      if (response.ok) {
-        // If stock update successful, then add to cart
-        if (existingItem) {
-          updateQuantity(product.id, existingItem.quantity + 1);
-        } else {
-          const newItem: CartItem = {
-            product: { ...product, stock: currentStock - 1 },
-            quantity: 1,
-            subtotal: parseFloat(product.price)
-          };
-          setCart([...cart, newItem]);
-        }
-        
-        // Refresh products to show updated stock
-        queryClient.invalidateQueries({ queryKey: ["/api/products"] });
-      }
-    } catch (error) {
-      console.error("Error updating stock:", error);
-      toast({
-        title: "Error actualizando stock",
-        description: "No se pudo actualizar el inventario",
-        variant: "destructive",
-      });
-    }
+    addToCartMutation.mutate(product);
   };
 
   const updateQuantity = (productId: number, newQuantity: number) => {
@@ -195,19 +242,21 @@ export default function POS() {
       return;
     }
 
-    setCart(cart.map(item => 
-      item.product.id === productId
-        ? { ...item, quantity: newQuantity, subtotal: newQuantity * parseFloat(item.product.price) }
-        : item
-    ));
+    const cartItem = cartData.find((item: any) => item.product.id === productId);
+    if (cartItem) {
+      updateCartMutation.mutate({ cartId: cartItem.id, quantity: newQuantity });
+    }
   };
 
   const removeFromCart = (productId: number) => {
-    setCart(cart.filter(item => item.product.id !== productId));
+    const cartItem = cartData.find((item: any) => item.product.id === productId);
+    if (cartItem) {
+      removeFromCartMutation.mutate(cartItem.id);
+    }
   };
 
   const clearCart = () => {
-    setCart([]);
+    clearCartMutation.mutate();
   };
 
   // Procesar venta

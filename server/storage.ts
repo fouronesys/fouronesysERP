@@ -2498,6 +2498,90 @@ export class DatabaseStorage implements IStorage {
       };
     }
   }
+
+  // POS Cart Management
+  async getPOSCartItems(companyId: number, userId: string): Promise<any[]> {
+    const cartItems = await db
+      .select({
+        id: posCartItems.id,
+        productId: posCartItems.productId,
+        quantity: posCartItems.quantity,
+        unitPrice: posCartItems.unitPrice,
+        subtotal: posCartItems.subtotal,
+        product: products
+      })
+      .from(posCartItems)
+      .leftJoin(products, eq(posCartItems.productId, products.id))
+      .where(and(eq(posCartItems.companyId, companyId), eq(posCartItems.userId, userId)));
+    
+    return cartItems;
+  }
+
+  async addToPOSCart(cartItem: InsertPOSCartItem): Promise<POSCartItem> {
+    // Check if item already exists in cart
+    const existingItem = await db
+      .select()
+      .from(posCartItems)
+      .where(and(
+        eq(posCartItems.companyId, cartItem.companyId),
+        eq(posCartItems.userId, cartItem.userId),
+        eq(posCartItems.productId, cartItem.productId)
+      ))
+      .limit(1);
+
+    if (existingItem.length > 0) {
+      // Update existing item quantity
+      const newQuantity = existingItem[0].quantity + cartItem.quantity;
+      const newSubtotal = newQuantity * parseFloat(cartItem.unitPrice.toString());
+      
+      const [updated] = await db
+        .update(posCartItems)
+        .set({
+          quantity: newQuantity,
+          subtotal: newSubtotal.toString(),
+          updatedAt: new Date()
+        })
+        .where(eq(posCartItems.id, existingItem[0].id))
+        .returning();
+      
+      return updated;
+    } else {
+      // Insert new item
+      const [newItem] = await db.insert(posCartItems).values(cartItem).returning();
+      return newItem;
+    }
+  }
+
+  async updatePOSCartItem(id: number, quantity: number): Promise<POSCartItem | null> {
+    const [item] = await db.select().from(posCartItems).where(eq(posCartItems.id, id)).limit(1);
+    if (!item) return null;
+
+    const newSubtotal = quantity * parseFloat(item.unitPrice.toString());
+    
+    const [updated] = await db
+      .update(posCartItems)
+      .set({
+        quantity,
+        subtotal: newSubtotal.toString(),
+        updatedAt: new Date()
+      })
+      .where(eq(posCartItems.id, id))
+      .returning();
+    
+    return updated;
+  }
+
+  async removePOSCartItem(id: number): Promise<boolean> {
+    const result = await db.delete(posCartItems).where(eq(posCartItems.id, id));
+    return result.rowCount > 0;
+  }
+
+  async clearPOSCart(companyId: number, userId: string): Promise<boolean> {
+    const result = await db
+      .delete(posCartItems)
+      .where(and(eq(posCartItems.companyId, companyId), eq(posCartItems.userId, userId)));
+    return result.rowCount > 0;
+  }
 }
 
 export const storage = new DatabaseStorage();
