@@ -238,18 +238,12 @@ export default function Customers() {
         subtitle="Gestiona tu base de clientes"
       />
       
-      {/* Floating Action Button */}
-      <Button 
-        onClick={handleNewCustomer} 
-        className="fixed bottom-6 right-6 h-14 w-14 rounded-full bg-blue-600 hover:bg-blue-700 shadow-lg z-50 md:hidden"
-        size="icon"
-      >
-        <Plus className="h-6 w-6" />
-      </Button>
-      
-      {/* Desktop Action Button */}
-      <div className="hidden md:flex justify-end mb-6">
-        <Button onClick={handleNewCustomer} className="bg-blue-600 hover:bg-blue-700">
+      {/* Always visible action button */}
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+          Lista de Clientes
+        </h2>
+        <Button onClick={handleNewCustomer} className="bg-blue-600 hover:bg-blue-700 text-white">
           <Plus className="h-4 w-4 mr-2" />
           Nuevo Cliente
         </Button>
