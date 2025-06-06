@@ -1190,17 +1190,15 @@ export class DatabaseStorage implements IStorage {
 
   // Payroll Entry operations
   async getPayrollEntries(companyId: number, periodId?: number): Promise<PayrollEntry[]> {
-    let query = db
+    const whereConditions = periodId 
+      ? and(eq(payrollEntries.companyId, companyId), eq(payrollEntries.periodId, periodId))
+      : eq(payrollEntries.companyId, companyId);
+    
+    return await db
       .select()
       .from(payrollEntries)
-      .where(eq(payrollEntries.companyId, companyId));
-    
-    if (periodId) {
-      query = query.where(and(eq(payrollEntries.companyId, companyId), eq(payrollEntries.periodId, periodId)));
-    }
-    
-    const entries = await query.orderBy(payrollEntries.id);
-    return entries;
+      .where(whereConditions)
+      .orderBy(payrollEntries.id);
   }
 
   async getPayrollEntry(id: number, companyId: number): Promise<PayrollEntry | undefined> {
@@ -1236,17 +1234,15 @@ export class DatabaseStorage implements IStorage {
 
   // Time Tracking operations
   async getTimeTracking(companyId: number, employeeId?: number): Promise<TimeTracking[]> {
-    let query = db
+    const whereConditions = employeeId 
+      ? and(eq(timeTracking.companyId, companyId), eq(timeTracking.employeeId, employeeId))
+      : eq(timeTracking.companyId, companyId);
+    
+    return await db
       .select()
       .from(timeTracking)
-      .where(eq(timeTracking.companyId, companyId));
-    
-    if (employeeId) {
-      query = query.where(and(eq(timeTracking.companyId, companyId), eq(timeTracking.employeeId, employeeId)));
-    }
-    
-    const entries = await query.orderBy(desc(timeTracking.date));
-    return entries;
+      .where(whereConditions)
+      .orderBy(desc(timeTracking.date));
   }
 
   async getTimeTrackingEntry(id: number, companyId: number): Promise<TimeTracking | undefined> {
@@ -1282,17 +1278,15 @@ export class DatabaseStorage implements IStorage {
 
   // Leave operations
   async getLeaves(companyId: number, employeeId?: number): Promise<Leave[]> {
-    let query = db
+    const whereConditions = employeeId 
+      ? and(eq(leaves.companyId, companyId), eq(leaves.employeeId, employeeId))
+      : eq(leaves.companyId, companyId);
+    
+    return await db
       .select()
       .from(leaves)
-      .where(eq(leaves.companyId, companyId));
-    
-    if (employeeId) {
-      query = query.where(and(eq(leaves.companyId, companyId), eq(leaves.employeeId, employeeId)));
-    }
-    
-    const leaveList = await query.orderBy(desc(leaves.startDate));
-    return leaveList;
+      .where(whereConditions)
+      .orderBy(desc(leaves.startDate));
   }
 
   async getLeave(id: number, companyId: number): Promise<Leave | undefined> {
