@@ -59,8 +59,9 @@ export default function Landing() {
               Sistema integral de gestión empresarial
             </h1>
             <p className="text-lg sm:text-xl text-gray-300 mb-6 sm:mb-8 leading-relaxed">
-              Gestiona tu empresa con todas las herramientas que necesitas: facturación, inventario, 
-              producción y más. Adaptado específicamente para las normativas dominicanas.
+              Gestiona tu empresa con herramientas inteligentes: facturación automatizada, generación de imágenes 
+              de productos con IA, verificación automática de RNC y asistente virtual. Adaptado específicamente 
+              para las normativas dominicanas.
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center items-center">
@@ -86,10 +87,61 @@ export default function Landing() {
 
         {/* Features */}
         <div id="features" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 mb-12 sm:mb-16">
+          {/* Sistema de Verificación RNC */}
+          <Card className="bg-gray-800/50 border-gray-700 backdrop-blur-sm hover:bg-gray-800/70 transition-all">
+            <CardContent className="p-4 sm:p-6 text-center">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-green-600 to-emerald-600 rounded-lg flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <h3 className="text-base sm:text-lg font-semibold text-white mb-2">
+                Verificación RNC Automática
+              </h3>
+              <p className="text-sm sm:text-base text-gray-300">
+                Validación en tiempo real con registro DGII, búsqueda y verificación instantánea
+              </p>
+            </CardContent>
+          </Card>
+
+          {/* Generación de Imágenes IA */}
+          <Card className="bg-gray-800/50 border-gray-700 backdrop-blur-sm hover:bg-gray-800/70 transition-all">
+            <CardContent className="p-4 sm:p-6 text-center">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-purple-600 to-pink-600 rounded-lg flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </div>
+              <h3 className="text-base sm:text-lg font-semibold text-white mb-2">
+                Generación de Imágenes IA
+              </h3>
+              <p className="text-sm sm:text-base text-gray-300">
+                Crea imágenes profesionales de productos automáticamente con inteligencia artificial
+              </p>
+            </CardContent>
+          </Card>
+
+          {/* Asistente Virtual IA */}
+          <Card className="bg-gray-800/50 border-gray-700 backdrop-blur-sm hover:bg-gray-800/70 transition-all">
+            <CardContent className="p-4 sm:p-6 text-center">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-600 to-cyan-600 rounded-lg flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                </svg>
+              </div>
+              <h3 className="text-base sm:text-lg font-semibold text-white mb-2">
+                Asistente Virtual IA
+              </h3>
+              <p className="text-sm sm:text-base text-gray-300">
+                Consulta datos, analiza ventas y recibe recomendaciones inteligentes para tu negocio
+              </p>
+            </CardContent>
+          </Card>
+
           {/* Facturación y Cumplimiento Fiscal */}
           <Card className="bg-gray-800/50 border-gray-700 backdrop-blur-sm hover:bg-gray-800/70 transition-all">
             <CardContent className="p-4 sm:p-6 text-center">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center mx-auto mb-3 sm:mb-4">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-orange-600 to-red-600 rounded-lg flex items-center justify-center mx-auto mb-3 sm:mb-4">
                 <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
@@ -98,7 +150,7 @@ export default function Landing() {
                 Facturación y Cumplimiento
               </h3>
               <p className="text-sm sm:text-base text-gray-300">
-                NCF automáticos, reportes 606/607 para DGII, validación RNC
+                NCF automáticos, reportes 606/607 para DGII, validación completa
               </p>
             </CardContent>
           </Card>
