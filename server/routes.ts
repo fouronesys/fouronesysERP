@@ -3090,21 +3090,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // Header with Four One Solutions ASCII logo
     lines.push("".padEnd(LINE_WIDTH, "="));
     
-    // Include actual PNG logo as base64 for thermal printing
+    // Company logo for thermal printing
     if (printOptions.showLogo) {
-      try {
-        const logoPath = './attached_assets/Four One Solutions Logo_20250130_143011_0000_1749182433509.png';
-        if (fs.existsSync(logoPath)) {
-          const logoBuffer = fs.readFileSync(logoPath);
-          const logoBase64 = logoBuffer.toString('base64');
-          // Add logo as base64 data for thermal printer
-          lines.push(centerText(`[LOGO:${logoBase64}]`));
-        } else {
-          lines.push(centerText("FOUR ONE SOLUTIONS"));
-        }
-      } catch (error) {
-        lines.push(centerText("FOUR ONE SOLUTIONS"));
-      }
+      lines.push(centerText("╔══════════════════════════════════════╗"));
+      lines.push(centerText("║                                      ║"));
+      lines.push(centerText("║         ███████   ███████            ║"));
+      lines.push(centerText("║         ██   ██   ██   ██            ║"));
+      lines.push(centerText("║         ███████   ███████            ║"));
+      lines.push(centerText("║         ██        ██                 ║"));
+      lines.push(centerText("║         ██        ██                 ║"));
+      lines.push(centerText("║                                      ║"));
+      lines.push(centerText("║             4  1  1  1               ║"));
+      lines.push(centerText("║                                      ║"));
+      lines.push(centerText("║       FOUR ONE SOLUTIONS             ║"));
+      lines.push(centerText("║                                      ║"));
+      lines.push(centerText("╚══════════════════════════════════════╝"));
     }
     lines.push("");
     
@@ -3250,30 +3250,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     lines.push(centerText("Escanea para verificar esta venta"));
     lines.push("");
     
-    // Generate real QR code using QRCode library
+    // Generate QR code for verification link
     try {
       const qrData = `https://${process.env.REPLIT_DOMAINS?.split(',')[0] || 'localhost'}/verify/${sale.id}`;
       
-      // Generate clean QR code for thermal printer
-      const qrString = await QRCode.toString(qrData, {
-        type: 'utf8',
-        small: true,
-        width: 25,
-        margin: 1
-      });
-      
-      // Clean QR code of escape sequences and center each line
-      const qrLines = qrString.split('\n')
-        .filter(line => line.trim())
-        .map(line => line.replace(/\u001b\[[0-9;]*m/g, '')); // Remove ANSI escape codes
-      
-      qrLines.forEach(line => {
-        lines.push(centerText(line));
-      });
+      // Create QR code as simple blocks for thermal printing
+      await QRCode.toDataURL(qrData, { width: 100, margin: 1 })
+        .then(url => {
+          // For thermal printers, we'll include the QR as data
+          lines.push(centerText(`[QR:${qrData}]`));
+        })
+        .catch(() => {
+          lines.push(centerText("QR: " + qrData));
+        });
       
     } catch (error) {
       console.log('QR generation error:', error);
-      lines.push(centerText("[ QR CODE ERROR ]"));
+      const qrData = `https://${process.env.REPLIT_DOMAINS?.split(',')[0] || 'localhost'}/verify/${sale.id}`;
+      lines.push(centerText("QR: " + qrData));
     }
     
     lines.push("");
