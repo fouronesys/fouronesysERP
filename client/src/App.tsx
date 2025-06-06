@@ -11,6 +11,7 @@ import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import { registerSW } from "@/lib/serviceWorkerRegistration";
+import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
 
 // Pages
 import Landing from "@/pages/Landing";
@@ -203,6 +204,9 @@ function Router() {
       
       {/* Quick Action Floating Menu */}
       <QuickActionMenu />
+      
+      {/* PWA Installation Prompt */}
+      <PWAInstallPrompt />
     </div>
   );
 }

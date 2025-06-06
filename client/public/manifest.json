@@ -1,78 +1,78 @@
 {
-  "name": "Four One Solutions",
-  "short_name": "Four One",
-  "description": "Sistema ERP integral para empresas dominicanas con funcionalidad offline",
+  "name": "Four One Solutions - Sistema de Gestión Empresarial",
+  "short_name": "Four One Solutions",
+  "description": "Sistema integral de gestión empresarial para República Dominicana con POS, contabilidad y cumplimiento fiscal",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#3b82f6",
   "orientation": "portrait-primary",
   "scope": "/",
-  "categories": ["business", "productivity", "finance"],
   "lang": "es-DO",
+  "categories": ["business", "finance", "productivity"],
   "icons": [
     {
-      "src": "/favicon.ico",
-      "sizes": "64x64 32x32 24x24 16x16",
-      "type": "image/x-icon"
-    },
-    {
-      "src": "/icon-192.png",
+      "src": "/pwa-192x192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/icon-512.png",
+      "src": "/pwa-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshot-mobile.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Interfaz móvil del sistema POS"
+    },
+    {
+      "src": "/screenshot-desktop.png",
+      "sizes": "1920x1080",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Panel de control principal"
     }
   ],
   "shortcuts": [
     {
-      "name": "POS",
+      "name": "POS Ventas",
       "short_name": "POS",
-      "description": "Punto de Venta",
+      "description": "Acceso rápido al módulo de punto de venta",
       "url": "/pos",
-      "icons": [
-        {
-          "src": "/icon-192.png",
-          "sizes": "192x192"
-        }
-      ]
+      "icons": [{ "src": "/pos-icon-96x96.png", "sizes": "96x96" }]
     },
     {
-      "name": "Dashboard",
-      "short_name": "Dashboard",
-      "description": "Panel Principal",
-      "url": "/dashboard",
-      "icons": [
-        {
-          "src": "/icon-192.png",
-          "sizes": "192x192"
-        }
-      ]
+      "name": "Contabilidad",
+      "short_name": "Contabilidad",
+      "description": "Acceso rápido al módulo contable",
+      "url": "/accounting",
+      "icons": [{ "src": "/accounting-icon-96x96.png", "sizes": "96x96" }]
     },
     {
-      "name": "Inventario",
-      "short_name": "Inventario",
-      "description": "Gestión de Inventario",
-      "url": "/inventory",
-      "icons": [
-        {
-          "src": "/icon-192.png",
-          "sizes": "192x192"
-        }
-      ]
+      "name": "Comprobantes Fiscales",
+      "short_name": "Fiscales",
+      "description": "Gestión de documentos fiscales",
+      "url": "/fiscal-documents",
+      "icons": [{ "src": "/fiscal-icon-96x96.png", "sizes": "96x96" }]
     }
   ],
-  "prefer_related_applications": false,
-  "related_applications": [],
-  "protocol_handlers": [
+  "related_applications": [
     {
-      "protocol": "web+fourone",
-      "url": "/?handler=%s"
+      "platform": "windows",
+      "url": "https://four-one-solutions.replit.app/download/windows"
     }
-  ]
+  ],
+  "prefer_related_applications": false
 }

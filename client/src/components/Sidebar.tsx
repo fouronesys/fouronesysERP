@@ -87,7 +87,7 @@ const navigation = [
   {
     category: "Contabilidad",
     items: [
-      { name: "Módulo Contable", href: "/accounting", icon: Calculator },
+      { name: "Contabilidad", href: "/accounting", icon: Calculator },
     ],
   },
   {
