@@ -121,25 +121,27 @@ export default function POS() {
   });
 
   // Transform cart data to match CartItem interface
-  const cart: CartItem[] = cartData.map((item: any) => ({
+  const cart: CartItem[] = Array.isArray(cartData) ? cartData.map((item: any) => ({
     product: item.product,
     quantity: item.quantity,
     subtotal: parseFloat(item.subtotal)
-  }));
+  })) : [];
 
   // Función para verificar secuencias agotándose
   const checkLowSequences = () => {
     const alerts: string[] = [];
-    ncfSequences.forEach((sequence: any) => {
-      if (sequence.isActive) {
-        const remaining = (sequence.maxSequence || 0) - (sequence.currentSequence || 0);
-        if (remaining <= 0) {
-          alerts.push(`Comprobantes ${sequence.ncfType} agotados`);
-        } else if (remaining <= 10) {
-          alerts.push(`Quedan ${remaining} comprobantes ${sequence.ncfType}`);
+    if (Array.isArray(ncfSequences)) {
+      ncfSequences.forEach((sequence: any) => {
+        if (sequence.isActive) {
+          const remaining = (sequence.maxSequence || 0) - (sequence.currentSequence || 0);
+          if (remaining <= 0) {
+            alerts.push(`Comprobantes ${sequence.ncfType} agotados`);
+          } else if (remaining <= 10) {
+            alerts.push(`Quedan ${remaining} comprobantes ${sequence.ncfType}`);
+          }
         }
-      }
-    });
+      });
+    }
     return alerts;
   };
 
@@ -676,9 +678,16 @@ export default function POS() {
                                 
                                 if (response.ok) {
                                   const result = await response.json();
-                                  if (result.valid && result.data) {
-                                    setCustomerName(result.data.name || "");
-                                    setCustomerAddress(result.data.address || "");
+                                  if (result.exists && result.customer) {
+                                    // Customer already exists, fill with existing data
+                                    setCustomerName(result.customer.name || "");
+                                    setCustomerPhone(result.customer.phone || "");
+                                    setCustomerAddress(result.customer.address || "");
+                                    alert("Cliente existente encontrado. Datos cargados automáticamente.");
+                                  } else if (result.validation?.valid && result.validation?.data) {
+                                    // RNC is valid, auto-fill with DGII data
+                                    setCustomerName(result.validation.data.name || "");
+                                    setCustomerAddress(result.validation.data.businessName || "");
                                     alert("RNC validado exitosamente. Datos completados automáticamente.");
                                   } else {
                                     alert("RNC no encontrado en el registro DGII");
