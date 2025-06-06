@@ -18,6 +18,7 @@ import {
 import { LogoProcessor } from "./logo-processor";
 import { ThermalLogoProcessor } from "./thermal-logo";
 import { ThermalQRProcessor } from "./thermal-qr";
+import { InvoiceHTMLService } from "./invoice-html-service";
 import QRCode from "qrcode";
 import multer from "multer";
 import path from "path";
@@ -4078,6 +4079,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.status(500).json({ message: "Failed to generate PDF invoice" });
       }
     },
+  );
+
+  // HTML Invoice Generation Route
+  app.post(
+    "/api/pos/print-html/:saleId",
+    isAuthenticated,
+    async (req: any, res) => {
+      try {
+        const { saleId } = req.params;
+        const userId = req.user.id;
+        const company = await storage.getCompanyByUserId(userId);
+        if (!company) {
+          return res.status(404).json({ message: "Company not found" });
+        }
+
+        // Get sale data
+        const sale = await storage.getPOSSale(parseInt(saleId), company.id);
+        if (!sale) {
+          return res.status(404).json({ message: "Sale not found" });
+        }
+
+        const items = await storage.getPOSSaleItems(sale.id);
+
+        // Prepare customer info
+        const customerInfo = {
+          name: sale.customerName || undefined,
+          phone: sale.customerPhone || undefined,
+          rnc: sale.customerRnc || undefined,
+        };
+
+        // Generate professional HTML invoice
+        const htmlContent = await InvoiceHTMLService.generateHTMLInvoice({
+          sale,
+          items,
+          company,
+          customerInfo,
+        });
+
+        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+        res.send(htmlContent);
+
+      } catch (error) {
+        console.error("Error generating HTML invoice:", error);
+        res.status(500).json({ message: "Failed to generate HTML invoice" });
+      }
+    }
   );
 
   // Get available print formats

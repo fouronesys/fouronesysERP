@@ -24,6 +24,45 @@ export default function InvoicePrintModal({ isOpen, onClose, saleId, saleNumber 
   const [isPrinting, setIsPrinting] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
 
+  // HTML invoice generation
+  const handleHTMLInvoice = async () => {
+    setIsGenerating(true);
+    try {
+      const response = await fetch(`/api/pos/print-html/${saleId}`, {
+        method: "POST",
+        credentials: 'include'
+      });
+
+      if (response.ok) {
+        const htmlContent = await response.text();
+        
+        // Open in new window/tab for printing
+        const printWindow = window.open('', '_blank');
+        if (printWindow) {
+          printWindow.document.write(htmlContent);
+          printWindow.document.close();
+        }
+
+        toast({
+          title: "Factura HTML generada",
+          description: "Factura profesional abierta en nueva ventana",
+        });
+
+        onClose();
+      } else {
+        throw new Error("Failed to generate HTML invoice");
+      }
+    } catch (error) {
+      toast({
+        title: "Error al generar factura",
+        description: "No se pudo generar la factura HTML",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   // Thermal printing options
   const [thermalWidth, setThermalWidth] = useState("80mm");
   const [thermalShowLogo, setThermalShowLogo] = useState(true);
@@ -159,7 +198,11 @@ export default function InvoicePrintModal({ isOpen, onClose, saleId, saleNumber 
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="html">
+              <Eye className="w-4 h-4 mr-2" />
+              Factura Profesional
+            </TabsTrigger>
             <TabsTrigger value="thermal">
               <Printer className="w-4 h-4 mr-2" />
               Impresión Térmica
@@ -169,6 +212,45 @@ export default function InvoicePrintModal({ isOpen, onClose, saleId, saleNumber 
               PDF / Carta
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="html" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Factura HTML Profesional</CardTitle>
+                <CardDescription>
+                  Genera una factura con diseño profesional que incluye logo, QR code y formato optimizado para impresión
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg">
+                  <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">Características incluidas:</h4>
+                  <ul className="space-y-1 text-sm text-blue-800 dark:text-blue-200">
+                    <li>• Logo de la empresa en alta calidad</li>
+                    <li>• Código QR de verificación</li>
+                    <li>• Diseño responsivo para impresión</li>
+                    <li>• Información completa del cliente y empresa</li>
+                    <li>• Formato profesional listo para imprimir</li>
+                  </ul>
+                </div>
+
+                <div className="flex gap-2">
+                  <Button 
+                    onClick={handleHTMLInvoice} 
+                    disabled={isGenerating}
+                    className="flex-1"
+                    size="lg"
+                  >
+                    <Eye className="w-4 h-4 mr-2" />
+                    {isGenerating ? "Generando..." : "Generar Factura Profesional"}
+                  </Button>
+                </div>
+
+                <div className="text-xs text-muted-foreground mt-2">
+                  La factura se abrirá en una nueva ventana lista para imprimir o guardar como PDF
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
           <TabsContent value="thermal" className="space-y-4">
             <Card>
