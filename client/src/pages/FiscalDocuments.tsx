@@ -222,46 +222,54 @@ export default function FiscalDocuments() {
                   <Loader2 className="h-8 w-8 animate-spin" />
                 </div>
               ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Tipo NCF</TableHead>
-                      <TableHead>Secuencia Actual</TableHead>
-                      <TableHead>Secuencia Máxima</TableHead>
-                      <TableHead>Período Fiscal</TableHead>
-                      <TableHead>Estado</TableHead>
-                      <TableHead>Acciones</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredSequences.length === 0 ? (
+                <div className="overflow-x-auto">
+                  <Table className="min-w-full">
+                    <TableHeader>
                       <TableRow>
-                        <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                          No hay secuencias NCF registradas
-                        </TableCell>
+                        <TableHead className="min-w-[80px]">Tipo NCF</TableHead>
+                        <TableHead className="hidden sm:table-cell min-w-[100px]">Secuencia</TableHead>
+                        <TableHead className="hidden md:table-cell min-w-[100px]">Máximo</TableHead>
+                        <TableHead className="hidden lg:table-cell min-w-[100px]">Período</TableHead>
+                        <TableHead className="hidden lg:table-cell min-w-[80px]">Estado</TableHead>
+                        <TableHead className="min-w-[80px]">Acciones</TableHead>
                       </TableRow>
-                    ) : (
-                      filteredSequences.map((sequence: any) => (
-                        <TableRow key={sequence.id}>
-                          <TableCell className="font-medium">{sequence.ncfType}</TableCell>
-                          <TableCell>{sequence.currentSequence || "0"}</TableCell>
-                          <TableCell>{sequence.maxSequence || "N/A"}</TableCell>
-                          <TableCell>{sequence.fiscalPeriod}</TableCell>
-                          <TableCell>
-                            <Badge variant={sequence.isActive ? "default" : "secondary"}>
-                              {sequence.isActive ? "Activa" : "Inactiva"}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <Button variant="ghost" size="sm">
-                              <Eye className="h-4 w-4" />
-                            </Button>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredSequences.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                            No hay secuencias NCF registradas
                           </TableCell>
                         </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
+                      ) : (
+                        filteredSequences.map((sequence: any) => (
+                          <TableRow key={sequence.id}>
+                            <TableCell className="font-medium text-xs sm:text-sm">{sequence.ncfType}</TableCell>
+                            <TableCell className="hidden sm:table-cell text-xs sm:text-sm">{sequence.currentSequence || "0"}</TableCell>
+                            <TableCell className="hidden md:table-cell text-xs sm:text-sm">{sequence.maxSequence || "N/A"}</TableCell>
+                            <TableCell className="hidden lg:table-cell text-xs sm:text-sm">{sequence.fiscalPeriod}</TableCell>
+                            <TableCell className="hidden lg:table-cell">
+                              <Badge variant={sequence.isActive ? "default" : "secondary"} className="text-xs">
+                                {sequence.isActive ? "Activa" : "Inactiva"}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex flex-col sm:hidden text-xs text-muted-foreground mb-1">
+                                <span>Sec: {sequence.currentSequence || "0"}</span>
+                                <Badge variant={sequence.isActive ? "default" : "secondary"} className="text-xs w-fit">
+                                  {sequence.isActive ? "Activa" : "Inactiva"}
+                                </Badge>
+                              </div>
+                              <Button variant="ghost" size="sm">
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
               )}
             </CardContent>
           </Card>
@@ -285,18 +293,19 @@ export default function FiscalDocuments() {
                   <Loader2 className="h-8 w-8 animate-spin" />
                 </div>
               ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>NCF</TableHead>
-                      <TableHead>Proveedor</TableHead>
-                      <TableHead>Fecha</TableHead>
-                      <TableHead>Monto</TableHead>
-                      <TableHead>ITBIS</TableHead>
-                      <TableHead>Estado</TableHead>
-                      <TableHead>Acciones</TableHead>
-                    </TableRow>
-                  </TableHeader>
+                <div className="overflow-x-auto">
+                  <Table className="min-w-full">
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="min-w-[100px]">NCF</TableHead>
+                        <TableHead className="hidden sm:table-cell min-w-[150px]">Proveedor</TableHead>
+                        <TableHead className="hidden md:table-cell min-w-[100px]">Fecha</TableHead>
+                        <TableHead className="min-w-[100px] text-right">Monto</TableHead>
+                        <TableHead className="hidden lg:table-cell min-w-[80px] text-right">ITBIS</TableHead>
+                        <TableHead className="hidden lg:table-cell min-w-[80px]">Estado</TableHead>
+                        <TableHead className="min-w-[80px]">Acciones</TableHead>
+                      </TableRow>
+                    </TableHeader>
                   <TableBody>
                     {filteredComprobantes606.length === 0 ? (
                       <TableRow>

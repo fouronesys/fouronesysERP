@@ -341,7 +341,7 @@ export default function Accounting() {
                       </TableRow>
                     ))}
                   </TableBody>
-                  </Table>
+                </Table>
                 </div>
               )}
             </CardContent>
