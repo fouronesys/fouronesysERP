@@ -327,6 +327,10 @@ export default function POS() {
         setCashReceived("");
         setCustomerName("");
         setCustomerPhone("");
+        setCustomerRnc("");
+        setCustomerAddress("");
+        setUseFiscalReceipt(false);
+        setSelectedNCFType("");
         
         // Mostrar modal de impresión
         setShowPrintModal(true);

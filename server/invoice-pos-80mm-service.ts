@@ -355,20 +355,27 @@ export class InvoicePOS80mmService {
         </div>
         
         <!-- Receipt title and number -->
-        <div class="receipt-title">*** RECIBO DE VENTA ***</div>
+        <div class="receipt-title">
+            ${sale.ncf ? '*** COMPROBANTE FISCAL ***' : '*** RECIBO DE VENTA ***'}
+        </div>
         <div class="receipt-number"># ${sale.saleNumber}</div>
+        ${sale.ncf ? `<div class="ncf-section" style="text-align: center; font-weight: bold; margin: 4px 0; padding: 2px; border: 1px solid #000;">
+            NCF: ${sale.ncf}
+        </div>` : ''}
         <div class="date-time">
             ${new Date(sale.createdAt).toLocaleDateString('es-DO')}<br>
             ${new Date(sale.createdAt).toLocaleTimeString('es-DO', { hour12: false })}
         </div>
         
         <!-- Customer info -->
-        ${customerInfo?.name || customerInfo?.phone || customerInfo?.rnc ? `
+        ${customerInfo?.name || customerInfo?.phone || customerInfo?.rnc || customerInfo?.address ? `
         <div class="customer-section">
-            <div class="section-title">CLIENTE:</div>
+            <div class="section-title">${sale.ncf ? 'DATOS DEL CLIENTE (FISCAL):' : 'CLIENTE:'}</div>
             ${customerInfo?.name ? `<div class="info-line">Nombre: ${customerInfo.name}</div>` : ''}
             ${customerInfo?.phone ? `<div class="info-line">Tel: ${customerInfo.phone}</div>` : ''}
-            ${customerInfo?.rnc ? `<div class="info-line">RNC: ${customerInfo.rnc}</div>` : ''}
+            ${customerInfo?.rnc ? `<div class="info-line">RNC/Cédula: ${customerInfo.rnc}</div>` : ''}
+            ${customerInfo?.address ? `<div class="info-line">Dirección: ${customerInfo.address}</div>` : ''}
+            ${sale.ncf ? '<div style="font-size: 8px; margin-top: 2px; font-style: italic;">* Datos requeridos por la DGII para comprobantes fiscales</div>' : ''}
         </div>
         ` : ''}
         

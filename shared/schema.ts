@@ -458,6 +458,7 @@ export const posSales = pgTable("pos_sales", {
   customerName: varchar("customer_name", { length: 255 }),
   customerPhone: varchar("customer_phone", { length: 20 }),
   customerRnc: varchar("customer_rnc", { length: 11 }), // Dominican RNC
+  customerAddress: text("customer_address"), // Required for fiscal receipts
   // Fiscal Receipt fields
   ncf: varchar("ncf", { length: 20 }), // Comprobante Fiscal
   ncfType: varchar("ncf_type", { length: 3 }), // B01, B02, B04, etc.
