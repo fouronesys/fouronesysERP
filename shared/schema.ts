@@ -1185,20 +1185,13 @@ export const journals = pgTable("journals", {
 export const journalEntries = pgTable("journal_entries", {
   id: serial("id").primaryKey(),
   companyId: integer("company_id").notNull().references(() => companies.id),
-  journalId: integer("journal_id").notNull().references(() => journals.id),
+  journalId: integer("journal_id").references(() => journals.id),
   entryNumber: varchar("entry_number", { length: 50 }).notNull(),
   reference: varchar("reference", { length: 100 }),
   description: text("description").notNull(),
-  entryDate: date("entry_date").notNull(),
-  totalDebit: decimal("total_debit", { precision: 15, scale: 2 }).notNull(),
-  totalCredit: decimal("total_credit", { precision: 15, scale: 2 }).notNull(),
-  isBalanced: boolean("is_balanced").default(false),
-  status: varchar("status", { length: 20 }).default("draft"), // draft, posted, cancelled
-  sourceModule: varchar("source_module", { length: 50 }), // POS, INVOICE, MANUAL, etc.
-  sourceId: integer("source_id"), // Reference to source transaction
+  date: date("date").notNull(),
+  totalAmount: decimal("total_amount", { precision: 15, scale: 2 }).notNull(),
   createdBy: varchar("created_by").notNull().references(() => users.id),
-  postedBy: varchar("posted_by").references(() => users.id),
-  postedAt: timestamp("posted_at"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -1468,10 +1461,6 @@ export const journalEntriesRelations = relations(journalEntries, ({ one, many })
   }),
   createdByUser: one(users, {
     fields: [journalEntries.createdBy],
-    references: [users.id],
-  }),
-  postedByUser: one(users, {
-    fields: [journalEntries.postedBy],
     references: [users.id],
   }),
   lines: many(journalEntryLines),

@@ -511,14 +511,14 @@ export class AccountingService {
     );
 
     if (startDate) {
-      query = query.where(gte(journalEntries.entryDate, startDate));
+      query = query.where(gte(journalEntries.date, startDate));
     }
     
     if (endDate) {
-      query = query.where(lte(journalEntries.entryDate, endDate));
+      query = query.where(lte(journalEntries.date, endDate));
     }
 
-    const transactions = await query.orderBy(journalEntries.entryDate, journalEntries.entryNumber);
+    const transactions = await query.orderBy(journalEntries.date, journalEntries.entryNumber);
 
     // Calculate running balance
     let runningBalance = 0;
