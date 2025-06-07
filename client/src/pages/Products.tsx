@@ -86,7 +86,9 @@ export default function Products() {
         title: "Producto creado",
         description: "El producto ha sido creado exitosamente.",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+      // Force refetch with exact query key match
+      queryClient.invalidateQueries({ queryKey: ["/api/products"], exact: true });
+      queryClient.refetchQueries({ queryKey: ["/api/products"], exact: true });
       setIsDialogOpen(false);
       form.reset();
     },
@@ -118,7 +120,9 @@ export default function Products() {
         title: "Producto actualizado",
         description: "El producto ha sido actualizado exitosamente.",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+      // Force refetch with exact query key match
+      queryClient.invalidateQueries({ queryKey: ["/api/products"], exact: true });
+      queryClient.refetchQueries({ queryKey: ["/api/products"], exact: true });
       setIsDialogOpen(false);
       setEditingProduct(null);
       form.reset();
@@ -143,7 +147,9 @@ export default function Products() {
         title: "Producto eliminado",
         description: "El producto ha sido eliminado exitosamente.",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+      // Force refetch with exact query key match
+      queryClient.invalidateQueries({ queryKey: ["/api/products"], exact: true });
+      queryClient.refetchQueries({ queryKey: ["/api/products"], exact: true });
     },
     onError: () => {
       toast({
