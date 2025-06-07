@@ -6,7 +6,15 @@ import { Check, ChevronDown, ChevronUp } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
-const Select = SelectPrimitive.Root
+const Select = React.forwardRef<
+  React.ElementRef<typeof SelectPrimitive.Root>,
+  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Root>
+>(({ value, ...props }, ref) => {
+  // Prevent empty string values from being passed to Select
+  const safeValue = value === "" ? undefined : value;
+  return <SelectPrimitive.Root value={safeValue} {...props} />;
+});
+Select.displayName = "Select";
 
 const SelectGroup = SelectPrimitive.Group
 
@@ -114,10 +122,33 @@ SelectLabel.displayName = SelectPrimitive.Label.displayName
 const SelectItem = React.forwardRef<
   React.ElementRef<typeof SelectPrimitive.Item>,
   React.ComponentPropsWithoutRef<typeof SelectPrimitive.Item>
->(({ className, children, value, ...props }, ref) => {
-  // Prevent empty string values that cause SelectItem errors
-  if (value === "") {
-    console.warn("SelectItem: Empty string value detected, using fallback");
+>(({ className, children, value, disabled, ...props }, ref) => {
+  // Completely prevent empty string values that cause SelectItem errors
+  if (!value || value === "" || (typeof value === 'string' && value.trim() === "")) {
+    // For disabled items with empty values, generate a safe placeholder value
+    if (disabled) {
+      const safeValue = `disabled-item-${Math.random().toString(36).substr(2, 9)}`;
+      return (
+        <SelectPrimitive.Item
+          ref={ref}
+          className={cn(
+            "relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+            className
+          )}
+          value={safeValue}
+          disabled={true}
+          {...props}
+        >
+          <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
+            <SelectPrimitive.ItemIndicator>
+              <Check className="h-4 w-4" />
+            </SelectPrimitive.ItemIndicator>
+          </span>
+          <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
+        </SelectPrimitive.Item>
+      );
+    }
+    // Skip rendering items with invalid values
     return null;
   }
 
@@ -129,6 +160,7 @@ const SelectItem = React.forwardRef<
         className
       )}
       value={value}
+      disabled={disabled}
       {...props}
     >
       <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
