@@ -88,7 +88,7 @@ export default function AssetManager() {
   });
 
   // Fetch available assets
-  const { data: assetsData, isLoading: assetsLoading } = useQuery({
+  const { data: assetsData, isLoading: assetsLoading } = useQuery<{ assets: Asset[] }>({
     queryKey: ['/api/assets/list'],
     retry: false
   });
@@ -696,9 +696,9 @@ export default function AssetManager() {
                           <div key={i} className="h-12 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
                         ))}
                       </div>
-                    ) : assetsData?.assets?.length > 0 ? (
+                    ) : (assetsData as any)?.assets?.length > 0 ? (
                       <div className="space-y-2 max-h-96 overflow-y-auto">
-                        {assetsData.assets.map((asset: Asset) => (
+                        {(assetsData as any).assets.map((asset: Asset) => (
                           <div
                             key={asset.name}
                             className="flex items-center justify-between p-3 border rounded hover:bg-gray-50 dark:hover:bg-gray-800"
