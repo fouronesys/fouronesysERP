@@ -21,6 +21,7 @@ import { ThermalQRProcessor } from "./thermal-qr";
 import { ErrorManager } from "./error-management";
 import { InvoiceHTMLService } from "./invoice-html-service";
 import { InvoicePOS80mmService } from "./invoice-pos-80mm-service";
+import { assetManager, type IconSet, type AssetOptimizationConfig } from "./asset-manager";
 import QRCode from "qrcode";
 import multer from "multer";
 import path from "path";
