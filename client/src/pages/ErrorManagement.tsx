@@ -61,9 +61,9 @@ const ErrorManagement = () => {
     queryKey: ['/api/errors', filters],
     queryFn: async () => {
       const params = new URLSearchParams();
-      if (filters.severity) params.append('severity', filters.severity);
-      if (filters.type) params.append('type', filters.type);
-      if (filters.resolved) params.append('resolved', filters.resolved);
+      if (filters.severity && filters.severity !== 'all') params.append('severity', filters.severity);
+      if (filters.type && filters.type !== 'all') params.append('type', filters.type);
+      if (filters.resolved && filters.resolved !== 'all') params.append('resolved', filters.resolved);
       params.append('page', filters.page.toString());
       
       const response = await fetch(`/api/errors?${params}`);
@@ -224,7 +224,7 @@ const ErrorManagement = () => {
                     <SelectValue placeholder="Filtrar por severidad" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todas las severidades</SelectItem>
+                    <SelectItem value="all">Todas las severidades</SelectItem>
                     <SelectItem value="critical">Crítico</SelectItem>
                     <SelectItem value="high">Alto</SelectItem>
                     <SelectItem value="medium">Medio</SelectItem>
@@ -240,7 +240,7 @@ const ErrorManagement = () => {
                     <SelectValue placeholder="Filtrar por tipo" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todos los tipos</SelectItem>
+                    <SelectItem value="all">Todos los tipos</SelectItem>
                     <SelectItem value="frontend">Frontend</SelectItem>
                     <SelectItem value="backend">Backend</SelectItem>
                     <SelectItem value="database">Base de Datos</SelectItem>
@@ -257,7 +257,7 @@ const ErrorManagement = () => {
                     <SelectValue placeholder="Estado" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todos</SelectItem>
+                    <SelectItem value="all">Todos</SelectItem>
                     <SelectItem value="true">Resueltos</SelectItem>
                     <SelectItem value="false">Pendientes</SelectItem>
                   </SelectContent>
