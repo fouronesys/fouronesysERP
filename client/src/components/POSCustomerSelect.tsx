@@ -51,15 +51,15 @@ export default function POSCustomerSelect({ selectedCustomer, onCustomerSelect, 
     }
   });
 
-  // Fetch customers
+  // Fetch customers from regular customers table
   const { data: customers = [] } = useQuery({
-    queryKey: ['/api/pos/customers']
+    queryKey: ['/api/customers']
   });
 
   // Create customer mutation
   const createCustomerMutation = useMutation({
     mutationFn: async (data: CustomerForm) => {
-      const response = await apiRequest('/api/pos/customers', {
+      const response = await apiRequest('/api/customers', {
         method: 'POST',
         body: data
       });
@@ -73,7 +73,7 @@ export default function POSCustomerSelect({ selectedCustomer, onCustomerSelect, 
       onCustomerSelect(customer);
       setIsDialogOpen(false);
       form.reset();
-      queryClient.invalidateQueries({ queryKey: ['/api/pos/customers'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/customers'] });
     },
     onError: (error: any) => {
       toast({
@@ -93,9 +93,8 @@ export default function POSCustomerSelect({ selectedCustomer, onCustomerSelect, 
     
     setIsValidatingRnc(true);
     try {
-      const response = await apiRequest('/api/pos/customers/search-rnc', {
-        method: 'POST',
-        body: { rnc }
+      const response = await apiRequest(`/api/customers/verify-rnc/${rnc}`, {
+        method: 'GET'
       });
       
       const data = await response.json();

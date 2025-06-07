@@ -981,7 +981,7 @@ export class DatabaseStorage implements IStorage {
       const firstDayOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
       
       const [posResult] = await db
-        .select({ total: sql<string>`COALESCE(SUM(${posSales.total}), 0)` })
+        .select({ total: sql<string>`COALESCE(SUM(CAST(${posSales.total} AS DECIMAL)), 0)` })
         .from(posSales)
         .where(
           and(
