@@ -655,6 +655,25 @@ export const notifications = pgTable("notifications", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Error Management System
+export const errorLogs = pgTable("error_logs", {
+  id: serial("id").primaryKey(),
+  errorId: varchar("error_id", { length: 50 }).notNull().unique(),
+  message: text("message").notNull(),
+  stack: text("stack").notNull(),
+  type: varchar("type", { length: 20 }).notNull(), // frontend, backend, database, api, validation
+  severity: varchar("severity", { length: 20 }).notNull(), // low, medium, high, critical
+  context: text("context").notNull(), // JSON string
+  userId: varchar("user_id"),
+  companyId: integer("company_id").references(() => companies.id),
+  resolved: boolean("resolved").default(false),
+  aiAnalysis: text("ai_analysis"),
+  suggestedFix: text("suggested_fix"),
+  createdAt: timestamp("created_at").defaultNow(),
+  resolvedAt: timestamp("resolved_at"),
+  resolvedBy: varchar("resolved_by"),
+});
+
 export const insertPOSSaleSchema = createInsertSchema(posSales).omit({
   id: true,
   createdAt: true,
@@ -691,6 +710,12 @@ export const insertNotificationSchema = createInsertSchema(notifications).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+});
+
+export const insertErrorLogSchema = createInsertSchema(errorLogs).omit({
+  id: true,
+  createdAt: true,
+  resolvedAt: true,
 });
 
 // POS Multi-Station Schema Types
@@ -1023,6 +1048,8 @@ export type POSPrintSettings = typeof posPrintSettings.$inferSelect;
 export type InsertPOSPrintSettings = z.infer<typeof insertPOSPrintSettingsSchema>;
 export type Notification = typeof notifications.$inferSelect;
 export type InsertNotification = z.infer<typeof insertNotificationSchema>;
+export type ErrorLog = typeof errorLogs.$inferSelect;
+export type InsertErrorLog = z.infer<typeof insertErrorLogSchema>;
 export type Employee = typeof employees.$inferSelect;
 export type InsertEmployee = z.infer<typeof insertEmployeeSchema>;
 export type PayrollPeriod = typeof payrollPeriods.$inferSelect;
