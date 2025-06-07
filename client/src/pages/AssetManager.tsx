@@ -103,10 +103,10 @@ export default function AssetManager() {
   const generateIconsMutation = useMutation({
     mutationFn: (formData: FormData) => 
       apiRequest('/api/assets/generate-icons', { method: 'POST', body: formData }),
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       toast({
         title: "Íconos generados exitosamente",
-        description: `Se generaron ${data.count} archivos de íconos`
+        description: `Se generaron ${data?.count || 'varios'} archivos de íconos`
       });
       queryClient.invalidateQueries({ queryKey: ['/api/assets'] });
       setSelectedFile(null);
@@ -125,10 +125,10 @@ export default function AssetManager() {
   const generateResponsiveMutation = useMutation({
     mutationFn: (formData: FormData) => 
       apiRequest('/api/assets/generate-responsive', { method: 'POST', body: formData }),
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       toast({
         title: "Imágenes responsivas generadas",
-        description: `Se generaron variantes para ${data.breakpoints.length} breakpoints`
+        description: `Se generaron variantes para ${data?.breakpoints?.length || 'varios'} breakpoints`
       });
       queryClient.invalidateQueries({ queryKey: ['/api/assets'] });
     },
@@ -145,10 +145,10 @@ export default function AssetManager() {
   const generateFaviconsMutation = useMutation({
     mutationFn: (formData: FormData) => 
       apiRequest('/api/assets/generate-favicons', { method: 'POST', body: formData }),
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       toast({
         title: "Favicons generados exitosamente",
-        description: `Se generaron ${data.count} archivos favicon`
+        description: `Se generaron ${data?.count || 'varios'} archivos favicon`
       });
       queryClient.invalidateQueries({ queryKey: ['/api/assets'] });
     },
@@ -165,10 +165,10 @@ export default function AssetManager() {
   const optimizeImageMutation = useMutation({
     mutationFn: (formData: FormData) => 
       apiRequest('/api/assets/optimize', { method: 'POST', body: formData }),
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       toast({
         title: "Imagen optimizada",
-        description: `Imagen optimizada en formatos: ${data.formats.join(', ')}`
+        description: `Imagen optimizada en formatos: ${data?.formats?.join(', ') || 'varios formatos'}`
       });
       queryClient.invalidateQueries({ queryKey: ['/api/assets'] });
     },
@@ -185,10 +185,10 @@ export default function AssetManager() {
   const cleanupAssetsMutation = useMutation({
     mutationFn: (maxAge: number) => 
       apiRequest(`/api/assets/cleanup?maxAge=${maxAge}`, { method: 'DELETE' }),
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       toast({
         title: "Limpieza completada",
-        description: `Se eliminaron ${data.count} archivos antiguos`
+        description: `Se eliminaron ${data?.count || 'varios'} archivos antiguos`
       });
       queryClient.invalidateQueries({ queryKey: ['/api/assets'] });
     },
