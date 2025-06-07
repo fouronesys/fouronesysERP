@@ -199,7 +199,7 @@ export default function POSCustomerSelect({ selectedCustomer, onCustomerSelect, 
                     </SelectItem>
                   ))
                 ) : (
-                  <SelectItem value="" disabled>
+                  <SelectItem value="no-fiscal-customers" disabled>
                     No hay clientes con RNC válido
                   </SelectItem>
                 )}
@@ -278,7 +278,7 @@ export default function POSCustomerSelect({ selectedCustomer, onCustomerSelect, 
                       <SelectItem value="new">Crear nuevo cliente</SelectItem>
                       {Array.isArray(customers) && customers.length > 0 && (
                         <>
-                          <SelectItem value="" disabled>--- Clientes existentes ---</SelectItem>
+                          <SelectItem value="existing-customers-separator" disabled>--- Clientes existentes ---</SelectItem>
                           {customers.map((customer: any) => (
                             <SelectItem key={customer.id} value={customer.id.toString()}>
                               <div className="flex items-center justify-between w-full">
