@@ -21,11 +21,22 @@ import { ThermalQRProcessor } from "./thermal-qr";
 import { ErrorManager } from "./error-management";
 import { InvoiceHTMLService } from "./invoice-html-service";
 import { InvoicePOS80mmService } from "./invoice-pos-80mm-service";
-import { assetManager, type IconSet, type AssetOptimizationConfig } from "./asset-manager";
+import { simpleAccountingService } from "./accounting-service-simple";
 import QRCode from "qrcode";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+
+// Notification management system
+const notifications = new Map<string, any[]>();
+
+function initUserNotifications(userId: string) {
+  if (!notifications.has(userId)) {
+    notifications.set(userId, []);
+  }
+}
+
+const userNotifications = notifications;
 import {
   insertCompanySchema,
   insertWarehouseSchema,
@@ -1092,7 +1103,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Generate automatic journal entry for the sale
       try {
-        await accountingService.generatePOSJournalEntry(sale.id, company.id, userId);
+        await simpleAccountingService.generatePOSJournalEntry(sale.id, company.id, userId);
         console.log(`Journal entry generated for POS sale ${sale.saleNumber}`);
       } catch (journalError) {
         console.error("Error generating journal entry for POS sale:", journalError);
