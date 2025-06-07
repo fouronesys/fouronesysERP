@@ -139,71 +139,72 @@ const ErrorManagement = () => {
   };
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Gestión de Errores</h1>
-        <div className="flex items-center space-x-2">
-          <Badge variant="outline" className="text-sm">
-            AI Powered
-          </Badge>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="container mx-auto p-6 space-y-6 max-w-7xl">
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-bold">Gestión de Errores</h1>
+          <div className="flex items-center space-x-2">
+            <Badge variant="outline" className="text-sm">
+              AI Powered
+            </Badge>
+          </div>
         </div>
-      </div>
 
-      {/* Statistics Cards */}
-      {stats && (
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
-          <Card>
-            <CardContent className="p-4">
-              <div className="text-2xl font-bold text-blue-600">{stats.total}</div>
-              <div className="text-sm text-gray-600">Total</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="text-2xl font-bold text-red-600">{stats.critical}</div>
-              <div className="text-sm text-gray-600">Críticos</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="text-2xl font-bold text-orange-600">{stats.high}</div>
-              <div className="text-sm text-gray-600">Altos</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="text-2xl font-bold text-yellow-600">{stats.medium}</div>
-              <div className="text-sm text-gray-600">Medios</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="text-2xl font-bold text-green-600">{stats.low}</div>
-              <div className="text-sm text-gray-600">Bajos</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="text-2xl font-bold text-emerald-600">{stats.resolved}</div>
-              <div className="text-sm text-gray-600">Resueltos</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="text-2xl font-bold text-purple-600">{stats.unresolved}</div>
-              <div className="text-sm text-gray-600">Pendientes</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="text-2xl font-bold text-indigo-600">{stats.last24h}</div>
-              <div className="text-sm text-gray-600">Últimas 24h</div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+        {/* Statistics Cards */}
+        {stats && (
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
+            <Card>
+              <CardContent className="p-4">
+                <div className="text-2xl font-bold text-blue-600">{stats.total}</div>
+                <div className="text-sm text-gray-600">Total</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4">
+                <div className="text-2xl font-bold text-red-600">{stats.critical}</div>
+                <div className="text-sm text-gray-600">Críticos</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4">
+                <div className="text-2xl font-bold text-orange-600">{stats.high}</div>
+                <div className="text-sm text-gray-600">Altos</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4">
+                <div className="text-2xl font-bold text-yellow-600">{stats.medium}</div>
+                <div className="text-sm text-gray-600">Medios</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4">
+                <div className="text-2xl font-bold text-green-600">{stats.low}</div>
+                <div className="text-sm text-gray-600">Bajos</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4">
+                <div className="text-2xl font-bold text-emerald-600">{stats.resolved}</div>
+                <div className="text-sm text-gray-600">Resueltos</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4">
+                <div className="text-2xl font-bold text-purple-600">{stats.unresolved}</div>
+                <div className="text-sm text-gray-600">Pendientes</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4">
+                <div className="text-2xl font-bold text-indigo-600">{stats.last24h}</div>
+                <div className="text-sm text-gray-600">Últimas 24h</div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
-      <Tabs defaultValue="all" className="space-y-4">
+        <Tabs defaultValue="all" className="space-y-4">
         <TabsList>
           <TabsTrigger value="all">Todos los Errores</TabsTrigger>
           <TabsTrigger value="unresolved">No Resueltos</TabsTrigger>
@@ -267,56 +268,58 @@ const ErrorManagement = () => {
           </Card>
 
           {/* Error List */}
-          <div className="grid gap-4">
+          <div className="space-y-4 max-h-[600px] overflow-y-auto">
             {isLoading ? (
               <div className="text-center py-8">Cargando errores...</div>
             ) : errors && errors.length > 0 ? (
-              errors.map((error) => (
-                <Card key={error.id} className="cursor-pointer hover:shadow-md transition-shadow">
-                  <CardContent className="p-4" onClick={() => setSelectedError(error)}>
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1 space-y-2">
-                        <div className="flex items-center space-x-2">
-                          {getSeverityIcon(error.severity)}
-                          {getTypeIcon(error.type)}
-                          <Badge className={getSeverityColor(error.severity)}>
-                            {error.severity.toUpperCase()}
-                          </Badge>
-                          <Badge variant="outline">
-                            {error.type.toUpperCase()}
-                          </Badge>
-                          {error.resolved && (
-                            <Badge className="bg-green-100 text-green-800">
-                              RESUELTO
+              <div className="grid gap-4">
+                {errors.map((error) => (
+                  <Card key={error.id} className="cursor-pointer hover:shadow-md transition-shadow">
+                    <CardContent className="p-4" onClick={() => setSelectedError(error)}>
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1 space-y-2">
+                          <div className="flex items-center space-x-2">
+                            {getSeverityIcon(error.severity)}
+                            {getTypeIcon(error.type)}
+                            <Badge className={getSeverityColor(error.severity)}>
+                              {error.severity.toUpperCase()}
                             </Badge>
-                          )}
+                            <Badge variant="outline">
+                              {error.type.toUpperCase()}
+                            </Badge>
+                            {error.resolved && (
+                              <Badge className="bg-green-100 text-green-800">
+                                RESUELTO
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="font-medium text-sm">{error.errorId}</div>
+                          <div className="text-sm text-gray-600 line-clamp-2">{error.message}</div>
+                          <div className="text-xs text-gray-500">
+                            {formatDate(error.createdAt)}
+                            {error.context?.url && (
+                              <span className="ml-2">• {error.context.url}</span>
+                            )}
+                          </div>
                         </div>
-                        <div className="font-medium text-sm">{error.errorId}</div>
-                        <div className="text-sm text-gray-600 line-clamp-2">{error.message}</div>
-                        <div className="text-xs text-gray-500">
-                          {formatDate(error.createdAt)}
-                          {error.context?.url && (
-                            <span className="ml-2">• {error.context.url}</span>
-                          )}
-                        </div>
+                        {!error.resolved && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              resolveErrorMutation.mutate(error.errorId);
+                            }}
+                            disabled={resolveErrorMutation.isPending}
+                          >
+                            Resolver
+                          </Button>
+                        )}
                       </div>
-                      {!error.resolved && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            resolveErrorMutation.mutate(error.errorId);
-                          }}
-                          disabled={resolveErrorMutation.isPending}
-                        >
-                          Resolver
-                        </Button>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
             ) : (
               <Card>
                 <CardContent className="p-8 text-center">
@@ -359,101 +362,103 @@ const ErrorManagement = () => {
         </TabsContent>
       </Tabs>
 
-      {/* Error Detail Modal */}
-      {selectedError && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <Card className="max-w-4xl w-full max-h-[90vh] overflow-auto">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center space-x-2">
-                  {getSeverityIcon(selectedError.severity)}
-                  <span>Error {selectedError.errorId}</span>
-                </CardTitle>
-                <Button variant="ghost" onClick={() => setSelectedError(null)}>×</Button>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <div className="text-sm font-medium">Tipo</div>
-                  <Badge variant="outline">{selectedError.type.toUpperCase()}</Badge>
+        {/* Error Detail Modal */}
+        {selectedError && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <Card className="max-w-4xl w-full max-h-[90vh] overflow-auto">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center space-x-2">
+                    {getSeverityIcon(selectedError.severity)}
+                    <span>Error {selectedError.errorId}</span>
+                  </CardTitle>
+                  <Button variant="ghost" onClick={() => setSelectedError(null)}>×</Button>
                 </div>
-                <div>
-                  <div className="text-sm font-medium">Severidad</div>
-                  <Badge className={getSeverityColor(selectedError.severity)}>
-                    {selectedError.severity.toUpperCase()}
-                  </Badge>
-                </div>
-                <div>
-                  <div className="text-sm font-medium">Fecha</div>
-                  <div className="text-sm">{formatDate(selectedError.createdAt)}</div>
-                </div>
-                <div>
-                  <div className="text-sm font-medium">Estado</div>
-                  <Badge className={selectedError.resolved ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}>
-                    {selectedError.resolved ? "RESUELTO" : "PENDIENTE"}
-                  </Badge>
-                </div>
-              </div>
-
-              <div>
-                <div className="text-sm font-medium mb-2">Mensaje de Error</div>
-                <div className="bg-gray-100 p-3 rounded text-sm font-mono">
-                  {selectedError.message}
-                </div>
-              </div>
-
-              {selectedError.aiAnalysis && (
-                <div>
-                  <div className="text-sm font-medium mb-2">Análisis de IA</div>
-                  <div className="bg-blue-50 p-3 rounded text-sm whitespace-pre-wrap">
-                    {selectedError.aiAnalysis}
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <div className="text-sm font-medium">Tipo</div>
+                    <Badge variant="outline">{selectedError.type.toUpperCase()}</Badge>
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium">Severidad</div>
+                    <Badge className={getSeverityColor(selectedError.severity)}>
+                      {selectedError.severity.toUpperCase()}
+                    </Badge>
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium">Fecha</div>
+                    <div className="text-sm">{formatDate(selectedError.createdAt)}</div>
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium">Estado</div>
+                    <Badge className={selectedError.resolved ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}>
+                      {selectedError.resolved ? "RESUELTO" : "PENDIENTE"}
+                    </Badge>
                   </div>
                 </div>
-              )}
 
-              {selectedError.suggestedFix && (
                 <div>
-                  <div className="text-sm font-medium mb-2">Solución Sugerida</div>
-                  <div className="bg-green-50 p-3 rounded text-sm whitespace-pre-wrap">
-                    {selectedError.suggestedFix}
+                  <div className="text-sm font-medium mb-2">Mensaje de Error</div>
+                  <div className="bg-gray-100 p-3 rounded text-sm font-mono">
+                    {selectedError.message}
                   </div>
                 </div>
-              )}
 
-              <div>
-                <div className="text-sm font-medium mb-2">Stack Trace</div>
-                <div className="bg-gray-100 p-3 rounded text-xs font-mono max-h-40 overflow-auto">
-                  {selectedError.stack}
-                </div>
-              </div>
+                {selectedError.aiAnalysis && (
+                  <div>
+                    <div className="text-sm font-medium mb-2">Análisis de IA</div>
+                    <div className="bg-blue-50 p-3 rounded text-sm whitespace-pre-wrap">
+                      {selectedError.aiAnalysis}
+                    </div>
+                  </div>
+                )}
 
-              {selectedError.context && (
+                {selectedError.suggestedFix && (
+                  <div>
+                    <div className="text-sm font-medium mb-2">Solución Sugerida</div>
+                    <div className="bg-green-50 p-3 rounded text-sm whitespace-pre-wrap">
+                      {selectedError.suggestedFix}
+                    </div>
+                  </div>
+                )}
+
                 <div>
-                  <div className="text-sm font-medium mb-2">Contexto</div>
+                  <div className="text-sm font-medium mb-2">Stack Trace</div>
                   <div className="bg-gray-100 p-3 rounded text-xs font-mono max-h-40 overflow-auto">
-                    {JSON.stringify(selectedError.context, null, 2)}
+                    {selectedError.stack}
                   </div>
                 </div>
-              )}
 
-              {!selectedError.resolved && (
-                <div className="flex justify-end space-x-2">
-                  <Button variant="outline" onClick={() => setSelectedError(null)}>
-                    Cerrar
-                  </Button>
-                  <Button
-                    onClick={() => resolveErrorMutation.mutate(selectedError.errorId)}
-                    disabled={resolveErrorMutation.isPending}
-                  >
-                    Marcar como Resuelto
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      )}
+                {selectedError.context && (
+                  <div>
+                    <div className="text-sm font-medium mb-2">Contexto</div>
+                    <div className="bg-gray-100 p-3 rounded text-xs font-mono max-h-40 overflow-auto">
+                      {JSON.stringify(selectedError.context, null, 2)}
+                    </div>
+                  </div>
+                )}
+
+                {!selectedError.resolved && (
+                  <div className="flex justify-end space-x-2">
+                    <Button variant="outline" onClick={() => setSelectedError(null)}>
+                      Cerrar
+                    </Button>
+                    <Button
+                      onClick={() => resolveErrorMutation.mutate(selectedError.errorId)}
+                      disabled={resolveErrorMutation.isPending}
+                    >
+                      Marcar como Resuelto
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        )}
+      </Tabs>
+      </div>
     </div>
   );
 };
