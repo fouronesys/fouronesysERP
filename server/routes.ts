@@ -18,6 +18,7 @@ import {
 import { LogoProcessor } from "./logo-processor";
 import { ThermalLogoProcessor } from "./thermal-logo";
 import { ThermalQRProcessor } from "./thermal-qr";
+import { ErrorManager } from "./error-management";
 import { InvoiceHTMLService } from "./invoice-html-service";
 import { InvoicePOS80mmService } from "./invoice-pos-80mm-service";
 import QRCode from "qrcode";
@@ -4894,6 +4895,97 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error searching customer by RNC:", error);
       res.status(500).json({ message: "Failed to search customer" });
+    }
+  });
+
+  // Error Management Routes
+  app.get("/api/errors", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      const { severity, type, resolved, page = "1", limit = "50" } = req.query;
+      const errorManager = ErrorManager.getInstance();
+      
+      const errors = await errorManager.getErrorLogs({
+        companyId: company.id,
+        severity,
+        type,
+        resolved: resolved !== undefined ? resolved === "true" : undefined,
+        limit: parseInt(limit),
+        offset: (parseInt(page) - 1) * parseInt(limit)
+      });
+
+      res.json(errors);
+    } catch (error) {
+      console.error("Error fetching error logs:", error);
+      res.status(500).json({ message: "Failed to fetch error logs" });
+    }
+  });
+
+  app.get("/api/errors/stats", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      const errorManager = ErrorManager.getInstance();
+      const stats = await errorManager.getErrorStats(company.id);
+
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching error stats:", error);
+      res.status(500).json({ message: "Failed to fetch error stats" });
+    }
+  });
+
+  app.patch("/api/errors/:errorId/resolve", isAuthenticated, async (req: any, res) => {
+    try {
+      const { errorId } = req.params;
+      const userId = req.user.id;
+
+      const errorManager = ErrorManager.getInstance();
+      const success = await errorManager.resolveError(errorId, userId);
+
+      if (success) {
+        res.json({ message: "Error marked as resolved" });
+      } else {
+        res.status(404).json({ message: "Error not found" });
+      }
+    } catch (error) {
+      console.error("Error resolving error:", error);
+      res.status(500).json({ message: "Failed to resolve error" });
+    }
+  });
+
+  app.post("/api/errors/frontend", async (req: any, res) => {
+    try {
+      const { message, stack, url, userAgent, userId, companyId } = req.body;
+      
+      const error = new Error(message);
+      error.stack = stack;
+
+      const context = {
+        url,
+        userAgent,
+        userId,
+        companyId,
+        method: 'FRONTEND',
+        timestamp: new Date()
+      };
+
+      const errorManager = ErrorManager.getInstance();
+      const errorId = await errorManager.logError(error, context);
+
+      res.json({ errorId, message: "Error logged successfully" });
+    } catch (error) {
+      console.error("Error logging frontend error:", error);
+      res.status(500).json({ message: "Failed to log error" });
     }
   });
 
