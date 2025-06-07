@@ -198,7 +198,19 @@ function Router() {
           <Route path="/fiscal-reports" component={FiscalReports} />
           <Route path="/accounting" component={Accounting} />
           <Route path="/error-management" component={ErrorManagement} />
-          <Route path="/asset-manager" component={AssetManager} />
+          <Route path="/asset-manager" component={() => (
+            <div style={{
+              border: '3px solid red',
+              backgroundColor: '#ffebee',
+              padding: '20px',
+              margin: '10px',
+              textAlign: 'center'
+            }}>
+              <h1>Asset Manager - Routing Test</h1>
+              <p>If you can see this red box, the routing is working correctly.</p>
+              <p>Navigate to /asset-manager to verify this appears.</p>
+            </div>
+          )} />
           <Route path="/employees" component={Employees} />
           <Route path="/payroll" component={Payroll} />
           <Route path="/fiscal-documents" component={FiscalDocuments} />

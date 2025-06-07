@@ -814,3 +814,19 @@ export default function AssetManager() {
     </div>
   );
 }
+
+// Add a simple test component to verify routing
+export function AssetManagerTest() {
+  return (
+    <div style={{
+      border: '3px solid red',
+      backgroundColor: '#ffebee',
+      padding: '20px',
+      margin: '10px',
+      textAlign: 'center'
+    }}>
+      <h1>Asset Manager Test - Component is Working!</h1>
+      <p>If you can see this, the routing is working correctly.</p>
+    </div>
+  );
+}
