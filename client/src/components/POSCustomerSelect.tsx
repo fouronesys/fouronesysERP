@@ -177,7 +177,7 @@ export default function POSCustomerSelect({ selectedCustomer, onCustomerSelect, 
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2">
-        <Select onValueChange={handleCustomerSelect} value={selectedCustomer?.id?.toString() || ""}>
+        <Select onValueChange={handleCustomerSelect} value={selectedCustomer?.id?.toString() || undefined}>
           <SelectTrigger className="flex-1">
             <SelectValue placeholder={requireFiscalCustomer ? "Seleccione cliente con RNC" : "Seleccione cliente"} />
           </SelectTrigger>
