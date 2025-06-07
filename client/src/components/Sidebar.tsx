@@ -26,7 +26,8 @@ import {
   ChevronRight,
   MessageCircle,
   UserCog,
-  Bug
+  Bug,
+  Image
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -115,6 +116,7 @@ const navigation = [
     items: [
       { name: "Empresa", href: "/company-settings", icon: Settings },
       { name: "Gestión de Errores", href: "/error-management", icon: Bug },
+      { name: "Gestor de Assets", href: "/asset-manager", icon: Image },
     ],
   },
 

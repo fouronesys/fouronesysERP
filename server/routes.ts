@@ -4899,6 +4899,228 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Configure multer for asset uploads
+  const assetUploadDir = path.join(process.cwd(), "uploads");
+  if (!fs.existsSync(assetUploadDir)) {
+    fs.mkdirSync(assetUploadDir, { recursive: true });
+  }
+
+  const assetStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+      cb(null, assetUploadDir);
+    },
+    filename: (req, file, cb) => {
+      const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+      const ext = path.extname(file.originalname);
+      cb(null, `asset-${uniqueSuffix}${ext}`);
+    },
+  });
+
+  const upload = multer({
+    storage: assetStorage,
+    limits: {
+      fileSize: 10 * 1024 * 1024, // 10MB limit for assets
+    },
+    fileFilter: (req, file, cb) => {
+      if (file.mimetype.startsWith("image/")) {
+        cb(null, true);
+      } else {
+        cb(new Error("Only image files are allowed"));
+      }
+    },
+  });
+
+  // ==================== ASSET MANAGEMENT ROUTES ====================
+  
+  // Generate icon set from uploaded image
+  app.post("/api/assets/generate-icons", isAuthenticated, upload.single('image'), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "No image file provided" });
+      }
+
+      const iconConfig: IconSet = {
+        name: req.body.name || 'icon',
+        sizes: req.body.sizes ? JSON.parse(req.body.sizes) : [16, 32, 48, 64, 96, 128, 192, 256, 512],
+        formats: req.body.formats ? JSON.parse(req.body.formats) : ['png', 'webp'],
+        baseColor: req.body.baseColor || '#0072FF',
+        variants: req.body.variants ? JSON.parse(req.body.variants) : undefined
+      };
+
+      const generatedFiles = await assetManager.generateIconSet(req.file.filename, iconConfig);
+      
+      res.json({
+        message: "Icon set generated successfully",
+        files: generatedFiles.map(file => file.replace(process.cwd(), '')),
+        count: generatedFiles.length
+      });
+    } catch (error) {
+      console.error("Error generating icon set:", error);
+      res.status(500).json({ message: "Failed to generate icon set" });
+    }
+  });
+
+  // Generate responsive image variants
+  app.post("/api/assets/generate-responsive", isAuthenticated, upload.single('image'), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "No image file provided" });
+      }
+
+      const breakpoints = req.body.breakpoints ? 
+        JSON.parse(req.body.breakpoints) : 
+        [320, 480, 768, 1024, 1200, 1920];
+
+      const config: AssetOptimizationConfig = {
+        quality: parseInt(req.body.quality) || 80,
+        progressive: req.body.progressive === 'true',
+        stripMetadata: req.body.stripMetadata !== 'false',
+        formats: req.body.formats ? JSON.parse(req.body.formats) : ['webp', 'png']
+      };
+
+      const responsiveImages = await assetManager.generateResponsiveImages(
+        req.file.filename, 
+        breakpoints, 
+        config
+      );
+
+      const srcSets = Object.keys(responsiveImages).reduce((acc, size) => {
+        const baseFilename = path.parse(req.file!.filename).name;
+        acc[size] = Object.keys(responsiveImages[parseInt(size)]).reduce((formatAcc, format) => {
+          formatAcc[format] = assetManager.generateSrcSet(baseFilename, [parseInt(size)], format);
+          return formatAcc;
+        }, {} as { [format: string]: string });
+        return acc;
+      }, {} as { [size: string]: { [format: string]: string } });
+
+      res.json({
+        message: "Responsive images generated successfully",
+        images: responsiveImages,
+        srcSets,
+        breakpoints
+      });
+    } catch (error) {
+      console.error("Error generating responsive images:", error);
+      res.status(500).json({ message: "Failed to generate responsive images" });
+    }
+  });
+
+  // Generate favicons and PWA icons
+  app.post("/api/assets/generate-favicons", isAuthenticated, upload.single('image'), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "No image file provided" });
+      }
+
+      const generatedFiles = await assetManager.generateFavicons(req.file.filename);
+      
+      res.json({
+        message: "Favicons generated successfully",
+        files: generatedFiles.map(file => file.replace(process.cwd(), '')),
+        count: generatedFiles.length
+      });
+    } catch (error) {
+      console.error("Error generating favicons:", error);
+      res.status(500).json({ message: "Failed to generate favicons" });
+    }
+  });
+
+  // Optimize single image
+  app.post("/api/assets/optimize", isAuthenticated, upload.single('image'), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "No image file provided" });
+      }
+
+      const config: AssetOptimizationConfig = {
+        quality: parseInt(req.body.quality) || 80,
+        progressive: req.body.progressive !== 'false',
+        stripMetadata: req.body.stripMetadata !== 'false',
+        formats: req.body.formats ? JSON.parse(req.body.formats) : ['webp']
+      };
+
+      const optimizedFiles = await assetManager.optimizeImage(req.file.filename, undefined, config);
+      
+      res.json({
+        message: "Image optimized successfully",
+        original: req.file.filename,
+        optimized: optimizedFiles.map(file => file.replace(process.cwd(), '')),
+        formats: config.formats
+      });
+    } catch (error) {
+      console.error("Error optimizing image:", error);
+      res.status(500).json({ message: "Failed to optimize image" });
+    }
+  });
+
+  // Get asset manifest
+  app.get("/api/assets/manifest", async (req, res) => {
+    try {
+      await assetManager.generateAssetManifest();
+      const manifestPath = path.join(process.cwd(), 'client/public/assets/asset-manifest.json');
+      
+      if (fs.existsSync(manifestPath)) {
+        const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+        res.json(manifest);
+      } else {
+        res.json({ generated: new Date().toISOString(), assets: {} });
+      }
+    } catch (error) {
+      console.error("Error getting asset manifest:", error);
+      res.status(500).json({ message: "Failed to get asset manifest" });
+    }
+  });
+
+  // Clean up old assets
+  app.delete("/api/assets/cleanup", isAuthenticated, async (req, res) => {
+    try {
+      const maxAge = parseInt(req.query.maxAge as string) || (7 * 24 * 60 * 60 * 1000); // 7 days default
+      const deletedFiles = await assetManager.cleanupAssets(maxAge);
+      
+      res.json({
+        message: "Asset cleanup completed",
+        deletedFiles,
+        count: deletedFiles.length
+      });
+    } catch (error) {
+      console.error("Error cleaning up assets:", error);
+      res.status(500).json({ message: "Failed to cleanup assets" });
+    }
+  });
+
+  // Get available assets
+  app.get("/api/assets/list", async (req, res) => {
+    try {
+      const assetsDir = path.join(process.cwd(), 'client/public/assets');
+      
+      if (!fs.existsSync(assetsDir)) {
+        return res.json({ assets: [] });
+      }
+
+      const files = fs.readdirSync(assetsDir, { recursive: true });
+      const assets = files
+        .filter(file => typeof file === 'string' && !file.endsWith('.json'))
+        .map(file => {
+          const filePath = path.join(assetsDir, file as string);
+          const stats = fs.statSync(filePath);
+          return {
+            name: file,
+            path: `/assets/${file}`,
+            size: stats.size,
+            modified: stats.mtime.toISOString(),
+            type: path.extname(file as string).slice(1).toLowerCase()
+          };
+        });
+
+      res.json({ assets });
+    } catch (error) {
+      console.error("Error listing assets:", error);
+      res.status(500).json({ message: "Failed to list assets" });
+    }
+  });
+
+  // ==================== ERROR MANAGEMENT ROUTES ====================
+
   // Error Management Routes
   app.get("/api/errors", isAuthenticated, async (req: any, res) => {
     try {
