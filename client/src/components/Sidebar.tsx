@@ -25,7 +25,8 @@ import {
   ChevronLeft,
   ChevronRight,
   MessageCircle,
-  UserCog
+  UserCog,
+  Bug
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -113,6 +114,7 @@ const navigation = [
     category: "Configuración",
     items: [
       { name: "Empresa", href: "/company-settings", icon: Settings },
+      { name: "Gestión de Errores", href: "/error-management", icon: Bug },
     ],
   },
 

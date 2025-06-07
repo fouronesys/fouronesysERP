@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import { registerSW } from "@/lib/serviceWorkerRegistration";
 import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
+import { errorLogger } from "@/lib/errorLogger";
 
 // Pages
 import Landing from "@/pages/Landing";
@@ -132,6 +133,15 @@ function Router() {
     enabled: isAuthenticated,
     retry: false,
   });
+
+  // Initialize error logger and set user context
+  useEffect(() => {
+    errorLogger.initializeGlobalHandlers();
+    
+    if (user && company && typeof user === 'object' && typeof company === 'object') {
+      errorLogger.setUserContext((user as any).id, (company as any).id);
+    }
+  }, [user, company]);
 
   // Show loading during authentication check
   if (isLoading) {
