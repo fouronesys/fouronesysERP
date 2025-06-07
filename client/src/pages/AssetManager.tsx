@@ -48,6 +48,15 @@ interface AssetManifest {
 }
 
 export default function AssetManager() {
+  console.log("AssetManager component rendered");
+  
+  // Add visual debugging to ensure component is rendering
+  const debugStyle = {
+    border: '3px solid red',
+    backgroundColor: '#ffebee',
+    padding: '20px',
+    margin: '10px'
+  };
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
