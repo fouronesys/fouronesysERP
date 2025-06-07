@@ -210,7 +210,7 @@ export default function BOM() {
               </CardHeader>
               <CardContent>
                 <Select 
-                  value={selectedProductId?.toString() || ""} 
+                  value={selectedProductId?.toString() || undefined} 
                   onValueChange={(value) => setSelectedProductId(parseInt(value))}
                 >
                   <SelectTrigger className="w-full">

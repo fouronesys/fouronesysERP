@@ -708,7 +708,7 @@ export default function Accounting() {
               <div className="grid grid-cols-3 gap-4">
                 <div className="grid w-full items-center gap-1.5">
                   <Label htmlFor="account-select">Cuenta</Label>
-                  <Select value={selectedAccountId?.toString() || ""} onValueChange={(value) => setSelectedAccountId(parseInt(value))}>
+                  <Select value={selectedAccountId?.toString() || undefined} onValueChange={(value) => setSelectedAccountId(parseInt(value))}>
                     <SelectTrigger>
                       <SelectValue placeholder="Selecciona una cuenta" />
                     </SelectTrigger>

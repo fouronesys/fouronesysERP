@@ -469,7 +469,7 @@ export default function CompanySettings() {
                 <div className="space-y-2">
                   <Label htmlFor="businessType">Tipo de Negocio</Label>
                   <Select
-                    value={form.watch("businessType") ?? ""}
+                    value={form.watch("businessType") ?? undefined}
                     onValueChange={(value) => form.setValue("businessType", value)}
                   >
                     <SelectTrigger>
