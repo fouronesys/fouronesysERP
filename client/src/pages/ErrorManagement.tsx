@@ -1,14 +1,12 @@
-import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { AlertTriangle, CheckCircle, Clock, Bug, Database, Server, Smartphone, AlertCircle } from "lucide-react";
-import { apiRequest } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { apiRequest } from '@/lib/queryClient';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { AlertTriangle, Bug, Database, Globe, Shield, CheckCircle, Clock, X } from 'lucide-react';
 
 interface ErrorLog {
   id: number;
@@ -40,91 +38,67 @@ interface ErrorStats {
 }
 
 const ErrorManagement = () => {
-  const [filters, setFilters] = useState({
-    severity: "",
-    type: "",
-    resolved: "",
-    page: 1
-  });
   const [selectedError, setSelectedError] = useState<ErrorLog | null>(null);
-  
-  const { toast } = useToast();
+  const [typeFilter, setTypeFilter] = useState('all');
+  const [severityFilter, setSeverityFilter] = useState('all');
   const queryClient = useQueryClient();
 
-  // Fetch error statistics
+  const { data: errors, isLoading } = useQuery({
+    queryKey: ['/api/errors'],
+    select: (data: ErrorLog[]) => {
+      let filtered = data;
+      if (typeFilter !== 'all') {
+        filtered = filtered.filter(error => error.type === typeFilter);
+      }
+      if (severityFilter !== 'all') {
+        filtered = filtered.filter(error => error.severity === severityFilter);
+      }
+      return filtered;
+    }
+  });
+
   const { data: stats } = useQuery<ErrorStats>({
-    queryKey: ['/api/errors/stats'],
+    queryKey: ['/api/errors/stats']
   });
 
-  // Fetch error logs
-  const { data: errors, isLoading } = useQuery<ErrorLog[]>({
-    queryKey: ['/api/errors', filters],
-    queryFn: async () => {
-      const params = new URLSearchParams();
-      if (filters.severity && filters.severity !== 'all') params.append('severity', filters.severity);
-      if (filters.type && filters.type !== 'all') params.append('type', filters.type);
-      if (filters.resolved && filters.resolved !== 'all') params.append('resolved', filters.resolved);
-      params.append('page', filters.page.toString());
-      
-      const response = await fetch(`/api/errors?${params}`);
-      if (!response.ok) throw new Error('Failed to fetch errors');
-      return response.json();
-    },
-  });
-
-  // Resolve error mutation
   const resolveErrorMutation = useMutation({
-    mutationFn: async (errorId: string) => {
-      return apiRequest(`/api/errors/${errorId}/resolve`, {
-        method: 'PATCH',
-      });
-    },
+    mutationFn: (errorId: string) => 
+      apiRequest(`/api/errors/${errorId}/resolve`, { method: 'PATCH' }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/errors'] });
       queryClient.invalidateQueries({ queryKey: ['/api/errors/stats'] });
-      toast({
-        title: "Error Resuelto",
-        description: "El error ha sido marcado como resuelto exitosamente.",
-      });
       setSelectedError(null);
-    },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "No se pudo resolver el error. Intenta nuevamente.",
-        variant: "destructive",
-      });
-    },
+    }
   });
 
   const getSeverityIcon = (severity: string) => {
     switch (severity) {
-      case 'critical': return <AlertTriangle className="h-4 w-4 text-red-500" />;
-      case 'high': return <AlertCircle className="h-4 w-4 text-orange-500" />;
-      case 'medium': return <Clock className="h-4 w-4 text-yellow-500" />;
-      case 'low': return <CheckCircle className="h-4 w-4 text-green-500" />;
-      default: return <Bug className="h-4 w-4 text-gray-500" />;
+      case 'critical': return <AlertTriangle className="h-4 w-4 text-red-600" />;
+      case 'high': return <AlertTriangle className="h-4 w-4 text-orange-600" />;
+      case 'medium': return <AlertTriangle className="h-4 w-4 text-yellow-600" />;
+      case 'low': return <AlertTriangle className="h-4 w-4 text-green-600" />;
+      default: return <AlertTriangle className="h-4 w-4 text-gray-600" />;
     }
   };
 
   const getTypeIcon = (type: string) => {
     switch (type) {
-      case 'frontend': return <Smartphone className="h-4 w-4" />;
-      case 'backend': return <Server className="h-4 w-4" />;
+      case 'frontend': return <Globe className="h-4 w-4" />;
+      case 'backend': return <Database className="h-4 w-4" />;
       case 'database': return <Database className="h-4 w-4" />;
-      case 'api': return <Server className="h-4 w-4" />;
-      case 'validation': return <AlertCircle className="h-4 w-4" />;
+      case 'api': return <Shield className="h-4 w-4" />;
+      case 'validation': return <Bug className="h-4 w-4" />;
       default: return <Bug className="h-4 w-4" />;
     }
   };
 
   const getSeverityColor = (severity: string) => {
     switch (severity) {
-      case 'critical': return 'bg-red-100 text-red-800 border-red-200';
-      case 'high': return 'bg-orange-100 text-orange-800 border-orange-200';
-      case 'medium': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'low': return 'bg-green-100 text-green-800 border-green-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 'critical': return 'bg-red-100 text-red-800';
+      case 'high': return 'bg-orange-100 text-orange-800';
+      case 'medium': return 'bg-yellow-100 text-yellow-800';
+      case 'low': return 'bg-green-100 text-green-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
   };
 
@@ -144,9 +118,7 @@ const ErrorManagement = () => {
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold">Gestión de Errores</h1>
           <div className="flex items-center space-x-2">
-            <Badge variant="outline" className="text-sm">
-              AI Powered
-            </Badge>
+            <Badge variant="outline" className="text-sm">AI Powered</Badge>
           </div>
         </div>
 
@@ -205,162 +177,145 @@ const ErrorManagement = () => {
         )}
 
         <Tabs defaultValue="all" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="all">Todos los Errores</TabsTrigger>
-          <TabsTrigger value="unresolved">No Resueltos</TabsTrigger>
-          <TabsTrigger value="critical">Críticos</TabsTrigger>
-          <TabsTrigger value="analytics">Análisis AI</TabsTrigger>
-        </TabsList>
+          <TabsList>
+            <TabsTrigger value="all">Todos los Errores</TabsTrigger>
+            <TabsTrigger value="unresolved">No Resueltos</TabsTrigger>
+            <TabsTrigger value="critical">Críticos</TabsTrigger>
+            <TabsTrigger value="analytics">Análisis AI</TabsTrigger>
+          </TabsList>
 
-        <TabsContent value="all" className="space-y-4">
-          {/* Filters */}
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex flex-wrap gap-4">
-                <Select 
-                  value={filters.severity} 
-                  onValueChange={(value) => setFilters(prev => ({ ...prev, severity: value }))}
-                >
-                  <SelectTrigger className="w-[200px]">
-                    <SelectValue placeholder="Filtrar por severidad" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todas las severidades</SelectItem>
-                    <SelectItem value="critical">Crítico</SelectItem>
-                    <SelectItem value="high">Alto</SelectItem>
-                    <SelectItem value="medium">Medio</SelectItem>
-                    <SelectItem value="low">Bajo</SelectItem>
-                  </SelectContent>
-                </Select>
+          <TabsContent value="all" className="space-y-4">
+            {/* Filters */}
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex flex-wrap gap-4">
+                  <Select value={typeFilter} onValueChange={setTypeFilter}>
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="Filtrar por tipo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos los tipos</SelectItem>
+                      <SelectItem value="frontend">Frontend</SelectItem>
+                      <SelectItem value="backend">Backend</SelectItem>
+                      <SelectItem value="database">Base de datos</SelectItem>
+                      <SelectItem value="api">API</SelectItem>
+                      <SelectItem value="validation">Validación</SelectItem>
+                    </SelectContent>
+                  </Select>
 
-                <Select 
-                  value={filters.type} 
-                  onValueChange={(value) => setFilters(prev => ({ ...prev, type: value }))}
-                >
-                  <SelectTrigger className="w-[200px]">
-                    <SelectValue placeholder="Filtrar por tipo" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos los tipos</SelectItem>
-                    <SelectItem value="frontend">Frontend</SelectItem>
-                    <SelectItem value="backend">Backend</SelectItem>
-                    <SelectItem value="database">Base de Datos</SelectItem>
-                    <SelectItem value="api">API</SelectItem>
-                    <SelectItem value="validation">Validación</SelectItem>
-                  </SelectContent>
-                </Select>
+                  <Select value={severityFilter} onValueChange={setSeverityFilter}>
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="Filtrar por severidad" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todas las severidades</SelectItem>
+                      <SelectItem value="critical">Críticos</SelectItem>
+                      <SelectItem value="high">Altos</SelectItem>
+                      <SelectItem value="medium">Medios</SelectItem>
+                      <SelectItem value="low">Bajos</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </CardContent>
+            </Card>
 
-                <Select 
-                  value={filters.resolved} 
-                  onValueChange={(value) => setFilters(prev => ({ ...prev, resolved: value }))}
-                >
-                  <SelectTrigger className="w-[200px]">
-                    <SelectValue placeholder="Estado" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos</SelectItem>
-                    <SelectItem value="true">Resueltos</SelectItem>
-                    <SelectItem value="false">Pendientes</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Error List */}
-          <div className="space-y-4 max-h-[600px] overflow-y-auto">
-            {isLoading ? (
-              <div className="text-center py-8">Cargando errores...</div>
-            ) : errors && errors.length > 0 ? (
-              <div className="grid gap-4">
-                {errors.map((error) => (
-                  <Card key={error.id} className="cursor-pointer hover:shadow-md transition-shadow">
-                    <CardContent className="p-4" onClick={() => setSelectedError(error)}>
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1 space-y-2">
-                          <div className="flex items-center space-x-2">
-                            {getSeverityIcon(error.severity)}
-                            {getTypeIcon(error.type)}
-                            <Badge className={getSeverityColor(error.severity)}>
-                              {error.severity.toUpperCase()}
-                            </Badge>
-                            <Badge variant="outline">
-                              {error.type.toUpperCase()}
-                            </Badge>
-                            {error.resolved && (
-                              <Badge className="bg-green-100 text-green-800">
-                                RESUELTO
+            {/* Error List */}
+            <div className="space-y-4 max-h-[600px] overflow-y-auto">
+              {isLoading ? (
+                <div className="text-center py-8">Cargando errores...</div>
+              ) : errors && errors.length > 0 ? (
+                <div className="grid gap-4">
+                  {errors.map((error) => (
+                    <Card key={error.id} className="cursor-pointer hover:shadow-md transition-shadow">
+                      <CardContent className="p-4" onClick={() => setSelectedError(error)}>
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1 space-y-2">
+                            <div className="flex items-center space-x-2">
+                              {getSeverityIcon(error.severity)}
+                              {getTypeIcon(error.type)}
+                              <Badge className={getSeverityColor(error.severity)}>
+                                {error.severity.toUpperCase()}
                               </Badge>
-                            )}
+                              <Badge variant="outline">
+                                {error.type.toUpperCase()}
+                              </Badge>
+                              {error.resolved && (
+                                <Badge className="bg-green-100 text-green-800">
+                                  RESUELTO
+                                </Badge>
+                              )}
+                            </div>
+                            <div className="font-medium text-sm">{error.errorId}</div>
+                            <div className="text-sm text-gray-600 line-clamp-2">{error.message}</div>
+                            <div className="text-xs text-gray-500">
+                              {formatDate(error.createdAt)}
+                              {error.context?.url && (
+                                <span className="ml-2">• {error.context.url}</span>
+                              )}
+                            </div>
                           </div>
-                          <div className="font-medium text-sm">{error.errorId}</div>
-                          <div className="text-sm text-gray-600 line-clamp-2">{error.message}</div>
-                          <div className="text-xs text-gray-500">
-                            {formatDate(error.createdAt)}
-                            {error.context?.url && (
-                              <span className="ml-2">• {error.context.url}</span>
-                            )}
-                          </div>
+                          {!error.resolved && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                resolveErrorMutation.mutate(error.errorId);
+                              }}
+                              disabled={resolveErrorMutation.isPending}
+                            >
+                              Resolver
+                            </Button>
+                          )}
                         </div>
-                        {!error.resolved && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              resolveErrorMutation.mutate(error.errorId);
-                            }}
-                            disabled={resolveErrorMutation.isPending}
-                          >
-                            Resolver
-                          </Button>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            ) : (
-              <Card>
-                <CardContent className="p-8 text-center">
-                  <div className="text-gray-500">No se encontraron errores</div>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-        </TabsContent>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <Card>
+                  <CardContent className="p-8 text-center">
+                    <div className="text-gray-500">No se encontraron errores</div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          </TabsContent>
 
-        <TabsContent value="unresolved">
-          <div className="text-center py-8 text-gray-500">
-            Filtros para errores no resueltos se aplicarán automáticamente
-          </div>
-        </TabsContent>
+          <TabsContent value="unresolved">
+            <div className="text-center py-8 text-gray-500">
+              Filtros para errores no resueltos se aplicarán automáticamente
+            </div>
+          </TabsContent>
 
-        <TabsContent value="critical">
-          <div className="text-center py-8 text-gray-500">
-            Filtros para errores críticos se aplicarán automáticamente
-          </div>
-        </TabsContent>
+          <TabsContent value="critical">
+            <div className="text-center py-8 text-gray-500">
+              Filtros para errores críticos se aplicarán automáticamente
+            </div>
+          </TabsContent>
 
-        <TabsContent value="analytics">
-          <Card>
-            <CardHeader>
-              <CardTitle>Análisis Inteligente con IA</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-gray-600">
-                Los errores de alta y crítica severidad son analizados automáticamente por IA para proporcionar:
-                <ul className="list-disc list-inside mt-2 space-y-1">
-                  <li>Análisis detallado del problema</li>
-                  <li>Soluciones sugeridas paso a paso</li>
-                  <li>Medidas preventivas</li>
-                  <li>Categorización automática</li>
-                </ul>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+          <TabsContent value="analytics">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <CheckCircle className="h-5 w-5 text-blue-600" />
+                  <span>Análisis Inteligente con IA</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-gray-600">
+                  Los errores de alta y crítica severidad son analizados automáticamente por IA para proporcionar:
+                  <ul className="list-disc list-inside mt-2 space-y-1">
+                    <li>Análisis detallado del problema</li>
+                    <li>Soluciones sugeridas paso a paso</li>
+                    <li>Medidas preventivas</li>
+                    <li>Categorización automática</li>
+                  </ul>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
 
         {/* Error Detail Modal */}
         {selectedError && (
@@ -372,7 +327,9 @@ const ErrorManagement = () => {
                     {getSeverityIcon(selectedError.severity)}
                     <span>Error {selectedError.errorId}</span>
                   </CardTitle>
-                  <Button variant="ghost" onClick={() => setSelectedError(null)}>×</Button>
+                  <Button variant="ghost" onClick={() => setSelectedError(null)}>
+                    <X className="h-4 w-4" />
+                  </Button>
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -457,7 +414,6 @@ const ErrorManagement = () => {
             </Card>
           </div>
         )}
-      </Tabs>
       </div>
     </div>
   );
