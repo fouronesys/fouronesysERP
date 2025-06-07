@@ -5,6 +5,7 @@ import { ThemeProvider } from "next-themes";
 import { Toaster } from "@/components/ui/toaster";
 import App from "./App";
 import "./index.css";
+import "./lib/globalErrorHandler";
 
 const queryClient = new QueryClient({
   defaultOptions: {

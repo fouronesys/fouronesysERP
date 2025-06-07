@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import SelectErrorBoundary from '@/components/SelectErrorBoundary';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertTriangle, Bug, Database, Globe, Shield, CheckCircle, Clock, X } from 'lucide-react';
 
@@ -189,32 +190,36 @@ const ErrorManagement = () => {
             <Card>
               <CardContent className="p-4">
                 <div className="flex flex-wrap gap-4">
-                  <Select value={typeFilter} onValueChange={setTypeFilter}>
-                    <SelectTrigger className="w-[180px]">
-                      <SelectValue placeholder="Filtrar por tipo" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Todos los tipos</SelectItem>
-                      <SelectItem value="frontend">Frontend</SelectItem>
-                      <SelectItem value="backend">Backend</SelectItem>
-                      <SelectItem value="database">Base de datos</SelectItem>
-                      <SelectItem value="api">API</SelectItem>
-                      <SelectItem value="validation">Validación</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <SelectErrorBoundary>
+                    <Select value={typeFilter} onValueChange={setTypeFilter}>
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="Filtrar por tipo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todos los tipos</SelectItem>
+                        <SelectItem value="frontend">Frontend</SelectItem>
+                        <SelectItem value="backend">Backend</SelectItem>
+                        <SelectItem value="database">Base de datos</SelectItem>
+                        <SelectItem value="api">API</SelectItem>
+                        <SelectItem value="validation">Validación</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </SelectErrorBoundary>
 
-                  <Select value={severityFilter} onValueChange={setSeverityFilter}>
-                    <SelectTrigger className="w-[180px]">
-                      <SelectValue placeholder="Filtrar por severidad" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Todas las severidades</SelectItem>
-                      <SelectItem value="critical">Críticos</SelectItem>
-                      <SelectItem value="high">Altos</SelectItem>
-                      <SelectItem value="medium">Medios</SelectItem>
-                      <SelectItem value="low">Bajos</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <SelectErrorBoundary>
+                    <Select value={severityFilter} onValueChange={setSeverityFilter}>
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="Filtrar por severidad" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todas las severidades</SelectItem>
+                        <SelectItem value="critical">Críticos</SelectItem>
+                        <SelectItem value="high">Altos</SelectItem>
+                        <SelectItem value="medium">Medios</SelectItem>
+                        <SelectItem value="low">Bajos</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </SelectErrorBoundary>
                 </div>
               </CardContent>
             </Card>
