@@ -112,27 +112,17 @@ export async function sendCompanyInvitationEmail(params: CompanyInvitationEmailP
 
 export async function sendPasswordResetEmail(email: string, resetToken: string): Promise<boolean> {
   try {
-    // Construct proper reset URL - use production domain for emails
-    let baseUrl = 'https://fourone.com.do';
-    
-    // In development, check for available domains
-    if (process.env.NODE_ENV === 'development') {
-      if (process.env.REPLIT_DEV_DOMAIN) {
-        baseUrl = `https://${process.env.REPLIT_DEV_DOMAIN}`;
-      } else if (process.env.FRONTEND_URL) {
-        baseUrl = process.env.FRONTEND_URL;
-      }
-    }
+    // Always use production domain for emails to ensure proper functionality
+    const baseUrl = 'https://fourone.com.do';
     
     const resetUrl = `${baseUrl}/reset-password?token=${resetToken}`;
     
     const emailContent = {
       to: email,
       from: {
-        email: 'noreply@fourone.solutions',
+        email: 'admin@fourone.com.do',
         name: 'Four One Solutions'
       },
-      reply_to: 'admin@fourone.com.do',
       subject: 'Restablecer contraseña - Four One Solutions',
       tracking_settings: {
         click_tracking: {

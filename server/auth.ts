@@ -313,16 +313,15 @@ export function setupAuth(app: Express) {
         console.error('Failed to send password reset email to:', email);
         // Always provide the reset token in development for testing
         if (process.env.NODE_ENV === 'development') {
-          const baseUrl = `${req.protocol}://${req.get('host')}`;
-          const resetUrl = `${baseUrl}/reset-password?token=${resetToken}`;
+          const productionUrl = `https://fourone.com.do/reset-password?token=${resetToken}`;
           console.log('\n=== DESARROLLO: Enlace de Recuperación ===');
           console.log(`Email: ${email}`);
-          console.log(`URL: ${resetUrl}`);
+          console.log(`URL de Producción: ${productionUrl}`);
           console.log(`Token: ${resetToken}`);
           console.log('==========================================\n');
           return res.json({ 
-            message: "Token generado exitosamente. Revisar consola para el enlace de recuperación.",
-            resetUrl,
+            message: "Token generado exitosamente. Usar URL de producción desde la consola.",
+            resetUrl: productionUrl,
             token: resetToken
           });
         }
