@@ -305,6 +305,7 @@ export function setupAuth(app: Express) {
       }
       
       // Force development mode for testing when SendGrid is not configured
+      // Comment out the line below when SendGrid is properly configured
       if (process.env.NODE_ENV === 'development') {
         emailSent = false;
       }
