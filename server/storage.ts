@@ -3109,8 +3109,8 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Bill of Materials (BOM)
-  async getBOMByProduct(productId: number, companyId: number) {
-    return await db.select({
+  async getBOMByProduct(productId: number, companyId: number): Promise<BOM[]> {
+    const result = await db.select({
       id: bom.id,
       productId: bom.productId,
       materialId: bom.materialId,
@@ -3121,14 +3121,12 @@ export class DatabaseStorage implements IStorage {
       companyId: bom.companyId,
       createdAt: bom.createdAt,
       updatedAt: bom.updatedAt,
-      material: {
-        id: products.id,
-        name: products.name,
-        code: products.code,
-        price: products.price,
-        unit: products.unit,
-        stock: products.stock
-      }
+      materialId_p: products.id,
+      materialName: products.name,
+      materialCode: products.code,
+      materialPrice: products.price,
+      materialUnit: products.unit,
+      materialStock: products.stock
     })
       .from(bom)
       .innerJoin(products, eq(bom.materialId, products.id))
@@ -3137,6 +3135,27 @@ export class DatabaseStorage implements IStorage {
         eq(bom.companyId, companyId)
       ))
       .orderBy(products.name);
+
+    return result.map(item => ({
+      id: item.id,
+      productId: item.productId,
+      materialId: item.materialId,
+      quantity: item.quantity,
+      unit: item.unit,
+      cost: item.cost,
+      notes: item.notes,
+      companyId: item.companyId,
+      createdAt: item.createdAt,
+      updatedAt: item.updatedAt,
+      material: {
+        id: item.materialId_p,
+        name: item.materialName,
+        code: item.materialCode,
+        price: item.materialPrice,
+        unit: item.materialUnit,
+        stock: item.materialStock.toString()
+      }
+    }));
   }
 
   async createBOMItem(bomData: any) {
