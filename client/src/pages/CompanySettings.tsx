@@ -73,10 +73,10 @@ export default function CompanySettings() {
     if (company) {
       form.reset({
         name: company.name || "",
-        businessName: company.businessName || "",
+        businessName: company.business_name || "",
         rnc: company.rnc || "",
         industry: company.industry || "",
-        businessType: company.businessType || "general",
+        businessType: company.business_type || "general",
         address: company.address || "",
         phone: company.phone || "",
         email: company.email || "",
@@ -92,7 +92,10 @@ export default function CompanySettings() {
 
   const mutation = useMutation({
     mutationFn: async (data: CompanySettingsFormData) => {
-      const response = await apiRequest("PUT", "/api/companies/current", data);
+      const response = await apiRequest("PUT", "/api/companies/current", { 
+        method: "PUT",
+        body: data 
+      });
       if (!response.ok) {
         throw new Error("Error al guardar la configuración");
       }

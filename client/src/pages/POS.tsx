@@ -424,8 +424,8 @@ export default function POS() {
         </div>
       )}
       
-      <div className="p-2 sm:p-4 lg:p-6 w-full">
-        <div className="grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-4 lg:gap-6 min-h-[calc(100vh-160px)]">
+      <div className="p-2 sm:p-4 lg:p-6 w-full max-w-screen-2xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-4 lg:gap-6 h-[calc(100vh-160px)] overflow-hidden">
           
           {/* Sección de Productos */}
           <div className="2xl:col-span-3 xl:col-span-2 lg:col-span-2 space-y-4 h-full overflow-hidden flex flex-col">
@@ -611,38 +611,70 @@ export default function POS() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  {/* Customer Selection Dropdown */}
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">Seleccionar Cliente Existente</label>
-                    <Select onValueChange={(value) => {
-                      if (value && value !== "new") {
-                        const customer = customersData?.find((c: any) => c.id.toString() === value);
-                        if (customer) {
-                          setCustomerName(customer.name || "");
-                          setCustomerPhone(customer.phone || "");
-                          setCustomerRnc(customer.rnc || "");
-                          setCustomerAddress(customer.address || "");
-                        }
-                      } else {
-                        // Limpiar campos para crear nuevo cliente
-                        setCustomerName("");
-                        setCustomerPhone("");
-                        setCustomerRnc("");
-                        setCustomerAddress("");
-                      }
-                    }}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Buscar cliente existente o crear nuevo" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="new">+ Crear nuevo cliente</SelectItem>
-                        {Array.isArray(customersData) && customersData.length > 0 && customersData.map((customer: any) => (
-                          <SelectItem key={customer.id} value={customer.id.toString()}>
-                            {customer.name} {customer.rnc ? `(${customer.rnc})` : ''}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                  {/* Customer Search and Selection */}
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium block">Buscar Cliente</label>
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                      <Input
+                        placeholder="Buscar por nombre, teléfono o RNC..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-10"
+                      />
+                    </div>
+                    
+                    {/* Lista de resultados filtrados */}
+                    {searchTerm && customersData && customersData.length > 0 && (
+                      <div className="max-h-32 overflow-y-auto border rounded-md bg-white dark:bg-gray-800">
+                        {customersData
+                          .filter((customer: any) => 
+                            customer.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                            customer.phone?.includes(searchTerm) ||
+                            customer.rnc?.includes(searchTerm)
+                          )
+                          .slice(0, 5)
+                          .map((customer: any) => (
+                            <div 
+                              key={customer.id}
+                              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer border-b last:border-b-0"
+                              onClick={() => {
+                                setCustomerName(customer.name || "");
+                                setCustomerPhone(customer.phone || "");
+                                setCustomerRnc(customer.rnc || "");
+                                setCustomerAddress(customer.address || "");
+                                setSearchTerm("");
+                                toast({
+                                  title: "Cliente seleccionado",
+                                  description: `${customer.name}`,
+                                });
+                              }}
+                            >
+                              <div className="text-sm font-medium">{customer.name}</div>
+                              <div className="text-xs text-gray-500">
+                                {customer.phone} {customer.rnc ? `• RNC: ${customer.rnc}` : ''}
+                              </div>
+                            </div>
+                          ))}
+                        
+                        {/* Opción para crear nuevo */}
+                        <div 
+                          className="p-2 hover:bg-blue-50 dark:hover:bg-blue-900/20 cursor-pointer text-blue-600 dark:text-blue-400 border-t"
+                          onClick={() => {
+                            setCustomerName("");
+                            setCustomerPhone("");
+                            setCustomerRnc("");
+                            setCustomerAddress("");
+                            setSearchTerm("");
+                          }}
+                        >
+                          <div className="text-sm font-medium flex items-center">
+                            <Plus className="h-4 w-4 mr-2" />
+                            Crear nuevo cliente
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   <div className="border-t pt-3 space-y-3">
