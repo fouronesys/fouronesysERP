@@ -149,8 +149,9 @@ export interface IStorage {
   
   // Super Admin operations
   getAllCompanies(): Promise<Company[]>;
+  getAllCompaniesWithDetails(): Promise<any[]>;
   getCompany(id: number): Promise<Company | undefined>;
-  updateCompanyStatus(id: number, isActive: boolean): Promise<Company>;
+  updateCompanyStatus(id: number, isActive: boolean, notes?: string): Promise<Company>;
   createCompanyForUser(company: InsertCompany, userId: string): Promise<Company>;
   getUserCompanies(userId: string): Promise<Company[]>;
   
@@ -2223,23 +2224,6 @@ export class DatabaseStorage implements IStorage {
     return currentUserCount < 5;
   }
 
-  async updateCompanyStatus(companyId: number, isActive: boolean): Promise<Company> {
-    const [company] = await db
-      .update(companies)
-      .set({ 
-        isActive,
-        updatedAt: new Date()
-      })
-      .where(eq(companies.id, companyId))
-      .returning();
-    
-    if (!company) {
-      throw new Error(`Company with ID ${companyId} not found`);
-    }
-    
-    return company;
-  }
-
   async deleteCompany(companyId: number): Promise<void> {
     // Delete related data first
     await db.delete(products).where(eq(products.companyId, companyId));
@@ -3002,6 +2986,52 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(paymentSubmissions.submittedAt))
       .limit(1);
     return payment;
+  }
+
+  async getAllCompaniesWithDetails() {
+    const companiesWithDetails = await db
+      .select({
+        id: companies.id,
+        name: companies.name,
+        businessName: companies.businessName,
+        email: companies.email,
+        phone: companies.phone,
+        rnc: companies.rnc,
+        isActive: companies.isActive,
+        subscriptionPlan: companies.subscriptionPlan,
+        createdAt: companies.createdAt,
+        ownerId: companies.ownerId,
+        ownerEmail: users.email,
+      })
+      .from(companies)
+      .leftJoin(users, eq(companies.ownerId, users.id))
+      .orderBy(desc(companies.createdAt));
+
+    // Get payment status for each company
+    const companiesWithPayment = await Promise.all(
+      companiesWithDetails.map(async (company) => {
+        const paymentStatus = await this.getUserPaymentStatus(company.ownerEmail || '');
+        return {
+          ...company,
+          paymentStatus: paymentStatus?.status || 'pending',
+        };
+      })
+    );
+
+    return companiesWithPayment;
+  }
+
+  async updateCompanyStatus(companyId: number, isActive: boolean, notes?: string) {
+    const [updatedCompany] = await db
+      .update(companies)
+      .set({ 
+        isActive,
+        updatedAt: new Date()
+      })
+      .where(eq(companies.id, companyId))
+      .returning();
+    
+    return updatedCompany;
   }
 }
 

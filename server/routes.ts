@@ -5520,5 +5520,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin company management endpoints
+  app.get("/api/admin/companies", isAuthenticated, async (req: any, res) => {
+    try {
+      const user = req.user;
+      if (!user || user.email !== 'ngconsultores.rd@gmail.com') {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      const companies = await storage.getAllCompaniesWithDetails();
+      res.json(companies);
+    } catch (error) {
+      console.error("Error fetching companies:", error);
+      res.status(500).json({ message: "Failed to fetch companies" });
+    }
+  });
+
+  app.patch("/api/admin/companies/:id/status", isAuthenticated, async (req: any, res) => {
+    try {
+      const user = req.user;
+      if (!user || user.email !== 'ngconsultores.rd@gmail.com') {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      const { id } = req.params;
+      const { isActive, notes } = req.body;
+
+      const company = await storage.updateCompanyStatus(parseInt(id), isActive, notes);
+      
+      // Log company status update
+      await auditLogger.log({
+        userId: user.id,
+        module: 'Company',
+        action: isActive ? 'COMPANY_ACTIVATED' : 'COMPANY_DEACTIVATED',
+        entityType: 'company',
+        entityId: id,
+        newValues: { isActive, notes },
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent'),
+        timestamp: new Date(),
+        success: true,
+        severity: 'info'
+      });
+
+      res.json(company);
+    } catch (error) {
+      console.error("Error updating company status:", error);
+      res.status(500).json({ message: "Failed to update company status" });
+    }
+  });
+
   return httpServer;
 }
