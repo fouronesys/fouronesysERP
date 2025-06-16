@@ -19,7 +19,7 @@ const paymentSchema = z.object({
   document: z.string().min(8, "Cédula o RNC es requerido"),
   documentType: z.enum(["cedula", "rnc"]),
   companyName: z.string().min(2, "El nombre de la empresa es requerido"),
-  plan: z.enum(["starter", "professional", "enterprise"]),
+  plan: z.enum(["monthly", "annual"]),
   email: z.string().email("Email inválido"),
   phone: z.string().min(10, "Teléfono es requerido")
 });
@@ -27,23 +27,46 @@ const paymentSchema = z.object({
 type PaymentFormData = z.infer<typeof paymentSchema>;
 
 const plans = {
-  starter: { name: "Plan Starter", price: "RD$ 2,500", features: ["Hasta 100 facturas/mes", "1 usuario", "Soporte básico"] },
-  professional: { name: "Plan Professional", price: "RD$ 4,500", features: ["Hasta 500 facturas/mes", "3 usuarios", "Soporte prioritario", "Reportes avanzados"] },
-  enterprise: { name: "Plan Enterprise", price: "RD$ 8,500", features: ["Facturas ilimitadas", "Usuarios ilimitados", "Soporte 24/7", "API personalizada"] }
+  monthly: { name: "Plan Mensual", price: "RD$ 3,500/mes + RD$ 5,000 instalación", features: ["Sistema completo", "Soporte técnico", "Actualizaciones incluidas", "Capacitación inicial"] },
+  annual: { name: "Plan Anual", price: "RD$ 35,000 instalación + RD$ 24,000/año", features: ["Sistema completo", "Soporte prioritario", "Actualizaciones incluidas", "Capacitación completa", "Descuento significativo"] }
 };
 
 const bankAccounts = [
   {
     bank: "Banco Popular Dominicano",
+    accountType: "Cuenta de Ahorros",
+    accountNumber: "844480111",
+    accountHolder: "Jesús María García Cruz",
+    cedula: "40215343837"
+  },
+  {
+    bank: "Banco Popular Dominicano",
     accountType: "Cuenta Corriente",
-    accountNumber: "764-123456-7",
-    accountHolder: "Four One Solutions SRL"
+    accountNumber: "838073138",
+    accountHolder: "Jesús María García Cruz",
+    cedula: "40215343837"
+  },
+  {
+    bank: "Banreservas",
+    accountType: "Cuenta Corriente",
+    accountNumber: "4231803209",
+    accountHolder: "Jesús María García Cruz",
+    cedula: "40215343837"
   },
   {
     bank: "Banco BHD León",
-    accountType: "Cuenta Corriente", 
-    accountNumber: "20-456789-1",
-    accountHolder: "Four One Solutions SRL"
+    accountType: "Cuenta Corriente",
+    accountNumber: "34860440011",
+    accountHolder: "Jesús María García Cruz",
+    cedula: "40215343837"
+  },
+  {
+    bank: "Asociación Popular de Ahorros y Préstamos (APAP)",
+    accountType: "Cuenta de Ahorros",
+    accountNumber: "1034116428",
+    accountHolder: "Jesús Cruz",
+    cedula: "40215343837",
+    note: "Desde APAP: Cuenta 1034116428 | Desde otros bancos: usar cédula y nombre"
   }
 ];
 
@@ -63,7 +86,7 @@ export default function Payment() {
       document: "",
       documentType: "cedula",
       companyName: "",
-      plan: "starter",
+      plan: "monthly",
       email: user?.email || "",
       phone: ""
     }
