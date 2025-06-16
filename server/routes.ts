@@ -5657,6 +5657,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.user.id;
       const userEmail = req.user.email;
       
+      // Check if user is super admin
+      const isSuperAdmin = await storage.isUserSuperAdmin(userId);
+      
+      // Super admins always have valid payment access
+      if (isSuperAdmin) {
+        return res.json({ 
+          hasValidPayment: true, 
+          status: 'confirmed', 
+          message: 'Super admin access - bypass payment requirements',
+          isSuperAdmin: true
+        });
+      }
+      
       // Find user's payment submission
       const submission = await storage.getUserPaymentStatus(userEmail);
       

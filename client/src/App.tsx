@@ -89,7 +89,10 @@ function ProtectedRoute({ component: Component, ...props }: { component: React.C
   }, [isAuthenticated, isLoading, toast]);
 
   useEffect(() => {
-    if (isAuthenticated && !isPaymentLoading && !hasValidPayment) {
+    // Super admins bypass payment requirements
+    const isSuperAdmin = user?.role === "super_admin";
+    
+    if (isAuthenticated && !isPaymentLoading && !hasValidPayment && !isSuperAdmin) {
       toast({
         title: "Pago requerido",
         description: "Debes completar el pago para acceder al sistema.",
@@ -99,7 +102,7 @@ function ProtectedRoute({ component: Component, ...props }: { component: React.C
         window.location.href = "/payment";
       }, 1000);
     }
-  }, [isAuthenticated, isPaymentLoading, hasValidPayment, toast]);
+  }, [isAuthenticated, isPaymentLoading, hasValidPayment, user?.role, toast]);
 
   if (isLoading || (isAuthenticated && isPaymentLoading)) {
     return (
