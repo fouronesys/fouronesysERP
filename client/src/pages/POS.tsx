@@ -112,12 +112,12 @@ export default function POS() {
   });
 
   // POS customers query
-  const { data: customersData = [], refetch: customersRefetch } = useQuery({
+  const { data: customersData = [], refetch: customersRefetch } = useQuery<Customer[]>({
     queryKey: ["/api/pos/customers"],
   });
 
   // Persistent cart from database
-  const { data: cartData = [], isLoading: cartLoading } = useQuery({
+  const { data: cartData = [], isLoading: cartLoading } = useQuery<any[]>({
     queryKey: ["/api/pos/cart"],
   });
 
