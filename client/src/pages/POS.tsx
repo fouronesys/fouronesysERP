@@ -525,7 +525,7 @@ export default function POS() {
               </CardHeader>
               
               {/* Área con scroll vertical */}
-              <CardContent className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 space-y-4">
+              <CardContent className="flex-1 overflow-y-auto max-h-[calc(100vh-200px)] scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 space-y-4 p-4">
                 {/* Sección de Productos en Carrito */}
                 <div className="space-y-3">
                   <h3 className="font-medium text-sm text-gray-700 dark:text-gray-300 flex items-center gap-2">
