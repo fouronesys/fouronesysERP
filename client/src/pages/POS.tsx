@@ -499,103 +499,109 @@ export default function POS() {
             )}
           </div>
 
-          {/* Sección de Carrito y Checkout */}
-          <div className="2xl:col-span-2 xl:col-span-2 lg:col-span-1 space-y-4 h-full flex flex-col overflow-hidden hidden lg:flex">
+          {/* Sección de Carrito y Checkout Unificado */}
+          <div className="2xl:col-span-2 xl:col-span-2 lg:col-span-1 h-full hidden lg:flex">
             
-            {/* Carrito */}
-            <Card className="flex-1 flex flex-col min-h-0">
-              <CardHeader className="pb-2 px-3 sm:px-6 sm:pb-3 flex-shrink-0">
-                <CardTitle className="text-sm sm:text-base flex items-center justify-between">
+            {/* Contenedor unificado con scroll */}
+            <Card className="flex-1 flex flex-col">
+              <CardHeader className="pb-3 flex-shrink-0">
+                <CardTitle className="text-base flex items-center justify-between">
                   <span className="flex items-center gap-2">
                     <ShoppingCart className="h-4 w-4" />
-                    <span className="hidden sm:inline">Carrito</span> ({cart.length})
+                    Carrito y Checkout ({cart.length})
                   </span>
                   {cart.length > 0 && (
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={clearCart}
-                      className="text-red-600 hover:text-red-700 h-8 px-2 text-xs sm:text-sm"
+                      className="text-red-600 hover:text-red-700 h-8 px-2"
                     >
-                      <X className="h-3 w-3 sm:h-4 sm:w-4" />
-                      <span className="hidden sm:inline ml-1">Limpiar</span>
+                      <X className="h-4 w-4" />
+                      <span className="ml-1">Limpiar</span>
                     </Button>
                   )}
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-2 sm:space-y-3 flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 min-h-0 px-3 sm:px-6">
-                {cart.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-24 sm:h-32 text-gray-500 dark:text-gray-400">
-                    <ShoppingCart className="h-6 w-6 sm:h-8 sm:w-8 mb-2" />
-                    <p className="text-xs sm:text-sm">Carrito vacío</p>
-                  </div>
-                ) : (
-                  cart.map((item) => (
-                    <div key={item.product.id} className="p-2 sm:p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                      <div className="flex justify-between items-start mb-2 gap-2">
-                        <div className="min-w-0 flex-1">
-                          <p className="font-medium text-xs sm:text-sm leading-tight truncate">{item.product.name}</p>
-                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                            {formatDOP(parseFloat(item.product.price))} c/u
-                          </p>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => removeFromCart(item.product.id)}
-                          className="h-7 w-7 sm:h-6 sm:w-6 p-0 text-red-600 hover:text-red-700 flex-shrink-0"
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
-                      </div>
-                      
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-1 sm:gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
-                            className="h-8 w-8 sm:h-6 sm:w-6 p-0 touch-manipulation"
-                          >
-                            <Minus className="h-3 w-3" />
-                          </Button>
-                          
-                          <span className="w-8 text-center text-sm font-medium px-2">
-                            {item.quantity}
-                          </span>
-                          
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
-                            className="h-8 w-8 sm:h-6 sm:w-6 p-0 touch-manipulation"
-                          >
-                            <Plus className="h-3 w-3" />
-                          </Button>
-                        </div>
-                        
-                        <span className="font-bold text-green-600 dark:text-green-400 text-sm sm:text-base">
-                          {formatDOP(item.subtotal)}
-                        </span>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Checkout */}
-            <div className="space-y-3 sm:space-y-4 pb-4">
               
-              {/* Cliente */}
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <Users className="h-4 w-4" />
-                    {useFiscalReceipt ? "Datos del Cliente (Obligatorio)" : "Cliente (Opcional)"}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
+              {/* Área con scroll vertical */}
+              <CardContent className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 space-y-4">
+                  {/* Sección de Productos en Carrito */}
+                  <div className="space-y-3">
+                    <h3 className="font-medium text-sm text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                      <Package className="h-4 w-4" />
+                      Productos ({cart.length})
+                    </h3>
+                    
+                    {cart.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center h-20 text-gray-500 dark:text-gray-400 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-lg">
+                        <ShoppingCart className="h-6 w-6 mb-2" />
+                        <p className="text-sm">Carrito vacío</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {cart.map((item) => (
+                          <div key={item.product.id} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                            <div className="flex justify-between items-start mb-2 gap-2">
+                              <div className="min-w-0 flex-1">
+                                <p className="font-medium text-sm leading-tight truncate">{item.product.name}</p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                                  {formatDOP(parseFloat(item.product.price))} c/u
+                                </p>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => removeFromCart(item.product.id)}
+                                className="h-6 w-6 p-0 text-red-600 hover:text-red-700 flex-shrink-0"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </div>
+                            
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
+                                  className="h-6 w-6 p-0"
+                                >
+                                  <Minus className="h-3 w-3" />
+                                </Button>
+                                
+                                <span className="w-8 text-center text-sm font-medium">
+                                  {item.quantity}
+                                </span>
+                                
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
+                                  className="h-6 w-6 p-0"
+                                >
+                                  <Plus className="h-3 w-3" />
+                                </Button>
+                              </div>
+                              
+                              <span className="font-bold text-green-600 dark:text-green-400 text-sm">
+                                {formatDOP(item.subtotal)}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Sección de Cliente */}
+                  <div className="space-y-3 pt-2 border-t border-gray-200 dark:border-gray-700">
+                    <h3 className="font-medium text-sm text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                      <Users className="h-4 w-4" />
+                      {useFiscalReceipt ? "Datos del Cliente (Obligatorio)" : "Cliente (Opcional)"}
+                    </h3>
+                    
+                    <div className="space-y-3">
                   {/* Customer Search and Selection */}
                   <div className="space-y-2">
                     <label className="text-sm font-medium block">Buscar Cliente</label>
@@ -754,18 +760,13 @@ export default function POS() {
                       </>
                     )}
                   </div>
-                </CardContent>
-              </Card>
 
-              {/* Totales y Pago */}
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <Calculator className="h-4 w-4" />
-                    Totales
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
+                  {/* Sección de Totales y Pago */}
+                  <div className="space-y-3 pt-2 border-t border-gray-200 dark:border-gray-700">
+                    <h3 className="font-medium text-sm text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                      <Calculator className="h-4 w-4" />
+                      Totales
+                    </h3>
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
                       <span>Subtotal:</span>
@@ -860,33 +861,34 @@ export default function POS() {
                     )}
                   </div>
 
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={() => setShowCalculator(true)}
-                      variant="outline"
-                      size="lg"
-                      className="flex-1"
-                    >
-                      <Calculator className="h-4 w-4 mr-2" />
-                      Calculadora
-                    </Button>
-                    <Button
-                      onClick={processSale}
-                      disabled={cart.length === 0 || isProcessing || (paymentMethod === "cash" && (!cashReceived || parseFloat(cashReceived) < total))}
-                      className="flex-1 bg-green-600 hover:bg-green-700"
-                      size="lg"
-                    >
-                      {isProcessing ? (
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                      ) : (
-                        <Receipt className="h-4 w-4 mr-2" />
-                      )}
-                      {isProcessing ? "Procesando..." : "Procesar Venta"}
-                    </Button>
+                    <div className="flex gap-2 pt-2">
+                      <Button
+                        onClick={() => setShowCalculator(true)}
+                        variant="outline"
+                        size="lg"
+                        className="flex-1"
+                      >
+                        <Calculator className="h-4 w-4 mr-2" />
+                        Calculadora
+                      </Button>
+                      <Button
+                        onClick={processSale}
+                        disabled={cart.length === 0 || isProcessing || (paymentMethod === "cash" && (!cashReceived || parseFloat(cashReceived) < total))}
+                        className="flex-1 bg-green-600 hover:bg-green-700"
+                        size="lg"
+                      >
+                        {isProcessing ? (
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                        ) : (
+                          <Receipt className="h-4 w-4 mr-2" />
+                        )}
+                        {isProcessing ? "Procesando..." : "Procesar Venta"}
+                      </Button>
+                    </div>
+                    </div>
                   </div>
-                </CardContent>
-              </Card>
-            </div>
+              </CardContent>
+            </Card>
           </div>
 
           {/* Tab Content móvil para carrito */}
