@@ -35,7 +35,7 @@ import { useAuth } from "@/hooks/useAuth";
 
 import { useSubscription } from "@/hooks/useSubscription";
 import { useIsMobile } from "@/hooks/use-mobile";
-import logoImage from "@assets/Four One Solutions Logo_20250130_143401_0000.png";
+import logoImage from "@assets/Four One Solutions Logo_20250130_143033_0000_1750054689746.png";
 
 const navigation = [
   {
