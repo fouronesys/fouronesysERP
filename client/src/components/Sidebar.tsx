@@ -65,8 +65,6 @@ const navigation = [
     category: "Producción",
     items: [
       { name: "Módulo de Producción", href: "/production", icon: Factory },
-      { name: "Órdenes de Producción", href: "/manufacturing", icon: Factory },
-      { name: "Lista de Materiales (BOM)", href: "/bom", icon: List },
     ],
   },
   {

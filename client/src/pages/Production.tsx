@@ -117,6 +117,15 @@ export default function Production() {
   const queryClient = useQueryClient();
 
   // Consultas de datos
+  const { data: user } = useQuery<any>({
+    queryKey: ["/api/user"],
+  });
+
+  const { data: company } = useQuery<any>({
+    queryKey: ["/api/company"],
+    enabled: !!user,
+  });
+
   const { data: products = [] } = useQuery<any[]>({
     queryKey: ["/api/products"],
   });
@@ -132,7 +141,11 @@ export default function Production() {
 
   const { data: recipes = [] } = useQuery<any[]>({
     queryKey: ["/api/recipes"],
+    enabled: company?.type === 'restaurant',
   });
+
+  // Verificar si la empresa es un restaurante
+  const isRestaurant = company?.type === 'restaurant';
 
   // Formularios
   const orderForm = useForm<ProductionOrderFormData>({
@@ -465,7 +478,7 @@ export default function Production() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className={`grid w-full ${isRestaurant ? 'grid-cols-3' : 'grid-cols-2'}`}>
           <TabsTrigger value="orders" className="flex items-center gap-2">
             <Factory className="w-4 h-4" />
             <span className="hidden sm:inline">Órdenes de Producción</span>
@@ -476,11 +489,13 @@ export default function Production() {
             <span className="hidden sm:inline">Lista de Materiales</span>
             <span className="sm:hidden">BOM</span>
           </TabsTrigger>
-          <TabsTrigger value="recipes" className="flex items-center gap-2">
-            <ChefHat className="w-4 h-4" />
-            <span className="hidden sm:inline">Recetas</span>
-            <span className="sm:hidden">Recetas</span>
-          </TabsTrigger>
+          {isRestaurant && (
+            <TabsTrigger value="recipes" className="flex items-center gap-2">
+              <ChefHat className="w-4 h-4" />
+              <span className="hidden sm:inline">Recetas</span>
+              <span className="sm:hidden">Recetas</span>
+            </TabsTrigger>
+          )}
         </TabsList>
 
         {/* Órdenes de Producción */}
@@ -958,8 +973,9 @@ export default function Production() {
           )}
         </TabsContent>
 
-        {/* Recetas */}
-        <TabsContent value="recipes" className="space-y-4">
+        {/* Recetas - Solo para restaurantes */}
+        {isRestaurant && (
+          <TabsContent value="recipes" className="space-y-4">
           <div className="flex justify-between items-center">
             <h2 className="text-xl font-semibold">Recetas de Producción</h2>
             <Dialog open={showRecipeDialog} onOpenChange={setShowRecipeDialog}>
@@ -1225,7 +1241,8 @@ export default function Production() {
               </div>
             )}
           </div>
-        </TabsContent>
+          </TabsContent>
+        )}
       </Tabs>
 
       {/* Diálogo de Cálculo de Costos */}
