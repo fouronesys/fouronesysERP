@@ -32,44 +32,7 @@ import POSCustomerSelect from "@/components/POSCustomerSelect";
 import { RNCCompanySuggestions } from "@/components/RNCCompanySuggestions";
 import type { Product, Customer, POSPrintSettings, Company } from "@shared/schema";
 
-// Hook avanzado para detectar breakpoints y orientación
-function useResponsiveLayout() {
-  const [layout, setLayout] = useState({
-    isMobile: false,
-    isTablet: false,
-    isDesktop: false,
-    isLandscape: false,
-    width: 0,
-    height: 0
-  });
-  
-  useEffect(() => {
-    const updateLayout = () => {
-      const width = window.innerWidth;
-      const height = window.innerHeight;
-      
-      setLayout({
-        isMobile: width < 768,
-        isTablet: width >= 768 && width < 1024,
-        isDesktop: width >= 1024,
-        isLandscape: width > height,
-        width,
-        height
-      });
-    };
-    
-    updateLayout();
-    window.addEventListener('resize', updateLayout);
-    window.addEventListener('orientationchange', updateLayout);
-    
-    return () => {
-      window.removeEventListener('resize', updateLayout);
-      window.removeEventListener('orientationchange', updateLayout);
-    };
-  }, []);
-  
-  return layout;
-}
+import { useResponsiveLayout, getResponsiveClass, getCardGridClass } from "@/hooks/useResponsiveLayout";
 
 // Funciones utilitarias
 const formatDOP = (amount: number) => {
@@ -446,19 +409,14 @@ export default function POS() {
         </div>
       )}
       
-      <div className={`w-full max-w-screen-2xl mx-auto ${
-        layout.isMobile ? 'p-2' : layout.isTablet ? 'p-4' : 'p-6'
-      }`}>
+      <div className={`w-full max-w-screen-2xl mx-auto ${layout.containerPadding}`}>
         <div className={`
-          grid gap-3 h-[calc(100vh-160px)] overflow-hidden
-          ${layout.isMobile 
-            ? 'grid-cols-1' 
-            : layout.isTablet 
-              ? 'grid-cols-2 gap-4' 
-              : layout.isDesktop 
-                ? 'grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6' 
-                : 'grid-cols-1'
-          }
+          grid h-[calc(100vh-160px)] overflow-hidden ${layout.spacing.md}
+          ${getResponsiveClass(layout, {
+            mobile: 'grid-cols-1',
+            tablet: 'grid-cols-2',
+            desktop: 'grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5'
+          })}
         `}>
           
           {/* Sección de Productos */}
@@ -508,12 +466,8 @@ export default function POS() {
 
                 {/* Grid de productos */}
                 <div className="flex-1 overflow-y-auto">
-                  <div className={`grid gap-3 ${
-                    layout.isMobile 
-                      ? 'grid-cols-2' 
-                      : layout.isTablet 
-                        ? 'grid-cols-3' 
-                        : 'grid-cols-4 lg:grid-cols-5 xl:grid-cols-6'
+                  <div className={`grid ${layout.spacing.sm} ${
+                    getCardGridClass(layout, { mobile: 2, tablet: 3, desktop: 4 })
                   }`}>
                     {filteredProducts.map((product) => (
                       <Card 
@@ -563,7 +517,15 @@ export default function POS() {
           </div>
 
           {/* Sección de Carrito y Checkout */}
-          <div className={`2xl:col-span-2 xl:col-span-2 lg:col-span-1 space-y-4 h-full flex flex-col overflow-hidden ${isMobile ? 'hidden' : ''}`}>
+          <div className={`
+            ${layout.spacing.sm} h-full flex flex-col overflow-hidden
+            ${getResponsiveClass(layout, {
+              mobile: 'hidden',
+              tablet: 'col-span-1',
+              desktop: 'col-span-2',
+              default: 'col-span-1'
+            })}
+          `}>
             
             {/* Carrito */}
             <Card className="flex-1 flex flex-col min-h-0">
@@ -953,7 +915,7 @@ export default function POS() {
           </div>
 
           {/* Tab Content móvil para carrito */}
-          {isMobile && activeTab === "cart" && (
+          {layout.isMobile && activeTab === "cart" && (
             <div className="space-y-4">
               <Card>
                 <CardHeader className="pb-3">

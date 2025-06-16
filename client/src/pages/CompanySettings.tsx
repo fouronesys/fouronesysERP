@@ -15,6 +15,7 @@ import { Building2, Image, Upload, Phone, AlertCircle, CheckCircle, Save } from 
 import { Header } from "@/components/Header";
 import { RNCCompanySuggestions } from "@/components/RNCCompanySuggestions";
 import { apiRequest } from "@/lib/queryClient";
+import { useResponsiveLayout, getResponsiveClass, getFormLayoutClass } from "@/hooks/useResponsiveLayout";
 
 const companySettingsSchema = z.object({
   name: z.string().min(1, "Nombre comercial es requerido"),
