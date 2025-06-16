@@ -46,6 +46,7 @@ import Purchases from "@/pages/Purchases";
 import FiscalReports from "@/pages/FiscalReports";
 import Accounting from "@/pages/Accounting";
 import ErrorManagement from "@/pages/ErrorManagement";
+import Inventory from "@/pages/Inventory";
 
 import InstallationGuide from "@/pages/InstallationGuide";
 import NotFound from "@/pages/not-found";

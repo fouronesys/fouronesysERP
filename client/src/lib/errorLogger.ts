@@ -63,8 +63,9 @@ class FrontendErrorLogger {
     window.addEventListener('unhandledrejection', (event) => {
       // Filter out WebSocket errors that are expected during development
       const message = event.reason?.message || 'Unhandled Promise Rejection';
-      if (message.includes('WebSocket') && message.includes('localhost:undefined')) {
-        // Prevent this specific development error from being logged
+      if (message.includes('WebSocket') || message.includes('wss://localhost:undefined')) {
+        // Prevent WebSocket development errors from being logged
+        event.preventDefault();
         return;
       }
       
