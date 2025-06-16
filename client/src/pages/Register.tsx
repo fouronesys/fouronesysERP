@@ -328,8 +328,8 @@ export default function Register() {
                         RD$ 24,000 <span className="text-sm font-normal">/año</span>
                       </div>
                       <div className="text-sm text-gray-500 mb-4">
-                        <span className="line-through">RD$ 30,000/año</span>
-                        <span className="text-green-600 font-medium ml-2">¡Ahorra RD$ 6,000!</span>
+                        <span className="line-through">RD$ 42,000/año</span>
+                        <span className="text-green-600 font-medium ml-2">¡Ahorra RD$ 18,000!</span>
                       </div>
                       <p className="text-sm text-gray-600">
                         El mejor valor, equivale a 10 meses por el precio de 12.
