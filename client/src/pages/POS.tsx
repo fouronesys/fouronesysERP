@@ -409,26 +409,11 @@ export default function POS() {
         </div>
       )}
       
-      <div className={`w-full max-w-screen-2xl mx-auto ${layout.containerPadding}`}>
-        <div className={`
-          grid h-[calc(100vh-160px)] overflow-hidden ${layout.spacing.md}
-          ${getResponsiveClass(layout, {
-            mobile: 'grid-cols-1',
-            tablet: 'grid-cols-2',
-            desktop: 'grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5'
-          })}
-        `}>
+      <div className="p-2 sm:p-4 lg:p-6 w-full max-w-screen-2xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-4 lg:gap-6 h-[calc(100vh-160px)] overflow-hidden">
           
           {/* Sección de Productos */}
-          <div className={`
-            space-y-4 h-full overflow-hidden flex flex-col
-            ${layout.isMobile 
-              ? 'col-span-1' 
-              : layout.isTablet 
-                ? 'col-span-1' 
-                : 'col-span-3 xl:col-span-3 2xl:col-span-3'
-            }
-          `}>
+          <div className="2xl:col-span-3 xl:col-span-2 lg:col-span-2 space-y-4 h-full overflow-hidden flex flex-col">
             
             {/* Tabs móviles */}
             {layout.isMobile && (
@@ -466,9 +451,7 @@ export default function POS() {
 
                 {/* Grid de productos */}
                 <div className="flex-1 overflow-y-auto">
-                  <div className={`grid ${layout.spacing.sm} ${
-                    getCardGridClass(layout, { mobile: 2, tablet: 3, desktop: 4 })
-                  }`}>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-3 2xl:grid-cols-4 gap-3">
                     {filteredProducts.map((product) => (
                       <Card 
                         key={product.id}
@@ -517,15 +500,7 @@ export default function POS() {
           </div>
 
           {/* Sección de Carrito y Checkout */}
-          <div className={`
-            ${layout.spacing.sm} h-full flex flex-col overflow-hidden
-            ${getResponsiveClass(layout, {
-              mobile: 'hidden',
-              tablet: 'col-span-1',
-              desktop: 'col-span-2',
-              default: 'col-span-1'
-            })}
-          `}>
+          <div className="2xl:col-span-2 xl:col-span-2 lg:col-span-1 space-y-4 h-full flex flex-col overflow-hidden hidden lg:flex">
             
             {/* Carrito */}
             <Card className="flex-1 flex flex-col min-h-0">
