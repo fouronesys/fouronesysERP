@@ -29,6 +29,7 @@ import {
   comprobantes605,
   comprobantes606,
   rncRegistry,
+  passwordResetTokens,
   posCartItems,
   chatChannels,
   chatChannelMembers,
@@ -2238,43 +2239,44 @@ export class DatabaseStorage implements IStorage {
 
   // Password reset token operations
   async createPasswordResetToken(email: string, token: string, expiresAt: Date): Promise<void> {
-    await db.execute(sql`
-      INSERT INTO password_reset_tokens (email, token, expires_at, created_at)
-      VALUES (${email}, ${token}, ${expiresAt}, NOW())
-      ON CONFLICT (email) DO UPDATE SET
-        token = ${token},
-        expires_at = ${expiresAt},
-        created_at = NOW()
-    `);
+    await db.insert(passwordResetTokens)
+      .values({ email, token, expiresAt })
+      .onConflictDoUpdate({
+        target: passwordResetTokens.email,
+        set: {
+          token,
+          expiresAt,
+          createdAt: new Date()
+        }
+      });
   }
 
   async getPasswordResetToken(token: string): Promise<{ email: string; expiresAt: Date; isRecovery?: boolean } | null> {
-    const [result] = await db.execute(sql`
-      SELECT email, expires_at, is_recovery
-      FROM password_reset_tokens 
-      WHERE token = ${token}
-    `);
+    const [result] = await db.select()
+      .from(passwordResetTokens)
+      .where(eq(passwordResetTokens.token, token));
     
     if (!result) return null;
     
     return {
-      email: result.email as string,
-      expiresAt: new Date(result.expires_at as string),
-      isRecovery: result.is_recovery as boolean || false
+      email: result.email,
+      expiresAt: result.expiresAt,
+      isRecovery: result.isRecovery || false
     };
   }
 
   async deletePasswordResetToken(token: string): Promise<void> {
-    await db.execute(sql`
-      DELETE FROM password_reset_tokens WHERE token = ${token}
-    `);
+    await db.delete(passwordResetTokens)
+      .where(eq(passwordResetTokens.token, token));
   }
 
   async updateUserPassword(email: string, hashedPassword: string): Promise<void> {
-    await db.execute(sql`
-      UPDATE users SET password = ${hashedPassword}, updated_at = NOW()
-      WHERE email = ${email}
-    `);
+    await db.update(users)
+      .set({ 
+        password: hashedPassword, 
+        updatedAt: new Date() 
+      })
+      .where(eq(users.email, email));
   }
 
 

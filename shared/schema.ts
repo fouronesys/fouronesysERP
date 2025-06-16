@@ -838,6 +838,16 @@ export const leaves = pgTable("leaves", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Password reset tokens table
+export const passwordResetTokens = pgTable("password_reset_tokens", {
+  id: serial("id").primaryKey(),
+  email: varchar("email", { length: 255 }).notNull(),
+  token: varchar("token", { length: 255 }).unique().notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  isRecovery: boolean("is_recovery").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // HR and Payroll Insert Schemas
 export const insertEmployeeSchema = createInsertSchema(employees).omit({
   id: true,

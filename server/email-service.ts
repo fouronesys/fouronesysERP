@@ -176,7 +176,8 @@ export async function sendPasswordSetupEmail(email: string, name: string): Promi
     const setupToken = crypto.randomBytes(32).toString('hex');
     
     // Store token in database with expiration (24 hours)
-    const { storage } = await import('./storage');
+    const { DatabaseStorage } = await import('./storage');
+    const storage = new DatabaseStorage();
     await storage.createPasswordResetToken(email, setupToken, new Date(Date.now() + 24 * 60 * 60 * 1000));
 
     const setupUrl = `${process.env.FRONTEND_URL || 'http://localhost:5000'}/setup-password?token=${setupToken}`;
