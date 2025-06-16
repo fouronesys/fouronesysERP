@@ -18,6 +18,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { insertCompanySchema, type Company } from "@shared/schema";
+import { RNCCompanySuggestions } from "@/components/RNCCompanySuggestions";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { z } from "zod";
 import { 
   Building2, 
@@ -386,10 +388,19 @@ export default function CompanySettings() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="name">Nombre Comercial*</Label>
-                  <Input
-                    id="name"
-                    placeholder="Ej: Mi Empresa"
-                    {...form.register("name")}
+                  <RNCCompanySuggestions
+                    label=""
+                    placeholder="Buscar empresa por nombre..."
+                    value={form.watch("name") || ""}
+                    onChange={(value) => form.setValue("name", value)}
+                    onCompanySelect={(company) => {
+                      form.setValue("name", company.name);
+                      form.setValue("rnc", company.rnc);
+                      toast({
+                        title: "Empresa seleccionada",
+                        description: `${company.name} - RNC: ${company.rnc}`,
+                      });
+                    }}
                     className="text-sm"
                   />
                   {form.formState.errors.name && (
