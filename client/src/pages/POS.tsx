@@ -759,6 +759,7 @@ export default function POS() {
                         </div>
                       </>
                     )}
+                    </div>
                   </div>
 
                   {/* Sección de Totales y Pago */}
@@ -884,9 +885,10 @@ export default function POS() {
                         )}
                         {isProcessing ? "Procesando..." : "Procesar Venta"}
                       </Button>
-                    </div>
+                      </div>
                     </div>
                   </div>
+                </div>
               </CardContent>
             </Card>
           </div>
