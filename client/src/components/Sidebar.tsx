@@ -240,7 +240,7 @@ export function Sidebar() {
         })}
 
         {/* Super Admin Access */}
-        {user && (user.role === 'super_admin' || user.email === 'ngconsultores.rd@gmail.com') && (
+        {user && (user.role === 'super_admin' || user.email === 'admin@fourone.com.do') && (
           <div className="pt-3 sm:pt-4 border-t border-gray-200 dark:border-gray-700 theme-blue:border-blue-500">
             <h3 className="px-2 sm:px-3 text-xs font-semibold text-gray-500 dark:text-gray-400 theme-blue:text-blue-200 uppercase tracking-wider">
               Administración

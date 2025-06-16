@@ -5441,7 +5441,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // Only allow admin users to view payment submissions
       const user = req.user;
-      if (!user || user.email !== 'ngconsultores.rd@gmail.com') {
+      if (!user || user.email !== 'admin@fourone.com.do') {
         return res.status(403).json({ message: "Access denied" });
       }
 
