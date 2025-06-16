@@ -1,0 +1,96 @@
+POST https://7ce310d6-f7c4-4f33-acdc-ca701d08f86e-00-zimm1kwfhzmx.kirk.replit.dev/api/pos/customers 500 (Internal Server Error)
+apiRequest @ queryClient.ts:31
+processSale @ POS.tsx:317
+callCallback2 @ chunk-RPCDYKBN.js?v=a7c7d6dd:3674
+invokeGuardedCallbackDev @ chunk-RPCDYKBN.js?v=a7c7d6dd:3699
+invokeGuardedCallback @ chunk-RPCDYKBN.js?v=a7c7d6dd:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-RPCDYKBN.js?v=a7c7d6dd:3736
+executeDispatch @ chunk-RPCDYKBN.js?v=a7c7d6dd:7014
+processDispatchQueueItemsInOrder @ chunk-RPCDYKBN.js?v=a7c7d6dd:7034
+processDispatchQueue @ chunk-RPCDYKBN.js?v=a7c7d6dd:7043
+dispatchEventsForPlugins @ chunk-RPCDYKBN.js?v=a7c7d6dd:7051
+(anonymous) @ chunk-RPCDYKBN.js?v=a7c7d6dd:7174
+batchedUpdates$1 @ chunk-RPCDYKBN.js?v=a7c7d6dd:18913
+batchedUpdates @ chunk-RPCDYKBN.js?v=a7c7d6dd:3579
+dispatchEventForPluginEventSystem @ chunk-RPCDYKBN.js?v=a7c7d6dd:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-RPCDYKBN.js?v=a7c7d6dd:5478
+dispatchEvent @ chunk-RPCDYKBN.js?v=a7c7d6dd:5472
+dispatchDiscreteEvent @ chunk-RPCDYKBN.js?v=a7c7d6dd:5449
+globalErrorHandler.ts:31 Error guardando cliente: Error: 500: Failed to create customer
+    at throwIfResNotOk (queryClient.ts:17:11)
+    at async apiRequest (queryClient.ts:38:3)
+    at async processSale (POS.tsx:317:11)
+console.error @ globalErrorHandler.ts:31
+console.error @ errorLogger.ts:104
+console.error @ errorLogger.ts:104
+console.error @ errorLogger.ts:104
+console.error @ errorLogger.ts:104
+processSale @ POS.tsx:325
+await in processSale
+callCallback2 @ chunk-RPCDYKBN.js?v=a7c7d6dd:3674
+invokeGuardedCallbackDev @ chunk-RPCDYKBN.js?v=a7c7d6dd:3699
+invokeGuardedCallback @ chunk-RPCDYKBN.js?v=a7c7d6dd:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-RPCDYKBN.js?v=a7c7d6dd:3736
+executeDispatch @ chunk-RPCDYKBN.js?v=a7c7d6dd:7014
+processDispatchQueueItemsInOrder @ chunk-RPCDYKBN.js?v=a7c7d6dd:7034
+processDispatchQueue @ chunk-RPCDYKBN.js?v=a7c7d6dd:7043
+dispatchEventsForPlugins @ chunk-RPCDYKBN.js?v=a7c7d6dd:7051
+(anonymous) @ chunk-RPCDYKBN.js?v=a7c7d6dd:7174
+batchedUpdates$1 @ chunk-RPCDYKBN.js?v=a7c7d6dd:18913
+batchedUpdates @ chunk-RPCDYKBN.js?v=a7c7d6dd:3579
+dispatchEventForPluginEventSystem @ chunk-RPCDYKBN.js?v=a7c7d6dd:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-RPCDYKBN.js?v=a7c7d6dd:5478
+dispatchEvent @ chunk-RPCDYKBN.js?v=a7c7d6dd:5472
+dispatchDiscreteEvent @ chunk-RPCDYKBN.js?v=a7c7d6dd:5449
+queryClient.ts:31 
+            
+            
+           POST https://7ce310d6-f7c4-4f33-acdc-ca701d08f86e-00-zimm1kwfhzmx.kirk.replit.dev/api/pos/sales 500 (Internal Server Error)
+apiRequest @ queryClient.ts:31
+processSale @ POS.tsx:331
+await in processSale
+callCallback2 @ chunk-RPCDYKBN.js?v=a7c7d6dd:3674
+invokeGuardedCallbackDev @ chunk-RPCDYKBN.js?v=a7c7d6dd:3699
+invokeGuardedCallback @ chunk-RPCDYKBN.js?v=a7c7d6dd:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-RPCDYKBN.js?v=a7c7d6dd:3736
+executeDispatch @ chunk-RPCDYKBN.js?v=a7c7d6dd:7014
+processDispatchQueueItemsInOrder @ chunk-RPCDYKBN.js?v=a7c7d6dd:7034
+processDispatchQueue @ chunk-RPCDYKBN.js?v=a7c7d6dd:7043
+dispatchEventsForPlugins @ chunk-RPCDYKBN.js?v=a7c7d6dd:7051
+(anonymous) @ chunk-RPCDYKBN.js?v=a7c7d6dd:7174
+batchedUpdates$1 @ chunk-RPCDYKBN.js?v=a7c7d6dd:18913
+batchedUpdates @ chunk-RPCDYKBN.js?v=a7c7d6dd:3579
+dispatchEventForPluginEventSystem @ chunk-RPCDYKBN.js?v=a7c7d6dd:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-RPCDYKBN.js?v=a7c7d6dd:5478
+dispatchEvent @ chunk-RPCDYKBN.js?v=a7c7d6dd:5472
+dispatchDiscreteEvent @ chunk-RPCDYKBN.js?v=a7c7d6dd:5449
+globalErrorHandler.ts:31 Error procesando venta: Error: 500: Failed to create POS sale
+    at throwIfResNotOk (queryClient.ts:17:11)
+    at async apiRequest (queryClient.ts:38:3)
+    at async processSale (POS.tsx:331:24)
+console.error @ globalErrorHandler.ts:31
+console.error @ errorLogger.ts:104
+console.error @ errorLogger.ts:104
+console.error @ errorLogger.ts:104
+console.error @ errorLogger.ts:104
+processSale @ POS.tsx:367
+await in processSale
+callCallback2 @ chunk-RPCDYKBN.js?v=a7c7d6dd:3674
+invokeGuardedCallbackDev @ chunk-RPCDYKBN.js?v=a7c7d6dd:3699
+invokeGuardedCallback @ chunk-RPCDYKBN.js?v=a7c7d6dd:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-RPCDYKBN.js?v=a7c7d6dd:3736
+executeDispatch @ chunk-RPCDYKBN.js?v=a7c7d6dd:7014
+processDispatchQueueItemsInOrder @ chunk-RPCDYKBN.js?v=a7c7d6dd:7034
+processDispatchQueue @ chunk-RPCDYKBN.js?v=a7c7d6dd:7043
+dispatchEventsForPlugins @ chunk-RPCDYKBN.js?v=a7c7d6dd:7051
+(anonymous) @ chunk-RPCDYKBN.js?v=a7c7d6dd:7174
+batchedUpdates$1 @ chunk-RPCDYKBN.js?v=a7c7d6dd:18913
+batchedUpdates @ chunk-RPCDYKBN.js?v=a7c7d6dd:3579
+dispatchEventForPluginEventSystem @ chunk-RPCDYKBN.js?v=a7c7d6dd:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-RPCDYKBN.js?v=a7c7d6dd:5478
+dispatchEvent @ chunk-RPCDYKBN.js?v=a7c7d6dd:5472
+dispatchDiscreteEvent @ chunk-RPCDYKBN.js?v=a7c7d6dd:5449
+globalErrorHandler.ts:31 Error stack: Error: 500: Failed to create POS sale
+    at throwIfResNotOk (https://7ce310d6-f7c4-4f33-acdc-ca701d08f86e-00-zimm1kwfhzmx.kirk.replit.dev/src/lib/queryClient.ts:16:11)
+    at async apiRequest (https://7ce310d6-f7c4-4f33-acdc-ca701d08f86e-00-zimm1kwfhzmx.kirk.replit.dev/src/lib/queryClient.ts:28:3)
+    at async processSale (https://7ce310d6-f7c4-4f33-acdc-ca701d08f86e-00-zimm1kwfhzmx.kirk.replit.dev/src/pages/POS.tsx?t=1750111823190:282:24)

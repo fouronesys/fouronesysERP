@@ -5189,10 +5189,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Validate RNC if provided
       if (customerData.rnc) {
-        const isValidRnc = await storage.validateCustomerRNC(customerData.rnc, company.id);
-        customerData.isValidatedRnc = isValidRnc;
-        if (isValidRnc) {
-          customerData.rncValidationDate = new Date();
+        try {
+          const validation = await storage.validateCustomerRNC(customerData.rnc, company.id);
+          const isValidRnc = typeof validation === 'boolean' ? validation : validation.valid;
+          customerData.isValidatedRnc = isValidRnc;
+          if (isValidRnc) {
+            customerData.rncValidationDate = new Date();
+          }
+        } catch (rncError) {
+          console.error("RNC validation error:", rncError);
+          customerData.isValidatedRnc = false;
         }
       }
 

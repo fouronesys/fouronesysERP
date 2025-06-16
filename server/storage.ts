@@ -911,12 +911,12 @@ export class DatabaseStorage implements IStorage {
           .insert(inventoryMovements)
           .values({
             productId: itemData.productId,
-            type: "out",
+            type: "OUT",
             quantity: -quantity,
-            reference: "POS Sale",
-            referenceId: itemData.saleId,
+            reason: "POS Sale",
             notes: `Venta POS #${itemData.saleId} - Stock reducido automáticamente`,
             companyId: currentProduct.companyId,
+            createdBy: itemData.saleId?.toString() || "system",
           });
       } else {
         console.warn(`Insufficient stock for product ${itemData.productId}. Available: ${currentProduct.stock}, Requested: ${quantity}`);
