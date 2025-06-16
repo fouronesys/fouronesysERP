@@ -98,11 +98,17 @@ export default function SalesReports() {
     );
   }
 
-  const formatCurrency = (amount: number) => {
+  const formatCurrency = (amount: number | string | null | undefined) => {
+    const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+    if (numAmount === null || numAmount === undefined || isNaN(numAmount)) {
+      return 'RD$0.00';
+    }
     return new Intl.NumberFormat('es-DO', {
       style: 'currency',
-      currency: 'DOP'
-    }).format(amount);
+      currency: 'DOP',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(numAmount);
   };
 
   const formatDate = (date: string | Date) => {
@@ -136,12 +142,38 @@ export default function SalesReports() {
     const invoiceData = (reportType === "invoices" || reportType === "all") ? safeInvoices : [];
     const posData = (reportType === "pos" || reportType === "all") ? safePOSSales : [];
     
-    const totalRevenue = invoiceData.reduce((sum, invoice) => sum + invoice.total, 0) + 
-                        posData.reduce((sum, sale) => sum + sale.total, 0);
+    // Calculate revenue with proper number handling
+    const invoiceRevenue = invoiceData.reduce((sum, invoice) => {
+      const amount = parseFloat(invoice.total?.toString() || '0');
+      return sum + (isNaN(amount) ? 0 : amount);
+    }, 0);
     
+    const posRevenue = posData.reduce((sum, sale) => {
+      const amount = parseFloat(sale.total?.toString() || '0');
+      return sum + (isNaN(amount) ? 0 : amount);
+    }, 0);
+    
+    const totalRevenue = invoiceRevenue + posRevenue;
     const totalTransactions = invoiceData.length + posData.length;
     const averageTicket = totalTransactions > 0 ? totalRevenue / totalTransactions : 0;
     const paidInvoices = invoiceData.filter(invoice => invoice.status === "paid").length;
+    
+    // Additional detailed metrics
+    const pendingInvoices = invoiceData.filter(invoice => invoice.status === "pending" || invoice.status === "draft").length;
+    const totalInvoices = invoiceData.length;
+    const totalPOSSales = posData.length;
+    
+    // Revenue breakdown
+    const invoicePercentage = totalRevenue > 0 ? (invoiceRevenue / totalRevenue) * 100 : 0;
+    const posPercentage = totalRevenue > 0 ? (posRevenue / totalRevenue) * 100 : 0;
+    
+    // Calculate tax totals
+    const totalTax = [...invoiceData, ...posData].reduce((sum, item) => {
+      const tax = parseFloat((item as any).tax?.toString() || (item as any).taxAmount?.toString() || '0');
+      return sum + (isNaN(tax) ? 0 : tax);
+    }, 0);
+    
+    const netRevenue = totalRevenue - totalTax;
     
     const allTransactions = [
       ...invoiceData.map(invoice => ({
@@ -167,6 +199,15 @@ export default function SalesReports() {
       totalTransactions,
       averageTicket,
       paidInvoices,
+      pendingInvoices,
+      totalInvoices,
+      totalPOSSales,
+      invoiceRevenue,
+      posRevenue,
+      invoicePercentage,
+      posPercentage,
+      totalTax,
+      netRevenue,
       transactions: allTransactions
     };
   }, [invoices, posSales, dateRange, reportType]);
@@ -472,6 +513,135 @@ export default function SalesReports() {
                 <p className="text-xs text-orange-700 dark:text-orange-300">
                   Facturas completadas
                 </p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Detailed Metrics */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Revenue Breakdown */}
+            <Card className="border-gray-200 dark:border-gray-700">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5" />
+                  Desglose de Ingresos
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Ingresos por Facturas</span>
+                    <span className="font-semibold">{formatCurrency(reportMetrics.invoiceRevenue)}</span>
+                  </div>
+                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                    <div 
+                      className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
+                      style={{ width: `${reportMetrics.invoicePercentage}%` }}
+                    ></div>
+                  </div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">
+                    {reportMetrics.invoicePercentage.toFixed(1)}% del total ({reportMetrics.totalInvoices} facturas)
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Ingresos por POS</span>
+                    <span className="font-semibold">{formatCurrency(reportMetrics.posRevenue)}</span>
+                  </div>
+                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                    <div 
+                      className="bg-green-600 h-2 rounded-full transition-all duration-300" 
+                      style={{ width: `${reportMetrics.posPercentage}%` }}
+                    ></div>
+                  </div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">
+                    {reportMetrics.posPercentage.toFixed(1)}% del total ({reportMetrics.totalPOSSales} ventas)
+                  </div>
+                </div>
+
+                <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="font-medium text-gray-600 dark:text-gray-400">Ingresos Netos</span>
+                    <span className="font-bold text-green-600 dark:text-green-400">{formatCurrency(reportMetrics.netRevenue)}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-xs text-gray-500 dark:text-gray-400">
+                    <span>Total de Impuestos</span>
+                    <span>{formatCurrency(reportMetrics.totalTax)}</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Status Summary */}
+            <Card className="border-gray-200 dark:border-gray-700">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  Resumen de Estados
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="text-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                    <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                      {reportMetrics.paidInvoices}
+                    </div>
+                    <div className="text-xs text-green-700 dark:text-green-300">
+                      Facturas Pagadas
+                    </div>
+                  </div>
+                  
+                  <div className="text-center p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                    <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
+                      {reportMetrics.pendingInvoices}
+                    </div>
+                    <div className="text-xs text-yellow-700 dark:text-yellow-300">
+                      Facturas Pendientes
+                    </div>
+                  </div>
+                  
+                  <div className="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                    <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                      {reportMetrics.totalPOSSales}
+                    </div>
+                    <div className="text-xs text-blue-700 dark:text-blue-300">
+                      Ventas POS
+                    </div>
+                  </div>
+                  
+                  <div className="text-center p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
+                    <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                      {reportMetrics.totalTransactions}
+                    </div>
+                    <div className="text-xs text-purple-700 dark:text-purple-300">
+                      Total Ventas
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-2 pt-3 border-t border-gray-200 dark:border-gray-700">
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-gray-600 dark:text-gray-400">Tasa de Conversión</span>
+                    <span className="font-semibold">
+                      {reportMetrics.totalInvoices > 0 ? 
+                        ((reportMetrics.paidInvoices / reportMetrics.totalInvoices) * 100).toFixed(1) : 0
+                      }%
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-gray-600 dark:text-gray-400">Facturas por día</span>
+                    <span className="font-semibold">
+                      {(reportMetrics.totalInvoices / parseInt(dateRange)).toFixed(1)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-gray-600 dark:text-gray-400">Ventas POS por día</span>
+                    <span className="font-semibold">
+                      {(reportMetrics.totalPOSSales / parseInt(dateRange)).toFixed(1)}
+                    </span>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </div>
