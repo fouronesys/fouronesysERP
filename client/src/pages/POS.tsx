@@ -526,249 +526,249 @@ export default function POS() {
               
               {/* Área con scroll vertical */}
               <CardContent className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 space-y-4">
-                  {/* Sección de Productos en Carrito */}
-                  <div className="space-y-3">
-                    <h3 className="font-medium text-sm text-gray-700 dark:text-gray-300 flex items-center gap-2">
-                      <Package className="h-4 w-4" />
-                      Productos ({cart.length})
-                    </h3>
-                    
-                    {cart.length === 0 ? (
-                      <div className="flex flex-col items-center justify-center h-20 text-gray-500 dark:text-gray-400 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-lg">
-                        <ShoppingCart className="h-6 w-6 mb-2" />
-                        <p className="text-sm">Carrito vacío</p>
-                      </div>
-                    ) : (
-                      <div className="space-y-2">
-                        {cart.map((item) => (
-                          <div key={item.product.id} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                            <div className="flex justify-between items-start mb-2 gap-2">
-                              <div className="min-w-0 flex-1">
-                                <p className="font-medium text-sm leading-tight truncate">{item.product.name}</p>
-                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                                  {formatDOP(parseFloat(item.product.price))} c/u
-                                </p>
-                              </div>
+                {/* Sección de Productos en Carrito */}
+                <div className="space-y-3">
+                  <h3 className="font-medium text-sm text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                    <Package className="h-4 w-4" />
+                    Productos ({cart.length})
+                  </h3>
+                  
+                  {cart.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center h-20 text-gray-500 dark:text-gray-400 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-lg">
+                      <ShoppingCart className="h-6 w-6 mb-2" />
+                      <p className="text-sm">Carrito vacío</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {cart.map((item) => (
+                        <div key={item.product.id} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                          <div className="flex justify-between items-start mb-2 gap-2">
+                            <div className="min-w-0 flex-1">
+                              <p className="font-medium text-sm leading-tight truncate">{item.product.name}</p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                                {formatDOP(parseFloat(item.product.price))} c/u
+                              </p>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => removeFromCart(item.product.id)}
+                              className="h-6 w-6 p-0 text-red-600 hover:text-red-700 flex-shrink-0"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
+                          
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => removeFromCart(item.product.id)}
-                                className="h-6 w-6 p-0 text-red-600 hover:text-red-700 flex-shrink-0"
+                                onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
+                                className="h-6 w-6 p-0"
                               >
-                                <Trash2 className="h-3 w-3" />
+                                <Minus className="h-3 w-3" />
+                              </Button>
+                              
+                              <span className="w-8 text-center text-sm font-medium">
+                                {item.quantity}
+                              </span>
+                              
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
+                                className="h-6 w-6 p-0"
+                              >
+                                <Plus className="h-3 w-3" />
                               </Button>
                             </div>
                             
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
-                                  className="h-6 w-6 p-0"
-                                >
-                                  <Minus className="h-3 w-3" />
-                                </Button>
-                                
-                                <span className="w-8 text-center text-sm font-medium">
-                                  {item.quantity}
-                                </span>
-                                
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
-                                  className="h-6 w-6 p-0"
-                                >
-                                  <Plus className="h-3 w-3" />
-                                </Button>
-                              </div>
-                              
-                              <span className="font-bold text-green-600 dark:text-green-400 text-sm">
-                                {formatDOP(item.subtotal)}
-                              </span>
-                            </div>
+                            <span className="font-bold text-green-600 dark:text-green-400 text-sm">
+                              {formatDOP(item.subtotal)}
+                            </span>
                           </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Sección de Cliente */}
-                  <div className="space-y-3 pt-2 border-t border-gray-200 dark:border-gray-700">
-                    <h3 className="font-medium text-sm text-gray-700 dark:text-gray-300 flex items-center gap-2">
-                      <Users className="h-4 w-4" />
-                      {useFiscalReceipt ? "Datos del Cliente (Obligatorio)" : "Cliente (Opcional)"}
-                    </h3>
-                    
-                    <div className="space-y-3">
-                  {/* Customer Search and Selection */}
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium block">Buscar Cliente</label>
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                      <Input
-                        placeholder="Buscar por nombre, teléfono o RNC..."
-                        value={customerSearchTerm}
-                        onChange={(e) => setCustomerSearchTerm(e.target.value)}
-                        className="pl-10"
-                      />
+                        </div>
+                      ))}
                     </div>
-                    
-                    {/* Lista de resultados filtrados */}
-                    {customerSearchTerm && customersData && customersData.length > 0 && (
-                      <div className="max-h-32 overflow-y-auto border rounded-md bg-white dark:bg-gray-800">
-                        {customersData
-                          .filter((customer: any) => 
-                            customer.name?.toLowerCase().includes(customerSearchTerm.toLowerCase()) ||
-                            customer.phone?.includes(customerSearchTerm) ||
-                            customer.rnc?.includes(customerSearchTerm)
-                          )
-                          .slice(0, 5)
-                          .map((customer: any) => (
-                            <div 
-                              key={customer.id}
-                              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer border-b last:border-b-0"
-                              onClick={() => {
-                                setCustomerName(customer.name || "");
-                                setCustomerPhone(customer.phone || "");
-                                setCustomerRnc(customer.rnc || "");
-                                setCustomerAddress(customer.address || "");
-                                setCustomerSearchTerm("");
-                                toast({
-                                  title: "Cliente seleccionado",
-                                  description: `${customer.name}`,
-                                });
-                              }}
-                            >
-                              <div className="text-sm font-medium">{customer.name}</div>
-                              <div className="text-xs text-gray-500">
-                                {customer.phone} {customer.rnc ? `• RNC: ${customer.rnc}` : ''}
+                  )}
+                </div>
+
+                {/* Sección de Cliente */}
+                <div className="space-y-3 pt-2 border-t border-gray-200 dark:border-gray-700">
+                  <h3 className="font-medium text-sm text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                    <Users className="h-4 w-4" />
+                    {useFiscalReceipt ? "Datos del Cliente (Obligatorio)" : "Cliente (Opcional)"}
+                  </h3>
+                  
+                  <div className="space-y-3">
+                    {/* Customer Search and Selection */}
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium block">Buscar Cliente</label>
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                        <Input
+                          placeholder="Buscar por nombre, teléfono o RNC..."
+                          value={customerSearchTerm}
+                          onChange={(e) => setCustomerSearchTerm(e.target.value)}
+                          className="pl-10"
+                        />
+                      </div>
+                      
+                      {/* Lista de resultados filtrados */}
+                      {customerSearchTerm && customersData && customersData.length > 0 && (
+                        <div className="max-h-32 overflow-y-auto border rounded-md bg-white dark:bg-gray-800">
+                          {customersData
+                            .filter((customer: any) => 
+                              customer.name?.toLowerCase().includes(customerSearchTerm.toLowerCase()) ||
+                              customer.phone?.includes(customerSearchTerm) ||
+                              customer.rnc?.includes(customerSearchTerm)
+                            )
+                            .slice(0, 5)
+                            .map((customer: any) => (
+                              <div 
+                                key={customer.id}
+                                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer border-b last:border-b-0"
+                                onClick={() => {
+                                  setCustomerName(customer.name || "");
+                                  setCustomerPhone(customer.phone || "");
+                                  setCustomerRnc(customer.rnc || "");
+                                  setCustomerAddress(customer.address || "");
+                                  setCustomerSearchTerm("");
+                                  toast({
+                                    title: "Cliente seleccionado",
+                                    description: `${customer.name}`,
+                                  });
+                                }}
+                              >
+                                <div className="text-sm font-medium">{customer.name}</div>
+                                <div className="text-xs text-gray-500">
+                                  {customer.phone} {customer.rnc ? `• RNC: ${customer.rnc}` : ''}
+                                </div>
                               </div>
+                            ))}
+                          
+                          {/* Opción para crear nuevo */}
+                          <div 
+                            className="p-2 hover:bg-blue-50 dark:hover:bg-blue-900/20 cursor-pointer text-blue-600 dark:text-blue-400 border-t"
+                            onClick={() => {
+                              setCustomerName("");
+                              setCustomerPhone("");
+                              setCustomerRnc("");
+                              setCustomerAddress("");
+                              setCustomerSearchTerm("");
+                            }}
+                          >
+                            <div className="text-sm font-medium flex items-center">
+                              <Plus className="h-4 w-4 mr-2" />
+                              Crear nuevo cliente
                             </div>
-                          ))}
-                        
-                        {/* Opción para crear nuevo */}
-                        <div 
-                          className="p-2 hover:bg-blue-50 dark:hover:bg-blue-900/20 cursor-pointer text-blue-600 dark:text-blue-400 border-t"
-                          onClick={() => {
-                            setCustomerName("");
-                            setCustomerPhone("");
-                            setCustomerRnc("");
-                            setCustomerAddress("");
-                            setCustomerSearchTerm("");
-                          }}
-                        >
-                          <div className="text-sm font-medium flex items-center">
-                            <Plus className="h-4 w-4 mr-2" />
-                            Crear nuevo cliente
                           </div>
                         </div>
-                      </div>
-                    )}
-                  </div>
+                      )}
+                    </div>
 
-                  <div className="border-t pt-3 space-y-3">
-                    {useFiscalReceipt ? (
-                      <RNCCompanySuggestions
-                        label=""
-                        placeholder="Buscar empresa por nombre... *"
-                        value={customerName}
-                        onChange={setCustomerName}
-                        onCompanySelect={(company) => {
-                          setCustomerName(company.name);
-                          setCustomerRnc(company.rnc);
-                          toast({
-                            title: "Empresa seleccionada",
-                            description: `${company.name} - RNC: ${company.rnc}`,
-                          });
-                        }}
-                        className={!customerName ? "border-red-300" : ""}
-                      />
-                    ) : (
-                      <Input
-                        placeholder="Nombre del cliente"
-                        value={customerName}
-                        onChange={(e) => setCustomerName(e.target.value)}
-                      />
-                    )}
-                    <Input
-                      placeholder="Teléfono"
-                      value={customerPhone}
-                      onChange={(e) => setCustomerPhone(e.target.value)}
-                    />
-                  
-                    {/* Campos obligatorios para comprobante fiscal */}
-                    {useFiscalReceipt && (
-                      <>
-                        <div className="flex gap-2">
-                          <Input
-                            placeholder="RNC/Cédula *"
-                            value={customerRnc}
-                            onChange={(e) => setCustomerRnc(e.target.value)}
-                            className={!customerRnc ? "border-red-300 flex-1" : "flex-1"}
-                          />
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={async () => {
-                              if (!customerRnc || customerRnc.length < 9) return;
-                              
-                              try {
-                                const response = await apiRequest('/api/pos/customers/search-rnc', {
-                                  method: 'POST',
-                                  body: { rnc: customerRnc }
-                                });
-                                
-                                if (response.ok) {
-                                  const result = await response.json();
-                                  if (result.exists && result.customer) {
-                                    // Customer already exists, fill with existing data
-                                    setCustomerName(result.customer.name || "");
-                                    setCustomerPhone(result.customer.phone || "");
-                                    setCustomerAddress(result.customer.address || "");
-                                    alert("Cliente existente encontrado. Datos cargados automáticamente.");
-                                  } else if (result.validation?.valid && result.validation?.data) {
-                                    // RNC is valid, auto-fill with DGII data
-                                    setCustomerName(result.validation.data.name || "");
-                                    setCustomerAddress(result.validation.data.businessName || "");
-                                    alert("RNC validado exitosamente. Datos completados automáticamente.");
-                                  } else {
-                                    alert("RNC no encontrado en el registro DGII");
-                                  }
-                                }
-                              } catch (error) {
-                                console.error("Error validating RNC:", error);
-                              }
-                            }}
-                            disabled={!customerRnc || customerRnc.length < 9}
-                          >
-                            <Search className="h-4 w-4 mr-1" />
-                            Verificar
-                          </Button>
-                        </div>
-                        <Input
-                          placeholder="Dirección completa *"
-                          value={customerAddress}
-                          onChange={(e) => setCustomerAddress(e.target.value)}
-                          className={!customerAddress ? "border-red-300" : ""}
+                    <div className="border-t pt-3 space-y-3">
+                      {useFiscalReceipt ? (
+                        <RNCCompanySuggestions
+                          label=""
+                          placeholder="Buscar empresa por nombre... *"
+                          value={customerName}
+                          onChange={setCustomerName}
+                          onCompanySelect={(company) => {
+                            setCustomerName(company.name);
+                            setCustomerRnc(company.rnc);
+                            toast({
+                              title: "Empresa seleccionada",
+                              description: `${company.name} - RNC: ${company.rnc}`,
+                            });
+                          }}
+                          className={!customerName ? "border-red-300" : ""}
                         />
-                        <div className="text-xs text-amber-600 bg-amber-50 dark:bg-amber-900/20 p-2 rounded">
-                          <strong>DGII:</strong> Los campos marcados con * son obligatorios para comprobantes fiscales
-                        </div>
-                      </>
-                    )}
+                      ) : (
+                        <Input
+                          placeholder="Nombre del cliente"
+                          value={customerName}
+                          onChange={(e) => setCustomerName(e.target.value)}
+                        />
+                      )}
+                      <Input
+                        placeholder="Teléfono"
+                        value={customerPhone}
+                        onChange={(e) => setCustomerPhone(e.target.value)}
+                      />
+                    
+                      {/* Campos obligatorios para comprobante fiscal */}
+                      {useFiscalReceipt && (
+                        <>
+                          <div className="flex gap-2">
+                            <Input
+                              placeholder="RNC/Cédula *"
+                              value={customerRnc}
+                              onChange={(e) => setCustomerRnc(e.target.value)}
+                              className={!customerRnc ? "border-red-300 flex-1" : "flex-1"}
+                            />
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={async () => {
+                                if (!customerRnc || customerRnc.length < 9) return;
+                                
+                                try {
+                                  const response = await apiRequest('/api/pos/customers/search-rnc', {
+                                    method: 'POST',
+                                    body: { rnc: customerRnc }
+                                  });
+                                  
+                                  if (response.ok) {
+                                    const result = await response.json();
+                                    if (result.exists && result.customer) {
+                                      // Customer already exists, fill with existing data
+                                      setCustomerName(result.customer.name || "");
+                                      setCustomerPhone(result.customer.phone || "");
+                                      setCustomerAddress(result.customer.address || "");
+                                      alert("Cliente existente encontrado. Datos cargados automáticamente.");
+                                    } else if (result.validation?.valid && result.validation?.data) {
+                                      // RNC is valid, auto-fill with DGII data
+                                      setCustomerName(result.validation.data.name || "");
+                                      setCustomerAddress(result.validation.data.businessName || "");
+                                      alert("RNC validado exitosamente. Datos completados automáticamente.");
+                                    } else {
+                                      alert("RNC no encontrado en el registro DGII");
+                                    }
+                                  }
+                                } catch (error) {
+                                  console.error("Error validating RNC:", error);
+                                }
+                              }}
+                              disabled={!customerRnc || customerRnc.length < 9}
+                            >
+                              <Search className="h-4 w-4 mr-1" />
+                              Verificar
+                            </Button>
+                          </div>
+                          <Input
+                            placeholder="Dirección completa *"
+                            value={customerAddress}
+                            onChange={(e) => setCustomerAddress(e.target.value)}
+                            className={!customerAddress ? "border-red-300" : ""}
+                          />
+                          <div className="text-xs text-amber-600 bg-amber-50 dark:bg-amber-900/20 p-2 rounded">
+                            <strong>DGII:</strong> Los campos marcados con * son obligatorios para comprobantes fiscales
+                          </div>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
 
-                  {/* Sección de Totales y Pago */}
-                  <div className="space-y-3 pt-2 border-t border-gray-200 dark:border-gray-700">
-                    <h3 className="font-medium text-sm text-gray-700 dark:text-gray-300 flex items-center gap-2">
-                      <Calculator className="h-4 w-4" />
-                      Totales
-                    </h3>
+                {/* Sección de Totales y Pago */}
+                <div className="space-y-3 pt-2 border-t border-gray-200 dark:border-gray-700">
+                  <h3 className="font-medium text-sm text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                    <Calculator className="h-4 w-4" />
+                    Totales
+                  </h3>
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
                       <span>Subtotal:</span>
@@ -787,107 +787,107 @@ export default function POS() {
                     </div>
                   </div>
 
-                    <div className="space-y-3">
-                      <div>
-                        <label className="text-sm font-medium mb-2 block">Método de Pago</label>
-                        <Select value={paymentMethod} onValueChange={(value: "cash" | "card") => setPaymentMethod(value)}>
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="cash">
-                              <div className="flex items-center gap-2">
-                                <Banknote className="h-4 w-4" />
-                                Efectivo
-                              </div>
-                            </SelectItem>
-                            <SelectItem value="card">
-                              <div className="flex items-center gap-2">
-                                <CreditCard className="h-4 w-4" />
-                                Tarjeta
-                              </div>
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-sm font-medium mb-2 block">Método de Pago</label>
+                      <Select value={paymentMethod} onValueChange={(value: "cash" | "card") => setPaymentMethod(value)}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="cash">
+                            <div className="flex items-center gap-2">
+                              <Banknote className="h-4 w-4" />
+                              Efectivo
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="card">
+                            <div className="flex items-center gap-2">
+                              <CreditCard className="h-4 w-4" />
+                              Tarjeta
+                            </div>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Opciones de Comprobante Fiscal */}
+                    <div className="space-y-3 border-t pt-3">
+                      <div className="flex items-center space-x-2">
+                        <input
+                          id="useFiscalReceipt"
+                          type="checkbox"
+                          checked={useFiscalReceipt}
+                          onChange={(e) => setUseFiscalReceipt(e.target.checked)}
+                          className="rounded"
+                        />
+                        <label htmlFor="useFiscalReceipt" className="text-sm font-medium">
+                          Generar Comprobante Fiscal
+                        </label>
                       </div>
 
-                      {/* Opciones de Comprobante Fiscal */}
-                      <div className="space-y-3 border-t pt-3">
-                        <div className="flex items-center space-x-2">
-                          <input
-                            id="useFiscalReceipt"
-                            type="checkbox"
-                            checked={useFiscalReceipt}
-                            onChange={(e) => setUseFiscalReceipt(e.target.checked)}
-                            className="rounded"
-                          />
-                          <label htmlFor="useFiscalReceipt" className="text-sm font-medium">
-                            Generar Comprobante Fiscal
-                          </label>
-                        </div>
-
-                        {useFiscalReceipt && (
-                          <div>
-                            <label className="text-sm font-medium mb-2 block">Tipo de NCF</label>
-                            <Select value={selectedNCFType} onValueChange={setSelectedNCFType}>
-                              <SelectTrigger>
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="B01">B01 - Crédito Fiscal</SelectItem>
-                                <SelectItem value="B02">B02 - Consumidor Final</SelectItem>
-                                <SelectItem value="B03">B03 - Nota de Débito</SelectItem>
-                                <SelectItem value="B04">B04 - Nota de Crédito</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        )}
-                      </div>
-
-                      {paymentMethod === "cash" && (
+                      {useFiscalReceipt && (
                         <div>
-                          <label className="text-sm font-medium mb-2 block">Efectivo Recibido</label>
-                          <Input
-                            type="number"
-                            step="0.01"
-                            placeholder="0.00"
-                            value={cashReceived}
-                            onChange={(e) => setCashReceived(e.target.value)}
-                          />
-                          {cashReceived && parseFloat(cashReceived) >= total && (
-                            <p className="text-sm text-green-600 dark:text-green-400 mt-1">
-                              Cambio: {formatDOP(cashChange)}
-                            </p>
-                          )}
+                          <label className="text-sm font-medium mb-2 block">Tipo de NCF</label>
+                          <Select value={selectedNCFType} onValueChange={setSelectedNCFType}>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="B01">B01 - Crédito Fiscal</SelectItem>
+                              <SelectItem value="B02">B02 - Consumidor Final</SelectItem>
+                              <SelectItem value="B03">B03 - Nota de Débito</SelectItem>
+                              <SelectItem value="B04">B04 - Nota de Crédito</SelectItem>
+                            </SelectContent>
+                          </Select>
                         </div>
                       )}
+                    </div>
 
-                      <div className="flex gap-2 pt-2">
-                        <Button
-                          onClick={() => setShowCalculator(true)}
-                          variant="outline"
-                          size="lg"
-                          className="flex-1"
-                        >
-                          <Calculator className="h-4 w-4 mr-2" />
-                          Calculadora
-                        </Button>
-                        <Button
-                          onClick={processSale}
-                          disabled={cart.length === 0 || isProcessing || (paymentMethod === "cash" && (!cashReceived || parseFloat(cashReceived) < total))}
-                          className="flex-1 bg-green-600 hover:bg-green-700"
-                          size="lg"
-                        >
-                          {isProcessing ? (
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                          ) : (
-                            <Receipt className="h-4 w-4 mr-2" />
-                          )}
-                          {isProcessing ? "Procesando..." : "Procesar Venta"}
-                        </Button>
+                    {paymentMethod === "cash" && (
+                      <div>
+                        <label className="text-sm font-medium mb-2 block">Efectivo Recibido</label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          placeholder="0.00"
+                          value={cashReceived}
+                          onChange={(e) => setCashReceived(e.target.value)}
+                        />
+                        {cashReceived && parseFloat(cashReceived) >= total && (
+                          <p className="text-sm text-green-600 dark:text-green-400 mt-1">
+                            Cambio: {formatDOP(cashChange)}
+                          </p>
+                        )}
                       </div>
+                    )}
+
+                    <div className="flex gap-2 pt-2">
+                      <Button
+                        onClick={() => setShowCalculator(true)}
+                        variant="outline"
+                        size="lg"
+                        className="flex-1"
+                      >
+                        <Calculator className="h-4 w-4 mr-2" />
+                        Calculadora
+                      </Button>
+                      <Button
+                        onClick={processSale}
+                        disabled={cart.length === 0 || isProcessing || (paymentMethod === "cash" && (!cashReceived || parseFloat(cashReceived) < total))}
+                        className="flex-1 bg-green-600 hover:bg-green-700"
+                        size="lg"
+                      >
+                        {isProcessing ? (
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                        ) : (
+                          <Receipt className="h-4 w-4 mr-2" />
+                        )}
+                        {isProcessing ? "Procesando..." : "Procesar Venta"}
+                      </Button>
                     </div>
                   </div>
+                </div>
               </CardContent>
             </Card>
           </div>
