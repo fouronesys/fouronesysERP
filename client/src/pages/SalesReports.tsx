@@ -321,11 +321,11 @@ export default function SalesReports() {
   const hasNoData = (!invoices || invoices.length === 0) && (!posSales || posSales.length === 0);
 
   return (
-    <div className="flex-1 flex flex-col bg-gray-50 dark:bg-gray-900">
+    <div className="flex-1 flex flex-col bg-gray-50 dark:bg-gray-900 min-h-screen">
       <Header title="Reportes de Ventas" subtitle="Análisis detallado de tus ventas" />
       
-      <div className="flex-1 overflow-y-auto">
-        <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-6">
+      <div className="flex-1 overflow-y-auto pb-20">
+        <div className="max-w-7xl mx-auto p-3 sm:p-4 lg:p-6 space-y-4 sm:space-y-6">
           
           {hasNoData && (
             <Card className="border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-900/20">
@@ -346,14 +346,14 @@ export default function SalesReports() {
           )}
           {/* Filters Section */}
           <Card className="border-gray-200 dark:border-gray-700">
-            <CardHeader className="pb-4">
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Filter className="h-5 w-5" />
+            <CardHeader className="pb-3 sm:pb-4">
+              <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                <Filter className="h-4 w-4 sm:h-5 sm:w-5" />
                 Filtros de Reporte
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <CardContent className="pt-0">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                 {/* Period Filter */}
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -447,7 +447,7 @@ export default function SalesReports() {
           </Card>
 
           {/* Metrics Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
             <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 border-blue-200 dark:border-blue-800">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium text-blue-900 dark:text-blue-100">
@@ -518,16 +518,16 @@ export default function SalesReports() {
           </div>
 
           {/* Detailed Metrics */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
             {/* Revenue Breakdown */}
             <Card className="border-gray-200 dark:border-gray-700">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <BarChart3 className="h-5 w-5" />
+              <CardHeader className="pb-3 sm:pb-4">
+                <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                  <BarChart3 className="h-4 w-4 sm:h-5 sm:w-5" />
                   Desglose de Ingresos
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-3 sm:space-y-4 pt-0">
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
                     <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Ingresos por Facturas</span>
@@ -575,13 +575,13 @@ export default function SalesReports() {
 
             {/* Status Summary */}
             <Card className="border-gray-200 dark:border-gray-700">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FileText className="h-5 w-5" />
+              <CardHeader className="pb-3 sm:pb-4">
+                <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                  <FileText className="h-4 w-4 sm:h-5 sm:w-5" />
                   Resumen de Estados
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-3 sm:space-y-4 pt-0">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="text-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
                     <div className="text-2xl font-bold text-green-600 dark:text-green-400">
@@ -648,16 +648,16 @@ export default function SalesReports() {
 
           {/* Transactions Table */}
           <Card className="border-gray-200 dark:border-gray-700">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <BarChart3 className="h-5 w-5" />
+            <CardHeader className="pb-3 sm:pb-4">
+              <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                <BarChart3 className="h-4 w-4 sm:h-5 sm:w-5" />
                 Detalle de Transacciones
-                <Badge variant="secondary" className="ml-2">
+                <Badge variant="secondary" className="ml-2 text-xs">
                   {reportMetrics.transactions.length}
                 </Badge>
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-0">
               {reportMetrics.transactions.length === 0 ? (
                 <div className="text-center py-8">
                   <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -727,33 +727,34 @@ export default function SalesReports() {
                     </div>
 
                     {/* Mobile Cards */}
-                    <div className="sm:hidden space-y-4">
+                    <div className="sm:hidden space-y-3">
                       {reportMetrics.transactions.slice(0, 20).map((transaction, index) => (
                         <Card key={index} className="border-gray-200 dark:border-gray-700">
-                          <CardContent className="p-4">
+                          <CardContent className="p-3">
                             <div className="flex justify-between items-start mb-2">
-                              <div>
-                                <p className="font-medium text-gray-900 dark:text-gray-100">
+                              <div className="flex-1 min-w-0">
+                                <p className="font-medium text-gray-900 dark:text-gray-100 text-sm truncate">
                                   {transaction.id}
                                 </p>
-                                <p className="text-sm text-gray-500 dark:text-gray-400">
+                                <p className="text-xs text-gray-500 dark:text-gray-400">
                                   {formatDate(transaction.date)}
                                 </p>
                               </div>
-                              <Badge variant={transaction.type === "Factura" ? "default" : "secondary"}>
+                              <Badge variant={transaction.type === "Factura" ? "default" : "secondary"} className="text-xs ml-2">
                                 {transaction.type}
                               </Badge>
                             </div>
                             <div className="space-y-1">
-                              <p className="text-sm text-gray-600 dark:text-gray-300">
-                                Cliente: {transaction.customer}
+                              <p className="text-xs text-gray-600 dark:text-gray-300 truncate">
+                                {transaction.customer}
                               </p>
-                              <div className="flex justify-between items-center">
-                                <span className="font-medium text-gray-900 dark:text-gray-100">
+                              <div className="flex justify-between items-center pt-1">
+                                <span className="font-semibold text-gray-900 dark:text-gray-100 text-sm">
                                   {formatCurrency(transaction.amount)}
                                 </span>
                                 <Badge 
                                   variant={transaction.status === "paid" || transaction.status === "completado" ? "default" : "secondary"}
+                                  className="text-xs"
                                 >
                                   {transaction.status}
                                 </Badge>
