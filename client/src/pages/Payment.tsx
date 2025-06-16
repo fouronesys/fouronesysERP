@@ -456,7 +456,7 @@ export default function Payment() {
                     <strong>Información:</strong> info@fourone.com.do
                   </p>
                   <p>
-                    <strong>Teléfono:</strong> (809) 555-0123
+                    <strong>Teléfono:</strong> (829) 351-9324
                   </p>
                 </div>
               </CardContent>
