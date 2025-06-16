@@ -51,7 +51,10 @@ export function RNCCompanySuggestions({
 
       setIsLoading(true);
       try {
-        const response = await apiRequest("GET", `/api/rnc/search?query=${encodeURIComponent(value)}&limit=10`);
+        const response = await fetch(`/api/rnc/search?query=${encodeURIComponent(value)}&limit=10`, {
+          method: 'GET',
+          credentials: 'include'
+        });
         const data = await response.json();
         
         if (data.companies && Array.isArray(data.companies)) {

@@ -29,6 +29,7 @@ import { useToast } from "@/hooks/use-toast";
 import MobileCalculator from "@/components/MobileCalculator";
 import InvoicePrintModal from "@/components/InvoicePrintModal";
 import POSCustomerSelect from "@/components/POSCustomerSelect";
+import { RNCCompanySuggestions } from "@/components/RNCCompanySuggestions";
 import type { Product, Customer, POSPrintSettings, Company } from "@shared/schema";
 
 // Hook para detectar móvil
@@ -643,12 +644,29 @@ export default function POS() {
                   </div>
 
                   <div className="border-t pt-3 space-y-3">
-                    <Input
-                      placeholder={useFiscalReceipt ? "Nombre del cliente *" : "Nombre del cliente"}
-                      value={customerName}
-                      onChange={(e) => setCustomerName(e.target.value)}
-                      className={useFiscalReceipt && !customerName ? "border-red-300" : ""}
-                    />
+                    {useFiscalReceipt ? (
+                      <RNCCompanySuggestions
+                        label=""
+                        placeholder="Buscar empresa por nombre... *"
+                        value={customerName}
+                        onChange={setCustomerName}
+                        onCompanySelect={(company) => {
+                          setCustomerName(company.name);
+                          setCustomerRnc(company.rnc);
+                          toast({
+                            title: "Empresa seleccionada",
+                            description: `${company.name} - RNC: ${company.rnc}`,
+                          });
+                        }}
+                        className={!customerName ? "border-red-300" : ""}
+                      />
+                    ) : (
+                      <Input
+                        placeholder="Nombre del cliente"
+                        value={customerName}
+                        onChange={(e) => setCustomerName(e.target.value)}
+                      />
+                    )}
                     <Input
                       placeholder="Teléfono"
                       value={customerPhone}

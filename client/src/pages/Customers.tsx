@@ -16,6 +16,7 @@ import { z } from "zod";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { RNCCompanySuggestions } from "@/components/RNCCompanySuggestions";
 import type { Customer } from "@shared/schema";
 
 const customerSchema = z.object({
@@ -392,7 +393,29 @@ export default function Customers() {
                   <FormItem>
                     <FormLabel>Nombre *</FormLabel>
                     <FormControl>
-                      <Input placeholder="Nombre del cliente" {...field} />
+                      {form.watch("type") === "company" ? (
+                        <RNCCompanySuggestions
+                          label=""
+                          placeholder="Buscar empresa por nombre..."
+                          value={field.value}
+                          onChange={field.onChange}
+                          onCompanySelect={(company) => {
+                            form.setValue("name", company.name);
+                            form.setValue("rnc", company.rnc);
+                            setRncVerification({
+                              isValid: true,
+                              rnc: company.rnc,
+                              companyName: company.name,
+                              status: company.status,
+                              category: company.category,
+                              message: "Empresa encontrada en el registro DGII",
+                              source: "DGII"
+                            });
+                          }}
+                        />
+                      ) : (
+                        <Input placeholder="Nombre del cliente" {...field} />
+                      )}
                     </FormControl>
                     <FormMessage />
                   </FormItem>
