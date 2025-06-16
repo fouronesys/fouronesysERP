@@ -88,7 +88,7 @@ export default function Payment() {
       companyName: "",
       plan: "monthly",
       email: user?.email || "",
-      phone: ""
+      phone: "8293519324"
     }
   });
 
@@ -117,21 +117,23 @@ export default function Payment() {
     }
 
     try {
-      const response = await apiRequest("POST", "/api/validate-rnc", { rnc });
+      const response = await fetch(`/api/customers/verify-rnc/${encodeURIComponent(rnc)}`, {
+        credentials: 'include'
+      });
       const data = await response.json();
       
       if (data.isValid) {
         setRncValidation({
           isValid: true,
-          companyName: data.companyName
+          companyName: data.razonSocial || data.companyName
         });
-        if (data.companyName) {
-          form.setValue("companyName", data.companyName);
+        if (data.razonSocial || data.companyName) {
+          form.setValue("companyName", data.razonSocial || data.companyName);
         }
       } else {
         setRncValidation({
           isValid: false,
-          error: "RNC no encontrado en el registro de la DGII"
+          error: data.message || "RNC no encontrado en el registro de la DGII"
         });
       }
     } catch (error) {

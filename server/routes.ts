@@ -24,6 +24,7 @@ import { InvoiceHTMLService } from "./invoice-html-service";
 import { InvoicePOS80mmService } from "./invoice-pos-80mm-service";
 import { simpleAccountingService } from "./accounting-service-simple";
 import { sendPasswordSetupEmail } from "./email-service";
+import { initializeAdminUser } from "./init-admin";
 import QRCode from "qrcode";
 import multer from "multer";
 import path from "path";
@@ -126,7 +127,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
   await setupAuth(app);
 
-  // Initialize RNC registry on startup
+  // Initialize admin user and RNC registry on startup
+  await initializeAdminUser();
   await initializeRNCRegistry();
 
   // Auth routes
