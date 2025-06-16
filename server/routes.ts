@@ -2703,7 +2703,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error("Error generating product description:", error);
         res
           .status(500)
-          .json({ message: error.message || "Failed to generate description" });
+          .json({ message: String(error) || "Failed to generate description" });
       }
     },
   );
@@ -2728,7 +2728,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Error generating product code:", error);
       res
         .status(500)
-        .json({ message: error.message || "Failed to generate code" });
+        .json({ message: String(error) || "Failed to generate code" });
     }
   });
 
@@ -2758,7 +2758,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Error analyzing sales:", error);
       res
         .status(500)
-        .json({ message: error.message || "Failed to analyze sales" });
+        .json({ message: String(error) || "Failed to analyze sales" });
     }
   });
 
@@ -2795,6 +2795,136 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     },
   );
+
+  // MANUFACTURING MODULE ROUTES
+  
+  // Production Orders
+  app.get("/api/production-orders", isAuthenticated, async (req: any, res) => {
+    try {
+      const companyId = req.user.companyId;
+      const orders = await storage.getProductionOrders(companyId);
+      res.json(orders);
+    } catch (error) {
+      console.error("Error fetching production orders:", error);
+      res.status(500).json({ message: "Failed to fetch production orders" });
+    }
+  });
+
+  app.post("/api/production-orders", isAuthenticated, async (req: any, res) => {
+    try {
+      const companyId = req.user.companyId;
+      const userId = req.user.id;
+      const orderData = {
+        ...req.body,
+        companyId,
+        createdBy: userId,
+        status: 'draft'
+      };
+      
+      const order = await storage.createProductionOrder(orderData);
+      res.json(order);
+    } catch (error) {
+      console.error("Error creating production order:", error);
+      res.status(500).json({ message: "Failed to create production order" });
+    }
+  });
+
+  app.patch("/api/production-orders/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const orderId = parseInt(req.params.id);
+      const companyId = req.user.companyId;
+      
+      const order = await storage.updateProductionOrder(orderId, req.body, companyId);
+      res.json(order);
+    } catch (error) {
+      console.error("Error updating production order:", error);
+      res.status(500).json({ message: "Failed to update production order" });
+    }
+  });
+
+  app.delete("/api/production-orders/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const orderId = parseInt(req.params.id);
+      const companyId = req.user.companyId;
+      
+      await storage.deleteProductionOrder(orderId, companyId);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting production order:", error);
+      res.status(500).json({ message: "Failed to delete production order" });
+    }
+  });
+
+  // Bill of Materials (BOM)
+  app.get("/api/bom/:productId", isAuthenticated, async (req: any, res) => {
+    try {
+      const productId = parseInt(req.params.productId);
+      const companyId = req.user.companyId;
+      
+      const bomItems = await storage.getBOMByProduct(productId, companyId);
+      res.json(bomItems);
+    } catch (error) {
+      console.error("Error fetching BOM:", error);
+      res.status(500).json({ message: "Failed to fetch BOM" });
+    }
+  });
+
+  app.post("/api/bom", isAuthenticated, async (req: any, res) => {
+    try {
+      const companyId = req.user.companyId;
+      const bomData = {
+        ...req.body,
+        companyId
+      };
+      
+      const bomItem = await storage.createBOMItem(bomData);
+      res.json(bomItem);
+    } catch (error) {
+      console.error("Error creating BOM item:", error);
+      res.status(500).json({ message: "Failed to create BOM item" });
+    }
+  });
+
+  app.patch("/api/bom/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const bomId = parseInt(req.params.id);
+      const companyId = req.user.companyId;
+      
+      const bomItem = await storage.updateBOMItem(bomId, req.body, companyId);
+      res.json(bomItem);
+    } catch (error) {
+      console.error("Error updating BOM item:", error);
+      res.status(500).json({ message: "Failed to update BOM item" });
+    }
+  });
+
+  app.delete("/api/bom/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const bomId = parseInt(req.params.id);
+      const companyId = req.user.companyId;
+      
+      await storage.deleteBOMItem(bomId, companyId);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting BOM item:", error);
+      res.status(500).json({ message: "Failed to delete BOM item" });
+    }
+  });
+
+  // Manufacturing cost calculation
+  app.get("/api/manufacturing/costs/:productId", isAuthenticated, async (req: any, res) => {
+    try {
+      const productId = parseInt(req.params.productId);
+      const companyId = req.user.companyId;
+      const quantity = parseInt(req.query.quantity as string) || 1;
+      
+      const costs = await storage.calculateManufacturingCosts(productId, quantity, companyId);
+      res.json(costs);
+    } catch (error) {
+      console.error("Error calculating manufacturing costs:", error);
+      res.status(500).json({ message: "Failed to calculate manufacturing costs" });
+    }
+  });
 
   // ACCOUNTING MODULE ROUTES
 
@@ -3020,7 +3150,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Error processing chat:", error);
       res
         .status(500)
-        .json({ message: error.message || "Failed to process message" });
+        .json({ message: String(error) || "Failed to process message" });
     }
   });
 
@@ -3067,7 +3197,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error("Error extracting invoice data:", error);
         res
           .status(500)
-          .json({ message: error.message || "Failed to extract data" });
+          .json({ message: String(error) || "Failed to extract data" });
       }
     },
   );
