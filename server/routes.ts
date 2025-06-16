@@ -409,14 +409,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const validatedData = insertCompanySchema
           .omit({ ownerId: true })
           .partial()
-          .parse(updateData) as any;
+          .parse(updateData);
         const company = await storage.updateCompany(id, validatedData);
         res.json(company);
       } catch (error) {
         console.error("Error updating company:", error);
         res
           .status(500)
-          .json({ message: "Failed to update company", error: error.message });
+          .json({ message: "Failed to update company", error: String(error) });
       }
     },
   );
@@ -640,7 +640,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validatedData = insertCompanySchema
         .omit({ ownerId: true })
         .partial()
-        .parse(updateData) as any;
+        .parse(updateData);
       console.log("Validated update data:", validatedData);
 
       const updatedCompany = await storage.updateCompany(
@@ -1173,7 +1173,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Error details:", JSON.stringify(error, null, 2));
       res
         .status(500)
-        .json({ message: "Failed to create POS sale", error: error.message });
+        .json({ message: "Failed to create POS sale", error: String(error) });
     }
   });
 
@@ -1863,7 +1863,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .status(500)
           .json({
             message: "Failed to create NCF sequence",
-            error: error.message,
+            error: String(error),
           });
       }
     },
@@ -2445,7 +2445,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error("Error importing RNC data:", error);
         res.status(500).json({
           message: "Failed to import RNC data",
-          error: error.message,
+          error: String(error),
         });
       }
     },
@@ -2791,7 +2791,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error("Error optimizing inventory:", error);
         res
           .status(500)
-          .json({ message: error.message || "Failed to optimize inventory" });
+          .json({ message: String(error) || "Failed to optimize inventory" });
       }
     },
   );
