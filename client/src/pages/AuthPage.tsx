@@ -68,12 +68,14 @@ export default function AuthPage() {
 
   const loginMutation = useMutation({
     mutationFn: async (data: LoginForm) => {
-      const response = await apiRequest("POST", "/api/login", data);
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw errorData;
+      try {
+        const response = await apiRequest("POST", "/api/login", data);
+        const result = await response.json();
+        return result;
+      } catch (error) {
+        console.error("Login mutation error:", error);
+        throw error;
       }
-      return response.json();
     },
     onSuccess: (user) => {
       toast({
@@ -85,25 +87,46 @@ export default function AuthPage() {
       setShowLoginAnimation(true);
     },
     onError: (error: any) => {
-      if (error.message === "processing") {
+      console.error("Login error:", error);
+      
+      // Extract error message from the error object
+      let errorMessage = "Credenciales inválidas";
+      
+      if (error && typeof error === 'object') {
+        if (error.message) {
+          errorMessage = error.message;
+        } else if (typeof error === 'string') {
+          errorMessage = error;
+        }
+      }
+      
+      // Handle specific error types
+      if (errorMessage === "processing") {
         toast({
-          title: error.title || "Orden en Procesamiento",
-          description: error.description || "Su pago ha sido confirmado y su cuenta está siendo procesada.",
+          title: "Orden en Procesamiento",
+          description: "Su pago ha sido confirmado y su cuenta está siendo procesada.",
           variant: "default",
         });
-      } else if (error.message === "payment_required") {
+      } else if (errorMessage === "payment_required") {
         toast({
-          title: error.title || "Pago Requerido",
-          description: error.description || "Debe completar el pago para activar su cuenta.",
+          title: "Pago Requerido",
+          description: "Debe completar el pago para activar su cuenta.",
           variant: "destructive",
         });
         setTimeout(() => {
           window.location.href = "/payment";
         }, 2000);
       } else {
+        // Parse the error message if it contains status codes
+        if (errorMessage.includes("401:")) {
+          errorMessage = "Email o contraseña incorrectos";
+        } else if (errorMessage.includes("500:")) {
+          errorMessage = "Error interno del servidor";
+        }
+        
         toast({
           title: "Error de inicio de sesión",
-          description: error.message || "Credenciales inválidas",
+          description: errorMessage,
           variant: "destructive",
         });
       }
