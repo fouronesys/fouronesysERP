@@ -5498,10 +5498,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const submission = await storage.getUserPaymentStatus(userEmail);
       
       if (!submission) {
-        return res.json({ status: 'pending', message: 'No payment submission found' });
+        return res.json({ 
+          hasValidPayment: false, 
+          status: 'pending', 
+          message: 'No payment submission found' 
+        });
       }
       
+      // Check if payment is confirmed
+      const hasValidPayment = submission.status === 'confirmed';
+      
       res.json({ 
+        hasValidPayment,
         status: submission.status || 'pending',
         submittedAt: submission.submittedAt,
         processedAt: submission.processedAt

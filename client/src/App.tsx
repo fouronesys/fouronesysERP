@@ -61,8 +61,16 @@ function ProtectedRoute({ component: Component, ...props }: { component: React.C
     retry: false,
   });
 
+  // Check payment status for authenticated users
+  const { data: paymentStatus, isLoading: isPaymentLoading } = useQuery({
+    queryKey: ["/api/user/payment-status"],
+    enabled: !!user,
+    retry: false,
+  });
+
   const { toast } = useToast();
   const isAuthenticated = !!user;
+  const hasValidPayment = paymentStatus?.hasValidPayment === true;
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -77,7 +85,20 @@ function ProtectedRoute({ component: Component, ...props }: { component: React.C
     }
   }, [isAuthenticated, isLoading, toast]);
 
-  if (isLoading) {
+  useEffect(() => {
+    if (isAuthenticated && !isPaymentLoading && !hasValidPayment) {
+      toast({
+        title: "Pago requerido",
+        description: "Debes completar el pago para acceder al sistema.",
+        variant: "destructive",
+      });
+      setTimeout(() => {
+        window.location.href = "/payment";
+      }, 1000);
+    }
+  }, [isAuthenticated, isPaymentLoading, hasValidPayment, toast]);
+
+  if (isLoading || (isAuthenticated && isPaymentLoading)) {
     return (
       <div className="fixed inset-0 bg-gradient-to-br from-blue-900 via-blue-800 to-indigo-900 flex items-center justify-center z-50">
         <div className="text-center max-w-md mx-auto px-6">
@@ -105,7 +126,7 @@ function ProtectedRoute({ component: Component, ...props }: { component: React.C
     );
   }
 
-  if (!isAuthenticated) {
+  if (!isAuthenticated || !hasValidPayment) {
     return null;
   }
 
