@@ -2993,6 +2993,16 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return payment;
   }
+
+  async getUserPaymentStatus(email: string): Promise<any> {
+    const [payment] = await db
+      .select()
+      .from(paymentSubmissions)
+      .where(eq(paymentSubmissions.email, email))
+      .orderBy(desc(paymentSubmissions.submittedAt))
+      .limit(1);
+    return payment;
+  }
 }
 
 export const storage = new DatabaseStorage();

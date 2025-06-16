@@ -179,7 +179,7 @@ function Router() {
   }
 
   // Show payment page if user is authenticated but payment not confirmed
-  if (isAuthenticated && paymentStatus && paymentStatus.status !== 'confirmed') {
+  if (isAuthenticated && paymentStatus && (paymentStatus as any).status !== 'confirmed') {
     return (
       <Switch>
         <Route path="/payment" component={Payment} />

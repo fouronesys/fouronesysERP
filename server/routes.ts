@@ -5488,5 +5488,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get user payment status
+  app.get("/api/user/payment-status", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const userEmail = req.user.email;
+      
+      // Find user's payment submission
+      const submission = await storage.getUserPaymentStatus(userEmail);
+      
+      if (!submission) {
+        return res.json({ status: 'pending', message: 'No payment submission found' });
+      }
+      
+      res.json({ 
+        status: submission.status || 'pending',
+        submittedAt: submission.submittedAt,
+        processedAt: submission.processedAt
+      });
+    } catch (error) {
+      console.error("Error fetching user payment status:", error);
+      res.status(500).json({ message: "Failed to fetch payment status" });
+    }
+  });
+
   return httpServer;
 }
