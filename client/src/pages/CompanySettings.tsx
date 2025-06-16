@@ -316,65 +316,66 @@ export default function CompanySettings() {
   }
 
   return (
-    <div className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900">
+    <div className="flex-1 flex flex-col bg-gray-50 dark:bg-gray-900">
       <Header title="Configuración de Empresa" subtitle="Personaliza la información fiscal y visual de tu empresa" />
       
-      <div className="p-3 sm:p-6 space-y-4 sm:space-y-6 min-h-[calc(100vh-120px)]">
-        <form onSubmit={(e) => {
-          console.log("🔥 Form submit event triggered!");
-          console.log("Form errors before submit:", form.formState.errors);
-          console.log("Form isValid:", form.formState.isValid);
-          e.preventDefault();
-          
-          // Force call onSubmit regardless of validation
-          const formData = form.getValues();
-          console.log("Force calling onSubmit with:", formData);
-          onSubmit(formData);
-        }} className="space-y-6">
-          {/* Logo de la Empresa */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Image className="mr-2 h-5 w-5" />
-                Logo de la Empresa
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-6">
-                <div className="shrink-0">
-                  {logoPreview ? (
-                    <img
-                      src={logoPreview}
-                      alt="Logo preview"
-                      className="h-16 w-16 sm:h-20 sm:w-20 object-contain border-2 border-gray-200 dark:border-gray-600 rounded-lg bg-white"
-                    />
-                  ) : (
-                    <div className="h-16 w-16 sm:h-20 sm:w-20 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg flex items-center justify-center">
-                      <Image className="h-6 w-6 sm:h-8 sm:w-8 text-gray-400" />
-                    </div>
-                  )}
+      <div className="flex-1 overflow-y-auto">
+        <div className="p-3 sm:p-6 space-y-4 sm:space-y-6 pb-8">
+          <form onSubmit={(e) => {
+            console.log("🔥 Form submit event triggered!");
+            console.log("Form errors before submit:", form.formState.errors);
+            console.log("Form isValid:", form.formState.isValid);
+            e.preventDefault();
+            
+            // Force call onSubmit regardless of validation
+            const formData = form.getValues();
+            console.log("Force calling onSubmit with:", formData);
+            onSubmit(formData);
+          }} className="space-y-6">
+            {/* Logo de la Empresa */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Image className="mr-2 h-5 w-5" />
+                  Logo de la Empresa
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-6">
+                  <div className="shrink-0">
+                    {logoPreview ? (
+                      <img
+                        src={logoPreview}
+                        alt="Logo preview"
+                        className="h-16 w-16 sm:h-20 sm:w-20 object-contain border-2 border-gray-200 dark:border-gray-600 rounded-lg bg-white"
+                      />
+                    ) : (
+                      <div className="h-16 w-16 sm:h-20 sm:w-20 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg flex items-center justify-center">
+                        <Image className="h-6 w-6 sm:h-8 sm:w-8 text-gray-400" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1 text-center sm:text-left">
+                    <Label htmlFor="logo" className="cursor-pointer">
+                      <div className="flex items-center justify-center sm:justify-start space-x-2 text-sm text-blue-600 hover:text-blue-500">
+                        <Upload className="h-4 w-4" />
+                        <span>Subir nuevo logo</span>
+                      </div>
+                      <Input
+                        id="logo"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleLogoChange}
+                        className="hidden"
+                      />
+                    </Label>
+                    <p className="mt-1 text-xs sm:text-sm text-gray-500">
+                      PNG, JPG, GIF hasta 5MB. Recomendado: 200x200px
+                    </p>
+                  </div>
                 </div>
-                <div className="flex-1 text-center sm:text-left">
-                  <Label htmlFor="logo" className="cursor-pointer">
-                    <div className="flex items-center justify-center sm:justify-start space-x-2 text-sm text-blue-600 hover:text-blue-500">
-                      <Upload className="h-4 w-4" />
-                      <span>Subir nuevo logo</span>
-                    </div>
-                    <Input
-                      id="logo"
-                      type="file"
-                      accept="image/*"
-                      onChange={handleLogoChange}
-                      className="hidden"
-                    />
-                  </Label>
-                  <p className="mt-1 text-xs sm:text-sm text-gray-500">
-                    PNG, JPG, GIF hasta 5MB. Recomendado: 200x200px
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
 
           {/* Información Básica */}
           <Card>
@@ -628,6 +629,7 @@ export default function CompanySettings() {
             </Button>
           </div>
         </form>
+        </div>
       </div>
     </div>
   );
