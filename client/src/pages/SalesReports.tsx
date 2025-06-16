@@ -145,7 +145,7 @@ export default function SalesReports() {
     
     const allTransactions = [
       ...invoiceData.map(invoice => ({
-        date: invoice.date || invoice.createdAt?.toISOString() || new Date().toISOString(),
+        date: invoice.date || (invoice.createdAt ? new Date(invoice.createdAt).toISOString() : new Date().toISOString()),
         type: "Factura",
         id: invoice.invoiceNumber || `INV-${invoice.id}`,
         customer: invoice.customerName || "Cliente General",
@@ -153,7 +153,7 @@ export default function SalesReports() {
         status: invoice.status || "pendiente"
       })),
       ...posData.map(sale => ({
-        date: sale.createdAt?.toISOString() || new Date().toISOString(),
+        date: sale.createdAt ? new Date(sale.createdAt).toISOString() : new Date().toISOString(),
         type: "POS",
         id: `POS-${sale.id}`,
         customer: sale.customerName || "Cliente General",
