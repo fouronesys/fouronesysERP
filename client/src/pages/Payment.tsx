@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, CreditCard, Building, Phone, Mail, Copy, Check, AlertCircle } from "lucide-react";
+import { CheckCircle, CreditCard, Building, Phone, Mail, Copy, Check, AlertCircle, LogOut } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/useAuth";
@@ -78,6 +78,24 @@ export default function Payment() {
   const { toast } = useToast();
   const { user } = useAuth();
   const [, setLocation] = useLocation();
+
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/logout", {
+        method: "POST",
+        credentials: "include",
+      });
+      // Clear any cached data
+      window.localStorage.clear();
+      window.sessionStorage.clear();
+      // Force redirect to auth page
+      window.location.href = "/auth";
+    } catch (error) {
+      console.error("Logout error:", error);
+      // Force redirect even if logout fails
+      window.location.href = "/auth";
+    }
+  };
 
   const form = useForm<PaymentFormData>({
     resolver: zodResolver(paymentSchema),
@@ -215,6 +233,42 @@ export default function Payment() {
           <p className="text-gray-600 dark:text-gray-300">
             Completa la información y realiza tu pago para activar tu cuenta
           </p>
+          
+          {/* User info and logout option */}
+          {user && (
+            <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
+                    <span className="text-white font-semibold text-sm">
+                      {(user as any)?.firstName?.[0] || (user as any)?.email?.[0]?.toUpperCase() || 'U'}
+                    </span>
+                  </div>
+                  <div className="text-left">
+                    <p className="font-medium text-gray-900 dark:text-white">
+                      {(user as any)?.firstName && (user as any)?.lastName 
+                        ? `${(user as any).firstName} ${(user as any).lastName}`
+                        : (user as any)?.email || 'Usuario'
+                      }
+                    </p>
+                    <p className="text-sm text-gray-600 dark:text-gray-300">
+                      {(user as any)?.email}
+                    </p>
+                  </div>
+                </div>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleLogout}
+                  className="flex items-center gap-2 text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300 dark:text-red-400 dark:border-red-800 dark:hover:bg-red-900/20"
+                >
+                  <LogOut className="h-4 w-4" />
+                  Esta no es mi cuenta
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="grid lg:grid-cols-2 gap-8">

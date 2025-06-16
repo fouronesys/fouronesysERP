@@ -18,7 +18,7 @@ export default function Landing() {
                 className="w-8 h-8 sm:w-10 sm:h-10 object-contain"
               />
               <span className="text-lg sm:text-xl font-bold text-white hidden xs:block">Four One Solutions</span>
-              <span className="text-lg font-bold text-white block xs:hidden">FOS</span>
+              <span className="text-lg font-bold text-white block xs:hidden">Four One</span>
             </div>
             
             {/* Mobile-friendly button layout */}
