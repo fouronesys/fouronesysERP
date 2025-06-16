@@ -23,6 +23,7 @@ import { auditLogger } from "./audit-logger";
 import { InvoiceHTMLService } from "./invoice-html-service";
 import { InvoicePOS80mmService } from "./invoice-pos-80mm-service";
 import { simpleAccountingService } from "./accounting-service-simple";
+import { sendPasswordSetupEmail } from "./email-service";
 import QRCode from "qrcode";
 import multer from "multer";
 import path from "path";
@@ -5424,6 +5425,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error processing payment submission:", error);
       res.status(500).json({ message: "Error al procesar los datos de pago" });
+    }
+  });
+
+  // Validate password setup/reset token
+  app.post("/api/validate-token", async (req: any, res) => {
+    try {
+      const { token } = req.body;
+      
+      if (!token) {
+        return res.json({ valid: false });
+      }
+
+      const tokenRecord = await storage.getPasswordResetToken(token);
+      
+      if (!tokenRecord || tokenRecord.expiresAt < new Date()) {
+        return res.json({ valid: false });
+      }
+
+      res.json({ 
+        valid: true, 
+        isRecovery: tokenRecord.isRecovery || false 
+      });
+    } catch (error) {
+      console.error("Error validating token:", error);
+      res.json({ valid: false });
+    }
+  });
+
+  // Setup password with token
+  app.post("/api/setup-password", async (req: any, res) => {
+    try {
+      const { token, password } = req.body;
+      
+      if (!token || !password) {
+        return res.status(400).json({ message: "Token y contraseña son requeridos" });
+      }
+
+      const tokenRecord = await storage.getPasswordResetToken(token);
+      
+      if (!tokenRecord || tokenRecord.expiresAt < new Date()) {
+        return res.status(400).json({ message: "Token inválido o expirado" });
+      }
+
+      // Update user password
+      const bcrypt = require('bcrypt');
+      const hashedPassword = await bcrypt.hash(password, 10);
+      
+      await storage.updateUserPassword(tokenRecord.email, hashedPassword);
+      
+      // Delete the used token
+      await storage.deletePasswordResetToken(token);
+
+      res.json({ success: true, message: "Contraseña establecida exitosamente" });
+    } catch (error) {
+      console.error("Error setting up password:", error);
+      res.status(500).json({ message: "Error al establecer contraseña" });
     }
   });
 

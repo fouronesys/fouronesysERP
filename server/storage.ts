@@ -2236,6 +2236,47 @@ export class DatabaseStorage implements IStorage {
     await db.delete(companies).where(eq(companies.id, companyId));
   }
 
+  // Password reset token operations
+  async createPasswordResetToken(email: string, token: string, expiresAt: Date): Promise<void> {
+    await db.execute(sql`
+      INSERT INTO password_reset_tokens (email, token, expires_at, created_at)
+      VALUES (${email}, ${token}, ${expiresAt}, NOW())
+      ON CONFLICT (email) DO UPDATE SET
+        token = ${token},
+        expires_at = ${expiresAt},
+        created_at = NOW()
+    `);
+  }
+
+  async getPasswordResetToken(token: string): Promise<{ email: string; expiresAt: Date; isRecovery?: boolean } | null> {
+    const [result] = await db.execute(sql`
+      SELECT email, expires_at, is_recovery
+      FROM password_reset_tokens 
+      WHERE token = ${token}
+    `);
+    
+    if (!result) return null;
+    
+    return {
+      email: result.email as string,
+      expiresAt: new Date(result.expires_at as string),
+      isRecovery: result.is_recovery as boolean || false
+    };
+  }
+
+  async deletePasswordResetToken(token: string): Promise<void> {
+    await db.execute(sql`
+      DELETE FROM password_reset_tokens WHERE token = ${token}
+    `);
+  }
+
+  async updateUserPassword(email: string, hashedPassword: string): Promise<void> {
+    await db.execute(sql`
+      UPDATE users SET password = ${hashedPassword}, updated_at = NOW()
+      WHERE email = ${email}
+    `);
+  }
+
 
 
   // RNC Registry operations
