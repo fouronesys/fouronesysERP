@@ -8,8 +8,8 @@ export async function initializeAdminUser() {
     
     // Simply update existing company contact info if it exists
     try {
-      const companies = await storage.getCompanies();
-      const existingCompany = companies.find(c => 
+      const companies = await storage.getAllCompanies();
+      const existingCompany = companies.find((c: any) => 
         c.name.includes("Four One") || 
         c.name.includes("Test Company") ||
         c.name.includes("Solutions")
