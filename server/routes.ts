@@ -24,6 +24,7 @@ import { InvoiceHTMLService } from "./invoice-html-service";
 import { InvoicePOS80mmService } from "./invoice-pos-80mm-service";
 import { simpleAccountingService } from "./accounting-service-simple";
 import { accountingService } from "./accounting-service";
+import { assetManager, type IconSet, type AssetOptimizationConfig } from "./asset-manager";
 import { sendPasswordSetupEmail } from "./email-service";
 import { initializeAdminUser } from "./init-admin";
 import QRCode from "qrcode";
@@ -3770,7 +3771,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const companyId = userCompany.id;
 
       // Get all 606 reports for company
-      const reports606 = [];
+      const reports606: any[] = [];
       res.json(reports606);
     } catch (error) {
       console.error("Error fetching 606 reports:", error);
@@ -3908,7 +3909,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         invoiceDate.getFullYear().toString() === periodYear &&
         (invoiceDate.getMonth() + 1).toString().padStart(2, "0") === periodMonth
       ) {
-        const supplier = await storage.getSupplier(invoice.supplierId);
+        const suppliers = await storage.getSuppliers();
+        const supplier = suppliers.find(s => s.id === invoice.supplierId);
         const line = [
           companyRnc,
           "31", // Tipo ID (default)
@@ -3957,7 +3959,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     // Process POS sales
     for (const sale of sales) {
-      const saleDate = new Date(sale.date);
+      const saleDate = new Date(sale.createdAt || new Date());
       if (
         saleDate.getFullYear().toString() === periodYear &&
         (saleDate.getMonth() + 1).toString().padStart(2, "0") === periodMonth
@@ -3976,7 +3978,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           saleDate.toISOString().split("T")[0].replace(/-/g, ""),
           "", // Fecha vencimiento
           parseFloat(sale.subtotal || "0").toFixed(2),
-          parseFloat(sale.tax || "0").toFixed(2),
+          parseFloat((sale as any).tax || "0").toFixed(2),
           "0.00", // ITBIS retenido
           "0.00", // Retención renta
           "0.00", // ITBIS percibido
@@ -4488,9 +4490,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } catch (error) {
         console.error("=== THERMAL RECEIPT ERROR ===");
         console.error("Error details:", error);
-        console.error("Error message:", error.message);
-        console.error("Error stack:", error.stack);
-        console.error("Sale ID:", saleId);
+        console.error("Error message:", (error as Error).message);
+        console.error("Error stack:", (error as Error).stack);
+        console.error("Sale ID:", req.params.saleId);
         res.status(500).json({
           message: "Failed to generate thermal receipt",
           error: error.message,
