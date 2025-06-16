@@ -450,8 +450,8 @@ export default function POS() {
                 </Card>
 
                 {/* Grid de productos */}
-                <div className="flex-1 overflow-y-auto">
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-3 2xl:grid-cols-4 gap-3">
+                <div className="flex-1 overflow-y-auto max-h-[calc(100vh-280px)] scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-3 2xl:grid-cols-4 gap-3 p-1">
                     {filteredProducts.map((product) => (
                       <Card 
                         key={product.id}
@@ -911,7 +911,7 @@ export default function POS() {
                     )}
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-3">
+                <CardContent className="space-y-3 max-h-[calc(100vh-400px)] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent">
                   {cart.length === 0 ? (
                     <p className="text-gray-500 text-center py-8">Carrito vacío</p>
                   ) : (
