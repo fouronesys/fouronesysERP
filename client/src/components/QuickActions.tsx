@@ -65,7 +65,7 @@ export function QuickActions() {
         ))}
 
         <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
-          <Link href="/reports">
+          <Link href="/sales-reports">
             <Button
               variant="ghost"
               className="w-full flex items-center justify-between p-4 h-auto bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
