@@ -5371,7 +5371,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Payment submission endpoint
+  // Simplified payment submission endpoint
+  app.post("/api/submit-payment", isAuthenticated, async (req: any, res) => {
+    try {
+      const {
+        fullName,
+        document,
+        documentType,
+        companyName,
+        plan,
+        email,
+        phone,
+        userId
+      } = req.body;
+
+      // Create payment record with simplified structure
+      const payment = await storage.createPaymentSubmission({
+        name: fullName,
+        email,
+        phone,
+        company: companyName,
+        rnc: documentType === 'rnc' ? document : null,
+        paymentMethod: 'bank_transfer',
+        bankAccount: 'pending_selection',
+        amount: plan === 'starter' ? 2500 : plan === 'professional' ? 4500 : 8500,
+        reference: `${documentType.toUpperCase()}-${document}`,
+        notes: `Plan: ${plan}, Document Type: ${documentType}`,
+        status: 'pending',
+        submittedAt: new Date()
+      });
+
+      // Log payment submission
+      await auditLogger.log({
+        userId,
+        module: 'Payment',
+        action: 'PAYMENT_SUBMITTED',
+        entityType: 'payment',
+        entityId: payment.id?.toString(),
+        newValues: { email, company: companyName, plan, document },
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent'),
+        timestamp: new Date(),
+        success: true,
+        severity: 'info'
+      });
+
+      res.json({ 
+        success: true, 
+        message: 'Datos de pago enviados exitosamente',
+        paymentId: payment.id 
+      });
+    } catch (error) {
+      console.error("Error processing payment submission:", error);
+      res.status(500).json({ message: "Error al procesar los datos de pago" });
+    }
+  });
+
+  // Payment submission endpoint (legacy)
   app.post("/api/payments/submit", async (req: any, res) => {
     try {
       const {
@@ -5465,6 +5521,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { status, notes } = req.body;
 
       const payment = await storage.updatePaymentStatus(parseInt(id), status, notes);
+
+      // If payment is confirmed, send password setup email
+      if (status === 'confirmed' && payment.email) {
+        try {
+          await sendPasswordSetupEmail(payment.email, payment.name || 'Usuario');
+        } catch (emailError) {
+          console.error('Failed to send password setup email:', emailError);
+        }
+      }
 
       // Log status update
       await auditLogger.log({

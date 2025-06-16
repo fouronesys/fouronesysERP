@@ -1,446 +1,424 @@
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { useToast } from '@/hooks/use-toast';
-import { apiRequest } from '@/lib/queryClient';
-import { CreditCard, Building2, Phone, Mail, Copy, Check } from 'lucide-react';
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { CheckCircle, CreditCard, Building, Phone, Mail, Copy, Check, AlertCircle } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+import { useAuth } from "@/hooks/useAuth";
+import { useLocation } from "wouter";
 
 const paymentSchema = z.object({
-  name: z.string().min(2, 'Nombre requerido'),
-  email: z.string().email('Email válido requerido'),
-  phone: z.string().min(10, 'Teléfono requerido'),
-  company: z.string().min(2, 'Nombre de empresa requerido'),
-  rnc: z.string().optional(),
-  paymentMethod: z.enum(['deposit', 'transfer']),
-  bankAccount: z.string().min(1, 'Selecciona una cuenta bancaria'),
-  amount: z.number().min(1, 'Monto debe ser mayor a 0'),
-  reference: z.string().min(3, 'Referencia de pago requerida'),
-  notes: z.string().optional(),
+  fullName: z.string().min(2, "El nombre completo es requerido"),
+  document: z.string().min(8, "Cédula o RNC es requerido"),
+  documentType: z.enum(["cedula", "rnc"]),
+  companyName: z.string().min(2, "El nombre de la empresa es requerido"),
+  plan: z.enum(["starter", "professional", "enterprise"]),
+  email: z.string().email("Email inválido"),
+  phone: z.string().min(10, "Teléfono es requerido")
 });
 
 type PaymentFormData = z.infer<typeof paymentSchema>;
 
+const plans = {
+  starter: { name: "Plan Starter", price: "RD$ 2,500", features: ["Hasta 100 facturas/mes", "1 usuario", "Soporte básico"] },
+  professional: { name: "Plan Professional", price: "RD$ 4,500", features: ["Hasta 500 facturas/mes", "3 usuarios", "Soporte prioritario", "Reportes avanzados"] },
+  enterprise: { name: "Plan Enterprise", price: "RD$ 8,500", features: ["Facturas ilimitadas", "Usuarios ilimitados", "Soporte 24/7", "API personalizada"] }
+};
+
 const bankAccounts = [
   {
-    id: 'popular_savings',
-    bank: 'Banco Popular',
-    type: 'Cuenta de Ahorros',
-    account: '844480111',
-    holder: 'Jesús María García Cruz',
-    cedula: '40215343837'
+    bank: "Banco Popular Dominicano",
+    accountType: "Cuenta Corriente",
+    accountNumber: "764-123456-7",
+    accountHolder: "Four One Solutions SRL"
   },
   {
-    id: 'popular_checking',
-    bank: 'Banco Popular',
-    type: 'Cuenta Corriente',
-    account: '838073138',
-    holder: 'Jesús María García Cruz',
-    cedula: '40215343837'
-  },
-  {
-    id: 'banreservas_checking',
-    bank: 'Banreservas',
-    type: 'Cuenta Corriente',
-    account: '4231803209',
-    holder: 'Jesús María García Cruz',
-    cedula: '40215343837'
-  },
-  {
-    id: 'bhd_checking',
-    bank: 'BHD León',
-    type: 'Cuenta Corriente',
-    account: '34860440011',
-    holder: 'Jesús María García Cruz',
-    cedula: '40215343837'
-  },
-  {
-    id: 'apap_savings',
-    bank: 'APAP',
-    type: 'Cuenta de Ahorros',
-    account: '1034116428',
-    holder: 'Jesús Cruz',
-    cedula: '40215343837',
-    instructions: 'Desde APAP: Cuenta - 1034116428\nDesde otros bancos: Cuenta de ahorro - 1034116428'
+    bank: "Banco BHD León",
+    accountType: "Cuenta Corriente", 
+    accountNumber: "20-456789-1",
+    accountHolder: "Four One Solutions SRL"
   }
 ];
 
 export default function Payment() {
-  const [selectedAccount, setSelectedAccount] = useState<string>('');
-  const [copied, setCopied] = useState<string>('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [copiedAccount, setCopiedAccount] = useState<string | null>(null);
+  const [rncValidation, setRncValidation] = useState<{ isValid?: boolean; companyName?: string; error?: string } | null>(null);
   const { toast } = useToast();
+  const { user } = useAuth();
+  const [, setLocation] = useLocation();
 
   const form = useForm<PaymentFormData>({
     resolver: zodResolver(paymentSchema),
     defaultValues: {
-      name: '',
-      email: '',
-      phone: '',
-      company: '',
-      rnc: '',
-      paymentMethod: 'deposit',
-      bankAccount: '',
-      amount: 0,
-      reference: '',
-      notes: '',
-    },
+      fullName: "",
+      document: "",
+      documentType: "cedula",
+      companyName: "",
+      plan: "starter",
+      email: user?.email || "",
+      phone: ""
+    }
   });
 
-  const copyToClipboard = (text: string, type: string) => {
-    navigator.clipboard.writeText(text);
-    setCopied(type);
-    setTimeout(() => setCopied(''), 2000);
-    toast({
-      title: "Copiado",
-      description: `${type} copiado al portapapeles`,
-    });
-  };
-
-  const onSubmit = async (data: PaymentFormData) => {
+  const copyToClipboard = async (text: string, accountInfo: string) => {
     try {
-      const response = await apiRequest('POST', '/api/payments/submit', data);
-      
-      if (response.ok) {
-        toast({
-          title: "Pago Registrado",
-          description: "Hemos recibido tu información de pago. Te contactaremos pronto para activar tu cuenta.",
-        });
-        form.reset();
-      } else {
-        throw new Error('Error al registrar el pago');
-      }
-    } catch (error) {
+      await navigator.clipboard.writeText(text);
+      setCopiedAccount(accountInfo);
+      toast({
+        title: "Copiado",
+        description: "Número de cuenta copiado al portapapeles"
+      });
+      setTimeout(() => setCopiedAccount(null), 2000);
+    } catch (err) {
       toast({
         title: "Error",
-        description: "No se pudo registrar el pago. Intenta nuevamente.",
-        variant: "destructive",
+        description: "No se pudo copiar al portapapeles",
+        variant: "destructive"
       });
     }
   };
 
-  const selectedBankAccount = bankAccounts.find(acc => acc.id === selectedAccount);
+  const validateRNC = async (rnc: string) => {
+    if (rnc.length < 9) {
+      setRncValidation(null);
+      return;
+    }
+
+    try {
+      const response = await apiRequest("POST", "/api/validate-rnc", { rnc });
+      const data = await response.json();
+      
+      if (data.isValid) {
+        setRncValidation({
+          isValid: true,
+          companyName: data.companyName
+        });
+        if (data.companyName) {
+          form.setValue("companyName", data.companyName);
+        }
+      } else {
+        setRncValidation({
+          isValid: false,
+          error: "RNC no encontrado en el registro de la DGII"
+        });
+      }
+    } catch (error) {
+      setRncValidation({
+        isValid: false,
+        error: "Error al validar RNC"
+      });
+    }
+  };
+
+  const onSubmit = async (data: PaymentFormData) => {
+    if (data.documentType === "rnc" && !rncValidation?.isValid) {
+      toast({
+        title: "Error",
+        description: "Debe validar el RNC antes de continuar",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await apiRequest("POST", "/api/submit-payment", {
+        ...data,
+        userId: user?.id
+      });
+
+      setShowSuccess(true);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Error al enviar los datos de pago",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  if (showSuccess) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md">
+          <CardContent className="pt-6">
+            <div className="text-center space-y-4">
+              <CheckCircle className="h-16 w-16 text-green-500 mx-auto" />
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                ¡Gracias por preferirnos!
+              </h2>
+              <p className="text-gray-600 dark:text-gray-300">
+                Tus datos de acceso serán enviados al correo que ingresaste una vez que se confirme tu pago.
+              </p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Nuestro equipo revisará tu pago y te contactará pronto.
+              </p>
+              <Button 
+                onClick={() => setLocation("/")}
+                className="w-full"
+              >
+                Volver al inicio
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white dark:from-gray-900 dark:to-gray-800 p-4">
       <div className="max-w-4xl mx-auto">
-        {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
-            Four One System
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+            Información de Pago
           </h1>
-          <p className="text-xl text-gray-600 dark:text-gray-300">
-            Sistema de Gestión Empresarial para República Dominicana
+          <p className="text-gray-600 dark:text-gray-300">
+            Completa la información y realiza tu pago para activar tu cuenta
           </p>
         </div>
 
         <div className="grid lg:grid-cols-2 gap-8">
-          {/* Pricing Card */}
-          <Card className="h-fit">
-            <CardHeader>
-              <CardTitle className="text-2xl text-center">Plan Empresarial</CardTitle>
-              <CardDescription className="text-center">
-                Sistema completo de gestión empresarial
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="text-center">
-                <div className="text-4xl font-bold text-blue-600 dark:text-blue-400">
-                  $99 USD
-                </div>
-                <div className="text-sm text-gray-500 mt-1">
-                  Pago único / Licencia permanente
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span className="text-sm">POS completo con NCF</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span className="text-sm">Gestión de inventario</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span className="text-sm">Reportes fiscales DGII</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span className="text-sm">Validación RNC automática</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span className="text-sm">Contabilidad integrada</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span className="text-sm">Soporte técnico incluido</span>
-                </div>
-              </div>
-
-              <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
-                <div className="flex items-center gap-2 mb-2">
-                  <Phone className="w-4 h-4 text-blue-600" />
-                  <span className="font-medium">Soporte Técnico</span>
-                </div>
-                <p className="text-sm text-gray-600 dark:text-gray-300">
-                  WhatsApp: +1 (809) 555-0123
-                </p>
-                <div className="flex items-center gap-2 mt-2">
-                  <Mail className="w-4 h-4 text-blue-600" />
-                  <span className="text-sm">admin@fourone.com.do</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Payment Form */}
+          {/* Formulario de Datos */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <CreditCard className="w-5 h-5" />
-                Información de Pago
+                <Building className="h-5 w-5" />
+                Datos de Pago
               </CardTitle>
               <CardDescription>
-                Completa tus datos y realiza el depósito/transferencia
+                Ingresa la información requerida para procesar tu suscripción
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Nombre Completo</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Tu nombre" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="email"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Email</FormLabel>
-                          <FormControl>
-                            <Input type="email" placeholder="tu@email.com" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="phone"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Teléfono</FormLabel>
-                          <FormControl>
-                            <Input placeholder="809-555-0123" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="company"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Empresa</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Nombre de tu empresa" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  <FormField
-                    control={form.control}
-                    name="rnc"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>RNC (Opcional)</FormLabel>
-                        <FormControl>
-                          <Input placeholder="123456789" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="fullName">Nombre Completo</Label>
+                  <Input
+                    id="fullName"
+                    {...form.register("fullName")}
+                    placeholder="Tu nombre completo"
                   />
-
-                  <FormField
-                    control={form.control}
-                    name="bankAccount"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Selecciona Cuenta Bancaria</FormLabel>
-                        <Select 
-                          onValueChange={(value) => {
-                            field.onChange(value);
-                            setSelectedAccount(value);
-                          }}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Selecciona una cuenta" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {bankAccounts.map((account) => (
-                              <SelectItem key={account.id} value={account.id}>
-                                {account.bank} - {account.type}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {selectedBankAccount && (
-                    <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg space-y-3">
-                      <div className="flex items-center gap-2">
-                        <Building2 className="w-4 h-4 text-blue-600" />
-                        <span className="font-medium">{selectedBankAccount.bank}</span>
-                      </div>
-                      <div className="space-y-2 text-sm">
-                        <div className="flex justify-between items-center">
-                          <span>Tipo:</span>
-                          <span className="font-medium">{selectedBankAccount.type}</span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span>Cuenta:</span>
-                          <div className="flex items-center gap-2">
-                            <span className="font-mono font-medium">{selectedBankAccount.account}</span>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => copyToClipboard(selectedBankAccount.account, 'Cuenta')}
-                            >
-                              {copied === 'Cuenta' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                            </Button>
-                          </div>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span>Titular:</span>
-                          <span className="font-medium">{selectedBankAccount.holder}</span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span>Cédula:</span>
-                          <div className="flex items-center gap-2">
-                            <span className="font-mono font-medium">{selectedBankAccount.cedula}</span>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => copyToClipboard(selectedBankAccount.cedula, 'Cédula')}
-                            >
-                              {copied === 'Cédula' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                            </Button>
-                          </div>
-                        </div>
-                        {selectedBankAccount.instructions && (
-                          <div className="mt-3 p-2 bg-yellow-50 dark:bg-yellow-900/20 rounded border-l-4 border-yellow-400">
-                            <div className="text-xs font-medium text-yellow-800 dark:text-yellow-200">
-                              Instrucciones especiales:
-                            </div>
-                            <div className="text-xs text-yellow-700 dark:text-yellow-300 whitespace-pre-line">
-                              {selectedBankAccount.instructions}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
+                  {form.formState.errors.fullName && (
+                    <p className="text-sm text-red-500">{form.formState.errors.fullName.message}</p>
                   )}
+                </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="amount"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Monto (USD)</FormLabel>
-                          <FormControl>
-                            <Input 
-                              type="number" 
-                              placeholder="99"
-                              {...field}
-                              onChange={(e) => field.onChange(Number(e.target.value))}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="reference"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Referencia de Pago</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Número de referencia" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="documentType">Tipo de Documento</Label>
+                    <Select onValueChange={(value) => form.setValue("documentType", value as "cedula" | "rnc")}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleccionar" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="cedula">Cédula</SelectItem>
+                        <SelectItem value="rnc">RNC</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
 
-                  <FormField
-                    control={form.control}
-                    name="notes"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Notas Adicionales (Opcional)</FormLabel>
-                        <FormControl>
-                          <Textarea 
-                            placeholder="Comentarios adicionales sobre el pago"
-                            className="resize-none"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  <div className="space-y-2">
+                    <Label htmlFor="document">Número de Documento</Label>
+                    <Input
+                      id="document"
+                      {...form.register("document")}
+                      placeholder="123-4567890-1"
+                      onChange={(e) => {
+                        form.register("document").onChange(e);
+                        if (form.getValues("documentType") === "rnc") {
+                          validateRNC(e.target.value);
+                        }
+                      }}
+                    />
+                  </div>
+                </div>
 
-                  <Button type="submit" className="w-full" size="lg">
-                    Registrar Pago
-                  </Button>
-                </form>
-              </Form>
+                {form.watch("documentType") === "rnc" && rncValidation && (
+                  <div className={`p-3 rounded-lg border ${rncValidation.isValid ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
+                    {rncValidation.isValid ? (
+                      <div className="flex items-center gap-2 text-green-700">
+                        <CheckCircle className="h-4 w-4" />
+                        <span className="text-sm">RNC válido: {rncValidation.companyName}</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 text-red-700">
+                        <AlertCircle className="h-4 w-4" />
+                        <span className="text-sm">{rncValidation.error}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <div className="space-y-2">
+                  <Label htmlFor="companyName">Nombre de la Empresa</Label>
+                  <Input
+                    id="companyName"
+                    {...form.register("companyName")}
+                    placeholder="Nombre de tu empresa"
+                  />
+                  {form.formState.errors.companyName && (
+                    <p className="text-sm text-red-500">{form.formState.errors.companyName.message}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="email">Correo Electrónico</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    {...form.register("email")}
+                    placeholder="tu@email.com"
+                  />
+                  {form.formState.errors.email && (
+                    <p className="text-sm text-red-500">{form.formState.errors.email.message}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Teléfono</Label>
+                  <Input
+                    id="phone"
+                    {...form.register("phone")}
+                    placeholder="(809) 123-4567"
+                  />
+                  {form.formState.errors.phone && (
+                    <p className="text-sm text-red-500">{form.formState.errors.phone.message}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="plan">Plan Seleccionado</Label>
+                  <Select onValueChange={(value) => form.setValue("plan", value as "starter" | "professional" | "enterprise")}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccionar plan" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(plans).map(([key, plan]) => (
+                        <SelectItem key={key} value={key}>
+                          {plan.name} - {plan.price}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <Button 
+                  type="submit" 
+                  className="w-full" 
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? "Enviando..." : "Enviar Datos de Pago"}
+                </Button>
+              </form>
             </CardContent>
           </Card>
-        </div>
 
-        <div className="mt-8 text-center text-sm text-gray-500">
-          <p>
-            Después de realizar el pago, nos pondremos en contacto contigo en un plazo de 24 horas 
-            para activar tu cuenta y proporcionarte acceso completo al sistema.
-          </p>
+          {/* Información de Cuentas Bancarias */}
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CreditCard className="h-5 w-5" />
+                  Cuentas Bancarias
+                </CardTitle>
+                <CardDescription>
+                  Realiza tu pago a cualquiera de estas cuentas
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {bankAccounts.map((account, index) => (
+                  <div key={index} className="p-4 border rounded-lg bg-gray-50 dark:bg-gray-800">
+                    <div className="flex justify-between items-start mb-2">
+                      <h4 className="font-semibold text-gray-900 dark:text-white">
+                        {account.bank}
+                      </h4>
+                      <Badge variant="secondary">{account.accountType}</Badge>
+                    </div>
+                    <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
+                      {account.accountHolder}
+                    </p>
+                    <div className="flex items-center justify-between">
+                      <span className="font-mono text-lg font-semibold">
+                        {account.accountNumber}
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => copyToClipboard(account.accountNumber, account.bank)}
+                      >
+                        {copiedAccount === account.bank ? (
+                          <Check className="h-4 w-4" />
+                        ) : (
+                          <Copy className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+
+            {/* Plan Seleccionado */}
+            {form.watch("plan") && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Plan Seleccionado</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <h4 className="font-semibold">{plans[form.watch("plan") as keyof typeof plans].name}</h4>
+                      <span className="text-xl font-bold text-blue-600">
+                        {plans[form.watch("plan") as keyof typeof plans].price}
+                      </span>
+                    </div>
+                    <ul className="space-y-1">
+                      {plans[form.watch("plan") as keyof typeof plans].features.map((feature, index) => (
+                        <li key={index} className="flex items-center gap-2 text-sm">
+                          <CheckCircle className="h-4 w-4 text-green-500" />
+                          {feature}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Mail className="h-5 w-5" />
+                  Contacto
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2 text-sm">
+                  <p>
+                    <strong>Soporte:</strong> soporte@fourone.com.do
+                  </p>
+                  <p>
+                    <strong>Información:</strong> info@fourone.com.do
+                  </p>
+                  <p>
+                    <strong>Teléfono:</strong> (809) 555-0123
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     </div>
