@@ -104,9 +104,10 @@ export default function AuthPage() {
       queryClient.setQueryData(["/api/user"], user);
       toast({
         title: "¡Cuenta creada exitosamente!",
-        description: "Bienvenido a Four One Solutions.",
+        description: "Ahora debes completar tu pago para activar tu cuenta.",
       });
-      setShowLoginAnimation(true);
+      // Redirect to payment page after successful registration
+      setLocation("/payment");
     },
     onError: (error: any) => {
       toast({

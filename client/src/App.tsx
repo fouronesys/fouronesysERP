@@ -138,6 +138,13 @@ function Router() {
     retry: false,
   });
 
+  // Check user payment status
+  const { data: paymentStatus, isLoading: paymentLoading } = useQuery({
+    queryKey: ["/api/user/payment-status"],
+    enabled: isAuthenticated,
+    retry: false,
+  });
+
   // Initialize error logger and set user context
   useEffect(() => {
     errorLogger.initializeGlobalHandlers();
@@ -148,7 +155,7 @@ function Router() {
   }, [user, company]);
 
   // Show loading during authentication check
-  if (isLoading) {
+  if (isLoading || (isAuthenticated && paymentLoading)) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900">
         <div className="flex flex-col items-center space-y-4">
@@ -165,7 +172,17 @@ function Router() {
       <Switch>
         <Route path="/auth" component={AuthPage} />
         <Route path="/payment" component={Payment} />
-        <Route path="/" component={Payment} />
+        <Route path="/" component={Landing} />
+        <Route component={Landing} />
+      </Switch>
+    );
+  }
+
+  // Show payment page if user is authenticated but payment not confirmed
+  if (isAuthenticated && paymentStatus && paymentStatus.status !== 'confirmed') {
+    return (
+      <Switch>
+        <Route path="/payment" component={Payment} />
         <Route component={Payment} />
       </Switch>
     );
