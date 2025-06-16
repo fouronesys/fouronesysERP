@@ -48,6 +48,7 @@ import Accounting from "@/pages/Accounting";
 import ErrorManagement from "@/pages/ErrorManagement";
 import Inventory from "@/pages/Inventory";
 import SystemMonitoring from "@/pages/SystemMonitoring";
+import Payment from "@/pages/Payment";
 
 import InstallationGuide from "@/pages/InstallationGuide";
 import NotFound from "@/pages/not-found";
@@ -163,8 +164,9 @@ function Router() {
     return (
       <Switch>
         <Route path="/auth" component={AuthPage} />
-        <Route path="/" component={Landing} />
-        <Route component={Landing} />
+        <Route path="/payment" component={Payment} />
+        <Route path="/" component={Payment} />
+        <Route component={Payment} />
       </Switch>
     );
   }

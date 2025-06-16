@@ -43,6 +43,7 @@ import {
   journalEntries,
   journalEntryLines,
   journals,
+  paymentSubmissions,
   type User,
   type UpsertUser,
   type Company,
@@ -2952,7 +2953,6 @@ export class DatabaseStorage implements IStorage {
     return entry;
   }
 
-  // Payment submission methods
   async createPaymentSubmission(paymentData: any): Promise<any> {
     const [payment] = await db
       .insert(paymentSubmissions)
