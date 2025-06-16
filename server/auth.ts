@@ -345,6 +345,11 @@ export function setupAuth(app: Express) {
         return res.status(400).json({ message: "Token y nueva contraseña son requeridos" });
       }
 
+      // Validate password strength
+      if (newPassword.length < 8) {
+        return res.status(400).json({ message: "La contraseña debe tener al menos 8 caracteres" });
+      }
+
       // Validate reset token
       const resetToken = await storage.getPasswordResetToken(token);
       if (!resetToken || resetToken.expiresAt < new Date()) {
@@ -355,6 +360,12 @@ export function setupAuth(app: Express) {
       const user = await storage.getUserByEmail(resetToken.email);
       if (!user) {
         return res.status(400).json({ message: "Usuario no encontrado" });
+      }
+
+      // Check if new password is the same as current password
+      const isSamePassword = await comparePasswords(newPassword, user.password);
+      if (isSamePassword) {
+        return res.status(400).json({ message: "La nueva contraseña no puede ser igual a la actual" });
       }
 
       // Hash new password

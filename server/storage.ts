@@ -2177,13 +2177,15 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateUserPassword(id: string, password: string): Promise<void> {
-    await db
+    console.log('Updating password for user ID:', id);
+    const result = await db
       .update(users)
       .set({
         password,
         updatedAt: new Date()
       })
       .where(eq(users.id, id));
+    console.log('Password update result:', result);
   }
 
   async createCompanyUser(data: {
@@ -2268,14 +2270,7 @@ export class DatabaseStorage implements IStorage {
       .where(eq(passwordResetTokens.token, token));
   }
 
-  async updateUserPassword(email: string, hashedPassword: string): Promise<void> {
-    await db.update(users)
-      .set({ 
-        password: hashedPassword, 
-        updatedAt: new Date() 
-      })
-      .where(eq(users.email, email));
-  }
+
 
 
 
