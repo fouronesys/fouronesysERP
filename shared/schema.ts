@@ -1480,6 +1480,18 @@ export type InsertUserRole = z.infer<typeof insertUserRoleSchema>;
 export type UserRoleAssignment = typeof userRoleAssignments.$inferSelect;
 export type InsertUserRoleAssignment = z.infer<typeof insertUserRoleAssignmentSchema>;
 
+// Manufacturing Module Types (updated)
+export type BOM = typeof bom.$inferSelect & {
+  material?: {
+    id: number;
+    name: string;
+    code: string;
+    price: string;
+    unit: string;
+    stock: string;
+  };
+};
+
 // ACCOUNTING MODULE RELATIONS
 export const accountTypesRelations = relations(accountTypes, ({ many }) => ({
   accounts: many(accounts),

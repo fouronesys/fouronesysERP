@@ -89,7 +89,7 @@ export default function BOM() {
 
   const updateBOMMutation = useMutation({
     mutationFn: async (data: BOMFormData) => {
-      await apiRequest("PATCH", `/api/bom/${editingBOM?.id}`, {
+      return apiRequest("PATCH", `/api/bom/${editingBOM?.id}`, {
         productId: parseInt(data.productId),
         materialId: parseInt(data.materialId),
         quantity: parseFloat(data.quantity),
@@ -118,7 +118,7 @@ export default function BOM() {
 
   const deleteBOMMutation = useMutation({
     mutationFn: async (bomId: number) => {
-      await apiRequest("DELETE", `/api/bom/${bomId}`);
+      return apiRequest("DELETE", `/api/bom/${bomId}`, {});
     },
     onSuccess: () => {
       toast({
