@@ -229,7 +229,11 @@ export function setupAuth(app: Express) {
 
 // Authentication middleware
 export function isAuthenticated(req: any, res: any, next: any) {
+  // Add debugging to understand auth failures
+  console.log(`[DEBUG] ${req.method} ${req.path} - Body:`, JSON.stringify(req.body, null, 2));
+  
   if (!req.isAuthenticated() || !req.user) {
+    console.log(`[AUTH] Authentication failed for ${req.method} ${req.path} - isAuthenticated: ${req.isAuthenticated()}, user: ${!!req.user}`);
     return res.status(401).json({ message: "Unauthorized" });
   }
   next();

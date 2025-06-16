@@ -103,9 +103,10 @@ export default function AuthPage() {
     onSuccess: (user) => {
       queryClient.setQueryData(["/api/user"], user);
       toast({
-        title: "Welcome to Four One Solutions!",
-        description: "Your account has been created successfully.",
+        title: "¡Cuenta creada exitosamente!",
+        description: "Bienvenido a Four One Solutions.",
       });
+      setShowLoginAnimation(true);
     },
     onError: (error: any) => {
       toast({
