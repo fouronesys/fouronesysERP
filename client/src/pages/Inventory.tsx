@@ -104,19 +104,19 @@ export default function Inventory() {
                          product.code.toLowerCase().includes(searchTerm.toLowerCase());
     
     if (filterStatus === "all") return matchesSearch;
-    if (filterStatus === "low-stock") return matchesSearch && product.stock <= product.minStock;
+    if (filterStatus === "low-stock") return matchesSearch && product.stock <= (product.minStock || 0);
     if (filterStatus === "out-of-stock") return matchesSearch && product.stock === 0;
     
     return matchesSearch;
   });
 
-  const lowStockProducts = products.filter(p => p.stock <= p.minStock && p.stock > 0);
+  const lowStockProducts = products.filter(p => p.stock <= (p.minStock || 0) && p.stock > 0);
   const outOfStockProducts = products.filter(p => p.stock === 0);
-  const totalValue = products.reduce((sum, p) => sum + (p.stock * (p.cost || p.price)), 0);
+  const totalValue = products.reduce((sum, p) => sum + (p.stock * Number(p.cost || p.price)), 0);
 
   const getStockStatus = (product: Product) => {
     if (product.stock === 0) return { label: "Sin Stock", variant: "destructive" as const };
-    if (product.stock <= product.minStock) return { label: "Stock Bajo", variant: "secondary" as const };
+    if (product.stock <= (product.minStock || 0)) return { label: "Stock Bajo", variant: "secondary" as const };
     return { label: "En Stock", variant: "default" as const };
   };
 
@@ -399,7 +399,7 @@ export default function Inventory() {
                   ) : (
                     filteredProducts.map((product) => {
                       const status = getStockStatus(product);
-                      const totalValue = product.stock * (product.cost || product.price);
+                      const totalValue = product.stock * parseFloat(String(product.cost || product.price));
                       
                       return (
                         <TableRow key={product.id}>

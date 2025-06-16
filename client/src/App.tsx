@@ -169,7 +169,7 @@ function Router() {
   }
 
   // Show setup page if no company is configured
-  if (!companyLoading && company && (!company.name || company.name === "Mi Empresa") && !setupComplete) {
+  if (!companyLoading && company && (!(company as any).name || (company as any).name === "Mi Empresa") && !setupComplete) {
     return <Setup onComplete={() => setSetupComplete(true)} />;
   }
 
@@ -184,6 +184,7 @@ function Router() {
           <Route path="/billing" component={Billing} />
           <Route path="/customers" component={Customers} />
           <Route path="/products" component={Products} />
+          <Route path="/inventory" component={Inventory} />
           <Route path="/manufacturing" component={Manufacturing} />
           <Route path="/pos" component={POS} />
           <Route path="/sales-reports" component={SalesReports} />
