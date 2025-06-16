@@ -46,6 +46,24 @@ export class ReportExporter {
     });
   }
 
+  private calculateMedian(numbers: number[]): number {
+    const sorted = [...numbers].sort((a, b) => a - b);
+    const middle = Math.floor(sorted.length / 2);
+    
+    if (sorted.length % 2 === 0) {
+      return (sorted[middle - 1] + sorted[middle]) / 2;
+    }
+    
+    return sorted[middle];
+  }
+
+  private calculateStandardDeviation(numbers: number[]): number {
+    const mean = numbers.reduce((sum, num) => sum + num, 0) / numbers.length;
+    const squaredDifferences = numbers.map(num => Math.pow(num - mean, 2));
+    const avgSquaredDifference = squaredDifferences.reduce((sum, diff) => sum + diff, 0) / numbers.length;
+    return Math.sqrt(avgSquaredDifference);
+  }
+
   async exportToPDF(data: ReportData): Promise<void> {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.width;
@@ -166,53 +184,158 @@ export class ReportExporter {
   async exportToExcel(data: ReportData): Promise<void> {
     const workbook = XLSX.utils.book_new();
     
-    // Summary worksheet
+    // Summary worksheet with more detailed information
     const summaryData = [
-      ['REPORTE DE VENTAS'],
-      [data.companyName],
-      [`Período: ${data.period}`],
-      [`Generado: ${new Date().toLocaleDateString('es-DO')}`],
+      ['REPORTE DE VENTAS - ' + data.companyName],
       [],
-      ['RESUMEN EJECUTIVO'],
-      ['Métrica', 'Valor'],
-      ['Ingresos Totales', this.formatCurrency(data.summary.totalRevenue)],
-      ['Total de Transacciones', data.summary.totalTransactions],
-      ['Ticket Promedio', this.formatCurrency(data.summary.averageTicket)],
-      ['Facturas Pagadas', data.summary.paidInvoices],
+      ['Período:', data.period],
+      ['Fecha de Generación:', new Date().toLocaleDateString('es-DO', { 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      })],
+      [],
+      ['=== RESUMEN EJECUTIVO ==='],
+      [],
+      ['Métrica', 'Valor', 'Observaciones'],
+      ['Ingresos Totales', data.summary.totalRevenue, this.formatCurrency(data.summary.totalRevenue)],
+      ['Total de Transacciones', data.summary.totalTransactions, data.summary.totalTransactions + ' ventas procesadas'],
+      ['Ticket Promedio', data.summary.averageTicket, this.formatCurrency(data.summary.averageTicket)],
+      ['Facturas Pagadas', data.summary.paidInvoices, data.summary.paidInvoices + ' de ' + data.transactions.filter(t => t.type === 'Factura').length + ' facturas'],
+      [],
+      ['=== ANÁLISIS ADICIONAL ==='],
+      [],
+      ['Detalle', 'Cantidad', 'Porcentaje'],
+      ['Facturas Totales', data.transactions.filter(t => t.type === 'Factura').length, ((data.transactions.filter(t => t.type === 'Factura').length / data.summary.totalTransactions) * 100).toFixed(1) + '%'],
+      ['Ventas POS', data.transactions.filter(t => t.type === 'POS').length, ((data.transactions.filter(t => t.type === 'POS').length / data.summary.totalTransactions) * 100).toFixed(1) + '%'],
+      ['Ventas Completadas', data.transactions.filter(t => t.status === 'completado' || t.status === 'paid').length, ((data.transactions.filter(t => t.status === 'completado' || t.status === 'paid').length / data.summary.totalTransactions) * 100).toFixed(1) + '%'],
     ];
     
     const summaryWS = XLSX.utils.aoa_to_sheet(summaryData);
     
-    // Style the summary sheet
-    summaryWS['!cols'] = [{ width: 25 }, { width: 20 }];
+    // Style the summary sheet with better formatting
+    summaryWS['!cols'] = [{ width: 25 }, { width: 15 }, { width: 30 }];
     
-    XLSX.utils.book_append_sheet(workbook, summaryWS, 'Resumen');
+    // Add the summary sheet first
+    XLSX.utils.book_append_sheet(workbook, summaryWS, 'Resumen Ejecutivo');
     
-    // Transactions worksheet
+    // Detailed Transactions worksheet
     if (data.transactions.length > 0) {
-      const transactionHeaders = ['Fecha', 'Tipo', 'ID', 'Cliente', 'Monto', 'Estado'];
-      const transactionData = data.transactions.map(transaction => [
-        this.formatDate(transaction.date),
-        transaction.type,
-        transaction.id,
-        transaction.customer,
-        transaction.amount,
-        transaction.status
-      ]);
+      const transactionData = [
+        ['=== DETALLE COMPLETO DE TRANSACCIONES ==='],
+        [],
+        ['Total de transacciones:', data.transactions.length],
+        ['Período:', data.period],
+        [],
+        ['Fecha', 'Tipo', 'ID', 'Cliente', 'Monto (Numérico)', 'Monto (Formato)', 'Estado', 'Observaciones'],
+        ...data.transactions.map((transaction, index) => [
+          this.formatDate(transaction.date),
+          transaction.type,
+          transaction.id,
+          transaction.customer,
+          transaction.amount.toString(),
+          this.formatCurrency(transaction.amount),
+          transaction.status,
+          `Transacción #${index + 1}`
+        ])
+      ];
       
-      const transactionsWS = XLSX.utils.aoa_to_sheet([transactionHeaders, ...transactionData]);
+      const transactionsWS = XLSX.utils.aoa_to_sheet(transactionData);
       
-      // Style the transactions sheet
+      // Style the transactions sheet with better formatting
       transactionsWS['!cols'] = [
         { width: 15 }, // Fecha
         { width: 12 }, // Tipo
-        { width: 15 }, // ID
+        { width: 20 }, // ID
         { width: 25 }, // Cliente
-        { width: 15 }, // Monto
-        { width: 12 }  // Estado
+        { width: 15 }, // Monto Numérico
+        { width: 18 }, // Monto Formato
+        { width: 15 }, // Estado
+        { width: 20 }  // Observaciones
       ];
       
-      XLSX.utils.book_append_sheet(workbook, transactionsWS, 'Transacciones');
+      XLSX.utils.book_append_sheet(workbook, transactionsWS, 'Transacciones Detalladas');
+      
+      // Analytics worksheet
+      const analyticsData = [
+        ['=== ANÁLISIS DE VENTAS POR TIPO ==='],
+        [],
+        ['Tipo de Venta', 'Cantidad', 'Ingresos Totales', 'Promedio por Venta', 'Porcentaje del Total'],
+      ];
+      
+      // Group transactions by type
+      const groupedByType = data.transactions.reduce((acc, transaction) => {
+        if (!acc[transaction.type]) {
+          acc[transaction.type] = { count: 0, total: 0 };
+        }
+        acc[transaction.type].count++;
+        acc[transaction.type].total += transaction.amount;
+        return acc;
+      }, {} as Record<string, { count: number; total: number }>);
+      
+      Object.entries(groupedByType).forEach(([type, stats]) => {
+        const percentage = ((stats.total / data.summary.totalRevenue) * 100).toFixed(1);
+        const average = (stats.total / stats.count).toFixed(2);
+        analyticsData.push([
+          type,
+          stats.count.toString(),
+          stats.total.toFixed(2),
+          average,
+          percentage + '%'
+        ]);
+      });
+      
+      analyticsData.push(
+        [],
+        ['=== ANÁLISIS POR ESTADO ==='],
+        [],
+        ['Estado', 'Cantidad', 'Ingresos', 'Porcentaje']
+      );
+      
+      // Group by status
+      const groupedByStatus = data.transactions.reduce((acc, transaction) => {
+        if (!acc[transaction.status]) {
+          acc[transaction.status] = { count: 0, total: 0 };
+        }
+        acc[transaction.status].count++;
+        acc[transaction.status].total += transaction.amount;
+        return acc;
+      }, {} as Record<string, { count: number; total: number }>);
+      
+      Object.entries(groupedByStatus).forEach(([status, stats]) => {
+        const percentage = ((stats.count / data.summary.totalTransactions) * 100).toFixed(1);
+        analyticsData.push([
+          status,
+          stats.count.toString(),
+          stats.total.toFixed(2),
+          percentage + '%'
+        ]);
+      });
+      
+      const amounts = data.transactions.map(t => t.amount);
+      analyticsData.push(
+        [],
+        ['=== ESTADÍSTICAS ADICIONALES ==='],
+        [],
+        ['Métrica', 'Valor'],
+        ['Venta más alta', Math.max(...amounts).toFixed(2)],
+        ['Venta más baja', Math.min(...amounts).toFixed(2)],
+        ['Mediana de ventas', this.calculateMedian(amounts).toFixed(2)],
+        ['Desviación estándar', this.calculateStandardDeviation(amounts).toFixed(2)]
+      );
+      
+      const analyticsWS = XLSX.utils.aoa_to_sheet(analyticsData);
+      analyticsWS['!cols'] = [
+        { width: 20 }, // Type/Status
+        { width: 15 }, // Count
+        { width: 18 }, // Total
+        { width: 18 }, // Average/Percentage
+        { width: 15 }  // Percentage
+      ];
+      
+      XLSX.utils.book_append_sheet(workbook, analyticsWS, 'Análisis Detallado');
     }
     
     // Top products worksheet
