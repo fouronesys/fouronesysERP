@@ -319,7 +319,7 @@ export default function CompanySettings() {
     <div className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900">
       <Header title="Configuración de Empresa" subtitle="Personaliza la información fiscal y visual de tu empresa" />
       
-      <div className="p-6 space-y-6">
+      <div className="p-3 sm:p-6 space-y-4 sm:space-y-6 min-h-[calc(100vh-120px)]">
         <form onSubmit={(e) => {
           console.log("🔥 Form submit event triggered!");
           console.log("Form errors before submit:", form.formState.errors);
@@ -418,10 +418,10 @@ export default function CompanySettings() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="rnc">RNC (Registro Nacional del Contribuyente)</Label>
-                  <div className="flex gap-2">
+                  <div className="flex flex-col sm:flex-row gap-2">
                     <Input
                       id="rnc"
                       placeholder="Ej: 131-12345-6"
@@ -432,14 +432,15 @@ export default function CompanySettings() {
                           handleRNCVerification(rncValue);
                         }
                       }}
-                      className={rncValidationResult?.valid === true ? "border-green-500" : 
-                                rncValidationResult?.valid === false ? "border-red-500" : ""}
+                      className={`${rncValidationResult?.valid === true ? "border-green-500" : 
+                                rncValidationResult?.valid === false ? "border-red-500" : ""} flex-1`}
                     />
                     <Button
                       type="button"
                       variant="outline"
                       disabled={isVerifyingRNC || !form.watch("rnc")}
                       onClick={() => handleRNCVerification(form.watch("rnc") || "")}
+                      className="sm:w-auto w-full"
                     >
                       {isVerifyingRNC ? "Verificando..." : "Verificar"}
                     </Button>
@@ -514,7 +515,7 @@ export default function CompanySettings() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="phone">Teléfono</Label>
                   <Input
@@ -534,7 +535,7 @@ export default function CompanySettings() {
                   />
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-2 sm:col-span-2 lg:col-span-1">
                   <Label htmlFor="website">Sitio Web</Label>
                   <Input
                     id="website"
@@ -555,7 +556,7 @@ export default function CompanySettings() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="taxRegime">Régimen Tributario</Label>
                   <Select
@@ -589,7 +590,7 @@ export default function CompanySettings() {
                   </Select>
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-2 sm:col-span-2 lg:col-span-1">
                   <Label htmlFor="timezone">Zona Horaria</Label>
                   <Select
                     value={form.watch("timezone") ?? "America/Santo_Domingo"}
@@ -610,11 +611,12 @@ export default function CompanySettings() {
           </Card>
 
           {/* Botón de Guardar */}
-          <div className="flex justify-end">
+          <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700 mt-6">
             <Button
               type="submit"
               disabled={updateMutation.isPending}
               size="lg"
+              className="w-full sm:w-auto"
               onClick={(e) => {
                 console.log("🖱️ Save button clicked!");
                 console.log("Form state:", form.formState);
