@@ -895,6 +895,25 @@ export const comprobantes605 = pgTable("comprobantes_605", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+export const paymentSubmissions = pgTable("payment_submissions", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  email: varchar("email", { length: 255 }).notNull(),
+  phone: varchar("phone", { length: 50 }).notNull(),
+  company: varchar("company", { length: 255 }).notNull(),
+  rnc: varchar("rnc", { length: 20 }),
+  paymentMethod: varchar("payment_method", { length: 20 }).notNull(),
+  bankAccount: varchar("bank_account", { length: 50 }).notNull(),
+  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+  reference: varchar("reference", { length: 100 }).notNull(),
+  notes: text("notes"),
+  status: varchar("status", { length: 20 }).notNull().default("pending"),
+  submittedAt: timestamp("submitted_at").notNull().defaultNow(),
+  processedAt: timestamp("processed_at"),
+  processedBy: varchar("processed_by", { length: 255 }),
+  adminNotes: text("admin_notes"),
+});
+
 export const comprobantes606 = pgTable("comprobantes_606", {
   id: serial("id").primaryKey(),
   companyId: integer("company_id").notNull().references(() => companies.id),

@@ -5371,5 +5371,122 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Payment submission endpoint
+  app.post("/api/payments/submit", async (req: any, res) => {
+    try {
+      const {
+        name,
+        email,
+        phone,
+        company,
+        rnc,
+        paymentMethod,
+        bankAccount,
+        amount,
+        reference,
+        notes
+      } = req.body;
+
+      // Create payment record
+      const payment = await storage.createPaymentSubmission({
+        name,
+        email,
+        phone,
+        company,
+        rnc: rnc || null,
+        paymentMethod,
+        bankAccount,
+        amount: parseFloat(amount),
+        reference,
+        notes: notes || null,
+        status: 'pending',
+        submittedAt: new Date()
+      });
+
+      // Log payment submission
+      await auditLogger.log({
+        module: 'Payment',
+        action: 'PAYMENT_SUBMITTED',
+        entityType: 'payment',
+        entityId: payment.id?.toString(),
+        newValues: { email, company, amount, reference },
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent'),
+        timestamp: new Date(),
+        success: true,
+        severity: 'info'
+      });
+
+      // Send confirmation email (if email service is configured)
+      try {
+        // TODO: Implement email notification
+        console.log(`Payment submission received from ${email} for ${company} - Amount: $${amount}`);
+      } catch (emailError) {
+        console.error('Failed to send confirmation email:', emailError);
+      }
+
+      res.json({ 
+        success: true, 
+        message: 'Payment submission received successfully',
+        paymentId: payment.id 
+      });
+    } catch (error) {
+      console.error("Error processing payment submission:", error);
+      res.status(500).json({ message: "Failed to process payment submission" });
+    }
+  });
+
+  // Get payment submissions (admin only)
+  app.get("/api/payments/submissions", isAuthenticated, async (req: any, res) => {
+    try {
+      // Only allow admin users to view payment submissions
+      const user = req.user;
+      if (!user || user.email !== 'ngconsultores.rd@gmail.com') {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      const payments = await storage.getPaymentSubmissions();
+      res.json(payments);
+    } catch (error) {
+      console.error("Error fetching payment submissions:", error);
+      res.status(500).json({ message: "Failed to fetch payment submissions" });
+    }
+  });
+
+  // Update payment status (admin only)
+  app.patch("/api/payments/:id/status", isAuthenticated, async (req: any, res) => {
+    try {
+      const user = req.user;
+      if (!user || user.email !== 'ngconsultores.rd@gmail.com') {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      const { id } = req.params;
+      const { status, notes } = req.body;
+
+      const payment = await storage.updatePaymentStatus(parseInt(id), status, notes);
+
+      // Log status update
+      await auditLogger.log({
+        userId: user.id,
+        module: 'Payment',
+        action: 'PAYMENT_STATUS_UPDATED',
+        entityType: 'payment',
+        entityId: id,
+        newValues: { status, notes },
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent'),
+        timestamp: new Date(),
+        success: true,
+        severity: 'info'
+      });
+
+      res.json(payment);
+    } catch (error) {
+      console.error("Error updating payment status:", error);
+      res.status(500).json({ message: "Failed to update payment status" });
+    }
+  });
+
   return httpServer;
 }

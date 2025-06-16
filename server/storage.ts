@@ -2951,6 +2951,48 @@ export class DatabaseStorage implements IStorage {
     const [entry] = await db.insert(journalEntries).values(entryData).returning();
     return entry;
   }
+
+  // Payment submission methods
+  async createPaymentSubmission(paymentData: any): Promise<any> {
+    const [payment] = await db
+      .insert(paymentSubmissions)
+      .values({
+        name: paymentData.name,
+        email: paymentData.email,
+        phone: paymentData.phone,
+        company: paymentData.company,
+        rnc: paymentData.rnc,
+        paymentMethod: paymentData.paymentMethod,
+        bankAccount: paymentData.bankAccount,
+        amount: paymentData.amount.toString(),
+        reference: paymentData.reference,
+        notes: paymentData.notes,
+        status: paymentData.status,
+        submittedAt: paymentData.submittedAt
+      })
+      .returning();
+    return payment;
+  }
+
+  async getPaymentSubmissions(): Promise<any[]> {
+    return await db
+      .select()
+      .from(paymentSubmissions)
+      .orderBy(desc(paymentSubmissions.submittedAt));
+  }
+
+  async updatePaymentStatus(paymentId: number, status: string, adminNotes?: string): Promise<any> {
+    const [payment] = await db
+      .update(paymentSubmissions)
+      .set({
+        status,
+        adminNotes,
+        processedAt: new Date()
+      })
+      .where(eq(paymentSubmissions.id, paymentId))
+      .returning();
+    return payment;
+  }
 }
 
 export const storage = new DatabaseStorage();
