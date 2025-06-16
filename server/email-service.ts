@@ -112,12 +112,12 @@ export async function sendCompanyInvitationEmail(params: CompanyInvitationEmailP
 
 export async function sendPasswordResetEmail(email: string, resetToken: string): Promise<boolean> {
   try {
-    const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password?token=${resetToken}`;
+    const resetUrl = `${process.env.FRONTEND_URL || 'https://fourone.com.do'}/reset-password?token=${resetToken}`;
     
     const emailContent = {
       to: email,
-      from: 'noreply@fourone.solutions',
-      subject: 'Restablecimiento de contraseña - Four One Solutions',
+      from: 'admin@fourone.com.do',
+      subject: 'Restablecer contraseña - Four One Solutions',
       html: `
         <!DOCTYPE html>
         <html lang="es">

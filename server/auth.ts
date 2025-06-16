@@ -268,6 +268,83 @@ export function setupAuth(app: Express) {
       res.status(500).json({ message: "Internal server error" });
     }
   });
+
+  // Password reset request endpoint
+  app.post("/api/forgot-password", async (req, res) => {
+    try {
+      const { email } = req.body;
+
+      if (!email) {
+        return res.status(400).json({ message: "Email is required" });
+      }
+
+      // Check if user exists
+      const user = await storage.getUserByEmail(email);
+      if (!user) {
+        // Return success even if user doesn't exist to prevent email enumeration
+        return res.json({ message: "Si existe una cuenta con ese email, se ha enviado un enlace de recuperación." });
+      }
+
+      // Generate reset token
+      const crypto = require('crypto');
+      const resetToken = crypto.randomBytes(32).toString('hex');
+      const expiry = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+      // Store reset token
+      await storage.createPasswordResetToken(email, resetToken, expiry);
+
+      // Send reset email
+      const { sendPasswordResetEmail } = await import('./email-service');
+      const emailSent = await sendPasswordResetEmail(email, resetToken);
+
+      if (!emailSent) {
+        console.error('Failed to send password reset email to:', email);
+        return res.status(500).json({ message: "Error enviando email de recuperación" });
+      }
+
+      res.json({ message: "Si existe una cuenta con ese email, se ha enviado un enlace de recuperación." });
+    } catch (error) {
+      console.error("Password reset request error:", error);
+      return res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  // Password reset endpoint
+  app.post("/api/reset-password", async (req, res) => {
+    try {
+      const { token, newPassword } = req.body;
+
+      if (!token || !newPassword) {
+        return res.status(400).json({ message: "Token y nueva contraseña son requeridos" });
+      }
+
+      // Validate reset token
+      const resetToken = await storage.getPasswordResetToken(token);
+      if (!resetToken || resetToken.expiresAt < new Date()) {
+        return res.status(400).json({ message: "Token inválido o expirado" });
+      }
+
+      // Get user by email
+      const user = await storage.getUserByEmail(resetToken.email);
+      if (!user) {
+        return res.status(400).json({ message: "Usuario no encontrado" });
+      }
+
+      // Hash new password
+      const hashedPassword = await hashPassword(newPassword);
+
+      // Update user password
+      await storage.updateUserPassword(user.id, hashedPassword);
+
+      // Delete used reset token
+      await storage.deletePasswordResetToken(token);
+
+      res.json({ message: "Contraseña restablecida exitosamente" });
+    } catch (error) {
+      console.error("Password reset error:", error);
+      return res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
 }
 
 // Authentication middleware
