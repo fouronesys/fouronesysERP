@@ -913,7 +913,7 @@ export default function Production() {
                               <Badge 
                                 variant={
                                   material?.stock && parseFloat(material.stock) >= parseFloat(item.quantity) 
-                                    ? "success" 
+                                    ? "default" 
                                     : "destructive"
                                 }
                               >
@@ -1279,7 +1279,7 @@ export default function Production() {
                         <div className="flex justify-between">
                           <span>{material.name}</span>
                           <Badge 
-                            variant={material.isAvailable ? "success" : "destructive"}
+                            variant={material.isAvailable ? "default" : "destructive"}
                             className="text-xs"
                           >
                             {material.isAvailable ? "Disponible" : "Faltante"}

@@ -9,6 +9,7 @@ import {
   invoiceItems,
   productionOrders,
   bom,
+  recipes,
   inventoryMovements,
   posSales,
   posSaleItems,
