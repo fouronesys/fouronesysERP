@@ -299,6 +299,16 @@ export function setupAuth(app: Express) {
 
       if (!emailSent) {
         console.error('Failed to send password reset email to:', email);
+        // In development, provide the reset token for manual testing
+        if (process.env.NODE_ENV === 'development') {
+          const resetUrl = `${req.protocol}://${req.get('host')}/reset-password?token=${resetToken}`;
+          console.log('Password reset URL for development:', resetUrl);
+          return res.json({ 
+            message: "Token de recuperación generado. Revisar consola del servidor para el enlace.", 
+            developmentToken: resetToken,
+            resetUrl 
+          });
+        }
         return res.status(500).json({ message: "Error enviando email de recuperación" });
       }
 
