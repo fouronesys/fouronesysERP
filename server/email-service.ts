@@ -132,6 +132,122 @@ export async function sendPasswordResetEmail(email: string, resetToken: string):
           enable: false
         }
       },
+      html: `
+        <!DOCTYPE html>
+        <html lang="es">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Restablecimiento de contraseña - Four One Solutions</title>
+          <style>
+            body { margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+            .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; }
+            .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 30px; text-align: center; }
+            .logo { color: white; font-size: 32px; font-weight: bold; margin: 0; text-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+            .content { padding: 40px 30px; background-color: #f8f9fa; }
+            .title { color: #333; font-size: 24px; font-weight: 600; margin: 0 0 20px 0; text-align: center; }
+            .message { color: #555; font-size: 16px; line-height: 1.6; margin-bottom: 30px; }
+            .button-container { text-align: center; margin: 40px 0; }
+            .reset-button { 
+              display: inline-block; 
+              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+              color: white; 
+              padding: 16px 32px; 
+              text-decoration: none; 
+              border-radius: 30px; 
+              font-weight: 600;
+              font-size: 16px;
+              box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+              transition: transform 0.2s ease, box-shadow 0.2s ease;
+            }
+            .reset-button:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6); }
+            .url-box { 
+              background: #e9ecef; 
+              border: 1px solid #dee2e6; 
+              border-radius: 8px; 
+              padding: 15px; 
+              margin: 20px 0; 
+              font-family: 'Courier New', monospace; 
+              font-size: 14px; 
+              word-break: break-all; 
+              color: #495057;
+            }
+            .warning-box { 
+              background: #fff3cd; 
+              border-left: 4px solid #ffc107; 
+              padding: 20px; 
+              margin: 30px 0; 
+              border-radius: 0 8px 8px 0;
+            }
+            .warning-title { color: #856404; font-weight: 600; margin: 0 0 10px 0; }
+            .warning-list { color: #856404; margin: 0; padding-left: 20px; }
+            .footer { 
+              background: #343a40; 
+              color: #ffffff; 
+              text-align: center; 
+              padding: 30px; 
+              font-size: 14px;
+            }
+            .footer-logo { color: #667eea; font-weight: 600; font-size: 18px; margin-bottom: 5px; }
+            .footer-tagline { color: #adb5bd; }
+            .divider { height: 1px; background: linear-gradient(to right, transparent, #dee2e6, transparent); margin: 30px 0; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1 class="logo">Four One Solutions</h1>
+            </div>
+            
+            <div class="content">
+              <h2 class="title">🔐 Restablecimiento de Contraseña</h2>
+              
+              <p class="message">
+                Hemos recibido una solicitud para restablecer la contraseña de su cuenta en Four One Solutions.
+              </p>
+              
+              <p class="message">
+                Para crear una nueva contraseña segura, haga clic en el siguiente botón:
+              </p>
+              
+              <div class="button-container">
+                <a href="${resetUrl}" class="reset-button">
+                  ✨ Restablecer mi Contraseña
+                </a>
+              </div>
+              
+              <div class="divider"></div>
+              
+              <p class="message">
+                <strong>¿No puede hacer clic en el botón?</strong> Copie y pegue este enlace en su navegador:
+              </p>
+              
+              <div class="url-box">
+                ${resetUrl}
+              </div>
+              
+              <div class="warning-box">
+                <div class="warning-title">⚠️ Información Importante</div>
+                <ul class="warning-list">
+                  <li>Este enlace expirará automáticamente en <strong>1 hora</strong></li>
+                  <li>Solo puede utilizarse <strong>una vez</strong> por motivos de seguridad</li>
+                  <li>Si no solicitó este restablecimiento, puede ignorar este mensaje</li>
+                  <li>Para su seguridad, nunca comparta este enlace con terceros</li>
+                </ul>
+              </div>
+            </div>
+            
+            <div class="footer">
+              <div class="footer-logo">Four One Solutions</div>
+              <div class="footer-tagline">Sistema Integral de Gestión Empresarial</div>
+              <div style="margin-top: 15px; color: #6c757d; font-size: 12px;">
+                Este es un mensaje automático, por favor no responda a este correo.
+              </div>
+            </div>
+          </div>
+        </body>
+        </html>
+      `,
       text: `Four One Solutions - Restablecimiento de contraseña
 
 Se ha solicitado un restablecimiento de contraseña para su cuenta.
