@@ -324,8 +324,8 @@ export default function SalesReports() {
     <div className="flex-1 flex flex-col bg-gray-50 dark:bg-gray-900 min-h-screen">
       <Header title="Reportes de Ventas" subtitle="Análisis detallado de tus ventas" />
       
-      <div className="flex-1 overflow-y-auto pb-20">
-        <div className="max-w-7xl mx-auto p-3 sm:p-4 lg:p-6 space-y-4 sm:space-y-6">
+      <div className="flex-1 overflow-y-auto">
+        <div className="w-full max-w-none px-2 sm:px-4 lg:px-6 py-4 space-y-4 sm:space-y-6 pb-24">
           
           {hasNoData && (
             <Card className="border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-900/20">
@@ -666,29 +666,29 @@ export default function SalesReports() {
                   </p>
                 </div>
               ) : (
-                <div className="overflow-x-auto">
-                  <div className="min-w-full">
+                <div className="w-full overflow-x-auto -mx-2 sm:mx-0">
+                  <div className="min-w-[600px] px-2 sm:px-0">
                     {/* Desktop Table */}
                     <div className="hidden sm:block">
-                      <table className="w-full">
+                      <table className="w-full table-fixed">
                         <thead>
                           <tr className="border-b border-gray-200 dark:border-gray-700">
-                            <th className="text-left py-3 px-4 font-medium text-gray-900 dark:text-gray-100">
+                            <th className="text-left py-3 px-2 font-medium text-gray-900 dark:text-gray-100 w-24">
                               Fecha
                             </th>
-                            <th className="text-left py-3 px-4 font-medium text-gray-900 dark:text-gray-100">
+                            <th className="text-left py-3 px-2 font-medium text-gray-900 dark:text-gray-100 w-20">
                               Tipo
                             </th>
-                            <th className="text-left py-3 px-4 font-medium text-gray-900 dark:text-gray-100">
+                            <th className="text-left py-3 px-2 font-medium text-gray-900 dark:text-gray-100 w-24">
                               ID
                             </th>
-                            <th className="text-left py-3 px-4 font-medium text-gray-900 dark:text-gray-100">
+                            <th className="text-left py-3 px-2 font-medium text-gray-900 dark:text-gray-100 flex-1">
                               Cliente
                             </th>
-                            <th className="text-right py-3 px-4 font-medium text-gray-900 dark:text-gray-100">
+                            <th className="text-right py-3 px-2 font-medium text-gray-900 dark:text-gray-100 w-24">
                               Monto
                             </th>
-                            <th className="text-left py-3 px-4 font-medium text-gray-900 dark:text-gray-100">
+                            <th className="text-left py-3 px-2 font-medium text-gray-900 dark:text-gray-100 w-20">
                               Estado
                             </th>
                           </tr>
@@ -696,26 +696,27 @@ export default function SalesReports() {
                         <tbody>
                           {reportMetrics.transactions.slice(0, 50).map((transaction, index) => (
                             <tr key={index} className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800">
-                              <td className="py-3 px-4 text-sm text-gray-600 dark:text-gray-300">
+                              <td className="py-3 px-2 text-sm text-gray-600 dark:text-gray-300 truncate">
                                 {formatDate(transaction.date)}
                               </td>
-                              <td className="py-3 px-4">
-                                <Badge variant={transaction.type === "Factura" ? "default" : "secondary"}>
+                              <td className="py-3 px-2">
+                                <Badge variant={transaction.type === "Factura" ? "default" : "secondary"} className="text-xs">
                                   {transaction.type}
                                 </Badge>
                               </td>
-                              <td className="py-3 px-4 text-sm font-mono text-gray-600 dark:text-gray-300">
+                              <td className="py-3 px-2 text-sm font-mono text-gray-600 dark:text-gray-300 truncate">
                                 {transaction.id}
                               </td>
-                              <td className="py-3 px-4 text-sm text-gray-600 dark:text-gray-300">
+                              <td className="py-3 px-2 text-sm text-gray-600 dark:text-gray-300 truncate">
                                 {transaction.customer}
                               </td>
-                              <td className="py-3 px-4 text-sm font-medium text-right text-gray-900 dark:text-gray-100">
+                              <td className="py-3 px-2 text-sm font-medium text-right text-gray-900 dark:text-gray-100">
                                 {formatCurrency(transaction.amount)}
                               </td>
-                              <td className="py-3 px-4">
+                              <td className="py-3 px-2">
                                 <Badge 
                                   variant={transaction.status === "paid" || transaction.status === "completado" ? "default" : "secondary"}
+                                  className="text-xs"
                                 >
                                   {transaction.status}
                                 </Badge>

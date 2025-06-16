@@ -424,8 +424,8 @@ export default function POS() {
         </div>
       )}
       
-      <div className="p-3 sm:p-6 max-w-screen-2xl mx-auto">
-        <div className="grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 sm:gap-6 h-[calc(100vh-140px)]">
+      <div className="p-2 sm:p-4 lg:p-6 w-full">
+        <div className="grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-4 lg:gap-6 min-h-[calc(100vh-160px)]">
           
           {/* Sección de Productos */}
           <div className="2xl:col-span-3 xl:col-span-2 lg:col-span-2 space-y-4 h-full overflow-hidden flex flex-col">
@@ -600,7 +600,7 @@ export default function POS() {
             </Card>
 
             {/* Checkout */}
-            <div className="flex-1 overflow-y-auto space-y-4 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 min-h-0">
+            <div className="space-y-3 sm:space-y-4 pb-4">
               
               {/* Cliente */}
               <Card>
