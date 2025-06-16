@@ -5295,30 +5295,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Company not found" });
       }
 
-      const errorManager = ErrorManager.getInstance();
-      const stats = await errorManager.getErrorStats(company.id);
+      // Get basic audit stats instead of complex error manager
+      const auditLogs = await auditLogger.getAuditLogs({
+        companyId: company.id,
+        limit: 1000
+      });
 
-      // Transform stats to match frontend expectations
-      const safeStats = {
-        total: stats?.total || 0,
-        byModule: stats?.byModule || {},
-        bySeverity: {
-          critical: stats?.critical || 0,
-          error: stats?.high || 0,
-          warning: stats?.medium || 0,
-          info: stats?.low || 0
-        },
-        recent: stats?.last24h || 0
+      // Process logs to generate stats
+      const errorLogs = auditLogs.filter(log => !log.success);
+      const last24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      const recentErrors = errorLogs.filter(log => new Date(log.timestamp) > last24h);
+
+      // Group by module
+      const byModule: Record<string, number> = {};
+      errorLogs.forEach(log => {
+        byModule[log.module] = (byModule[log.module] || 0) + 1;
+      });
+
+      // Group by severity
+      const bySeverity: Record<string, number> = {
+        critical: errorLogs.filter(log => log.severity === 'critical').length,
+        error: errorLogs.filter(log => log.severity === 'error').length,
+        warning: errorLogs.filter(log => log.severity === 'warning').length,
+        info: errorLogs.filter(log => log.severity === 'info').length
       };
 
-      res.json(safeStats);
+      const stats = {
+        total: errorLogs.length,
+        byModule,
+        bySeverity,
+        recent: recentErrors.length
+      };
+
+      res.json(stats);
     } catch (error) {
       console.error("Error fetching error stats:", error);
       // Return safe fallback data structure
       res.json({
         total: 0,
         byModule: {},
-        bySeverity: {},
+        bySeverity: {
+          critical: 0,
+          error: 0,
+          warning: 0,
+          info: 0
+        },
         recent: 0
       });
     }
