@@ -199,7 +199,7 @@ export default function SystemMonitoring() {
       </div>
 
       {/* Module Health Status */}
-      {systemHealth?.modules && (
+      {systemHealth?.modules && typeof systemHealth.modules === 'object' && (
         <Card>
           <CardHeader>
             <CardTitle>Estado de Módulos</CardTitle>
@@ -207,7 +207,7 @@ export default function SystemMonitoring() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-              {Object.entries(systemHealth.modules).map(([module, status]) => (
+              {Object.entries(systemHealth.modules || {}).map(([module, status]) => (
                 <div key={module} className="flex items-center space-x-2 p-2 rounded-lg bg-gray-50 dark:bg-gray-800">
                   {getHealthIcon(status)}
                   <div>
@@ -233,7 +233,7 @@ export default function SystemMonitoring() {
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                {Object.entries(errorStats.byModule).map(([module, count]) => (
+                {Object.entries(errorStats.byModule || {}).map(([module, count]) => (
                   <div key={module} className="flex justify-between items-center">
                     <span className="text-sm">{module}</span>
                     <Badge variant="secondary">{count}</Badge>
@@ -249,7 +249,7 @@ export default function SystemMonitoring() {
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                {Object.entries(errorStats.bySeverity).map(([severity, count]) => (
+                {Object.entries(errorStats.bySeverity || {}).map(([severity, count]) => (
                   <div key={severity} className="flex justify-between items-center">
                     <div className="flex items-center space-x-2">
                       <div className={`w-3 h-3 rounded-full ${getSeverityColor(severity)}`}></div>
