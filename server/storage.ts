@@ -3097,6 +3097,172 @@ export class DatabaseStorage implements IStorage {
     
     return updatedCompany;
   }
+  // MANUFACTURING MODULE METHODS
+
+  // Production Orders
+  async getProductionOrders(companyId: number) {
+    return await db.select({
+      id: productionOrders.id,
+      number: productionOrders.number,
+      productId: productionOrders.productId,
+      quantity: productionOrders.quantity,
+      status: productionOrders.status,
+      plannedStartDate: productionOrders.plannedStartDate,
+      plannedEndDate: productionOrders.plannedEndDate,
+      actualStartDate: productionOrders.actualStartDate,
+      actualEndDate: productionOrders.actualEndDate,
+      notes: productionOrders.notes,
+      createdBy: productionOrders.createdBy,
+      createdAt: productionOrders.createdAt,
+      updatedAt: productionOrders.updatedAt
+    })
+      .from(productionOrders)
+      .where(eq(productionOrders.companyId, companyId))
+      .orderBy(desc(productionOrders.createdAt));
+  }
+
+  async createProductionOrder(orderData: any) {
+    const [order] = await db.insert(productionOrders).values({
+      ...orderData,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    }).returning();
+    return order;
+  }
+
+  async updateProductionOrder(orderId: number, updateData: any, companyId: number) {
+    const [order] = await db
+      .update(productionOrders)
+      .set({
+        ...updateData,
+        updatedAt: new Date()
+      })
+      .where(and(
+        eq(productionOrders.id, orderId),
+        eq(productionOrders.companyId, companyId)
+      ))
+      .returning();
+    return order;
+  }
+
+  async deleteProductionOrder(orderId: number, companyId: number) {
+    await db
+      .delete(productionOrders)
+      .where(and(
+        eq(productionOrders.id, orderId),
+        eq(productionOrders.companyId, companyId)
+      ));
+  }
+
+  // Bill of Materials (BOM)
+  async getBOMByProduct(productId: number, companyId: number) {
+    return await db.select({
+      id: bom.id,
+      productId: bom.productId,
+      materialId: bom.materialId,
+      quantity: bom.quantity,
+      unit: bom.unit,
+      cost: bom.cost,
+      notes: bom.notes,
+      material: {
+        id: products.id,
+        name: products.name,
+        code: products.code,
+        price: products.price,
+        unit: products.unit,
+        stock: products.stock
+      }
+    })
+      .from(bom)
+      .innerJoin(products, eq(bom.materialId, products.id))
+      .where(and(
+        eq(bom.productId, productId),
+        eq(bom.companyId, companyId)
+      ))
+      .orderBy(products.name);
+  }
+
+  async createBOMItem(bomData: any) {
+    const [bomItem] = await db.insert(bom).values({
+      ...bomData,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    }).returning();
+    return bomItem;
+  }
+
+  async updateBOMItem(bomId: number, updateData: any, companyId: number) {
+    const [bomItem] = await db
+      .update(bom)
+      .set({
+        ...updateData,
+        updatedAt: new Date()
+      })
+      .where(and(
+        eq(bom.id, bomId),
+        eq(bom.companyId, companyId)
+      ))
+      .returning();
+    return bomItem;
+  }
+
+  async deleteBOMItem(bomId: number, companyId: number) {
+    await db
+      .delete(bom)
+      .where(and(
+        eq(bom.id, bomId),
+        eq(bom.companyId, companyId)
+      ));
+  }
+
+  // Manufacturing cost calculation
+  async calculateManufacturingCosts(productId: number, quantity: number, companyId: number) {
+    const bomItems = await this.getBOMByProduct(productId, companyId);
+    
+    let totalMaterialCost = 0;
+    let totalLaborCost = 0;
+    let totalOverheadCost = 0;
+    
+    const materials = [];
+    
+    for (const bomItem of bomItems) {
+      const materialQuantity = parseFloat(bomItem.quantity.toString()) * quantity;
+      const materialCost = parseFloat(bomItem.material.price.toString()) * materialQuantity;
+      totalMaterialCost += materialCost;
+      
+      materials.push({
+        id: bomItem.material.id,
+        name: bomItem.material.name,
+        code: bomItem.material.code,
+        unitCost: parseFloat(bomItem.material.price.toString()),
+        requiredQuantity: materialQuantity,
+        unit: bomItem.unit,
+        totalCost: materialCost,
+        availableStock: parseFloat(bomItem.material.stock.toString()),
+        isAvailable: parseFloat(bomItem.material.stock.toString()) >= materialQuantity
+      });
+    }
+    
+    // Calculate estimated labor cost (10% of material cost)
+    totalLaborCost = totalMaterialCost * 0.10;
+    
+    // Calculate estimated overhead cost (15% of material cost)
+    totalOverheadCost = totalMaterialCost * 0.15;
+    
+    const totalCost = totalMaterialCost + totalLaborCost + totalOverheadCost;
+    
+    return {
+      productId,
+      quantity,
+      materialCost: totalMaterialCost,
+      laborCost: totalLaborCost,
+      overheadCost: totalOverheadCost,
+      totalCost,
+      unitCost: totalCost / quantity,
+      materials,
+      canProduce: materials.every(m => m.isAvailable)
+    };
+  }
 }
 
 export const storage = new DatabaseStorage();

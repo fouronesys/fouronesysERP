@@ -7,8 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Search, List, Package, Edit, Trash2, Calculator, Factory } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Plus, Search, Edit, Trash2, Calculator, Factory, Package } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -43,19 +43,25 @@ export default function BOM() {
     queryFn: () => fetch(`/api/bom/${selectedProductId}`).then(res => res.json()),
   });
 
+  const { data: costs } = useQuery({
+    queryKey: ["/api/manufacturing/costs", selectedProductId],
+    enabled: !!selectedProductId,
+    queryFn: () => fetch(`/api/manufacturing/costs/${selectedProductId}?quantity=1`).then(res => res.json()),
+  });
+
   const form = useForm<BOMFormData>({
     resolver: zodResolver(bomSchema),
     defaultValues: {
-      productId: "",
+      productId: selectedProductId?.toString() || "",
       materialId: "",
       quantity: "",
-      unit: "unit",
+      unit: "",
     },
   });
 
   const createBOMMutation = useMutation({
     mutationFn: async (data: BOMFormData) => {
-      await apiRequest("POST", "/api/bom", {
+      return apiRequest("POST", "/api/bom", {
         productId: parseInt(data.productId),
         materialId: parseInt(data.materialId),
         quantity: parseFloat(data.quantity),
@@ -68,6 +74,7 @@ export default function BOM() {
         description: "El material ha sido agregado a la lista de materiales.",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/bom", selectedProductId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/manufacturing/costs", selectedProductId] });
       setIsDialogOpen(false);
       form.reset();
     },
@@ -82,8 +89,7 @@ export default function BOM() {
 
   const updateBOMMutation = useMutation({
     mutationFn: async (data: BOMFormData) => {
-      if (!editingBOM) return;
-      await apiRequest("PUT", `/api/bom/${editingBOM.id}`, {
+      await apiRequest("PATCH", `/api/bom/${editingBOM?.id}`, {
         productId: parseInt(data.productId),
         materialId: parseInt(data.materialId),
         quantity: parseFloat(data.quantity),
@@ -96,6 +102,7 @@ export default function BOM() {
         description: "El material ha sido actualizado exitosamente.",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/bom", selectedProductId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/manufacturing/costs", selectedProductId] });
       setIsDialogOpen(false);
       setEditingBOM(null);
       form.reset();
@@ -110,8 +117,8 @@ export default function BOM() {
   });
 
   const deleteBOMMutation = useMutation({
-    mutationFn: async (id: number) => {
-      await apiRequest("DELETE", `/api/bom/${id}`);
+    mutationFn: async (bomId: number) => {
+      await apiRequest("DELETE", `/api/bom/${bomId}`);
     },
     onSuccess: () => {
       toast({
@@ -119,6 +126,7 @@ export default function BOM() {
         description: "El material ha sido eliminado de la lista.",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/bom", selectedProductId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/manufacturing/costs", selectedProductId] });
     },
     onError: () => {
       toast({
@@ -133,9 +141,9 @@ export default function BOM() {
   const materialProducts = products?.filter(p => !p.isManufactured) || [];
 
   const filteredBOMItems = bomItems?.filter(item => {
-    const material = products?.find(p => p.id === item.materialId);
-    return material?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-           material?.code.toLowerCase().includes(searchTerm.toLowerCase());
+    if (!searchTerm) return true;
+    return item.material?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+           item.material?.code.toLowerCase().includes(searchTerm.toLowerCase());
   }) || [];
 
   const onSubmit = (data: BOMFormData) => {
@@ -146,99 +154,135 @@ export default function BOM() {
     }
   };
 
-  const handleEdit = (bom: BOM) => {
-    setEditingBOM(bom);
-    form.reset({
-      productId: bom.productId.toString(),
-      materialId: bom.materialId.toString(),
-      quantity: bom.quantity,
-      unit: bom.unit,
-    });
-    setIsDialogOpen(true);
-  };
-
   const handleNewBOM = () => {
     setEditingBOM(null);
     form.reset({
       productId: selectedProductId?.toString() || "",
       materialId: "",
       quantity: "",
-      unit: "unit",
+      unit: "",
     });
     setIsDialogOpen(true);
   };
 
-  const getProductName = (productId: number) => {
-    const product = products?.find(p => p.id === productId);
-    return product?.name || `Producto #${productId}`;
+  const handleEdit = (bomItem: BOM) => {
+    setEditingBOM(bomItem);
+    form.reset({
+      productId: bomItem.productId.toString(),
+      materialId: bomItem.materialId.toString(),
+      quantity: bomItem.quantity.toString(),
+      unit: bomItem.unit,
+    });
+    setIsDialogOpen(true);
   };
 
-  const getProductCode = (productId: number) => {
-    const product = products?.find(p => p.id === productId);
-    return product?.code || "";
-  };
-
-  const calculateTotalCost = () => {
-    if (!bomItems || !products) return 0;
-    
-    return bomItems.reduce((total, item) => {
-      const material = products.find(p => p.id === item.materialId);
-      const cost = material?.cost ? parseFloat(material.cost) : 0;
-      return total + (cost * parseFloat(item.quantity));
-    }, 0);
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('es-DO', {
+      style: 'currency',
+      currency: 'DOP'
+    }).format(amount);
   };
 
   return (
     <div className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900">
-      <Header title="Lista de Materiales (BOM)" subtitle="Gestiona los materiales e ingredientes de tus productos manufacturados" />
+      <Header title="Lista de Materiales (BOM)" subtitle="Gestiona las recetas y materiales de productos manufacturados" />
       
-      <div className="p-6">
-        <Tabs defaultValue="bom" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="bom">Lista de Materiales</TabsTrigger>
-            <TabsTrigger value="calculator">Calculadora de Costos</TabsTrigger>
-          </TabsList>
+      <div className="px-2 sm:px-4 lg:px-6 py-4 pb-24 space-y-6">
+        {/* Product Selection */}
+        <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+          <CardHeader>
+            <CardTitle className="flex items-center text-gray-900 dark:text-white">
+              <Factory className="mr-2 h-5 w-5" />
+              Seleccionar Producto a Manufacturar
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Select 
+              value={selectedProductId?.toString() || ""} 
+              onValueChange={(value) => setSelectedProductId(parseInt(value))}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Selecciona un producto manufacturado..." />
+              </SelectTrigger>
+              <SelectContent>
+                {manufacturedProducts.map((product) => (
+                  <SelectItem key={product.id} value={product.id.toString()}>
+                    {product.name} ({product.code})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            
+            {manufacturedProducts.length === 0 && (
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                No hay productos manufacturados. Marca productos como "manufacturados" en la sección de productos.
+              </p>
+            )}
+          </CardContent>
+        </Card>
 
-          <TabsContent value="bom" className="space-y-6">
-            {/* Product Selection */}
+        {selectedProductId && (
+          <>
+            {/* Cost Analysis */}
+            {costs && (
+              <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                <CardHeader>
+                  <CardTitle className="flex items-center text-gray-900 dark:text-white">
+                    <Calculator className="mr-2 h-5 w-5" />
+                    Análisis de Costos
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="bg-blue-50 dark:bg-blue-900/30 p-4 rounded-lg">
+                      <p className="text-sm text-blue-600 dark:text-blue-400">Costo de Materiales</p>
+                      <p className="text-lg font-bold text-blue-900 dark:text-blue-300">
+                        {formatCurrency(costs.materialCost)}
+                      </p>
+                    </div>
+                    <div className="bg-green-50 dark:bg-green-900/30 p-4 rounded-lg">
+                      <p className="text-sm text-green-600 dark:text-green-400">Costo de Mano de Obra</p>
+                      <p className="text-lg font-bold text-green-900 dark:text-green-300">
+                        {formatCurrency(costs.laborCost)}
+                      </p>
+                    </div>
+                    <div className="bg-yellow-50 dark:bg-yellow-900/30 p-4 rounded-lg">
+                      <p className="text-sm text-yellow-600 dark:text-yellow-400">Gastos Generales</p>
+                      <p className="text-lg font-bold text-yellow-900 dark:text-yellow-300">
+                        {formatCurrency(costs.overheadCost)}
+                      </p>
+                    </div>
+                    <div className="bg-purple-50 dark:bg-purple-900/30 p-4 rounded-lg">
+                      <p className="text-sm text-purple-600 dark:text-purple-400">Costo Total</p>
+                      <p className="text-lg font-bold text-purple-900 dark:text-purple-300">
+                        {formatCurrency(costs.totalCost)}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-4 flex items-center gap-2">
+                    <Badge variant={costs.canProduce ? "default" : "destructive"}>
+                      {costs.canProduce ? "Puede Producirse" : "Stock Insuficiente"}
+                    </Badge>
+                    <span className="text-sm text-gray-600 dark:text-gray-400">
+                      Costo por unidad: {formatCurrency(costs.unitCost)}
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* BOM Items */}
             <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
               <CardHeader>
-                <CardTitle className="flex items-center text-gray-900 dark:text-white">
-                  <Factory className="mr-2 h-5 w-5" />
-                  Seleccionar Producto a Manufacturar
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Select 
-                  value={selectedProductId?.toString() || undefined} 
-                  onValueChange={(value) => setSelectedProductId(parseInt(value))}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Selecciona un producto manufacturado..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {manufacturedProducts.map((product) => (
-                      <SelectItem key={product.id} value={product.id.toString()}>
-                        {product.name} ({product.code})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                
-                {manufacturedProducts.length === 0 && (
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-                    No hay productos manufacturados. Marca productos como "manufacturados" en la sección de productos.
-                  </p>
-                )}
-              </CardContent>
-            </Card>
-
-            {selectedProductId && (
-              <>
-                {/* Actions and Search */}
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <div className="flex-1">
-                    <div className="relative">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                  <CardTitle className="flex items-center text-gray-900 dark:text-white">
+                    <Package className="mr-2 h-5 w-5" />
+                    Materiales Requeridos ({filteredBOMItems.length})
+                  </CardTitle>
+                  
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <div className="relative flex-1 sm:w-64">
                       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                       <Input
                         placeholder="Buscar materiales..."
@@ -247,299 +291,308 @@ export default function BOM() {
                         className="pl-10"
                       />
                     </div>
-                  </div>
-                  <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                    <DialogTrigger asChild>
-                      <Button onClick={handleNewBOM} className="bg-blue-600 hover:bg-blue-700 text-white">
-                        <Plus className="mr-2 h-4 w-4" />
-                        Agregar Material
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-2xl">
-                      <DialogHeader>
-                        <DialogTitle>
-                          {editingBOM ? "Editar Material" : "Agregar Material a BOM"}
-                        </DialogTitle>
-                      </DialogHeader>
-                      <Form {...form}>
-                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                          <FormField
-                            control={form.control}
-                            name="productId"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Producto Final</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                  <FormControl>
-                                    <SelectTrigger>
-                                      <SelectValue placeholder="Seleccionar producto" />
-                                    </SelectTrigger>
-                                  </FormControl>
-                                  <SelectContent>
-                                    {manufacturedProducts.map((product) => (
-                                      <SelectItem key={product.id} value={product.id.toString()}>
-                                        {product.name} ({product.code})
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-
-                          <FormField
-                            control={form.control}
-                            name="materialId"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Material/Ingrediente</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                  <FormControl>
-                                    <SelectTrigger>
-                                      <SelectValue placeholder="Seleccionar material" />
-                                    </SelectTrigger>
-                                  </FormControl>
-                                  <SelectContent>
-                                    {materialProducts.map((product) => (
-                                      <SelectItem key={product.id} value={product.id.toString()}>
-                                        {product.name} ({product.code}) - {product.unit}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-
-                          <div className="grid grid-cols-2 gap-4">
+                    
+                    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                      <DialogTrigger asChild>
+                        <Button onClick={handleNewBOM} className="bg-blue-600 hover:bg-blue-700 text-white">
+                          <Plus className="mr-2 h-4 w-4" />
+                          Agregar Material
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-2xl">
+                        <DialogHeader>
+                          <DialogTitle>
+                            {editingBOM ? "Editar Material" : "Agregar Material"}
+                          </DialogTitle>
+                        </DialogHeader>
+                        <Form {...form}>
+                          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                             <FormField
                               control={form.control}
-                              name="quantity"
+                              name="materialId"
                               render={({ field }) => (
                                 <FormItem>
-                                  <FormLabel>Cantidad Necesaria</FormLabel>
-                                  <FormControl>
-                                    <Input type="number" step="0.0001" placeholder="1.5" {...field} />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                            <FormField
-                              control={form.control}
-                              name="unit"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>Unidad</FormLabel>
+                                  <FormLabel>Material/Ingrediente</FormLabel>
                                   <Select onValueChange={field.onChange} defaultValue={field.value}>
                                     <FormControl>
                                       <SelectTrigger>
-                                        <SelectValue placeholder="Seleccionar unidad" />
+                                        <SelectValue placeholder="Seleccionar material" />
                                       </SelectTrigger>
                                     </FormControl>
                                     <SelectContent>
-                                      <SelectItem value="unit">Unidad</SelectItem>
-                                      <SelectItem value="kg">Kilogramo</SelectItem>
-                                      <SelectItem value="lb">Libra</SelectItem>
-                                      <SelectItem value="l">Litro</SelectItem>
-                                      <SelectItem value="ml">Mililitro</SelectItem>
-                                      <SelectItem value="m">Metro</SelectItem>
-                                      <SelectItem value="cm">Centímetro</SelectItem>
-                                      <SelectItem value="g">Gramo</SelectItem>
-                                      <SelectItem value="oz">Onza</SelectItem>
+                                      {materialProducts.map((product) => (
+                                        <SelectItem key={product.id} value={product.id.toString()}>
+                                          {product.name} ({product.code}) - Stock: {product.stock} {product.unit}
+                                        </SelectItem>
+                                      ))}
                                     </SelectContent>
                                   </Select>
                                   <FormMessage />
                                 </FormItem>
                               )}
                             />
-                          </div>
 
-                          <div className="flex justify-end space-x-2">
-                            <Button
-                              type="button"
-                              variant="outline"
-                              onClick={() => setIsDialogOpen(false)}
-                            >
-                              Cancelar
-                            </Button>
-                            <Button
-                              type="submit"
-                              disabled={createBOMMutation.isPending || updateBOMMutation.isPending}
-                              className="bg-blue-600 hover:bg-blue-700 text-white"
-                            >
-                              {editingBOM ? "Actualizar" : "Agregar"} Material
-                            </Button>
-                          </div>
-                        </form>
-                      </Form>
-                    </DialogContent>
-                  </Dialog>
+                            <div className="grid grid-cols-2 gap-4">
+                              <FormField
+                                control={form.control}
+                                name="quantity"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Cantidad Requerida</FormLabel>
+                                    <FormControl>
+                                      <Input type="number" step="0.01" placeholder="1.00" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+
+                              <FormField
+                                control={form.control}
+                                name="unit"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Unidad</FormLabel>
+                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                      <FormControl>
+                                        <SelectTrigger>
+                                          <SelectValue placeholder="Seleccionar unidad" />
+                                        </SelectTrigger>
+                                      </FormControl>
+                                      <SelectContent>
+                                        <SelectItem value="kg">Kilogramos (kg)</SelectItem>
+                                        <SelectItem value="g">Gramos (g)</SelectItem>
+                                        <SelectItem value="l">Litros (l)</SelectItem>
+                                        <SelectItem value="ml">Mililitros (ml)</SelectItem>
+                                        <SelectItem value="und">Unidades (und)</SelectItem>
+                                        <SelectItem value="m">Metros (m)</SelectItem>
+                                        <SelectItem value="cm">Centímetros (cm)</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                            </div>
+
+                            <div className="flex justify-end space-x-2">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => setIsDialogOpen(false)}
+                              >
+                                Cancelar
+                              </Button>
+                              <Button
+                                type="submit"
+                                disabled={createBOMMutation.isPending || updateBOMMutation.isPending}
+                                className="bg-blue-600 hover:bg-blue-700 text-white"
+                              >
+                                {editingBOM ? "Actualizar" : "Agregar"} Material
+                              </Button>
+                            </div>
+                          </form>
+                        </Form>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
                 </div>
-
-                {/* BOM List */}
-                <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-                  <CardHeader>
-                    <CardTitle className="flex items-center justify-between text-gray-900 dark:text-white">
-                      <div className="flex items-center">
-                        <List className="mr-2 h-5 w-5" />
-                        BOM para: {getProductName(selectedProductId)} ({getProductCode(selectedProductId)})
-                      </div>
-                      <div className="text-sm font-normal text-gray-500 dark:text-gray-400">
-                        {filteredBOMItems.length} materiales
-                      </div>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {isLoading ? (
-                      <div className="text-center py-12">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                        <p className="mt-2 text-gray-500 dark:text-gray-400">Cargando materiales...</p>
-                      </div>
-                    ) : filteredBOMItems.length === 0 ? (
-                      <div className="text-center py-12">
-                        <Package className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" />
-                        <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">
-                          No hay materiales en la BOM
-                        </h3>
-                        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                          {searchTerm ? "No se encontraron materiales que coincidan con tu búsqueda." : "Comienza agregando materiales a este producto."}
-                        </p>
-                        {!searchTerm && (
-                          <div className="mt-6">
-                            <Button onClick={handleNewBOM} className="bg-blue-600 hover:bg-blue-700 text-white">
-                              <Plus className="mr-2 h-4 w-4" />
-                              Agregar Material
-                            </Button>
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <div className="overflow-x-auto">
-                        <table className="w-full">
-                          <thead className="bg-gray-50 dark:bg-gray-700">
-                            <tr>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                Material/Ingrediente
-                              </th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                Código
-                              </th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                Cantidad
-                              </th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                Costo Unitario
-                              </th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                Costo Total
-                              </th>
-                              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                Acciones
-                              </th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                            {filteredBOMItems.map((item) => {
-                              const material = products?.find(p => p.id === item.materialId);
-                              const unitCost = material?.cost ? parseFloat(material.cost) : 0;
-                              const totalCost = unitCost * parseFloat(item.quantity);
-                              
-                              return (
-                                <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                                  <td className="px-6 py-4 whitespace-nowrap">
-                                    <div className="text-sm font-medium text-gray-900 dark:text-white">
-                                      {material?.name || `Material #${item.materialId}`}
-                                    </div>
-                                  </td>
-                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                                    {material?.code || "N/A"}
-                                  </td>
-                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                                    {item.quantity} {item.unit}
-                                  </td>
-                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                                    {new Intl.NumberFormat("es-DO", {
-                                      style: "currency",
-                                      currency: "DOP",
-                                    }).format(unitCost)}
-                                  </td>
-                                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                                    {new Intl.NumberFormat("es-DO", {
-                                      style: "currency",
-                                      currency: "DOP",
-                                    }).format(totalCost)}
-                                  </td>
-                                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                    <div className="flex items-center justify-end space-x-2">
-                                      <Button 
-                                        variant="ghost" 
-                                        size="sm"
-                                        onClick={() => handleEdit(item)}
-                                      >
-                                        <Edit className="h-4 w-4" />
-                                      </Button>
-                                      <Button 
-                                        variant="ghost" 
-                                        size="sm"
-                                        onClick={() => deleteBOMMutation.mutate(item.id)}
-                                        disabled={deleteBOMMutation.isPending}
-                                      >
-                                        <Trash2 className="h-4 w-4 text-red-500" />
-                                      </Button>
-                                    </div>
-                                  </td>
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                          <tfoot className="bg-gray-50 dark:bg-gray-700">
-                            <tr>
-                              <td colSpan={4} className="px-6 py-3 text-right text-sm font-medium text-gray-900 dark:text-white">
-                                Costo Total de Materiales:
-                              </td>
-                              <td className="px-6 py-3 text-sm font-bold text-gray-900 dark:text-white">
-                                {new Intl.NumberFormat("es-DO", {
-                                  style: "currency",
-                                  currency: "DOP",
-                                }).format(calculateTotalCost())}
-                              </td>
-                              <td></td>
-                            </tr>
-                          </tfoot>
-                        </table>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </>
-            )}
-          </TabsContent>
-
-          <TabsContent value="calculator" className="space-y-6">
-            <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-              <CardHeader>
-                <CardTitle className="flex items-center text-gray-900 dark:text-white">
-                  <Calculator className="mr-2 h-5 w-5" />
-                  Calculadora de Costos de Producción
-                </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-center py-12">
-                  <Calculator className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" />
-                  <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">
-                    Calculadora de Costos
-                  </h3>
-                  <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                    Próximamente: herramientas avanzadas para calcular costos de producción, márgenes y precios sugeridos.
-                  </p>
-                </div>
+                {isLoading ? (
+                  <div className="text-center py-12">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                    <p className="mt-2 text-gray-500 dark:text-gray-400">Cargando materiales...</p>
+                  </div>
+                ) : filteredBOMItems.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Package className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" />
+                    <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">
+                      No hay materiales
+                    </h3>
+                    <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                      {searchTerm ? "No se encontraron materiales que coincidan con tu búsqueda." : "Comienza agregando materiales a este producto."}
+                    </p>
+                    {!searchTerm && (
+                      <div className="mt-6">
+                        <Button onClick={handleNewBOM} className="bg-blue-600 hover:bg-blue-700 text-white">
+                          <Plus className="mr-2 h-4 w-4" />
+                          Agregar Material
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <>
+                    {/* Desktop Table */}
+                    <div className="hidden lg:block overflow-x-auto">
+                      <table className="w-full">
+                        <thead className="bg-gray-50 dark:bg-gray-700">
+                          <tr>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                              Material/Ingrediente
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                              Código
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                              Cantidad
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                              Costo Unitario
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                              Costo Total
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                              Stock Disponible
+                            </th>
+                            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                              Acciones
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                          {filteredBOMItems.map((bomItem) => {
+                            const totalCost = bomItem.quantity * (bomItem.material?.price || 0);
+                            const isAvailable = (bomItem.material?.stock || 0) >= bomItem.quantity;
+                            
+                            return (
+                              <tr key={bomItem.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                                <td className="px-4 py-4 whitespace-nowrap">
+                                  <div className="text-sm font-medium text-gray-900 dark:text-white">
+                                    {bomItem.material?.name}
+                                  </div>
+                                </td>
+                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                                  {bomItem.material?.code}
+                                </td>
+                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                                  {bomItem.quantity} {bomItem.unit}
+                                </td>
+                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                                  {formatCurrency(bomItem.material?.price || 0)}
+                                </td>
+                                <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                                  {formatCurrency(totalCost)}
+                                </td>
+                                <td className="px-4 py-4 whitespace-nowrap">
+                                  <div className="flex items-center">
+                                    <span className={`text-sm ${isAvailable ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                                      {bomItem.material?.stock} {bomItem.material?.unit}
+                                    </span>
+                                    {!isAvailable && (
+                                      <Badge variant="destructive" className="ml-2 text-xs">
+                                        Insuficiente
+                                      </Badge>
+                                    )}
+                                  </div>
+                                </td>
+                                <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                  <div className="flex items-center justify-end space-x-2">
+                                    <Button 
+                                      variant="ghost" 
+                                      size="sm"
+                                      onClick={() => handleEdit(bomItem)}
+                                    >
+                                      <Edit className="h-4 w-4" />
+                                    </Button>
+                                    <Button 
+                                      variant="ghost" 
+                                      size="sm"
+                                      onClick={() => deleteBOMMutation.mutate(bomItem.id)}
+                                      disabled={deleteBOMMutation.isPending}
+                                    >
+                                      <Trash2 className="h-4 w-4 text-red-500" />
+                                    </Button>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Mobile Cards */}
+                    <div className="lg:hidden space-y-4">
+                      {filteredBOMItems.map((bomItem) => {
+                        const totalCost = bomItem.quantity * (bomItem.material?.price || 0);
+                        const isAvailable = (bomItem.material?.stock || 0) >= bomItem.quantity;
+                        
+                        return (
+                          <Card key={bomItem.id} className="border-gray-200 dark:border-gray-700">
+                            <CardContent className="p-4">
+                              <div className="flex items-start justify-between mb-3">
+                                <div className="flex-1 min-w-0">
+                                  <h3 className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                                    {bomItem.material?.name}
+                                  </h3>
+                                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                                    {bomItem.material?.code}
+                                  </p>
+                                </div>
+                                <div className="flex items-center space-x-2 ml-2">
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm"
+                                    onClick={() => handleEdit(bomItem)}
+                                    className="h-8 w-8 p-0"
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm"
+                                    onClick={() => deleteBOMMutation.mutate(bomItem.id)}
+                                    disabled={deleteBOMMutation.isPending}
+                                    className="h-8 w-8 p-0"
+                                  >
+                                    <Trash2 className="h-4 w-4 text-red-500" />
+                                  </Button>
+                                </div>
+                              </div>
+                              
+                              <div className="grid grid-cols-2 gap-3 text-center">
+                                <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-2">
+                                  <p className="text-xs text-gray-500 dark:text-gray-400">Cantidad</p>
+                                  <p className="text-sm font-medium text-gray-900 dark:text-white">
+                                    {bomItem.quantity} {bomItem.unit}
+                                  </p>
+                                </div>
+                                
+                                <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-2">
+                                  <p className="text-xs text-gray-500 dark:text-gray-400">Costo Total</p>
+                                  <p className="text-sm font-medium text-gray-900 dark:text-white">
+                                    {formatCurrency(totalCost)}
+                                  </p>
+                                </div>
+                              </div>
+                              
+                              <div className="mt-3 flex items-center justify-between">
+                                <div className="text-xs">
+                                  <span className="text-gray-500 dark:text-gray-400">Stock: </span>
+                                  <span className={isAvailable ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}>
+                                    {bomItem.material?.stock} {bomItem.material?.unit}
+                                  </span>
+                                </div>
+                                {!isAvailable && (
+                                  <Badge variant="destructive" className="text-xs">
+                                    Insuficiente
+                                  </Badge>
+                                )}
+                              </div>
+                            </CardContent>
+                          </Card>
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
               </CardContent>
             </Card>
-          </TabsContent>
-        </Tabs>
+          </>
+        )}
       </div>
     </div>
   );
