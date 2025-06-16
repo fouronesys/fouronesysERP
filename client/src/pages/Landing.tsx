@@ -66,11 +66,11 @@ export default function Landing() {
             
             <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center items-center">
               <Button 
-                onClick={() => window.location.href = "/api/login"}
+                onClick={() => window.location.href = "/auth"}
                 size="lg"
                 className="w-full sm:w-auto bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-6 sm:px-8 py-3 text-base sm:text-lg border-none"
               >
-                Comenzar Prueba Gratuita de 7 Días
+                Comenzar Ahora
               </Button>
               
               <Button 
@@ -395,14 +395,14 @@ export default function Landing() {
                 
                 <div className="space-y-2 sm:space-y-3">
                   <Button 
-                    onClick={() => window.location.href = "/api/login"}
+                    onClick={() => window.location.href = "/auth"}
                     className="w-full bg-gradient-to-r from-gray-900 to-black hover:from-black hover:to-gray-900 text-white border-none text-sm sm:text-base py-2 sm:py-3"
                   >
-                    Comenzar Prueba Gratuita
+                    Comenzar Ahora
                   </Button>
                   <Button 
                     variant="outline"
-                    onClick={() => window.location.href = "/register"}
+                    onClick={() => window.location.href = "/auth"}
                     className="w-full border-gray-400 text-gray-300 bg-transparent hover:bg-gray-300 hover:text-black text-sm sm:text-base py-2 sm:py-3"
                   >
                     Registrar Nueva Empresa
@@ -461,10 +461,10 @@ export default function Landing() {
                 
                 <div className="space-y-3">
                   <Button 
-                    onClick={() => window.location.href = "/api/login"}
+                    onClick={() => window.location.href = "/auth"}
                     className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white border-none"
                   >
-                    Comenzar Prueba Gratuita
+                    Comenzar Ahora
                   </Button>
                   <Button 
                     variant="outline"
@@ -481,7 +481,7 @@ export default function Landing() {
           <div className="text-center mt-12">
             <div className="flex items-center justify-center text-gray-600 dark:text-gray-400 mb-4">
               <Shield className="h-5 w-5 text-green-500 mr-2" />
-              7 días de prueba gratuita • Sin compromiso • Cancela cuando quieras
+              Sistema profesional • Soporte técnico incluido • Cumple normativas RD
             </div>
             <p className="text-sm text-gray-500 dark:text-gray-400">
               Cumplimos con todas las normativas de República Dominicana (DGII, ITBIS, NCF)
