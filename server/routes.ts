@@ -23,6 +23,7 @@ import { auditLogger } from "./audit-logger";
 import { InvoiceHTMLService } from "./invoice-html-service";
 import { InvoicePOS80mmService } from "./invoice-pos-80mm-service";
 import { simpleAccountingService } from "./accounting-service-simple";
+import { accountingService } from "./accounting-service";
 import { sendPasswordSetupEmail } from "./email-service";
 import { initializeAdminUser } from "./init-admin";
 import QRCode from "qrcode";
@@ -61,7 +62,6 @@ import {
   insertFiscalPeriodSchema,
   insertBudgetSchema,
 } from "@shared/schema";
-import { simpleAccountingService } from "./accounting-service-simple";
 
 // Initialize with sample DGII RNC data for fast startup
 async function initializeRNCRegistry() {
@@ -141,7 +141,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (user) {
         const userRole = await storage.getUserRole(userId);
         // Simplificar para super admin - no verificar empresas si es super admin
-        let userCompanies = [];
+        let userCompanies: any[] = [];
         if (userRole !== "super_admin") {
           try {
             userCompanies = await storage.getUserCompanies(userId);

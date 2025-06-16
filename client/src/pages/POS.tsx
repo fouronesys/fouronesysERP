@@ -380,7 +380,9 @@ export default function POS() {
       }
     } catch (error) {
       console.error("Error procesando venta:", error);
-      console.error("Error stack:", error.stack);
+      if (error instanceof Error) {
+        console.error("Error stack:", error.stack);
+      }
     } finally {
       setIsProcessing(false);
     }

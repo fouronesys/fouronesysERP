@@ -73,7 +73,7 @@ function ProtectedRoute({ component: Component, ...props }: { component: React.C
 
   const { toast } = useToast();
   const isAuthenticated = !!user;
-  const hasValidPayment = paymentStatus?.hasValidPayment === true;
+  const hasValidPayment = (paymentStatus as any)?.hasValidPayment === true;
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -90,7 +90,7 @@ function ProtectedRoute({ component: Component, ...props }: { component: React.C
 
   useEffect(() => {
     // Super admins bypass payment requirements
-    const isSuperAdmin = user?.role === "super_admin";
+    const isSuperAdmin = (user as any)?.role === "super_admin";
     
     if (isAuthenticated && !isPaymentLoading && !hasValidPayment && !isSuperAdmin) {
       toast({
@@ -102,7 +102,7 @@ function ProtectedRoute({ component: Component, ...props }: { component: React.C
         window.location.href = "/payment";
       }, 1000);
     }
-  }, [isAuthenticated, isPaymentLoading, hasValidPayment, user?.role, toast]);
+  }, [isAuthenticated, isPaymentLoading, hasValidPayment, (user as any)?.role, toast]);
 
   if (isLoading || (isAuthenticated && isPaymentLoading)) {
     return (
