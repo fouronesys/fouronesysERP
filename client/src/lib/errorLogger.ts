@@ -61,7 +61,14 @@ class FrontendErrorLogger {
   public initializeGlobalHandlers() {
     // Handle unhandled promise rejections
     window.addEventListener('unhandledrejection', (event) => {
-      const error = new Error(event.reason?.message || 'Unhandled Promise Rejection');
+      // Filter out WebSocket errors that are expected during development
+      const message = event.reason?.message || 'Unhandled Promise Rejection';
+      if (message.includes('WebSocket') && message.includes('localhost:undefined')) {
+        // Prevent this specific development error from being logged
+        return;
+      }
+      
+      const error = new Error(message);
       error.stack = event.reason?.stack;
       this.logError(error, {
         type: 'unhandledrejection',
