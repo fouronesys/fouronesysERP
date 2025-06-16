@@ -19,6 +19,7 @@ import { LogoProcessor } from "./logo-processor";
 import { ThermalLogoProcessor } from "./thermal-logo";
 import { ThermalQRProcessor } from "./thermal-qr";
 import { ErrorManager } from "./error-management";
+import { auditLogger } from "./audit-logger";
 import { InvoiceHTMLService } from "./invoice-html-service";
 import { InvoicePOS80mmService } from "./invoice-pos-80mm-service";
 import { simpleAccountingService } from "./accounting-service-simple";
@@ -821,6 +822,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         companyId: company.id,
       });
       const product = await storage.createProduct(productData);
+      
+      // Log product creation
+      await auditLogger.logProductAction(userId, company.id, 'create', product.id.toString(), null, product, req);
+      
       res.json(product);
     } catch (error) {
       console.error("Error creating product:", error);
@@ -836,11 +841,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Company not found" });
       }
       const id = parseInt(req.params.id);
+      
+      // Get old product data for audit
+      const oldProduct = await storage.getProduct(id, company.id);
+      
       const productData = insertProductSchema.parse({
         ...req.body,
         companyId: company.id,
       });
       const product = await storage.updateProduct(id, productData, company.id);
+      
+      // Log product update
+      await auditLogger.logProductAction(userId, company.id, 'update', id.toString(), oldProduct, product, req);
+      
       res.json(product);
     } catch (error) {
       console.error("Error updating product:", error);
@@ -873,7 +886,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Company not found" });
       }
       const id = parseInt(req.params.id);
+      
+      // Get product data before deletion for audit
+      const deletedProduct = await storage.getProduct(id, company.id);
+      
       await storage.deleteProduct(id, company.id);
+      
+      // Log product deletion
+      await auditLogger.logProductAction(userId, company.id, 'delete', id.toString(), deletedProduct, null, req);
+      
       res.json({ message: "Product deleted successfully" });
     } catch (error) {
       console.error("Error deleting product:", error);
@@ -1089,6 +1110,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       const sale = await storage.createPOSSale(saleToCreate);
+
+      // Log POS sale creation
+      await auditLogger.logPOSAction(userId, company.id, 'create_sale', sale, req);
 
       // Create sale items
       if (items && Array.isArray(items)) {
