@@ -377,97 +377,97 @@ export default function CompanySettings() {
               </CardContent>
             </Card>
 
-          {/* Información Básica */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Building2 className="mr-2 h-5 w-5" />
-                Información Básica
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Nombre Comercial*</Label>
-                  <RNCCompanySuggestions
-                    label=""
-                    placeholder="Buscar empresa por nombre..."
-                    value={form.watch("name") || ""}
-                    onChange={(value) => form.setValue("name", value)}
-                    onCompanySelect={(company) => {
-                      form.setValue("name", company.name);
-                      form.setValue("rnc", company.rnc);
-                      toast({
-                        title: "Empresa seleccionada",
-                        description: `${company.name} - RNC: ${company.rnc}`,
-                      });
-                    }}
-                    className="text-sm"
-                  />
-                  {form.formState.errors.name && (
-                    <p className="text-xs sm:text-sm text-red-500">{form.formState.errors.name.message}</p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="businessName">Razón Social</Label>
-                  <Input
-                    id="businessName"
-                    placeholder="Ej: Mi Empresa SRL"
-                    {...form.register("businessName")}
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="rnc">RNC (Registro Nacional del Contribuyente)</Label>
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    <Input
-                      id="rnc"
-                      placeholder="Ej: 131-12345-6"
-                      {...form.register("rnc")}
-                      onBlur={(e) => {
-                        const rncValue = e.target.value;
-                        if (rncValue && rncValue.length >= 9) {
-                          handleRNCVerification(rncValue);
-                        }
+            {/* Información Básica */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Building2 className="mr-2 h-5 w-5" />
+                  Información Básica
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Nombre Comercial*</Label>
+                    <RNCCompanySuggestions
+                      label=""
+                      placeholder="Buscar empresa por nombre..."
+                      value={form.watch("name") || ""}
+                      onChange={(value) => form.setValue("name", value)}
+                      onCompanySelect={(company) => {
+                        form.setValue("name", company.name);
+                        form.setValue("rnc", company.rnc);
+                        toast({
+                          title: "Empresa seleccionada",
+                          description: `${company.name} - RNC: ${company.rnc}`,
+                        });
                       }}
-                      className={`${rncValidationResult?.valid === true ? "border-green-500" : 
-                                rncValidationResult?.valid === false ? "border-red-500" : ""} flex-1`}
+                      className="text-sm"
                     />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      disabled={isVerifyingRNC || !form.watch("rnc")}
-                      onClick={() => handleRNCVerification(form.watch("rnc") || "")}
-                      className="sm:w-auto w-full"
-                    >
-                      {isVerifyingRNC ? "Verificando..." : "Verificar"}
-                    </Button>
+                    {form.formState.errors.name && (
+                      <p className="text-xs sm:text-sm text-red-500">{form.formState.errors.name.message}</p>
+                    )}
                   </div>
-                  {rncValidationResult && (
-                    <div className={`text-sm p-2 rounded ${
-                      rncValidationResult.valid 
-                        ? "bg-green-50 text-green-700 border border-green-200" 
-                        : "bg-red-50 text-red-700 border border-red-200"
-                    }`}>
-                      {rncValidationResult.valid ? (
-                        <div>
-                          <p className="font-medium">✓ RNC Verificado en DGII</p>
-                          <p>Empresa: {rncValidationResult.data?.razonSocial}</p>
-                          {rncValidationResult.data?.categoria && (
-                            <p>Categoría: {rncValidationResult.data.categoria}</p>
-                          )}
-                          {rncValidationResult.data?.estado && (
-                            <p>Estado: {rncValidationResult.data.estado}</p>
-                          )}
-                        </div>
-                      ) : (
-                        <p>✗ {rncValidationResult.message}</p>
-                      )}
+
+                  <div className="space-y-2">
+                    <Label htmlFor="businessName">Razón Social</Label>
+                    <Input
+                      id="businessName"
+                      placeholder="Ej: Mi Empresa SRL"
+                      {...form.register("businessName")}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="rnc">RNC (Registro Nacional del Contribuyente)</Label>
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <Input
+                        id="rnc"
+                        placeholder="Ej: 131-12345-6"
+                        {...form.register("rnc")}
+                        onBlur={(e) => {
+                          const rncValue = e.target.value;
+                          if (rncValue && rncValue.length >= 9) {
+                            handleRNCVerification(rncValue);
+                          }
+                        }}
+                        className={`${rncValidationResult?.valid === true ? "border-green-500" : 
+                                  rncValidationResult?.valid === false ? "border-red-500" : ""} flex-1`}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        disabled={isVerifyingRNC || !form.watch("rnc")}
+                        onClick={() => handleRNCVerification(form.watch("rnc") || "")}
+                        className="sm:w-auto w-full"
+                      >
+                        {isVerifyingRNC ? "Verificando..." : "Verificar"}
+                      </Button>
                     </div>
-                  )}
+                    {rncValidationResult && (
+                      <div className={`text-sm p-2 rounded ${
+                        rncValidationResult.valid 
+                          ? "bg-green-50 text-green-700 border border-green-200" 
+                          : "bg-red-50 text-red-700 border border-red-200"
+                      }`}>
+                        {rncValidationResult.valid ? (
+                          <div>
+                            <p className="font-medium">✓ RNC Verificado en DGII</p>
+                            <p>Empresa: {rncValidationResult.data?.razonSocial}</p>
+                            {rncValidationResult.data?.categoria && (
+                              <p>Categoría: {rncValidationResult.data.categoria}</p>
+                            )}
+                            {rncValidationResult.data?.estado && (
+                              <p>Estado: {rncValidationResult.data.estado}</p>
+                            )}
+                          </div>
+                        ) : (
+                          <p>✗ {rncValidationResult.message}</p>
+                        )}
+                      </div>
+                    )}
                 </div>
 
                 <div className="space-y-2">
