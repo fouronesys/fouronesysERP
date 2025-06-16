@@ -1080,12 +1080,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // POS routes
   app.get("/api/pos/sales", isAuthenticated, async (req: any, res) => {
     try {
+      console.log("GET /api/pos/sales - User:", req.user);
+      console.log("GET /api/pos/sales - Session:", req.session);
+      console.log("GET /api/pos/sales - IsAuthenticated:", req.isAuthenticated());
+      
       const userId = req.user.id;
       const company = await storage.getCompanyByUserId(userId);
       if (!company) {
+        console.log("Company not found for user:", userId);
         return res.status(404).json({ message: "Company not found" });
       }
+      
+      console.log("Fetching POS sales for company:", company.id);
       const sales = await storage.getPOSSales(company.id);
+      console.log("POS sales fetched successfully:", sales.length);
       res.json(sales);
     } catch (error) {
       console.error("Error fetching POS sales:", error);
