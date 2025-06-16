@@ -105,7 +105,7 @@ export default function Billing() {
         tax: parseFloat(data.tax),
         total: parseFloat(data.total),
       };
-      await apiRequest("PUT", `/api/invoices/${editingInvoice.id}`, payload);
+      return await apiRequest(`/api/invoices/${editingInvoice.id}`, { method: "PUT", body: payload });
     },
     onSuccess: () => {
       toast({
@@ -128,7 +128,7 @@ export default function Billing() {
 
   const deleteInvoiceMutation = useMutation({
     mutationFn: async (id: number) => {
-      await apiRequest("DELETE", `/api/invoices/${id}`);
+      return await apiRequest(`/api/invoices/${id}`, { method: "DELETE" });
     },
     onSuccess: () => {
       toast({
@@ -193,10 +193,10 @@ export default function Billing() {
       number: invoice.number,
       ncf: invoice.ncf || "",
       date: invoice.date.split('T')[0],
-      dueDate: invoice.dueDate.split('T')[0],
+      dueDate: invoice.dueDate ? invoice.dueDate.split('T')[0] : "",
       status: invoice.status as "pending" | "paid" | "overdue",
       subtotal: invoice.subtotal.toString(),
-      tax: invoice.tax.toString(),
+      tax: invoice.itbis.toString(),
       total: invoice.total.toString(),
       notes: invoice.notes || "",
     });
@@ -210,7 +210,7 @@ export default function Billing() {
   };
 
   const getTotalRevenue = () => {
-    return invoices?.reduce((sum, invoice) => sum + invoice.total, 0) || 0;
+    return invoices?.reduce((sum, invoice) => sum + parseFloat(invoice.total), 0) || 0;
   };
 
   const getPendingInvoices = () => {
@@ -406,7 +406,7 @@ export default function Billing() {
                     
                     <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                       <Calendar className="h-3 w-3 flex-shrink-0" />
-                      <span>Vence: {new Date(invoice.dueDate).toLocaleDateString('es-DO')}</span>
+                      <span>Vence: {invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString('es-DO') : 'Sin fecha'}</span>
                     </div>
                     
                     <div className="pt-2 border-t border-gray-100 dark:border-gray-700">
@@ -415,7 +415,7 @@ export default function Billing() {
                           Total:
                         </span>
                         <span className="text-lg font-bold text-gray-900 dark:text-white">
-                          {formatCurrency(invoice.total)}
+                          {formatCurrency(parseFloat(invoice.total))}
                         </span>
                       </div>
                     </div>
