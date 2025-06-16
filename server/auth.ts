@@ -3,6 +3,7 @@ import { Strategy as LocalStrategy } from "passport-local";
 import { Express } from "express";
 import session from "express-session";
 import bcrypt from "bcrypt";
+import crypto from "crypto";
 import { storage } from "./storage";
 import { User as SelectUser } from "@shared/schema";
 
@@ -286,7 +287,6 @@ export function setupAuth(app: Express) {
       }
 
       // Generate reset token
-      const crypto = require('crypto');
       const resetToken = crypto.randomBytes(32).toString('hex');
       const expiry = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
 
