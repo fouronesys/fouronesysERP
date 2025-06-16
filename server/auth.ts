@@ -145,7 +145,7 @@ export function setupAuth(app: Express) {
 
   // Login endpoint
   app.post("/api/login", (req, res, next) => {
-    passport.authenticate("local", (err: any, user: any, info: any) => {
+    passport.authenticate("local", async (err: any, user: any, info: any) => {
       if (err) {
         return res.status(500).json({ message: "Internal server error" });
       }
@@ -153,18 +153,46 @@ export function setupAuth(app: Express) {
         return res.status(401).json({ message: info?.message || "Invalid credentials" });
       }
 
-      req.login(user, (err) => {
-        if (err) {
-          return res.status(500).json({ message: "Internal server error" });
+      try {
+        // Check company activation status
+        const company = await storage.getCompanyByUserId(user.id);
+        if (company && !company.isActive) {
+          // Company exists but not activated - check payment status
+          const paymentStatus = await storage.getUserPaymentStatus(user.email);
+          
+          if (paymentStatus && paymentStatus.status === 'confirmed') {
+            // Payment completed but company not activated
+            return res.status(403).json({ 
+              message: "processing",
+              title: "Orden en Procesamiento",
+              description: "Su pago ha sido confirmado y su cuenta está siendo procesada. Le notificaremos cuando esté lista."
+            });
+          } else {
+            // No payment or payment not confirmed
+            return res.status(403).json({ 
+              message: "payment_required",
+              title: "Pago Requerido",
+              description: "Debe completar el pago para activar su cuenta."
+            });
+          }
         }
-        res.json({
-          id: user.id,
-          email: user.email,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          role: user.role,
+
+        req.login(user, (err) => {
+          if (err) {
+            return res.status(500).json({ message: "Internal server error" });
+          }
+          res.json({
+            id: user.id,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            role: user.role,
+          });
         });
-      });
+      } catch (error) {
+        console.error("Login error:", error);
+        return res.status(500).json({ message: "Internal server error" });
+      }
     })(req, res, next);
   });
 

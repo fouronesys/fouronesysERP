@@ -69,6 +69,10 @@ export default function AuthPage() {
   const loginMutation = useMutation({
     mutationFn: async (data: LoginForm) => {
       const response = await apiRequest("POST", "/api/login", data);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw errorData;
+      }
       return response.json();
     },
     onSuccess: (user) => {
@@ -81,11 +85,28 @@ export default function AuthPage() {
       setShowLoginAnimation(true);
     },
     onError: (error: any) => {
-      toast({
-        title: "Login failed",
-        description: error.message || "Invalid email or password",
-        variant: "destructive",
-      });
+      if (error.message === "processing") {
+        toast({
+          title: error.title || "Orden en Procesamiento",
+          description: error.description || "Su pago ha sido confirmado y su cuenta está siendo procesada.",
+          variant: "default",
+        });
+      } else if (error.message === "payment_required") {
+        toast({
+          title: error.title || "Pago Requerido",
+          description: error.description || "Debe completar el pago para activar su cuenta.",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/payment";
+        }, 2000);
+      } else {
+        toast({
+          title: "Error de inicio de sesión",
+          description: error.message || "Credenciales inválidas",
+          variant: "destructive",
+        });
+      }
     },
   });
 
