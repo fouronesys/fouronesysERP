@@ -134,7 +134,7 @@ export default function POS() {
   const sequenceAlerts = checkLowSequences();
 
   // Productos filtrados
-  const filteredProducts = products.filter(product =>
+  const filteredProducts = (products || []).filter(product =>
     product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     product.code.toLowerCase().includes(searchTerm.toLowerCase())
   );
