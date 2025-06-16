@@ -32,22 +32,43 @@ import POSCustomerSelect from "@/components/POSCustomerSelect";
 import { RNCCompanySuggestions } from "@/components/RNCCompanySuggestions";
 import type { Product, Customer, POSPrintSettings, Company } from "@shared/schema";
 
-// Hook para detectar móvil
-function useIsMobile() {
-  const [isMobile, setIsMobile] = useState(false);
+// Hook avanzado para detectar breakpoints y orientación
+function useResponsiveLayout() {
+  const [layout, setLayout] = useState({
+    isMobile: false,
+    isTablet: false,
+    isDesktop: false,
+    isLandscape: false,
+    width: 0,
+    height: 0
+  });
   
   useEffect(() => {
-    const checkIsMobile = () => {
-      setIsMobile(window.innerWidth < 768);
+    const updateLayout = () => {
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      
+      setLayout({
+        isMobile: width < 768,
+        isTablet: width >= 768 && width < 1024,
+        isDesktop: width >= 1024,
+        isLandscape: width > height,
+        width,
+        height
+      });
     };
     
-    checkIsMobile();
-    window.addEventListener('resize', checkIsMobile);
+    updateLayout();
+    window.addEventListener('resize', updateLayout);
+    window.addEventListener('orientationchange', updateLayout);
     
-    return () => window.removeEventListener('resize', checkIsMobile);
+    return () => {
+      window.removeEventListener('resize', updateLayout);
+      window.removeEventListener('orientationchange', updateLayout);
+    };
   }, []);
   
-  return isMobile;
+  return layout;
 }
 
 // Funciones utilitarias
@@ -93,7 +114,7 @@ export default function POS() {
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const isMobile = useIsMobile();
+  const layout = useResponsiveLayout();
 
   // Queries
   const { data: products = [], isLoading: productsLoading } = useQuery<Product[]>({
@@ -425,14 +446,34 @@ export default function POS() {
         </div>
       )}
       
-      <div className="p-2 sm:p-4 lg:p-6 w-full max-w-screen-2xl mx-auto">
-        <div className="grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-4 lg:gap-6 h-[calc(100vh-160px)] overflow-hidden">
+      <div className={`w-full max-w-screen-2xl mx-auto ${
+        layout.isMobile ? 'p-2' : layout.isTablet ? 'p-4' : 'p-6'
+      }`}>
+        <div className={`
+          grid gap-3 h-[calc(100vh-160px)] overflow-hidden
+          ${layout.isMobile 
+            ? 'grid-cols-1' 
+            : layout.isTablet 
+              ? 'grid-cols-2 gap-4' 
+              : layout.isDesktop 
+                ? 'grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6' 
+                : 'grid-cols-1'
+          }
+        `}>
           
           {/* Sección de Productos */}
-          <div className="2xl:col-span-3 xl:col-span-2 lg:col-span-2 space-y-4 h-full overflow-hidden flex flex-col">
+          <div className={`
+            space-y-4 h-full overflow-hidden flex flex-col
+            ${layout.isMobile 
+              ? 'col-span-1' 
+              : layout.isTablet 
+                ? 'col-span-1' 
+                : 'col-span-3 xl:col-span-3 2xl:col-span-3'
+            }
+          `}>
             
             {/* Tabs móviles */}
-            {isMobile && (
+            {layout.isMobile && (
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <TabsList className="grid w-full grid-cols-2">
                   <TabsTrigger value="products">
@@ -448,7 +489,7 @@ export default function POS() {
             )}
 
             {/* Contenido de productos */}
-            {(!isMobile || activeTab === "products") && (
+            {(!layout.isMobile || activeTab === "products") && (
               <>
                 {/* Buscador */}
                 <Card>
@@ -467,7 +508,13 @@ export default function POS() {
 
                 {/* Grid de productos */}
                 <div className="flex-1 overflow-y-auto">
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-3 2xl:grid-cols-4 gap-3">
+                  <div className={`grid gap-3 ${
+                    layout.isMobile 
+                      ? 'grid-cols-2' 
+                      : layout.isTablet 
+                        ? 'grid-cols-3' 
+                        : 'grid-cols-4 lg:grid-cols-5 xl:grid-cols-6'
+                  }`}>
                     {filteredProducts.map((product) => (
                       <Card 
                         key={product.id}
