@@ -409,7 +409,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const validatedData = insertCompanySchema
           .omit({ ownerId: true })
           .partial()
-          .parse(updateData);
+          .parse(updateData) as any;
         const company = await storage.updateCompany(id, validatedData);
         res.json(company);
       } catch (error) {
@@ -640,7 +640,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validatedData = insertCompanySchema
         .omit({ ownerId: true })
         .partial()
-        .parse(updateData);
+        .parse(updateData) as any;
       console.log("Validated update data:", validatedData);
 
       const updatedCompany = await storage.updateCompany(
@@ -2160,7 +2160,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const movement = await storage.createInventoryMovement(movementData);
       
       // Update product stock
-      const product = await storage.getProduct(productId, companyId);
+      const product = await storage.getProduct(productId, company.id);
       if (!product) {
         return res.status(404).json({ message: "Product not found" });
       }
@@ -2172,7 +2172,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         newStock -= quantity;
       }
       
-      await storage.updateProduct(productId, { stock: Math.max(0, newStock) });
+      await storage.updateProduct(productId, { stock: Math.max(0, newStock) }, company.id);
       
       res.json(movement);
     } catch (error) {
