@@ -193,7 +193,6 @@ function Router() {
     return (
       <Switch>
         <Route path="/auth" component={AuthPage} />
-        <Route path="/payment" component={Payment} />
         <Route path="/" component={Landing} />
         <Route component={Landing} />
       </Switch>

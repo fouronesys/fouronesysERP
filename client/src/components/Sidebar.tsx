@@ -28,6 +28,7 @@ import {
   UserCog,
   Bug,
   Image,
+  Building2,
   Activity
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -239,12 +240,12 @@ export function Sidebar() {
         })}
 
         {/* Super Admin Access */}
-        {user && user.role === 'super_admin' && (
+        {user && (user.role === 'super_admin' || user.email === 'ngconsultores.rd@gmail.com') && (
           <div className="pt-3 sm:pt-4 border-t border-gray-200 dark:border-gray-700 theme-blue:border-blue-500">
             <h3 className="px-2 sm:px-3 text-xs font-semibold text-gray-500 dark:text-gray-400 theme-blue:text-blue-200 uppercase tracking-wider">
               Administración
             </h3>
-            <div className="mt-1 sm:mt-2">
+            <div className="mt-1 sm:mt-2 space-y-1">
               <Link 
                 href="/super-admin"
                 className={cn(
@@ -256,6 +257,18 @@ export function Sidebar() {
               >
                 <ShieldCheck className="mr-2 sm:mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
                 <span className="truncate">Panel de Admin</span>
+              </Link>
+              <Link 
+                href="/company-management"
+                className={cn(
+                  "group flex items-center px-2 sm:px-3 py-2 text-xs sm:text-sm font-medium rounded-lg transition-colors",
+                  location === "/company-management"
+                    ? "text-blue-600 bg-blue-50 dark:bg-blue-900/20 theme-blue:bg-white/20 theme-blue:text-white"
+                    : "text-gray-700 dark:text-gray-300 theme-blue:text-blue-100 hover:bg-gray-100 dark:hover:bg-gray-800 theme-blue:hover:bg-white/10"
+                )}
+              >
+                <Building2 className="mr-2 sm:mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+                <span className="truncate">Gestión de Empresas</span>
               </Link>
             </div>
           </div>
