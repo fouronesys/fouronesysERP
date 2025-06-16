@@ -69,7 +69,29 @@ export default function AuthPage() {
   const loginMutation = useMutation({
     mutationFn: async (data: LoginForm) => {
       try {
-        const response = await apiRequest("POST", "/api/login", data);
+        const response = await fetch("/api/login", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(data),
+          credentials: "include",
+        });
+
+        if (!response.ok) {
+          const contentType = response.headers.get('content-type');
+          let errorMessage = "Login failed";
+          
+          if (contentType && contentType.includes('application/json')) {
+            const errorData = await response.json();
+            errorMessage = errorData.message || "Invalid credentials";
+          } else {
+            errorMessage = await response.text() || "Server error";
+          }
+          
+          throw new Error(errorMessage);
+        }
+
         const result = await response.json();
         return result;
       } catch (error) {

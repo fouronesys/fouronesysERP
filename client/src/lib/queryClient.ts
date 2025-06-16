@@ -57,8 +57,28 @@ export const getQueryFn: <T>(options: {
       return null;
     }
 
-    await throwIfResNotOk(res);
-    return await res.json();
+    if (!res.ok) {
+      let errorMessage = res.statusText;
+      try {
+        const contentType = res.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          const errorData = await res.json();
+          errorMessage = errorData.message || errorData.error || res.statusText;
+        } else {
+          errorMessage = await res.text() || res.statusText;
+        }
+      } catch (parseError) {
+        errorMessage = res.statusText;
+      }
+      throw new Error(`${res.status}: ${errorMessage}`);
+    }
+
+    const contentType = res.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+      return await res.json();
+    } else {
+      throw new Error('Expected JSON response but received: ' + contentType);
+    }
   };
 
 export const queryClient = new QueryClient({
