@@ -114,14 +114,15 @@ const ErrorManagement = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="container mx-auto p-6 space-y-6 max-w-7xl">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold">Gestión de Errores</h1>
-          <div className="flex items-center space-x-2">
-            <Badge variant="outline" className="text-sm">AI Powered</Badge>
+    <div className="h-screen bg-gray-50 dark:bg-gray-900 overflow-hidden flex flex-col">
+      <div className="flex-1 overflow-y-auto">
+        <div className="container mx-auto p-6 space-y-6 max-w-7xl">
+          <div className="flex items-center justify-between">
+            <h1 className="text-3xl font-bold">Gestión de Errores</h1>
+            <div className="flex items-center space-x-2">
+              <Badge variant="outline" className="text-sm">AI Powered</Badge>
+            </div>
           </div>
-        </div>
 
         {/* Statistics Cards */}
         {stats && (
@@ -419,6 +420,7 @@ const ErrorManagement = () => {
             </Card>
           </div>
         )}
+        </div>
       </div>
     </div>
   );

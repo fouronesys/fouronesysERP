@@ -75,6 +75,7 @@ interface CartItem {
 export default function POS() {
   // Estados básicos
   const [searchTerm, setSearchTerm] = useState("");
+  const [customerSearchTerm, setCustomerSearchTerm] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [customerName, setCustomerName] = useState("");
   const [customerRnc, setCustomerRnc] = useState("");
@@ -618,20 +619,20 @@ export default function POS() {
                       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                       <Input
                         placeholder="Buscar por nombre, teléfono o RNC..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
+                        value={customerSearchTerm}
+                        onChange={(e) => setCustomerSearchTerm(e.target.value)}
                         className="pl-10"
                       />
                     </div>
                     
                     {/* Lista de resultados filtrados */}
-                    {searchTerm && customersData && customersData.length > 0 && (
+                    {customerSearchTerm && customersData && customersData.length > 0 && (
                       <div className="max-h-32 overflow-y-auto border rounded-md bg-white dark:bg-gray-800">
                         {customersData
                           .filter((customer: any) => 
-                            customer.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                            customer.phone?.includes(searchTerm) ||
-                            customer.rnc?.includes(searchTerm)
+                            customer.name?.toLowerCase().includes(customerSearchTerm.toLowerCase()) ||
+                            customer.phone?.includes(customerSearchTerm) ||
+                            customer.rnc?.includes(customerSearchTerm)
                           )
                           .slice(0, 5)
                           .map((customer: any) => (
@@ -643,7 +644,7 @@ export default function POS() {
                                 setCustomerPhone(customer.phone || "");
                                 setCustomerRnc(customer.rnc || "");
                                 setCustomerAddress(customer.address || "");
-                                setSearchTerm("");
+                                setCustomerSearchTerm("");
                                 toast({
                                   title: "Cliente seleccionado",
                                   description: `${customer.name}`,
@@ -665,7 +666,7 @@ export default function POS() {
                             setCustomerPhone("");
                             setCustomerRnc("");
                             setCustomerAddress("");
-                            setSearchTerm("");
+                            setCustomerSearchTerm("");
                           }}
                         >
                           <div className="text-sm font-medium flex items-center">
