@@ -12,13 +12,13 @@ export default function Dashboard() {
   const isMobile = useIsMobile();
 
   return (
-    <div className="w-full">
+    <div className="w-full min-h-screen bg-gray-50 dark:bg-gray-900">
       <Header 
         title="Dashboard Principal" 
         subtitle="Resumen general de tu empresa" 
       />
       
-      <div className="space-y-4 sm:space-y-6">
+      <div className="px-2 sm:px-4 lg:px-6 py-4 space-y-4 sm:space-y-6 pb-24">
         {/* Metrics Cards */}
         <DashboardMetrics />
 
