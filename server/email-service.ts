@@ -128,49 +128,35 @@ export async function sendPasswordResetEmail(email: string, resetToken: string):
     
     const emailContent = {
       to: email,
-      from: 'admin@fourone.com.do',
+      from: {
+        email: 'noreply@fourone.solutions',
+        name: 'Four One Solutions'
+      },
+      reply_to: 'admin@fourone.com.do',
       subject: 'Restablecer contraseña - Four One Solutions',
-      html: `
-        <!DOCTYPE html>
-        <html lang="es">
-        <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Restablecimiento de contraseña</title>
-        </head>
-        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-          <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
-            <h1 style="color: white; margin: 0; font-size: 28px;">Four One Solutions</h1>
-          </div>
-          
-          <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px;">
-            <h2 style="color: #333; margin-top: 0;">Restablecimiento de contraseña</h2>
-            
-            <p>Se ha solicitado un restablecimiento de contraseña para su cuenta.</p>
-            
-            <p>Para crear una nueva contraseña, haga clic en el siguiente enlace:</p>
-            
-            <div style="text-align: center; margin: 30px 0;">
-              <a href="${resetUrl}" 
-                 style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
-                        color: white; 
-                        padding: 15px 30px; 
-                        text-decoration: none; 
-                        border-radius: 25px; 
-                        font-weight: bold; 
-                        font-size: 16px;
-                        display: inline-block;">
-                Restablecer Contraseña
-              </a>
-            </div>
-            
-            <div style="background: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 5px; margin: 20px 0;">
-              <p style="margin: 0; font-size: 14px;"><strong>Nota:</strong> Este enlace expira en 1 hora. Si no solicitó este cambio, ignore este email.</p>
-            </div>
-          </div>
-        </body>
-        </html>
-      `
+      tracking_settings: {
+        click_tracking: {
+          enable: false
+        },
+        open_tracking: {
+          enable: false
+        }
+      },
+      text: `Four One Solutions - Restablecimiento de contraseña
+
+Se ha solicitado un restablecimiento de contraseña para su cuenta.
+
+Para crear una nueva contraseña, copie y pegue el siguiente enlace en su navegador:
+
+${resetUrl}
+
+IMPORTANTE:
+- Este enlace expirará en 1 hora
+- Solo puede usarse una vez
+- Si no solicitó este restablecimiento, ignore este mensaje
+
+Four One Solutions
+Sistema de Gestión Empresarial`
     };
 
     await mailService.send(emailContent);
