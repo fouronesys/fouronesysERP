@@ -761,6 +761,7 @@ export default function POS() {
                     )}
                     </div>
                   </div>
+                </div>
 
                   {/* Sección de Totales y Pago */}
                   <div className="space-y-3 pt-2 border-t border-gray-200 dark:border-gray-700">
@@ -786,109 +787,107 @@ export default function POS() {
                     </div>
                   </div>
 
-                  <div className="space-y-3">
-                    <div>
-                      <label className="text-sm font-medium mb-2 block">Método de Pago</label>
-                      <Select value={paymentMethod} onValueChange={(value: "cash" | "card") => setPaymentMethod(value)}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="cash">
-                            <div className="flex items-center gap-2">
-                              <Banknote className="h-4 w-4" />
-                              Efectivo
-                            </div>
-                          </SelectItem>
-                          <SelectItem value="card">
-                            <div className="flex items-center gap-2">
-                              <CreditCard className="h-4 w-4" />
-                              Tarjeta
-                            </div>
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {/* Opciones de Comprobante Fiscal */}
-                    <div className="space-y-3 border-t pt-3">
-                      <div className="flex items-center space-x-2">
-                        <input
-                          id="useFiscalReceipt"
-                          type="checkbox"
-                          checked={useFiscalReceipt}
-                          onChange={(e) => setUseFiscalReceipt(e.target.checked)}
-                          className="rounded"
-                        />
-                        <label htmlFor="useFiscalReceipt" className="text-sm font-medium">
-                          Generar Comprobante Fiscal
-                        </label>
+                    <div className="space-y-3">
+                      <div>
+                        <label className="text-sm font-medium mb-2 block">Método de Pago</label>
+                        <Select value={paymentMethod} onValueChange={(value: "cash" | "card") => setPaymentMethod(value)}>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="cash">
+                              <div className="flex items-center gap-2">
+                                <Banknote className="h-4 w-4" />
+                                Efectivo
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="card">
+                              <div className="flex items-center gap-2">
+                                <CreditCard className="h-4 w-4" />
+                                Tarjeta
+                              </div>
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
 
-                      {useFiscalReceipt && (
+                      {/* Opciones de Comprobante Fiscal */}
+                      <div className="space-y-3 border-t pt-3">
+                        <div className="flex items-center space-x-2">
+                          <input
+                            id="useFiscalReceipt"
+                            type="checkbox"
+                            checked={useFiscalReceipt}
+                            onChange={(e) => setUseFiscalReceipt(e.target.checked)}
+                            className="rounded"
+                          />
+                          <label htmlFor="useFiscalReceipt" className="text-sm font-medium">
+                            Generar Comprobante Fiscal
+                          </label>
+                        </div>
+
+                        {useFiscalReceipt && (
+                          <div>
+                            <label className="text-sm font-medium mb-2 block">Tipo de NCF</label>
+                            <Select value={selectedNCFType} onValueChange={setSelectedNCFType}>
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="B01">B01 - Crédito Fiscal</SelectItem>
+                                <SelectItem value="B02">B02 - Consumidor Final</SelectItem>
+                                <SelectItem value="B03">B03 - Nota de Débito</SelectItem>
+                                <SelectItem value="B04">B04 - Nota de Crédito</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        )}
+                      </div>
+
+                      {paymentMethod === "cash" && (
                         <div>
-                          <label className="text-sm font-medium mb-2 block">Tipo de NCF</label>
-                          <Select value={selectedNCFType} onValueChange={setSelectedNCFType}>
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="B01">B01 - Crédito Fiscal</SelectItem>
-                              <SelectItem value="B02">B02 - Consumidor Final</SelectItem>
-                              <SelectItem value="B03">B03 - Nota de Débito</SelectItem>
-                              <SelectItem value="B04">B04 - Nota de Crédito</SelectItem>
-                            </SelectContent>
-                          </Select>
+                          <label className="text-sm font-medium mb-2 block">Efectivo Recibido</label>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            placeholder="0.00"
+                            value={cashReceived}
+                            onChange={(e) => setCashReceived(e.target.value)}
+                          />
+                          {cashReceived && parseFloat(cashReceived) >= total && (
+                            <p className="text-sm text-green-600 dark:text-green-400 mt-1">
+                              Cambio: {formatDOP(cashChange)}
+                            </p>
+                          )}
                         </div>
                       )}
-                    </div>
 
-                    {paymentMethod === "cash" && (
-                      <div>
-                        <label className="text-sm font-medium mb-2 block">Efectivo Recibido</label>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          placeholder="0.00"
-                          value={cashReceived}
-                          onChange={(e) => setCashReceived(e.target.value)}
-                        />
-                        {cashReceived && parseFloat(cashReceived) >= total && (
-                          <p className="text-sm text-green-600 dark:text-green-400 mt-1">
-                            Cambio: {formatDOP(cashChange)}
-                          </p>
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                    <div className="flex gap-2 pt-2">
-                      <Button
-                        onClick={() => setShowCalculator(true)}
-                        variant="outline"
-                        size="lg"
-                        className="flex-1"
-                      >
-                        <Calculator className="h-4 w-4 mr-2" />
-                        Calculadora
-                      </Button>
-                      <Button
-                        onClick={processSale}
-                        disabled={cart.length === 0 || isProcessing || (paymentMethod === "cash" && (!cashReceived || parseFloat(cashReceived) < total))}
-                        className="flex-1 bg-green-600 hover:bg-green-700"
-                        size="lg"
-                      >
-                        {isProcessing ? (
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                        ) : (
-                          <Receipt className="h-4 w-4 mr-2" />
-                        )}
-                        {isProcessing ? "Procesando..." : "Procesar Venta"}
-                      </Button>
+                      <div className="flex gap-2 pt-2">
+                        <Button
+                          onClick={() => setShowCalculator(true)}
+                          variant="outline"
+                          size="lg"
+                          className="flex-1"
+                        >
+                          <Calculator className="h-4 w-4 mr-2" />
+                          Calculadora
+                        </Button>
+                        <Button
+                          onClick={processSale}
+                          disabled={cart.length === 0 || isProcessing || (paymentMethod === "cash" && (!cashReceived || parseFloat(cashReceived) < total))}
+                          className="flex-1 bg-green-600 hover:bg-green-700"
+                          size="lg"
+                        >
+                          {isProcessing ? (
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                          ) : (
+                            <Receipt className="h-4 w-4 mr-2" />
+                          )}
+                          {isProcessing ? "Procesando..." : "Procesar Venta"}
+                        </Button>
                       </div>
                     </div>
                   </div>
-                </div>
               </CardContent>
             </Card>
           </div>
