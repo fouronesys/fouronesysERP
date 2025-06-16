@@ -196,6 +196,18 @@ export function setupAuth(app: Express) {
     })(req, res, next);
   });
 
+  // Clear cookies endpoint for troubleshooting
+  app.post("/api/clear-session", (req, res) => {
+    req.session.destroy((err: any) => {
+      if (err) {
+        console.error("Session destruction error:", err);
+        return res.status(500).json({ message: "Error clearing session" });
+      }
+      res.clearCookie('connect.sid');
+      res.json({ message: "Session cleared successfully" });
+    });
+  });
+
   // Logout endpoint - support both GET and POST
   const logoutHandler = (req: any, res: any, next: any) => {
     req.logout((err: any) => {

@@ -105,7 +105,8 @@ export default function AuthPage() {
         description: "Has iniciado sesión exitosamente.",
       });
       
-      // Show animation immediately and handle redirect
+      // Clear browser cache and show animation
+      queryClient.clear();
       setShowLoginAnimation(true);
     },
     onError: (error: any) => {
