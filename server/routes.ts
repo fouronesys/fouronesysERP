@@ -5337,7 +5337,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/system/health", isAuthenticated, async (req: any, res) => {
+  app.get("/api/system/health", async (req: any, res) => {
     try {
       const health = {
         database: 'healthy' as const,
