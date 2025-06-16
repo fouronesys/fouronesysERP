@@ -301,7 +301,11 @@ export function setupAuth(app: Express) {
         console.error('Failed to send password reset email to:', email);
         // In development, provide the reset token for manual testing
         if (process.env.NODE_ENV === 'development') {
-          const resetUrl = `${req.protocol}://${req.get('host')}/reset-password?token=${resetToken}`;
+          // Use Replit domain if available, otherwise localhost
+          const baseUrl = process.env.REPLIT_DEV_DOMAIN 
+            ? `https://${process.env.REPLIT_DEV_DOMAIN}` 
+            : `${req.protocol}://${req.get('host')}`;
+          const resetUrl = `${baseUrl}/reset-password?token=${resetToken}`;
           console.log('Password reset URL for development:', resetUrl);
           return res.json({ 
             message: "Token de recuperación generado. Revisar consola del servidor para el enlace.", 
