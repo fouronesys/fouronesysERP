@@ -1048,10 +1048,7 @@ export type InsertProduct = z.infer<typeof insertProductSchema>;
 export type Invoice = typeof invoices.$inferSelect;
 export type InsertInvoice = z.infer<typeof insertInvoiceSchema>;
 export type InvoiceItem = typeof invoiceItems.$inferSelect;
-export type ProductionOrder = typeof productionOrders.$inferSelect;
-export type InsertProductionOrder = z.infer<typeof insertProductionOrderSchema>;
-export type BOM = typeof bom.$inferSelect;
-export type InsertBOM = z.infer<typeof insertBOMSchema>;
+
 export type InventoryMovement = typeof inventoryMovements.$inferSelect;
 export type Warehouse = typeof warehouses.$inferSelect;
 export type InsertWarehouse = z.infer<typeof insertWarehouseSchema>;
@@ -1480,7 +1477,9 @@ export type InsertUserRole = z.infer<typeof insertUserRoleSchema>;
 export type UserRoleAssignment = typeof userRoleAssignments.$inferSelect;
 export type InsertUserRoleAssignment = z.infer<typeof insertUserRoleAssignmentSchema>;
 
-// Manufacturing Module Types (updated)
+// Manufacturing Module Types
+export type ProductionOrder = typeof productionOrders.$inferSelect;
+export type InsertProductionOrder = z.infer<typeof insertProductionOrderSchema>;
 export type BOM = typeof bom.$inferSelect & {
   material?: {
     id: number;
@@ -1491,6 +1490,7 @@ export type BOM = typeof bom.$inferSelect & {
     stock: string;
   };
 };
+export type InsertBOM = z.infer<typeof insertBOMSchema>;
 
 // ACCOUNTING MODULE RELATIONS
 export const accountTypesRelations = relations(accountTypes, ({ many }) => ({

@@ -327,6 +327,21 @@ export interface IStorage {
   releaseStockReservations(sessionId: string): Promise<void>;
   getStockReservations(productId: number): Promise<StockReservation[]>;
   cleanExpiredReservations(): Promise<void>;
+
+  // Manufacturing Module operations
+  getProductionOrders(companyId: number): Promise<ProductionOrder[]>;
+  createProductionOrder(orderData: InsertProductionOrder): Promise<ProductionOrder>;
+  updateProductionOrder(orderId: number, updateData: any, companyId: number): Promise<ProductionOrder>;
+  deleteProductionOrder(orderId: number, companyId: number): Promise<void>;
+  
+  // BOM operations
+  getBOMByProduct(productId: number, companyId: number): Promise<BOM[]>;
+  createBOMItem(bomData: InsertBOM): Promise<BOM>;
+  updateBOMItem(bomId: number, updateData: any, companyId: number): Promise<BOM>;
+  deleteBOMItem(bomId: number, companyId: number): Promise<void>;
+  
+  // Manufacturing cost calculation
+  calculateManufacturingCosts(productId: number, quantity: number, companyId: number): Promise<any>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -822,54 +837,7 @@ export class DatabaseStorage implements IStorage {
     return invoice;
   }
 
-  // Production Order operations
-  async getProductionOrders(companyId: number): Promise<ProductionOrder[]> {
-    return await db
-      .select()
-      .from(productionOrders)
-      .where(eq(productionOrders.companyId, companyId))
-      .orderBy(desc(productionOrders.createdAt));
-  }
 
-  async createProductionOrder(orderData: InsertProductionOrder): Promise<ProductionOrder> {
-    const [order] = await db
-      .insert(productionOrders)
-      .values(orderData)
-      .returning();
-    return order;
-  }
-
-  // BOM operations
-  async getBOMByProduct(productId: number, companyId: number): Promise<BOM[]> {
-    return await db
-      .select()
-      .from(bom)
-      .where(and(eq(bom.productId, productId), eq(bom.companyId, companyId)))
-      .orderBy(desc(bom.createdAt));
-  }
-
-  async createBOMItem(bomData: InsertBOM): Promise<BOM> {
-    const [bomItem] = await db
-      .insert(bom)
-      .values(bomData)
-      .returning();
-    return bomItem;
-  }
-
-  async updateBOMItem(id: number, bomData: Partial<InsertBOM>, companyId: number): Promise<BOM | undefined> {
-    const [bomItem] = await db
-      .update(bom)
-      .set(bomData)
-      .where(and(eq(bom.id, id), eq(bom.companyId, companyId)))
-      .returning();
-    return bomItem;
-  }
-
-  async deleteBOMItem(id: number, companyId: number): Promise<void> {
-    await db
-      .delete(bom)
-      .where(and(eq(bom.id, id), eq(bom.companyId, companyId)));
-  }
 
   // POS operations
   async getPOSSales(companyId: number): Promise<POSSale[]> {
@@ -3101,21 +3069,7 @@ export class DatabaseStorage implements IStorage {
 
   // Production Orders
   async getProductionOrders(companyId: number) {
-    return await db.select({
-      id: productionOrders.id,
-      number: productionOrders.number,
-      productId: productionOrders.productId,
-      quantity: productionOrders.quantity,
-      status: productionOrders.status,
-      plannedStartDate: productionOrders.plannedStartDate,
-      plannedEndDate: productionOrders.plannedEndDate,
-      actualStartDate: productionOrders.actualStartDate,
-      actualEndDate: productionOrders.actualEndDate,
-      notes: productionOrders.notes,
-      createdBy: productionOrders.createdBy,
-      createdAt: productionOrders.createdAt,
-      updatedAt: productionOrders.updatedAt
-    })
+    return await db.select()
       .from(productionOrders)
       .where(eq(productionOrders.companyId, companyId))
       .orderBy(desc(productionOrders.createdAt));
@@ -3164,6 +3118,9 @@ export class DatabaseStorage implements IStorage {
       unit: bom.unit,
       cost: bom.cost,
       notes: bom.notes,
+      companyId: bom.companyId,
+      createdAt: bom.createdAt,
+      updatedAt: bom.updatedAt,
       material: {
         id: products.id,
         name: products.name,
