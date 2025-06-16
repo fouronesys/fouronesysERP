@@ -49,6 +49,7 @@ export default function CompanySettings() {
   const [rncValidationResult, setRncValidationResult] = useState<RNCValidationResult | null>(null);
   const [isVerifyingRNC, setIsVerifyingRNC] = useState(false);
   const queryClient = useQueryClient();
+  const layout = useResponsiveLayout();
 
   const form = useForm<CompanySettingsFormData>({
     resolver: zodResolver(companySettingsSchema),
@@ -176,8 +177,8 @@ export default function CompanySettings() {
       <Header title="Configuración de Empresa" subtitle="Personaliza la información fiscal y visual de tu empresa" />
       
       <div className="flex-1 overflow-y-auto">
-        <div className="max-w-4xl mx-auto p-4 sm:p-6 pb-20 space-y-6">
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pb-8">
+        <div className={`max-w-4xl mx-auto ${layout.containerPadding} pb-20 ${layout.spacing.lg}`}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className={`${layout.spacing.lg} pb-8`}>
             {/* Logo de la Empresa */}
             <Card>
               <CardHeader>
@@ -232,8 +233,14 @@ export default function CompanySettings() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
+                <div className={`grid ${layout.spacing.md} ${
+                  getResponsiveClass(layout, {
+                    mobile: 'grid-cols-1',
+                    tablet: 'grid-cols-2',
+                    desktop: 'grid-cols-2'
+                  })
+                }`}>
+                  <div className={layout.spacing.xs}>
                     <Label htmlFor="name">Nombre Comercial*</Label>
                     <RNCCompanySuggestions
                       label=""
@@ -255,7 +262,7 @@ export default function CompanySettings() {
                     )}
                   </div>
 
-                  <div className="space-y-2">
+                  <div className={layout.spacing.xs}>
                     <Label htmlFor="businessName">Razón Social</Label>
                     <Input
                       id="businessName"
@@ -265,8 +272,14 @@ export default function CompanySettings() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  <div className="space-y-2">
+                <div className={`grid ${layout.spacing.md} ${
+                  getResponsiveClass(layout, {
+                    mobile: 'grid-cols-1',
+                    tablet: 'grid-cols-1',
+                    desktop: 'grid-cols-2'
+                  })
+                }`}>
+                  <div className={layout.spacing.xs}>
                     <Label htmlFor="rnc">RNC (Registro Nacional del Contribuyente)</Label>
                     <div className="flex flex-col sm:flex-row gap-2">
                       <Input

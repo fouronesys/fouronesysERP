@@ -119,10 +119,14 @@ export const getCardGridClass = (layout: ResponsiveLayout, itemsPerRow?: { mobil
   const tablet = itemsPerRow?.tablet || 2;
   const desktop = itemsPerRow?.desktop || 3;
   
-  return getResponsiveClass(layout, {
-    mobile: `grid-cols-${mobile}`,
-    tablet: `grid-cols-${tablet} lg:grid-cols-${tablet + 1}`,
-    desktop: `grid-cols-${desktop} lg:grid-cols-${desktop + 1} xl:grid-cols-${desktop + 2}`,
-    default: 'grid-cols-1'
-  });
+  if (layout.isMobile) {
+    return mobile === 1 ? 'grid-cols-1' : mobile === 2 ? 'grid-cols-2' : 'grid-cols-3';
+  }
+  if (layout.isTablet) {
+    return tablet === 1 ? 'grid-cols-1' : tablet === 2 ? 'grid-cols-2 lg:grid-cols-3' : 'grid-cols-3 lg:grid-cols-4';
+  }
+  return desktop === 1 ? 'grid-cols-1' : 
+         desktop === 2 ? 'grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' :
+         desktop === 3 ? 'grid-cols-3 lg:grid-cols-4 xl:grid-cols-5' :
+         'grid-cols-4 lg:grid-cols-5 xl:grid-cols-6';
 };
