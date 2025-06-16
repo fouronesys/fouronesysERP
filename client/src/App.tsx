@@ -49,6 +49,7 @@ import ErrorManagement from "@/pages/ErrorManagement";
 import Inventory from "@/pages/Inventory";
 import SystemMonitoring from "@/pages/SystemMonitoring";
 import Payment from "@/pages/Payment";
+import CompanyManagement from "@/pages/CompanyManagement";
 
 import InstallationGuide from "@/pages/InstallationGuide";
 import NotFound from "@/pages/not-found";
@@ -242,6 +243,7 @@ function Router() {
           <Route path="/accounting" component={Accounting} />
           <Route path="/error-management" component={ErrorManagement} />
           <Route path="/system-monitoring" component={SystemMonitoring} />
+          <Route path="/company-management" component={CompanyManagement} />
 
           <Route path="/employees" component={Employees} />
           <Route path="/payroll" component={Payroll} />
