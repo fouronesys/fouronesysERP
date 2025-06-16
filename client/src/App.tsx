@@ -24,6 +24,7 @@ import Products from "@/pages/Products";
 import Chat from "@/pages/Chat";
 import UserManagement from "@/pages/UserManagement";
 import Manufacturing from "@/pages/Manufacturing";
+import Production from "@/pages/Production";
 import BOM from "@/pages/BOM";
 import POS from "@/pages/POS";
 import Setup from "@/pages/Setup";
@@ -234,6 +235,7 @@ function Router() {
           <Route path="/products" component={Products} />
           <Route path="/inventory" component={Inventory} />
           <Route path="/manufacturing" component={Manufacturing} />
+          <Route path="/production" component={Production} />
           <Route path="/pos" component={POS} />
           <Route path="/sales-reports" component={SalesReports} />
           <Route path="/pos-sales" component={POSSales} />

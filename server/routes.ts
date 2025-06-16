@@ -2926,6 +2926,86 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/manufacturing/calculate-cost", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+      const { productId, quantity } = req.body;
+      const costData = await storage.calculateManufacturingCosts(productId, quantity, company.id);
+      res.json(costData);
+    } catch (error) {
+      console.error("Error calculating manufacturing costs:", error);
+      res.status(500).json({ message: "Failed to calculate manufacturing costs" });
+    }
+  });
+
+  // Recipe routes
+  app.get("/api/recipes", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+      const recipes = await storage.getRecipes(company.id);
+      res.json(recipes);
+    } catch (error) {
+      console.error("Error fetching recipes:", error);
+      res.status(500).json({ message: "Failed to fetch recipes" });
+    }
+  });
+
+  app.post("/api/recipes", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+      const recipeData = { ...req.body, companyId: company.id };
+      const recipe = await storage.createRecipe(recipeData);
+      res.json(recipe);
+    } catch (error) {
+      console.error("Error creating recipe:", error);
+      res.status(500).json({ message: "Failed to create recipe" });
+    }
+  });
+
+  app.patch("/api/recipes/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+      const recipeId = parseInt(req.params.id);
+      const recipe = await storage.updateRecipe(recipeId, req.body, company.id);
+      res.json(recipe);
+    } catch (error) {
+      console.error("Error updating recipe:", error);
+      res.status(500).json({ message: "Failed to update recipe" });
+    }
+  });
+
+  app.delete("/api/recipes/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+      const recipeId = parseInt(req.params.id);
+      await storage.deleteRecipe(recipeId, company.id);
+      res.json({ message: "Recipe deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting recipe:", error);
+      res.status(500).json({ message: "Failed to delete recipe" });
+    }
+  });
+
   // ACCOUNTING MODULE ROUTES
 
   // Initialize Chart of Accounts

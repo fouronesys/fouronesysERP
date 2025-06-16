@@ -3239,6 +3239,66 @@ export class DatabaseStorage implements IStorage {
       canProduce: materials.every(m => m.isAvailable)
     };
   }
+
+  // Recipe management methods
+  async getRecipes(companyId: number) {
+    return await db
+      .select()
+      .from(recipes)
+      .where(eq(recipes.companyId, companyId))
+      .orderBy(desc(recipes.createdAt));
+  }
+
+  async createRecipe(recipeData: any) {
+    const [recipe] = await db
+      .insert(recipes)
+      .values({
+        companyId: recipeData.companyId,
+        productId: recipeData.productId,
+        name: recipeData.name,
+        description: recipeData.description,
+        instructions: recipeData.instructions,
+        preparationTime: recipeData.preparationTime,
+        cookingTime: recipeData.cookingTime,
+        servings: recipeData.servings,
+        difficulty: recipeData.difficulty || 'medium',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .returning();
+    return recipe;
+  }
+
+  async updateRecipe(recipeId: number, recipeData: any, companyId: number) {
+    const [recipe] = await db
+      .update(recipes)
+      .set({
+        productId: recipeData.productId,
+        name: recipeData.name,
+        description: recipeData.description,
+        instructions: recipeData.instructions,
+        preparationTime: recipeData.preparationTime,
+        cookingTime: recipeData.cookingTime,
+        servings: recipeData.servings,
+        difficulty: recipeData.difficulty,
+        updatedAt: new Date(),
+      })
+      .where(and(
+        eq(recipes.id, recipeId),
+        eq(recipes.companyId, companyId)
+      ))
+      .returning();
+    return recipe;
+  }
+
+  async deleteRecipe(recipeId: number, companyId: number) {
+    await db
+      .delete(recipes)
+      .where(and(
+        eq(recipes.id, recipeId),
+        eq(recipes.companyId, companyId)
+      ));
+  }
 }
 
 export const storage = new DatabaseStorage();
