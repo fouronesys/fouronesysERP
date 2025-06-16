@@ -2002,14 +2002,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
               : "",
             parseFloat(comp.montoFacturado).toFixed(2).padStart(12, "0"),
             parseFloat(comp.itbisFacturado).toFixed(2).padStart(12, "0"),
-            parseFloat(comp.itbisRetenido).toFixed(2).padStart(12, "0"),
-            parseFloat(comp.itbisPercibido).toFixed(2).padStart(12, "0"),
-            parseFloat(comp.retencionRenta).toFixed(2).padStart(12, "0"),
-            parseFloat(comp.isrPercibido).toFixed(2).padStart(12, "0"),
-            parseFloat(comp.impuestoSelectivoConsumo)
+            parseFloat(comp.itbisRetenido || "0").toFixed(2).padStart(12, "0"),
+            parseFloat(comp.itbisPercibido || "0").toFixed(2).padStart(12, "0"),
+            parseFloat(comp.retencionRenta || "0").toFixed(2).padStart(12, "0"),
+            parseFloat(comp.isrPercibido || "0").toFixed(2).padStart(12, "0"),
+            parseFloat(comp.impuestoSelectivoConsumo || "0")
               .toFixed(2)
               .padStart(12, "0"),
-            parseFloat(comp.otrosImpuestos).toFixed(2).padStart(12, "0"),
+            parseFloat(comp.otrosImpuestos || "0").toFixed(2).padStart(12, "0"),
             parseFloat(comp.montoTotal).toFixed(2).padStart(12, "0"),
           ].join("|");
           content += line + "\n";
@@ -2160,7 +2160,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const movement = await storage.createInventoryMovement(movementData);
       
       // Update product stock
-      const product = await storage.getProduct(productId);
+      const product = await storage.getProduct(productId, companyId);
       if (!product) {
         return res.status(404).json({ message: "Product not found" });
       }
@@ -3909,7 +3909,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         invoiceDate.getFullYear().toString() === periodYear &&
         (invoiceDate.getMonth() + 1).toString().padStart(2, "0") === periodMonth
       ) {
-        const suppliers = await storage.getSuppliers();
+        const suppliers = await storage.getSuppliers(companyId);
         const supplier = suppliers.find(s => s.id === invoice.supplierId);
         const line = [
           companyRnc,
@@ -3965,7 +3965,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         (saleDate.getMonth() + 1).toString().padStart(2, "0") === periodMonth
       ) {
         const customer = sale.customerId
-          ? await storage.getCustomer(sale.customerId)
+          ? await storage.getCustomer(sale.customerId, companyId)
           : null;
 
         // Formato según especificación DGII 607
@@ -4009,7 +4009,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         invoiceDate.getFullYear().toString() === periodYear &&
         (invoiceDate.getMonth() + 1).toString().padStart(2, "0") === periodMonth
       ) {
-        const customer = await storage.getCustomer(invoice.customerId);
+        const customer = await storage.getCustomer(invoice.customerId, companyId);
 
         const line = [
           customer?.rnc || customer?.cedula || "000000000",
@@ -4109,7 +4109,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (address.length > LINE_WIDTH - 4) {
         const words = address.split(" ");
         let currentLine = "";
-        words.forEach((word) => {
+        words.forEach((word: string) => {
           if ((currentLine + word).length > LINE_WIDTH - 4) {
             if (currentLine) lines.push(centerText(currentLine.trim()));
             currentLine = word + " ";
@@ -4495,8 +4495,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error("Sale ID:", req.params.saleId);
         res.status(500).json({
           message: "Failed to generate thermal receipt",
-          error: error.message,
-          details: error.toString(),
+          error: (error as Error).message,
+          details: (error as Error).toString(),
         });
       }
     },
