@@ -196,7 +196,7 @@ export default function Payment() {
                 </p>
                 <div className="flex items-center gap-2 mt-2">
                   <Mail className="w-4 h-4 text-blue-600" />
-                  <span className="text-sm">ngconsultores.rd@gmail.com</span>
+                  <span className="text-sm">admin@fourone.com.do</span>
                 </div>
               </div>
             </CardContent>

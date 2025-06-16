@@ -5457,7 +5457,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch("/api/payments/:id/status", isAuthenticated, async (req: any, res) => {
     try {
       const user = req.user;
-      if (!user || user.email !== 'ngconsultores.rd@gmail.com') {
+      if (!user || user.email !== 'admin@fourone.com.do') {
         return res.status(403).json({ message: "Access denied" });
       }
 
@@ -5524,7 +5524,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/admin/companies", isAuthenticated, async (req: any, res) => {
     try {
       const user = req.user;
-      if (!user || user.email !== 'ngconsultores.rd@gmail.com') {
+      if (!user || user.email !== 'admin@fourone.com.do') {
         return res.status(403).json({ message: "Access denied" });
       }
 
@@ -5539,7 +5539,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch("/api/admin/companies/:id/status", isAuthenticated, async (req: any, res) => {
     try {
       const user = req.user;
-      if (!user || user.email !== 'ngconsultores.rd@gmail.com') {
+      if (!user || user.email !== 'admin@fourone.com.do') {
         return res.status(403).json({ message: "Access denied" });
       }
 
