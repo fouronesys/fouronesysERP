@@ -1,11 +1,13 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { Header } from "@/components/Header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { 
   Calendar, 
   TrendingUp, 
@@ -19,10 +21,13 @@ import {
   Eye,
   FileSpreadsheet,
   FileImage,
-  FileType
+  FileType,
+  AlertCircle,
+  RefreshCw
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { toast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 import { reportExporter, type ReportData } from "@/lib/reportExporter";
 import type { Invoice, POSSale } from "@shared/schema";
 
@@ -32,20 +37,66 @@ export default function SalesReports() {
   const [exportFormat, setExportFormat] = useState<"pdf" | "excel" | "word" | "txt">("pdf");
   const [isExporting, setIsExporting] = useState(false);
   const isMobile = useIsMobile();
+  const { user, isAuthenticated } = useAuth();
+  const [, setLocation] = useLocation();
 
-  const { data: invoices, isLoading: invoicesLoading } = useQuery<Invoice[]>({
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setLocation('/login');
+    }
+  }, [isAuthenticated, setLocation]);
+
+  const { data: invoices, isLoading: invoicesLoading, error: invoicesError } = useQuery<Invoice[]>({
     queryKey: ["/api/invoices"],
+    enabled: isAuthenticated,
+    retry: (failureCount, error: any) => {
+      if (error?.response?.status === 401) {
+        setLocation('/login');
+        return false;
+      }
+      return failureCount < 3;
+    }
   });
 
-  const { data: posSales, isLoading: posLoading } = useQuery<POSSale[]>({
+  const { data: posSales, isLoading: posLoading, error: posError } = useQuery<POSSale[]>({
     queryKey: ["/api/pos/sales"],
+    enabled: isAuthenticated,
+    retry: (failureCount, error: any) => {
+      if (error?.response?.status === 401) {
+        setLocation('/login');
+        return false;
+      }
+      return failureCount < 3;
+    }
   });
 
-  const { data: company } = useQuery({
+  const { data: company, error: companyError } = useQuery({
     queryKey: ["/api/companies/current"],
+    enabled: isAuthenticated,
+    retry: (failureCount, error: any) => {
+      if (error?.response?.status === 401) {
+        setLocation('/login');
+        return false;
+      }
+      return failureCount < 3;
+    }
   });
 
   const isLoading = invoicesLoading || posLoading;
+  const hasErrors = invoicesError || posError || companyError;
+
+  // Don't render if not authenticated
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-600" />
+          <p className="text-gray-600 dark:text-gray-400">Redirigiendo al login...</p>
+        </div>
+      </div>
+    );
+  }
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('es-DO', {
@@ -78,8 +129,12 @@ export default function SalesReports() {
     const filteredInvoices = invoices ? filterSalesByDate(invoices, parseInt(dateRange)) : [];
     const filteredPOSSales = posSales ? filterSalesByDate(posSales, parseInt(dateRange)) : [];
     
-    const invoiceData = (reportType === "invoices" || reportType === "all") ? filteredInvoices : [];
-    const posData = (reportType === "pos" || reportType === "all") ? filteredPOSSales : [];
+    // Provide default empty arrays if data is not available
+    const safeInvoices = filteredInvoices || [];
+    const safePOSSales = filteredPOSSales || [];
+    
+    const invoiceData = (reportType === "invoices" || reportType === "all") ? safeInvoices : [];
+    const posData = (reportType === "pos" || reportType === "all") ? safePOSSales : [];
     
     const totalRevenue = invoiceData.reduce((sum, invoice) => sum + invoice.total, 0) + 
                         posData.reduce((sum, sale) => sum + sale.total, 0);
@@ -134,8 +189,8 @@ export default function SalesReports() {
       const reportData: ReportData = {
         title: "Reporte de Ventas",
         period: getPeriodLabel(),
-        companyName: company?.name || "Mi Empresa",
-        companyLogo: company?.logo,
+        companyName: (company as any)?.name || "Mi Empresa",
+        companyLogo: (company as any)?.logo,
         summary: {
           totalRevenue: reportMetrics.totalRevenue,
           totalTransactions: reportMetrics.totalTransactions,
@@ -190,12 +245,64 @@ export default function SalesReports() {
     );
   }
 
+  if (hasErrors) {
+    return (
+      <div className="flex-1 flex flex-col bg-gray-50 dark:bg-gray-900">
+        <Header title="Reportes de Ventas" subtitle="Análisis detallado de tus ventas" />
+        <div className="flex-1 flex items-center justify-center p-4">
+          <div className="max-w-md w-full">
+            <Alert className="border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-900/20">
+              <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
+              <AlertDescription className="text-red-800 dark:text-red-200">
+                <div className="mb-2">
+                  <strong>Error al cargar los datos</strong>
+                </div>
+                <p className="text-sm mb-3">
+                  No se pudieron cargar los datos de reportes. Esto puede deberse a problemas de conexión o autenticación.
+                </p>
+                <Button 
+                  onClick={() => window.location.reload()} 
+                  size="sm"
+                  className="bg-red-600 hover:bg-red-700 text-white"
+                >
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Reintentar
+                </Button>
+              </AlertDescription>
+            </Alert>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show empty state if no data is available
+  const hasNoData = (!invoices || invoices.length === 0) && (!posSales || posSales.length === 0);
+
   return (
     <div className="flex-1 flex flex-col bg-gray-50 dark:bg-gray-900">
       <Header title="Reportes de Ventas" subtitle="Análisis detallado de tus ventas" />
       
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-6">
+          
+          {hasNoData && (
+            <Card className="border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-900/20">
+              <CardContent className="p-6 text-center">
+                <BarChart3 className="h-12 w-12 mx-auto mb-4 text-blue-600 dark:text-blue-400" />
+                <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-100 mb-2">
+                  No hay datos de ventas disponibles
+                </h3>
+                <p className="text-blue-700 dark:text-blue-300 mb-4">
+                  Comienza a realizar ventas para ver tus reportes aquí.
+                </p>
+                <Button onClick={() => setLocation('/pos')} className="bg-blue-600 hover:bg-blue-700">
+                  <ShoppingCart className="h-4 w-4 mr-2" />
+                  Ir al POS
+                </Button>
+              </CardContent>
+            </Card>
+          )}
           {/* Filters Section */}
           <Card className="border-gray-200 dark:border-gray-700">
             <CardHeader className="pb-4">
