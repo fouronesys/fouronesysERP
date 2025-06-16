@@ -3317,6 +3317,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // For now, we'll store the logo URL in the database without file upload
   // This can be enhanced later with proper cloud storage
 
+  // RNC company search endpoint
+  app.get("/api/rnc/search", async (req, res) => {
+    try {
+      const { query, limit = "10" } = req.query;
+      
+      if (!query || typeof query !== 'string' || query.length < 3) {
+        return res.json({ companies: [] });
+      }
+
+      const companies = await storage.searchCompaniesByName(query.trim(), parseInt(limit as string));
+      
+      res.json({ 
+        companies: companies
+      });
+    } catch (error) {
+      console.error('RNC search error:', error);
+      res.status(500).json({ error: 'Error searching companies' });
+    }
+  });
+
   // RNC auto-fill endpoint
   app.get("/api/rnc/:rnc", async (req, res) => {
     try {

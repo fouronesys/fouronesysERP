@@ -2287,6 +2287,32 @@ export class DatabaseStorage implements IStorage {
     return result;
   }
 
+  async searchCompaniesByName(query: string, limit: number = 10): Promise<any[]> {
+    try {
+      const searchTerm = `%${query.toLowerCase()}%`;
+      const result = await db
+        .select()
+        .from(rncRegistry)
+        .where(
+          or(
+            ilike(rncRegistry.razonSocial, searchTerm),
+            ilike(rncRegistry.nombreComercial, searchTerm)
+          )
+        )
+        .limit(limit);
+      
+      return result.map(company => ({
+        rnc: company.rnc,
+        name: company.razonSocial,
+        status: company.estado || 'ACTIVO',
+        category: company.categoria || 'CONTRIBUYENTE REGISTRADO'
+      }));
+    } catch (error) {
+      console.error('Error searching companies by name:', error);
+      return [];
+    }
+  }
+
   async createRNCRegistry(rncData: InsertRNCRegistry): Promise<RNCRegistry> {
     const [result] = await db
       .insert(rncRegistry)
