@@ -295,25 +295,38 @@ export function setupAuth(app: Express) {
 
       // Send reset email
       const { sendPasswordResetEmail } = await import('./email-service');
-      const emailSent = await sendPasswordResetEmail(email, resetToken);
+      let emailSent = false;
+      
+      try {
+        emailSent = await sendPasswordResetEmail(email, resetToken);
+      } catch (error) {
+        console.error('SendGrid error:', error);
+        emailSent = false;
+      }
+      
+      // Force development mode for testing when SendGrid is not configured
+      if (process.env.NODE_ENV === 'development') {
+        emailSent = false;
+      }
 
       if (!emailSent) {
         console.error('Failed to send password reset email to:', email);
-        // In development, provide the reset token for manual testing
+        // Always provide the reset token in development for testing
         if (process.env.NODE_ENV === 'development') {
-          // Use Replit domain if available, otherwise localhost
-          const baseUrl = process.env.REPLIT_DEV_DOMAIN 
-            ? `https://${process.env.REPLIT_DEV_DOMAIN}` 
-            : `${req.protocol}://${req.get('host')}`;
+          const baseUrl = `${req.protocol}://${req.get('host')}`;
           const resetUrl = `${baseUrl}/reset-password?token=${resetToken}`;
-          console.log('Password reset URL for development:', resetUrl);
+          console.log('\n=== DESARROLLO: Enlace de Recuperación ===');
+          console.log(`Email: ${email}`);
+          console.log(`URL: ${resetUrl}`);
+          console.log(`Token: ${resetToken}`);
+          console.log('==========================================\n');
           return res.json({ 
-            message: "Token de recuperación generado. Revisar consola del servidor para el enlace.", 
-            developmentToken: resetToken,
-            resetUrl 
+            message: "Token generado exitosamente. Revisar consola para el enlace de recuperación.",
+            resetUrl,
+            token: resetToken
           });
         }
-        return res.status(500).json({ message: "Error enviando email de recuperación" });
+        return res.status(500).json({ message: "Error enviando email de recuperación. Contactar soporte técnico." });
       }
 
       res.json({ message: "Si existe una cuenta con ese email, se ha enviado un enlace de recuperación." });
