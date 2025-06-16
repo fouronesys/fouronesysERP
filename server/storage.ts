@@ -193,6 +193,10 @@ export interface IStorage {
   updateProduct(id: number, product: Partial<InsertProduct>, companyId: number): Promise<Product | undefined>;
   deleteProduct(id: number, companyId: number): Promise<void>;
   
+  // Inventory Movement operations
+  getInventoryMovements(companyId: number): Promise<any[]>;
+  createInventoryMovement(movement: any): Promise<any>;
+  
   // Invoice operations
   getInvoices(companyId: number): Promise<Invoice[]>;
   getInvoice(id: number, companyId: number): Promise<Invoice | undefined>;

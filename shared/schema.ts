@@ -162,6 +162,19 @@ export const products = pgTable("products", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Inventory Movements
+export const inventoryMovements = pgTable("inventory_movements", {
+  id: serial("id").primaryKey(),
+  productId: integer("product_id").notNull().references(() => products.id),
+  type: varchar("type", { length: 20 }).notNull(), // IN, OUT, ADJUSTMENT
+  quantity: integer("quantity").notNull(),
+  reason: varchar("reason", { length: 100 }).notNull(),
+  notes: text("notes"),
+  companyId: integer("company_id").notNull().references(() => companies.id),
+  createdBy: varchar("created_by", { length: 255 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Invoices
 export const invoices = pgTable("invoices", {
   id: serial("id").primaryKey(),
@@ -262,19 +275,6 @@ export const productionOrders = pgTable("production_orders", {
   companyId: integer("company_id").notNull().references(() => companies.id),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
-
-// Inventory Movements
-export const inventoryMovements = pgTable("inventory_movements", {
-  id: serial("id").primaryKey(),
-  productId: integer("product_id").notNull().references(() => products.id),
-  type: varchar("type", { length: 20 }).notNull(), // in, out, adjustment
-  quantity: integer("quantity").notNull(),
-  reference: varchar("reference", { length: 100 }),
-  referenceId: integer("reference_id"),
-  notes: text("notes"),
-  companyId: integer("company_id").notNull().references(() => companies.id),
-  createdAt: timestamp("created_at").defaultNow(),
 });
 
 

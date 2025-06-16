@@ -2071,6 +2071,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
   );
 
+  // Inventory Management Routes
+  app.get("/api/inventory/movements", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+      const movements = await storage.getInventoryMovements(company.id);
+      res.json(movements);
+    } catch (error) {
+      console.error("Error fetching inventory movements:", error);
+      res.status(500).json({ message: "Failed to fetch inventory movements" });
+    }
+  });
+
+  app.post("/api/inventory/movements", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+      
+      const { productId, type, quantity, reason, notes } = req.body;
+      
+      // Create movement record
+      const movementData = {
+        productId: parseInt(productId),
+        type,
+        quantity: parseInt(quantity),
+        reason,
+        notes,
+        companyId: company.id,
+        createdBy: userId,
+      };
+      
+      const movement = await storage.createInventoryMovement(movementData);
+      
+      // Update product stock
+      const product = await storage.getProduct(productId);
+      if (!product) {
+        return res.status(404).json({ message: "Product not found" });
+      }
+      
+      let newStock = product.stock;
+      if (type === 'IN' || type === 'ADJUSTMENT') {
+        newStock += quantity;
+      } else if (type === 'OUT') {
+        newStock -= quantity;
+      }
+      
+      await storage.updateProduct(productId, { stock: Math.max(0, newStock) });
+      
+      res.json(movement);
+    } catch (error) {
+      console.error("Error creating inventory movement:", error);
+      res.status(500).json({ message: "Failed to create inventory movement" });
+    }
+  });
+
   // Purchases Module Routes
   app.get("/api/suppliers", isAuthenticated, async (req: any, res) => {
     try {

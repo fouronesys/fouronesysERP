@@ -54,6 +54,7 @@ const navigation = [
     category: "Inventario",
     items: [
       { name: "Productos", href: "/products", icon: Package },
+      { name: "Control de Stock", href: "/inventory", icon: Warehouse },
       { name: "Almacenes", href: "/warehouses", icon: Warehouse },
       { name: "Movimientos", href: "/movements", icon: ArrowLeftRight },
     ],
