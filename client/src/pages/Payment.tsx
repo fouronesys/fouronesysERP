@@ -190,7 +190,10 @@ export default function Payment() {
                 Nuestro equipo revisará tu pago y te contactará pronto.
               </p>
               <Button 
-                onClick={() => setLocation("/")}
+                onClick={() => {
+                  console.log("Button clicked, redirecting to landing page");
+                  window.location.href = "/";
+                }}
                 className="w-full"
               >
                 Volver al inicio
