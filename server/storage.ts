@@ -144,7 +144,7 @@ export interface IStorage {
   upsertUser(user: UpsertUser): Promise<User>;
   
   // Company operations
-  createCompany(company: InsertCompany): Promise<Company>;
+  createCompany(company: InsertCompany & { ownerId: string }): Promise<Company>;
   getCompanyByUserId(userId: string): Promise<Company | undefined>;
   getCompanyById(id: number): Promise<Company | undefined>;
   updateCompany(id: number, company: Partial<InsertCompany>): Promise<Company>;

@@ -662,10 +662,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/companies", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.id;
-      const companyData = insertCompanySchema.parse({
-        ...req.body,
+      // Don't validate ownerId through schema since it's omitted, add it directly
+      const validatedData = insertCompanySchema.parse(req.body);
+      const companyData = {
+        ...validatedData,
         ownerId: userId,
-      });
+      };
       const company = await storage.createCompany(companyData);
       res.json(company);
     } catch (error) {
