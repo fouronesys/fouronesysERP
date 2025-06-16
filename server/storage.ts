@@ -2240,16 +2240,13 @@ export class DatabaseStorage implements IStorage {
 
   // Password reset token operations
   async createPasswordResetToken(email: string, token: string, expiresAt: Date): Promise<void> {
+    // First delete any existing tokens for this email
+    await db.delete(passwordResetTokens)
+      .where(eq(passwordResetTokens.email, email));
+    
+    // Then insert the new token
     await db.insert(passwordResetTokens)
-      .values({ email, token, expiresAt })
-      .onConflictDoUpdate({
-        target: passwordResetTokens.email,
-        set: {
-          token,
-          expiresAt,
-          createdAt: new Date()
-        }
-      });
+      .values({ email, token, expiresAt });
   }
 
   async getPasswordResetToken(token: string): Promise<{ email: string; expiresAt: Date; isRecovery?: boolean } | null> {

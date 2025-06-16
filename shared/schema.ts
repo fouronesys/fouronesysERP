@@ -841,7 +841,7 @@ export const leaves = pgTable("leaves", {
 // Password reset tokens table
 export const passwordResetTokens = pgTable("password_reset_tokens", {
   id: serial("id").primaryKey(),
-  email: varchar("email", { length: 255 }).notNull(),
+  email: varchar("email", { length: 255 }).unique().notNull(),
   token: varchar("token", { length: 255 }).unique().notNull(),
   expiresAt: timestamp("expires_at").notNull(),
   isRecovery: boolean("is_recovery").default(false),
