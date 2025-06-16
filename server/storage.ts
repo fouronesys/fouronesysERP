@@ -2396,6 +2396,54 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  // Inventory Movement Methods
+  async getInventoryMovements(companyId: number): Promise<any[]> {
+    try {
+      const result = await db
+        .select({
+          id: inventoryMovements.id,
+          productId: inventoryMovements.productId,
+          type: inventoryMovements.type,
+          quantity: inventoryMovements.quantity,
+          reason: inventoryMovements.reason,
+          notes: inventoryMovements.notes,
+          createdBy: inventoryMovements.createdBy,
+          createdAt: inventoryMovements.createdAt,
+          product: {
+            id: products.id,
+            name: products.name,
+            code: products.code,
+            stock: products.stock
+          }
+        })
+        .from(inventoryMovements)
+        .innerJoin(products, eq(inventoryMovements.productId, products.id))
+        .where(eq(inventoryMovements.companyId, companyId))
+        .orderBy(desc(inventoryMovements.createdAt));
+      
+      return result;
+    } catch (error) {
+      console.error("Error fetching inventory movements:", error);
+      return [];
+    }
+  }
+
+  async createInventoryMovement(movement: any): Promise<any> {
+    try {
+      const [result] = await db
+        .insert(inventoryMovements)
+        .values({
+          ...movement,
+          createdAt: new Date()
+        })
+        .returning();
+      return result;
+    } catch (error) {
+      console.error("Error creating inventory movement:", error);
+      throw error;
+    }
+  }
+
   async createPurchaseOrder(order: any): Promise<any> {
     try {
       const [result] = await db
