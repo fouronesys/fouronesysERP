@@ -591,6 +591,10 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(companies).orderBy(desc(companies.createdAt));
   }
 
+  async getAllUsers(): Promise<User[]> {
+    return await db.select().from(users).orderBy(desc(users.createdAt));
+  }
+
   async getCompany(id: number): Promise<Company | undefined> {
     const [company] = await db.select().from(companies).where(eq(companies.id, id));
     return company;
