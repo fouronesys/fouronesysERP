@@ -209,6 +209,11 @@ export function setupAuth(app: Express) {
 
   // Get current user endpoint
   app.get("/api/user", (req, res) => {
+    console.log("Session ID:", req.sessionID);
+    console.log("Session data:", req.session);
+    console.log("Is authenticated:", req.isAuthenticated());
+    console.log("User object:", req.user);
+    
     if (!req.isAuthenticated() || !req.user) {
       return res.status(401).json({ message: "Not authenticated" });
     }
