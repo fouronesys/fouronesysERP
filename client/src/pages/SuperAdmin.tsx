@@ -76,6 +76,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { RNCCompanySuggestions } from "@/components/RNCCompanySuggestions";
 
 // Schema for admin form with ownerEmail
 const companySchemaForAdmin = insertCompanySchema.extend({
@@ -95,6 +96,49 @@ export default function SuperAdmin() {
   const [selectedCompanies, setSelectedCompanies] = useState<number[]>([]);
   const [rncValidationResult, setRncValidationResult] = useState<any>(null);
   const [isVerifyingRNC, setIsVerifyingRNC] = useState(false);
+
+  // RNC verification function
+  const handleRNCVerification = async (rncValue: string) => {
+    if (!rncValue || rncValue.length < 9) {
+      setRncValidationResult({
+        valid: false,
+        message: "RNC debe tener al menos 9 caracteres",
+      });
+      return;
+    }
+
+    setIsVerifyingRNC(true);
+    try {
+      const response = await apiRequest("GET", `/api/customers/verify-rnc/${rncValue.replace(/\D/g, "")}`);
+      const result = await response.json();
+
+      if (result.isValid) {
+        setRncValidationResult({
+          valid: true,
+          message: "RNC válido y registrado en DGII",
+          data: result,
+        });
+
+        // Auto-fill company name if available
+        if (result.companyName && !form.getValues("name")) {
+          form.setValue("name", result.companyName);
+        }
+      } else {
+        setRncValidationResult({
+          valid: false,
+          message: result.message || "RNC no válido",
+        });
+      }
+    } catch (error) {
+      console.error("Error verifying RNC:", error);
+      setRncValidationResult({
+        valid: false,
+        message: "Error al verificar el RNC. Inténtalo de nuevo.",
+      });
+    } finally {
+      setIsVerifyingRNC(false);
+    }
+  };
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -288,63 +332,7 @@ export default function SuperAdmin() {
     }
   };
 
-  const handleRNCVerification = async (rnc: string) => {
-    if (!rnc || rnc.trim() === '') {
-      setRncValidationResult(null);
-      return;
-    }
 
-    try {
-      setIsVerifyingRNC(true);
-      setRncValidationResult(null);
-
-      const response = await fetch(`/api/verify-rnc?rnc=${encodeURIComponent(rnc.trim())}`);
-      
-      if (!response.ok) {
-        setRncValidationResult({
-          isValid: false,
-          message: `Error del servidor: ${response.status}`
-        });
-        return;
-      }
-
-      const result = await response.json();
-      setRncValidationResult(result);
-
-      if (result.isValid && result.company) {
-        // Auto-llenar campos con datos de DGII
-        form.setValue('businessName', result.company.businessName || '');
-        form.setValue('name', result.company.name || result.company.businessName || '');
-        form.setValue('address', result.company.address || '');
-        form.setValue('phone', result.company.phone || '');
-        form.setValue('email', result.company.email || '');
-        
-        toast({
-          title: "RNC Válido",
-          description: "Datos empresariales cargados automáticamente desde DGII",
-        });
-      } else {
-        setRncValidationResult({
-          isValid: false,
-          message: result.message || "RNC no encontrado en el registro de DGII"
-        });
-      }
-    } catch (error) {
-      console.error('Error verifying RNC:', error);
-      setRncValidationResult({
-        isValid: false,
-        message: "Error al verificar RNC. Inténtelo nuevamente."
-      });
-      
-      toast({
-        title: "Error de verificación",
-        description: "No se pudo verificar el RNC en este momento",
-        variant: "destructive",
-      });
-    } finally {
-      setIsVerifyingRNC(false);
-    }
-  };
 
   const bulkActivateMutation = useMutation({
     mutationFn: async (companyIds: number[]) => {
@@ -615,7 +603,21 @@ export default function SuperAdmin() {
                             <FormItem>
                               <FormLabel>Nombre Comercial *</FormLabel>
                               <FormControl>
-                                <Input {...field} placeholder="Empresa ABC" />
+                                <RNCCompanySuggestions
+                                  label=""
+                                  placeholder="Buscar empresa por nombre..."
+                                  value={field.value || ""}
+                                  onChange={field.onChange}
+                                  onCompanySelect={(company) => {
+                                    form.setValue("name", company.name);
+                                    form.setValue("rnc", company.rnc);
+                                    toast({
+                                      title: "Empresa seleccionada",
+                                      description: `${company.name} - RNC: ${company.rnc}`,
+                                    });
+                                  }}
+                                  className="text-sm"
+                                />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -644,24 +646,67 @@ export default function SuperAdmin() {
                           control={form.control}
                           name="rnc"
                           render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>RNC</FormLabel>
-                              <FormControl>
-                                <Input 
-                                  {...field} 
-                                  placeholder="123456789"
-                                  onBlur={(e) => handleRNCVerification(e.target.value)}
-                                />
-                              </FormControl>
-                              {isVerifyingRNC && (
-                                <div className="flex items-center text-sm text-muted-foreground">
-                                  <RefreshCw className="h-3 w-3 animate-spin mr-1" />
-                                  Verificando RNC...
-                                </div>
-                              )}
+                            <FormItem className="md:col-span-2">
+                              <FormLabel>RNC (Registro Nacional del Contribuyente)</FormLabel>
+                              <div className="flex flex-col sm:flex-row gap-2">
+                                <FormControl>
+                                  <Input 
+                                    {...field} 
+                                    placeholder="Ej: 131-12345-6"
+                                    onBlur={(e) => {
+                                      const rncValue = e.target.value;
+                                      if (rncValue && rncValue.length >= 9) {
+                                        handleRNCVerification(rncValue);
+                                      }
+                                    }}
+                                    className={`${rncValidationResult?.valid === true ? "border-green-500" : 
+                                              rncValidationResult?.valid === false ? "border-red-500" : ""} flex-1`}
+                                  />
+                                </FormControl>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  disabled={isVerifyingRNC || !field.value}
+                                  onClick={() => handleRNCVerification(field.value || "")}
+                                  className="w-full sm:w-auto"
+                                >
+                                  {isVerifyingRNC ? (
+                                    <>
+                                      <RefreshCw className="h-4 w-4 animate-spin mr-2" />
+                                      Verificando...
+                                    </>
+                                  ) : (
+                                    <>
+                                      <CheckCircle className="h-4 w-4 mr-2" />
+                                      Verificar
+                                    </>
+                                  )}
+                                </Button>
+                              </div>
                               {rncValidationResult && (
-                                <div className={`text-sm ${rncValidationResult.isValid ? 'text-green-600' : 'text-red-600'}`}>
-                                  {rncValidationResult.isValid ? '✓ RNC válido' : `✗ ${rncValidationResult.message}`}
+                                <div className={`text-sm p-3 rounded-lg ${
+                                  rncValidationResult.valid 
+                                    ? "bg-green-50 text-green-700 border border-green-200" 
+                                    : "bg-red-50 text-red-700 border border-red-200"
+                                }`}>
+                                  {rncValidationResult.valid ? (
+                                    <div className="space-y-1">
+                                      <p className="font-medium flex items-center">
+                                        <CheckCircle className="h-4 w-4 mr-2" />
+                                        RNC válido y registrado en DGII
+                                      </p>
+                                      {rncValidationResult.data?.companyName && (
+                                        <p className="text-xs">
+                                          Empresa: {rncValidationResult.data.companyName}
+                                        </p>
+                                      )}
+                                    </div>
+                                  ) : (
+                                    <p className="flex items-center">
+                                      <AlertCircle className="h-4 w-4 mr-2" />
+                                      {rncValidationResult.message}
+                                    </p>
+                                  )}
                                 </div>
                               )}
                               <FormMessage />
