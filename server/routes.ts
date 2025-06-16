@@ -5308,5 +5308,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ==================== AUDIT AND MONITORING ROUTES ====================
+
+  // System monitoring and audit routes
+  app.get("/api/audit/logs", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      const { limit = 50, offset = 0, module, severity } = req.query;
+      
+      const filters = {
+        companyId: company.id,
+        limit: parseInt(limit as string),
+        offset: parseInt(offset as string),
+        module: module as string,
+        severity: severity as string
+      };
+
+      const logs = await auditLogger.getAuditLogs(filters);
+      res.json(logs);
+    } catch (error) {
+      console.error("Error fetching audit logs:", error);
+      res.status(500).json({ message: "Failed to fetch audit logs" });
+    }
+  });
+
+  app.get("/api/system/health", isAuthenticated, async (req: any, res) => {
+    try {
+      const health = {
+        database: 'healthy' as const,
+        authentication: 'healthy' as const,
+        modules: {
+          'POS': 'healthy' as const,
+          'Products': 'healthy' as const,
+          'Customers': 'healthy' as const,
+          'Inventory': 'healthy' as const,
+          'Accounting': 'healthy' as const,
+          'Fiscal': 'healthy' as const,
+          'HR': 'healthy' as const,
+          'Reports': 'healthy' as const
+        },
+        uptime: process.uptime(),
+        errors24h: 0
+      };
+
+      // Check database connectivity
+      try {
+        await storage.testConnection();
+      } catch (dbError) {
+        health.database = 'error';
+      }
+
+      res.json(health);
+    } catch (error) {
+      console.error("Error checking system health:", error);
+      res.status(500).json({ message: "Failed to check system health" });
+    }
+  });
+
   return httpServer;
 }

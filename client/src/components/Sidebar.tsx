@@ -117,6 +117,7 @@ const navigation = [
     items: [
       { name: "Empresa", href: "/company-settings", icon: Settings },
       { name: "Gestión de Errores", href: "/error-management", icon: Bug },
+      { name: "Monitoreo del Sistema", href: "/system-monitoring", icon: Activity },
     ],
   },
 
