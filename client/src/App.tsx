@@ -51,6 +51,7 @@ import SystemMonitoring from "@/pages/SystemMonitoring";
 import Payment from "@/pages/Payment";
 import CompanyManagement from "@/pages/CompanyManagement";
 import SetupPassword from "@/pages/SetupPassword";
+import ResetPassword from "@/pages/ResetPassword";
 
 import InstallationGuide from "@/pages/InstallationGuide";
 import NotFound from "@/pages/not-found";
@@ -195,7 +196,7 @@ function Router() {
       <Switch>
         <Route path="/auth" component={AuthPage} />
         <Route path="/setup-password" component={SetupPassword} />
-        <Route path="/reset-password" component={SetupPassword} />
+        <Route path="/reset-password" component={ResetPassword} />
         <Route path="/" component={Landing} />
         <Route component={Landing} />
       </Switch>
