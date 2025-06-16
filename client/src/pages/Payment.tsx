@@ -323,7 +323,7 @@ export default function Payment() {
 
                 <div className="space-y-2">
                   <Label htmlFor="plan">Plan Seleccionado</Label>
-                  <Select onValueChange={(value) => form.setValue("plan", value as "starter" | "professional" | "enterprise")}>
+                  <Select onValueChange={(value) => form.setValue("plan", value as "monthly" | "annual")}>
                     <SelectTrigger>
                       <SelectValue placeholder="Seleccionar plan" />
                     </SelectTrigger>
@@ -363,19 +363,34 @@ export default function Payment() {
               <CardContent className="space-y-4">
                 {bankAccounts.map((account, index) => (
                   <div key={index} className="p-4 border rounded-lg bg-gray-50 dark:bg-gray-800">
-                    <div className="flex justify-between items-start mb-2">
+                    <div className="flex justify-between items-start mb-3">
                       <h4 className="font-semibold text-gray-900 dark:text-white">
                         {account.bank}
                       </h4>
                       <Badge variant="secondary">{account.accountType}</Badge>
                     </div>
-                    <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
-                      {account.accountHolder}
-                    </p>
+                    
+                    <div className="space-y-2 mb-3">
+                      <p className="text-sm text-gray-600 dark:text-gray-300">
+                        <strong>Titular:</strong> {account.accountHolder}
+                      </p>
+                      <p className="text-sm text-gray-600 dark:text-gray-300">
+                        <strong>Cédula:</strong> {account.cedula}
+                      </p>
+                      {account.note && (
+                        <p className="text-xs text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 p-2 rounded">
+                          <strong>Nota:</strong> {account.note}
+                        </p>
+                      )}
+                    </div>
+                    
                     <div className="flex items-center justify-between">
-                      <span className="font-mono text-lg font-semibold">
-                        {account.accountNumber}
-                      </span>
+                      <div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Número de Cuenta</p>
+                        <span className="font-mono text-lg font-semibold">
+                          {account.accountNumber}
+                        </span>
+                      </div>
                       <Button
                         variant="outline"
                         size="sm"

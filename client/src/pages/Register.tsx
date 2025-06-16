@@ -297,10 +297,10 @@ export default function Register() {
                     >
                       <h3 className="text-lg font-bold mb-2">Plan Mensual</h3>
                       <div className="text-2xl font-bold text-black mb-2">
-                        RD$ 25,000 <span className="text-sm font-normal">instalación</span>
+                        RD$ 5,000 <span className="text-sm font-normal">instalación</span>
                       </div>
                       <div className="text-xl font-bold mb-4">
-                        RD$ 2,500 <span className="text-sm font-normal">/mes</span>
+                        RD$ 3,500 <span className="text-sm font-normal">/mes</span>
                       </div>
                       <p className="text-sm text-gray-600">
                         Flexibilidad mes a mes, perfecto para empresas que prefieren pagos mensuales.
@@ -317,7 +317,7 @@ export default function Register() {
                     >
                       <div className="absolute -top-2 left-1/2 transform -translate-x-1/2">
                         <div className="bg-green-500 text-white px-3 py-1 rounded-full text-xs font-medium">
-                          Ahorra RD$ 6,000
+                          Ahorra RD$ 18,000
                         </div>
                       </div>
                       <h3 className="text-lg font-bold mb-2">Plan Anual</h3>
