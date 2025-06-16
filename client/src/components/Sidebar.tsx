@@ -27,7 +27,8 @@ import {
   MessageCircle,
   UserCog,
   Bug,
-  Image
+  Image,
+  Activity
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 

@@ -2433,7 +2433,13 @@ export class DatabaseStorage implements IStorage {
       const [result] = await db
         .insert(inventoryMovements)
         .values({
-          ...movement,
+          productId: movement.productId,
+          type: movement.type,
+          quantity: movement.quantity,
+          reason: movement.reason,
+          notes: movement.notes,
+          companyId: movement.companyId,
+          createdBy: movement.createdBy,
           createdAt: new Date()
         })
         .returning();
