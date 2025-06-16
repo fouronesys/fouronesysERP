@@ -92,6 +92,7 @@ export class AuditLogger {
       `);
     } catch (error) {
       console.error("Error logging audit entry:", error);
+      // Don't throw error to prevent blocking main operations
     }
   }
 
