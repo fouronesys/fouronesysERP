@@ -75,7 +75,7 @@ export default function Billing() {
         tax: parseFloat(data.tax),
         total: parseFloat(data.total),
       };
-      await apiRequest("POST", "/api/invoices", payload);
+      return await apiRequest("/api/invoices", { method: "POST", body: payload });
     },
     onSuccess: () => {
       toast({
@@ -492,6 +492,7 @@ export default function Billing() {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
+                            <SelectItem value="">Sin Comprobante</SelectItem>
                             <SelectItem value="B01">B01 - Crédito Fiscal</SelectItem>
                             <SelectItem value="B02">B02 - Consumidor Final</SelectItem>
                             <SelectItem value="B14">B14 - Régimen Especial</SelectItem>

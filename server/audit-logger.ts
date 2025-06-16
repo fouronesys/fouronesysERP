@@ -84,10 +84,10 @@ export class AuditLogger {
           old_values, new_values, ip_address, user_agent, session_id,
           timestamp, success, error_message, severity
         ) VALUES (
-          ${entry.userId}, ${entry.companyId}, ${entry.module}, ${entry.action},
-          ${entry.entityType}, ${entry.entityId}, ${JSON.stringify(entry.oldValues)},
-          ${JSON.stringify(entry.newValues)}, ${entry.ipAddress}, ${entry.userAgent},
-          ${entry.sessionId}, ${entry.timestamp}, ${entry.success}, ${entry.errorMessage}, ${entry.severity}
+          ${entry.userId || null}, ${entry.companyId || null}, ${entry.module}, ${entry.action},
+          ${entry.entityType}, ${entry.entityId || null}, ${entry.oldValues ? JSON.stringify(entry.oldValues) : null},
+          ${entry.newValues ? JSON.stringify(entry.newValues) : null}, ${entry.ipAddress || null}, ${entry.userAgent || null},
+          ${entry.sessionId || null}, ${entry.timestamp}, ${entry.success}, ${entry.errorMessage || null}, ${entry.severity}
         )
       `);
     } catch (error) {

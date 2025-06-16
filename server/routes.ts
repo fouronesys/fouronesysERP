@@ -970,6 +970,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/invoices", isAuthenticated, async (req: any, res) => {
     try {
+      console.log("Creating invoice with data:", req.body);
       const userId = req.user.id;
       const company = await storage.getCompanyByUserId(userId);
       if (!company) {
@@ -986,8 +987,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         companyId: company.id,
       };
 
-      // Auto-assign NCF if ncfType is provided
-      if (req.body.ncfType && !req.body.ncf) {
+      // Auto-assign NCF if ncfType is provided and not empty
+      if (req.body.ncfType && req.body.ncfType !== "" && !req.body.ncf) {
         const nextNCF = await storage.getNextNCF(company.id, req.body.ncfType);
         if (!nextNCF) {
           return res.status(400).json({
@@ -995,14 +996,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
         processedData.ncf = nextNCF;
+        // Increment the NCF sequence after successful assignment
+        await storage.incrementNCFSequence(company.id, req.body.ncfType);
+      } else if (!req.body.ncfType || req.body.ncfType === "") {
+        // For "sin comprobante" option, set NCF to null
+        processedData.ncf = null;
       }
 
+      console.log("Processed invoice data:", processedData);
       const invoiceData = insertInvoiceSchema.parse(processedData);
       const invoice = await storage.createInvoice(invoiceData);
+      console.log("Invoice created successfully:", invoice);
+      
       res.json(invoice);
     } catch (error) {
       console.error("Error creating invoice:", error);
-      res.status(500).json({ message: "Failed to create invoice" });
+      console.error("Error details:", JSON.stringify(error, null, 2));
+      res.status(500).json({ message: "Failed to create invoice", error: String(error) });
     }
   });
 
