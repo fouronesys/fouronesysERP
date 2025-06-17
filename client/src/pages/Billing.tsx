@@ -9,14 +9,23 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Search, FileText, Eye, Edit, Trash2, Calendar, DollarSign, User, Building2 } from "lucide-react";
-import { useForm } from "react-hook-form";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Plus, Search, FileText, Eye, Edit, Trash2, Calendar, DollarSign, User, Building2, X, ShoppingCart } from "lucide-react";
+import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
-import type { Invoice, Customer } from "@shared/schema";
+import type { Invoice, Customer, Product } from "@shared/schema";
+
+const invoiceItemSchema = z.object({
+  productId: z.string().min(1, "Producto requerido"),
+  description: z.string().min(1, "Descripción requerida"),
+  quantity: z.string().min(1, "Cantidad requerida"),
+  unitPrice: z.string().min(1, "Precio unitario requerido"),
+  subtotal: z.string().min(1, "Subtotal requerido"),
+});
 
 const invoiceSchema = z.object({
   customerId: z.string().min(1, "El cliente es requerido"),
@@ -26,6 +35,7 @@ const invoiceSchema = z.object({
   date: z.string().min(1, "La fecha es requerida"),
   dueDate: z.string().min(1, "La fecha de vencimiento es requerida"),
   status: z.enum(["pending", "paid", "overdue"]),
+  items: z.array(invoiceItemSchema).min(1, "Debe agregar al menos un producto"),
   subtotal: z.string().min(1, "El subtotal es requerido"),
   tax: z.string().default("0"),
   total: z.string().min(1, "El total es requerido"),
@@ -50,6 +60,10 @@ export default function Billing() {
     queryKey: ["/api/customers"],
   });
 
+  const { data: products } = useQuery<Product[]>({
+    queryKey: ["/api/products"],
+  });
+
   const form = useForm<InvoiceFormData>({
     resolver: zodResolver(invoiceSchema),
     defaultValues: {
@@ -59,12 +73,52 @@ export default function Billing() {
       date: new Date().toISOString().split('T')[0],
       dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       status: "pending",
-      subtotal: "",
+      items: [],
+      subtotal: "0",
       tax: "0",
-      total: "",
+      total: "0",
       notes: "",
     },
   });
+
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: "items"
+  });
+
+  // Calculate totals when items change
+  const calculateTotals = () => {
+    const items = form.getValues("items");
+    const subtotal = items.reduce((sum, item) => {
+      return sum + (parseFloat(item.quantity) * parseFloat(item.unitPrice));
+    }, 0);
+    const tax = subtotal * 0.18; // 18% ITBIS
+    const total = subtotal + tax;
+    
+    form.setValue("subtotal", subtotal.toFixed(2));
+    form.setValue("tax", tax.toFixed(2));
+    form.setValue("total", total.toFixed(2));
+  };
+
+  // Add product to invoice
+  const addProduct = () => {
+    append({
+      productId: "",
+      description: "",
+      quantity: "1",
+      unitPrice: "0",
+      subtotal: "0"
+    });
+  };
+
+  // Update item subtotal when quantity or price changes
+  const updateItemSubtotal = (index: number) => {
+    const items = form.getValues("items");
+    const item = items[index];
+    const subtotal = parseFloat(item.quantity) * parseFloat(item.unitPrice);
+    form.setValue(`items.${index}.subtotal`, subtotal.toFixed(2));
+    calculateTotals();
+  };
 
   const createInvoiceMutation = useMutation({
     mutationFn: async (data: InvoiceFormData) => {
@@ -578,70 +632,195 @@ export default function Billing() {
                   )}
                 />
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="subtotal"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Subtotal *</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="number" 
-                            step="0.01" 
-                            placeholder="0.00" 
-                            {...field} 
-                            onChange={(e) => {
-                              field.onChange(e);
-                              const subtotal = parseFloat(e.target.value) || 0;
-                              const tax = parseFloat(form.getValues("tax")) || 0;
-                              form.setValue("total", (subtotal + tax).toString());
-                            }}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                {/* Invoice Items Section */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-semibold">Productos</h3>
+                    <Button type="button" onClick={addProduct} size="sm">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Agregar Producto
+                    </Button>
+                  </div>
 
-                  <FormField
-                    control={form.control}
-                    name="tax"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>ITBIS</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="number" 
-                            step="0.01" 
-                            placeholder="0.00" 
-                            {...field}
-                            onChange={(e) => {
-                              field.onChange(e);
-                              const subtotal = parseFloat(form.getValues("subtotal")) || 0;
-                              const tax = parseFloat(e.target.value) || 0;
-                              form.setValue("total", (subtotal + tax).toString());
-                            }}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  {fields.length > 0 && (
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="min-w-[200px]">Producto</TableHead>
+                            <TableHead className="min-w-[80px]">Cant.</TableHead>
+                            <TableHead className="min-w-[100px]">Precio</TableHead>
+                            <TableHead className="min-w-[100px]">Subtotal</TableHead>
+                            <TableHead className="w-[50px]"></TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {fields.map((field, index) => (
+                            <TableRow key={field.id}>
+                              <TableCell>
+                                <FormField
+                                  control={form.control}
+                                  name={`items.${index}.productId`}
+                                  render={({ field }) => (
+                                    <Select 
+                                      onValueChange={(value) => {
+                                        field.onChange(value);
+                                        const product = products?.find(p => p.id.toString() === value);
+                                        if (product) {
+                                          form.setValue(`items.${index}.description`, product.name);
+                                          form.setValue(`items.${index}.unitPrice`, product.price);
+                                          updateItemSubtotal(index);
+                                        }
+                                      }}
+                                      value={field.value}
+                                    >
+                                      <SelectTrigger>
+                                        <SelectValue placeholder="Seleccionar producto" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        {products?.map((product) => (
+                                          <SelectItem key={product.id} value={product.id.toString()}>
+                                            {product.name} - ${product.price}
+                                          </SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                  )}
+                                />
+                              </TableCell>
+                              <TableCell>
+                                <FormField
+                                  control={form.control}
+                                  name={`items.${index}.quantity`}
+                                  render={({ field }) => (
+                                    <Input
+                                      type="number"
+                                      min="1"
+                                      {...field}
+                                      onChange={(e) => {
+                                        field.onChange(e);
+                                        updateItemSubtotal(index);
+                                      }}
+                                      className="w-20"
+                                    />
+                                  )}
+                                />
+                              </TableCell>
+                              <TableCell>
+                                <FormField
+                                  control={form.control}
+                                  name={`items.${index}.unitPrice`}
+                                  render={({ field }) => (
+                                    <Input
+                                      type="number"
+                                      step="0.01"
+                                      {...field}
+                                      onChange={(e) => {
+                                        field.onChange(e);
+                                        updateItemSubtotal(index);
+                                      }}
+                                      className="w-24"
+                                    />
+                                  )}
+                                />
+                              </TableCell>
+                              <TableCell>
+                                <FormField
+                                  control={form.control}
+                                  name={`items.${index}.subtotal`}
+                                  render={({ field }) => (
+                                    <Input
+                                      {...field}
+                                      disabled
+                                      className="w-24 bg-gray-50 dark:bg-gray-800"
+                                    />
+                                  )}
+                                />
+                              </TableCell>
+                              <TableCell>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => {
+                                    remove(index);
+                                    calculateTotals();
+                                  }}
+                                >
+                                  <X className="h-4 w-4 text-red-500" />
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
 
-                  <FormField
-                    control={form.control}
-                    name="total"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Total *</FormLabel>
-                        <FormControl>
-                          <Input type="number" step="0.01" placeholder="0.00" {...field} readOnly />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  {fields.length === 0 && (
+                    <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                      <ShoppingCart className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                      <p>No hay productos agregados</p>
+                      <p className="text-sm">Haz clic en "Agregar Producto" para empezar</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Totals Summary */}
+                <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+                  <h4 className="font-semibold mb-3">Resumen de Totales</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="subtotal"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Subtotal</FormLabel>
+                          <FormControl>
+                            <Input 
+                              {...field} 
+                              disabled
+                              className="bg-white dark:bg-gray-700 font-semibold"
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="tax"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>ITBIS (18%)</FormLabel>
+                          <FormControl>
+                            <Input 
+                              {...field}
+                              disabled
+                              className="bg-white dark:bg-gray-700 font-semibold"
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="total"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Total</FormLabel>
+                          <FormControl>
+                            <Input 
+                              {...field} 
+                              disabled
+                              className="bg-white dark:bg-gray-700 font-bold text-lg text-green-600 dark:text-green-400"
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
                 </div>
 
                 <FormField
