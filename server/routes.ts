@@ -409,7 +409,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const validatedData = insertCompanySchema
           .omit({ ownerId: true })
           .partial()
-          .parse(updateData) as any;
+          .parse(updateData);
         const company = await storage.updateCompany(id, validatedData);
         res.json(company);
       } catch (error) {
@@ -640,7 +640,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validatedData = insertCompanySchema
         .omit({ ownerId: true })
         .partial()
-        .parse(updateData) as any;
+        .parse(updateData);
       console.log("Validated update data:", validatedData);
 
       const updatedCompany = await storage.updateCompany(

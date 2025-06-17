@@ -368,7 +368,7 @@ export default function Payroll() {
                     <div className="text-right">
                       <p className="text-sm text-muted-foreground">Total a Pagar</p>
                       <p className="text-lg font-semibold">
-                        DOP ${calculateTotalPay(entries).toLocaleString()}
+                        DOP ${calculateTotalPay(entries as PayrollEntry[]).toLocaleString()}
                       </p>
                     </div>
                     {getStatusBadge(selectedPeriod.status)}
@@ -381,7 +381,7 @@ export default function Payroll() {
                   </div>
                 ) : (
                   <div className="grid gap-4">
-                    {entries.map((entry: PayrollEntry) => (
+                    {(entries as PayrollEntry[]).map((entry: PayrollEntry) => (
                       <Card key={entry.id}>
                         <CardHeader>
                           <div className="flex justify-between items-start">
@@ -440,7 +440,7 @@ export default function Payroll() {
                       </Card>
                     ))}
 
-                    {entries.length === 0 && (
+                    {(entries as PayrollEntry[]).length === 0 && (
                       <Card>
                         <CardContent className="text-center py-12">
                           <DollarSign className="w-12 h-12 text-muted-foreground mx-auto mb-4" />

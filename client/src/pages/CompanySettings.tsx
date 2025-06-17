@@ -145,7 +145,7 @@ export default function CompanySettings() {
     setIsVerifyingRNC(true);
     try {
       const result = await apiRequest(`/api/rnc/validate?rnc=${encodeURIComponent(rnc)}`);
-      setRncValidationResult(result);
+      setRncValidationResult(result as unknown as RNCValidationResult);
     } catch (error) {
       console.error("RNC validation error:", error);
       setRncValidationResult({
