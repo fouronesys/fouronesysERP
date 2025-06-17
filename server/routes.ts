@@ -173,6 +173,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // User Profile Management
+  app.put("/api/user/profile", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { firstName, lastName, phoneNumber, jobTitle, department } = req.body;
+      
+      const updatedUser = await storage.updateUser(userId, {
+        firstName,
+        lastName,
+        phoneNumber,
+        jobTitle,
+        department,
+        updatedAt: new Date(),
+      });
+
+      if (!updatedUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      await auditLogger.logAuthAction(userId, 'update_profile', { 
+        firstName, lastName, phoneNumber, jobTitle, department 
+      }, req);
+
+      res.json(updatedUser);
+    } catch (error) {
+      console.error("Error updating user profile:", error);
+      res.status(500).json({ message: "Failed to update profile" });
+    }
+  });
+
+  app.put("/api/user/password", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { currentPassword, newPassword } = req.body;
+
+      if (!currentPassword || !newPassword) {
+        return res.status(400).json({ message: "Current password and new password are required" });
+      }
+
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Verify current password
+      const bcrypt = require("bcrypt");
+      const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.password);
+      if (!isCurrentPasswordValid) {
+        return res.status(400).json({ message: "Current password is incorrect" });
+      }
+
+      // Hash new password
+      const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+      
+      await storage.updateUser(userId, {
+        password: hashedNewPassword,
+        updatedAt: new Date(),
+      });
+
+      await auditLogger.logAuthAction(userId, 'change_password', {}, req);
+
+      res.json({ message: "Password updated successfully" });
+    } catch (error) {
+      console.error("Error updating password:", error);
+      res.status(500).json({ message: "Failed to update password" });
+    }
+  });
+
   // RNC Verification Service
   const verifyRNCWithDGII = async (rnc: string) => {
     try {
@@ -508,6 +576,166 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching current company:", error);
       res.status(500).json({ message: "Failed to fetch company" });
+    }
+  });
+
+  // Company Configuration Management
+  app.put("/api/companies/current/settings", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      const {
+        name,
+        businessName,
+        rnc,
+        address,
+        phone,
+        email,
+        website,
+        industry,
+        businessType,
+        taxRegime,
+        currency,
+        timezone,
+        logoUrl
+      } = req.body;
+
+      const updateData = {
+        name,
+        businessName,
+        rnc,
+        address,
+        phone,
+        email,
+        website,
+        industry,
+        businessType,
+        taxRegime,
+        currency,
+        timezone,
+        logoUrl,
+        updatedAt: new Date(),
+      };
+
+      const updatedCompany = await storage.updateCompany(company.id, updateData);
+
+      await auditLogger.logFiscalAction(
+        userId,
+        company.id,
+        'update_company_settings',
+        'company',
+        company.id.toString(),
+        updateData,
+        req
+      );
+
+      res.json(updatedCompany);
+    } catch (error) {
+      console.error("Error updating company settings:", error);
+      res.status(500).json({ message: "Failed to update company settings" });
+    }
+  });
+
+  // NCF Sequence Management
+  app.get("/api/companies/current/ncf-sequences", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      const sequences = await storage.getNCFSequences(company.id);
+      res.json(sequences || []);
+    } catch (error) {
+      console.error("Error fetching NCF sequences:", error);
+      res.status(500).json({ message: "Failed to fetch NCF sequences" });
+    }
+  });
+
+  app.post("/api/companies/current/ncf-sequences", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      const { ncfType, prefix, currentSequence, endSequence, isActive } = req.body;
+
+      if (!ncfType || !prefix || currentSequence === undefined || endSequence === undefined) {
+        return res.status(400).json({ message: "Missing required NCF sequence data" });
+      }
+
+      const sequenceData = {
+        companyId: company.id,
+        ncfType,
+        prefix,
+        currentSequence: parseInt(currentSequence),
+        endSequence: parseInt(endSequence),
+        isActive: isActive !== false,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      const sequence = await storage.createNCFSequence(sequenceData);
+
+      await auditLogger.logFiscalAction(
+        userId,
+        company.id,
+        'create_ncf_sequence',
+        'ncf_sequence',
+        sequence.id?.toString(),
+        sequenceData,
+        req
+      );
+
+      res.json(sequence);
+    } catch (error) {
+      console.error("Error creating NCF sequence:", error);
+      res.status(500).json({ message: "Failed to create NCF sequence" });
+    }
+  });
+
+  app.put("/api/companies/current/ncf-sequences/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      const sequenceId = parseInt(req.params.id);
+      const { prefix, currentSequence, endSequence, isActive } = req.body;
+
+      const updateData = {
+        prefix,
+        currentSequence: parseInt(currentSequence),
+        endSequence: parseInt(endSequence),
+        isActive,
+        updatedAt: new Date(),
+      };
+
+      const sequence = await storage.updateNCFSequence(sequenceId, updateData, company.id);
+
+      await auditLogger.logFiscalAction(
+        userId,
+        company.id,
+        'update_ncf_sequence',
+        'ncf_sequence',
+        sequenceId.toString(),
+        updateData,
+        req
+      );
+
+      res.json(sequence);
+    } catch (error) {
+      console.error("Error updating NCF sequence:", error);
+      res.status(500).json({ message: "Failed to update NCF sequence" });
     }
   });
 
@@ -1144,11 +1372,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
+      // Ensure fiscal period is set for all sales
+      const currentDate = new Date();
+      const fiscalPeriod = currentDate.getFullYear().toString() + 
+                          (currentDate.getMonth() + 1).toString().padStart(2, '0') + 
+                          currentDate.getDate().toString().padStart(2, '0');
+
       const saleToCreate = insertPOSSaleSchema.parse({
         ...saleData,
         companyId: company.id,
         saleNumber,
         ncf,
+        ncfType: useFiscalReceipt ? ncfType : null,
+        fiscalPeriod,
         createdBy: userId,
       });
 
