@@ -1322,9 +1322,6 @@ export default function Production() {
           )}
         </DialogContent>
       </Dialog>
-
-        </TabsContent>
-      </Tabs>
       </div>
     </div>
   );
