@@ -321,30 +321,38 @@ export default function SalesReports() {
   const hasNoData = (!invoices || invoices.length === 0) && (!posSales || posSales.length === 0);
 
   return (
-    <div className="flex-1 flex flex-col bg-gray-50 dark:bg-gray-900 min-h-screen">
-      <Header title="Reportes de Ventas" subtitle="Análisis detallado de tus ventas" />
-      
-      <div className="flex-1 overflow-y-auto">
-        <div className="w-full max-w-none px-2 sm:px-4 lg:px-6 py-4 space-y-4 sm:space-y-6 pb-24">
-          
-          {hasNoData && (
-            <Card className="border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-900/20">
-              <CardContent className="p-6 text-center">
-                <BarChart3 className="h-12 w-12 mx-auto mb-4 text-blue-600 dark:text-blue-400" />
-                <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-100 mb-2">
-                  No hay datos de ventas disponibles
-                </h3>
-                <p className="text-blue-700 dark:text-blue-300 mb-4">
-                  Comienza a realizar ventas para ver tus reportes aquí.
-                </p>
-                <Button onClick={() => setLocation('/pos')} className="bg-blue-600 hover:bg-blue-700">
-                  <ShoppingCart className="h-4 w-4 mr-2" />
-                  Ir al POS
-                </Button>
-              </CardContent>
-            </Card>
-          )}
-          {/* Filters Section */}
+    <div className="h-screen overflow-y-auto">
+      <div className="container mx-auto p-4 space-y-6 pb-20">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+              Reportes de Ventas
+            </h1>
+            <p className="text-gray-600 dark:text-gray-400">
+              Análisis detallado de rendimiento de ventas
+            </p>
+          </div>
+        </div>
+        
+        {hasNoData && (
+          <Card className="border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-900/20">
+            <CardContent className="p-6 text-center">
+              <BarChart3 className="h-12 w-12 mx-auto mb-4 text-blue-600 dark:text-blue-400" />
+              <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-100 mb-2">
+                No hay datos de ventas disponibles
+              </h3>
+              <p className="text-blue-700 dark:text-blue-300 mb-4">
+                Comienza a realizar ventas para ver tus reportes aquí.
+              </p>
+              <Button onClick={() => setLocation('/pos')} className="bg-blue-600 hover:bg-blue-700">
+                <ShoppingCart className="h-4 w-4 mr-2" />
+                Ir al POS
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+        
+        {/* Filters Section */}
           <Card className="border-gray-200 dark:border-gray-700">
             <CardHeader className="pb-3 sm:pb-4">
               <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
