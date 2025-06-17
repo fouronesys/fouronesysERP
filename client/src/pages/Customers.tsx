@@ -241,13 +241,15 @@ export default function Customers() {
   }
 
   return (
-    <div className="w-full relative">
+    <div className="h-screen flex flex-col">
       <Header 
         title="Clientes" 
         subtitle="Gestiona tu base de clientes"
       />
       
-      {/* Always visible action button */}
+      <div className="flex-1 overflow-y-auto relative">
+        <div className="p-3 sm:p-6 pb-32">
+        {/* Always visible action button */}
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
           Lista de Clientes
@@ -643,6 +645,8 @@ export default function Customers() {
           </Form>
         </DialogContent>
       </Dialog>
+        </div>
+      </div>
     </div>
   );
 }
