@@ -157,12 +157,18 @@ export default function Payroll() {
   };
 
   return (
-    <FeatureGuard feature="payroll">
-      <div className="space-y-6">
-        <Header 
-          title="Nómina" 
-          subtitle="Gestiona los períodos de nómina y pagos de empleados"
-        />
+    <div className="h-screen overflow-y-auto">
+      <div className="container mx-auto p-4 space-y-6 pb-20">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+              Sistema de Nómina
+            </h1>
+            <p className="text-gray-600 dark:text-gray-400">
+              Gestiona períodos de nómina y pagos de empleados
+            </p>
+          </div>
+        </div>
 
         <Tabs defaultValue="periods" className="w-full">
           <TabsList>
@@ -471,6 +477,6 @@ export default function Payroll() {
           </TabsContent>
         </Tabs>
       </div>
-    </FeatureGuard>
+    </div>
   );
 }

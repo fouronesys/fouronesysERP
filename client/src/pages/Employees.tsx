@@ -162,12 +162,18 @@ export default function Employees() {
   };
 
   return (
-    <FeatureGuard feature="employees">
-      <div className="space-y-6">
-        <Header 
-          title="Empleados" 
-          subtitle="Gestiona la información de los empleados de tu empresa"
-        />
+    <div className="h-screen overflow-y-auto">
+      <div className="container mx-auto p-4 space-y-6 pb-20">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+              Gestión de Empleados
+            </h1>
+            <p className="text-gray-600 dark:text-gray-400">
+              Administra la información y datos de los empleados
+            </p>
+          </div>
+        </div>
 
         <div className="flex justify-between items-center">
           <div className="flex items-center space-x-4">
@@ -503,6 +509,6 @@ export default function Employees() {
           </div>
         )}
       </div>
-    </FeatureGuard>
+    </div>
   );
 }
