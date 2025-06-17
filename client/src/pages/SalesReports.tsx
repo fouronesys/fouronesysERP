@@ -353,7 +353,7 @@ export default function SalesReports() {
         )}
         
         {!hasNoData && (
-          <>
+          <div className="space-y-6">
             {/* Filters Section */}
             <Card className="border-gray-200 dark:border-gray-700">
               <CardHeader className="pb-3 sm:pb-4">
@@ -789,7 +789,8 @@ export default function SalesReports() {
               )}
             </CardContent>
           </Card>
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );
