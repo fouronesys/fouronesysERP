@@ -1597,6 +1597,236 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // DGII Tools - Pre-validation endpoint
+  app.post("/api/dgii/prevalidate", isAuthenticated, async (req: any, res) => {
+    try {
+      const { reportType, period, year, data } = req.body;
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      // Validation logic based on report type
+      const validationResults = {
+        isValid: true,
+        warnings: [],
+        errors: [],
+        summary: {
+          totalRecords: 0,
+          validRecords: 0,
+          recordsWithWarnings: 0,
+          recordsWithErrors: 0
+        }
+      };
+
+      if (reportType === "606") {
+        // Validate 606 format - Purchases
+        const requiredFields = ['rnc', 'tipoBienes', 'numeroComprobante', 'fechaComprobante', 'montoFacturado', 'itbisFacturado'];
+        
+        if (data && Array.isArray(data)) {
+          validationResults.summary.totalRecords = data.length;
+          
+          data.forEach((record, index) => {
+            let recordValid = true;
+            
+            // Check required fields
+            requiredFields.forEach(field => {
+              if (!record[field] || record[field].toString().trim() === '') {
+                validationResults.errors.push({
+                  record: index + 1,
+                  field,
+                  message: `Campo requerido faltante: ${field}`
+                });
+                recordValid = false;
+              }
+            });
+
+            // Validate RNC format
+            if (record.rnc && !/^\d{9}$/.test(record.rnc.toString())) {
+              validationResults.warnings.push({
+                record: index + 1,
+                field: 'rnc',
+                message: 'RNC debe tener exactamente 9 dígitos'
+              });
+            }
+
+            // Validate amounts
+            if (record.montoFacturado && isNaN(parseFloat(record.montoFacturado))) {
+              validationResults.errors.push({
+                record: index + 1,
+                field: 'montoFacturado',
+                message: 'Monto facturado debe ser un número válido'
+              });
+              recordValid = false;
+            }
+
+            if (recordValid) {
+              validationResults.summary.validRecords++;
+            } else {
+              validationResults.summary.recordsWithErrors++;
+            }
+          });
+        }
+      } else if (reportType === "607") {
+        // Validate 607 format - Sales
+        const requiredFields = ['rnc', 'tipoIdentificacion', 'numeroComprobante', 'fechaComprobante', 'montoFacturado', 'itbisFacturado'];
+        
+        if (data && Array.isArray(data)) {
+          validationResults.summary.totalRecords = data.length;
+          
+          data.forEach((record, index) => {
+            let recordValid = true;
+            
+            requiredFields.forEach(field => {
+              if (!record[field] || record[field].toString().trim() === '') {
+                validationResults.errors.push({
+                  record: index + 1,
+                  field,
+                  message: `Campo requerido faltante: ${field}`
+                });
+                recordValid = false;
+              }
+            });
+
+            if (recordValid) {
+              validationResults.summary.validRecords++;
+            } else {
+              validationResults.summary.recordsWithErrors++;
+            }
+          });
+        }
+      }
+
+      validationResults.isValid = validationResults.summary.recordsWithErrors === 0;
+      
+      res.json({
+        success: true,
+        validation: validationResults,
+        message: validationResults.isValid ? "Validación exitosa" : "Se encontraron errores en la validación"
+      });
+
+    } catch (error) {
+      console.error("Error in DGII pre-validation:", error);
+      res.status(500).json({ message: "Error en pre-validación", error: error.message });
+    }
+  });
+
+  // DGII Tools - Generate TXT endpoint
+  app.post("/api/dgii/generate-txt", isAuthenticated, async (req: any, res) => {
+    try {
+      const { reportType, period, year, data } = req.body;
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      let txtContent = '';
+      const currentDate = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+
+      if (reportType === "606") {
+        // Generate 606 TXT format
+        txtContent += `606|${company.rnc}|${year}|${period.toString().padStart(2, '0')}|${data.length}|${currentDate}\n`;
+        
+        if (data && Array.isArray(data)) {
+          data.forEach((record, index) => {
+            const line = [
+              record.rnc || '',
+              record.tipoBienes || '01',
+              record.numeroComprobante || '',
+              record.fechaComprobante || '',
+              record.montoFacturado || '0.00',
+              record.itbisFacturado || '0.00'
+            ].join('|');
+            txtContent += line + '\n';
+          });
+        }
+      } else if (reportType === "607") {
+        // Generate 607 TXT format
+        txtContent += `607|${company.rnc}|${year}|${period.toString().padStart(2, '0')}|${data.length}|${currentDate}\n`;
+        
+        if (data && Array.isArray(data)) {
+          data.forEach((record, index) => {
+            const line = [
+              record.rnc || '',
+              record.tipoIdentificacion || '1',
+              record.numeroComprobante || '',
+              record.fechaComprobante || '',
+              record.montoFacturado || '0.00',
+              record.itbisFacturado || '0.00'
+            ].join('|');
+            txtContent += line + '\n';
+          });
+        }
+      }
+
+      const filename = `${reportType}_${company.rnc}_${year}${period.toString().padStart(2, '0')}.txt`;
+      
+      res.setHeader('Content-Type', 'text/plain');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.send(txtContent);
+
+    } catch (error) {
+      console.error("Error generating DGII TXT:", error);
+      res.status(500).json({ message: "Error generando archivo TXT", error: error.message });
+    }
+  });
+
+  // DGII Tools - Prepare submission endpoint
+  app.post("/api/dgii/prepare-submission", isAuthenticated, async (req: any, res) => {
+    try {
+      const { reportType, period, year, data } = req.body;
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      // Create submission package
+      const submissionId = `SUB_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const submissionData = {
+        id: submissionId,
+        companyRnc: company.rnc,
+        reportType,
+        period,
+        year,
+        recordCount: data ? data.length : 0,
+        createdAt: new Date().toISOString(),
+        status: 'prepared',
+        checksum: require('crypto').createHash('md5').update(JSON.stringify(data)).digest('hex'),
+        submissionInstructions: {
+          website: 'https://dgii.gov.do',
+          steps: [
+            'Acceder al portal de la DGII con su certificado digital',
+            'Navegar a la sección de Declaraciones Informativas',
+            `Seleccionar el formulario ${reportType}`,
+            'Cargar el archivo TXT generado',
+            'Verificar los datos y enviar la declaración'
+          ],
+          requirements: [
+            'Certificado digital vigente',
+            'Conexión a internet estable',
+            'Navegador web actualizado'
+          ]
+        }
+      };
+
+      res.json({
+        success: true,
+        submission: submissionData,
+        message: "Preparación para envío completada exitosamente"
+      });
+
+    } catch (error) {
+      console.error("Error preparing DGII submission:", error);
+      res.status(500).json({ message: "Error preparando envío", error: error.message });
+    }
+  });
+
   app.post("/api/pos/cart", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.id;
