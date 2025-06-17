@@ -298,10 +298,18 @@ export default function Billing() {
   }
 
   return (
-    <div className="w-full">
-      <Header title="Facturación" subtitle="Gestiona tus facturas y pagos" />
-      
-      <div className="p-3 sm:p-6 space-y-4 sm:space-y-6">
+    <div className="h-screen overflow-y-auto">
+      <div className="container mx-auto p-4 space-y-6 pb-20">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+              Sistema de Facturación
+            </h1>
+            <p className="text-gray-600 dark:text-gray-400">
+              Gestiona facturas, NCF y documentos fiscales
+            </p>
+          </div>
+        </div>
         {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card>

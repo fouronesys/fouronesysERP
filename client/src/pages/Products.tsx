@@ -274,10 +274,18 @@ export default function Products() {
   }
 
   return (
-    <div className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900">
-      <Header title="Productos" subtitle="Gestiona tu catálogo de productos e inventario" />
-      
-      <div className="px-2 sm:px-4 lg:px-6 py-4 pb-24">
+    <div className="h-screen overflow-y-auto">
+      <div className="container mx-auto p-4 space-y-6 pb-20">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+              Catálogo de Productos
+            </h1>
+            <p className="text-gray-600 dark:text-gray-400">
+              Gestiona inventario, precios y productos
+            </p>
+          </div>
+        </div>
         {/* Actions and Search */}
         <div className="flex flex-col sm:flex-row gap-4 mb-6">
           <div className="flex-1">

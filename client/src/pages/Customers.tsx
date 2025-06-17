@@ -241,13 +241,18 @@ export default function Customers() {
   }
 
   return (
-    <div className="h-screen flex flex-col">
-      <Header 
-        title="Clientes" 
-        subtitle="Gestiona tu base de clientes"
-      />
-      
-      <div className="flex-1 overflow-y-auto relative">
+    <div className="h-screen overflow-y-auto">
+      <div className="container mx-auto p-4 space-y-6 pb-20">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+              Gestión de Clientes
+            </h1>
+            <p className="text-gray-600 dark:text-gray-400">
+              Administra tu base de clientes y contactos
+            </p>
+          </div>
+        </div>
         <div className="p-3 sm:p-6 pb-32">
         {/* Always visible action button */}
       <div className="flex justify-between items-center mb-6">
