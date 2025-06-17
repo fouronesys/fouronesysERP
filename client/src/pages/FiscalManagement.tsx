@@ -204,13 +204,13 @@ export default function FiscalManagement() {
     return <Badge className={config.color}>{config.label}</Badge>;
   };
 
-  const filteredDocuments = fiscalDocuments?.filter((doc: FiscalDocument) =>
+  const filteredDocuments = (fiscalDocuments as FiscalDocument[] | undefined)?.filter((doc: FiscalDocument) =>
     doc.number.toLowerCase().includes(searchTerm.toLowerCase()) ||
     doc.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
     doc.customerRnc?.toLowerCase().includes(searchTerm.toLowerCase())
   ) || [];
 
-  const filteredReports = fiscalReports?.filter((report: FiscalReport) =>
+  const filteredReports = (fiscalReports as FiscalReport[] | undefined)?.filter((report: FiscalReport) =>
     report.type.includes(searchTerm) ||
     report.period.toLowerCase().includes(searchTerm.toLowerCase()) ||
     report.year.includes(searchTerm)
@@ -687,7 +687,7 @@ export default function FiscalManagement() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">
-                    {fiscalReports?.filter((r: FiscalReport) => r.type === '606').length || 0}
+                    {(fiscalReports as FiscalReport[] | undefined)?.filter((r: FiscalReport) => r.type === '606').length || 0}
                   </div>
                   <p className="text-xs text-muted-foreground">Compras generadas</p>
                 </CardContent>
@@ -700,7 +700,7 @@ export default function FiscalManagement() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">
-                    {fiscalReports?.filter((r: FiscalReport) => r.type === '607').length || 0}
+                    {(fiscalReports as FiscalReport[] | undefined)?.filter((r: FiscalReport) => r.type === '607').length || 0}
                   </div>
                   <p className="text-xs text-muted-foreground">Ventas generadas</p>
                 </CardContent>
@@ -713,7 +713,7 @@ export default function FiscalManagement() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">
-                    {fiscalDocuments?.length || 0}
+                    {(fiscalDocuments as FiscalDocument[] | undefined)?.length || 0}
                   </div>
                   <p className="text-xs text-muted-foreground">Registrados este mes</p>
                 </CardContent>
@@ -883,15 +883,15 @@ export default function FiscalManagement() {
                     <div className="space-y-2">
                       <div className="flex justify-between">
                         <span className="text-sm text-gray-600">RNC:</span>
-                        <span className="text-sm font-mono">{companyInfo?.rnc || "No configurado"}</span>
+                        <span className="text-sm font-mono">{(companyInfo as any)?.rnc || "No configurado"}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-sm text-gray-600">Razón Social:</span>
-                        <span className="text-sm">{companyInfo?.name || "No configurado"}</span>
+                        <span className="text-sm">{(companyInfo as any)?.name || "No configurado"}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-sm text-gray-600">Categoría:</span>
-                        <span className="text-sm">{companyInfo?.category || "No configurado"}</span>
+                        <span className="text-sm">{(companyInfo as any)?.category || "No configurado"}</span>
                       </div>
                     </div>
                   </div>

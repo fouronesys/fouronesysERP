@@ -249,6 +249,7 @@ function Router() {
           <Route path="/recipes" component={Manufacturing} />
           <Route path="/purchases" component={Purchases} />
           <Route path="/fiscal-reports" component={FiscalReports} />
+          <Route path="/fiscal-management" component={FiscalManagement} />
           <Route path="/accounting" component={Accounting} />
           <Route path="/error-management" component={ErrorManagement} />
           <Route path="/system-monitoring" component={SystemMonitoring} />

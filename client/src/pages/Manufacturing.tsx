@@ -57,13 +57,16 @@ export default function Manufacturing() {
   const createOrderMutation = useMutation({
     mutationFn: async (data: ProductionOrderFormData) => {
       const orderNumber = `OP-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`;
-      await apiRequest("POST", "/api/production-orders", {
-        number: orderNumber,
-        productId: parseInt(data.productId),
-        quantity: parseInt(data.quantity),
-        plannedStartDate: data.plannedStartDate || undefined,
-        plannedEndDate: data.plannedEndDate || undefined,
-        notes: data.notes || undefined,
+      return await apiRequest("/api/production-orders", {
+        method: "POST",
+        body: {
+          number: orderNumber,
+          productId: parseInt(data.productId),
+          quantity: parseInt(data.quantity),
+          plannedStartDate: data.plannedStartDate || undefined,
+          plannedEndDate: data.plannedEndDate || undefined,
+          notes: data.notes || undefined,
+        }
       });
     },
     onSuccess: () => {
