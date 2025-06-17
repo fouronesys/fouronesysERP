@@ -3199,6 +3199,145 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Profile Routes
+  app.get("/api/auth/profile", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const user = await storage.getUserById(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Remove sensitive data
+      const { password, ...safeUser } = user;
+      res.json(safeUser);
+    } catch (error) {
+      console.error("Error fetching user profile:", error);
+      res.status(500).json({ message: "Failed to fetch profile" });
+    }
+  });
+
+  app.patch("/api/auth/profile", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { firstName, lastName, email, phone, avatar } = req.body;
+      
+      // Validate email uniqueness if changed
+      if (email) {
+        const existingUser = await storage.getUserByEmail(email);
+        if (existingUser && existingUser.id !== userId) {
+          return res.status(400).json({ message: "Email already in use" });
+        }
+      }
+      
+      const updatedUser = await storage.updateUser(userId, {
+        firstName,
+        lastName,
+        email,
+        phone,
+        avatar,
+        updatedAt: new Date()
+      });
+      
+      if (!updatedUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Remove sensitive data
+      const { password, ...safeUser } = updatedUser;
+      res.json(safeUser);
+    } catch (error) {
+      console.error("Error updating user profile:", error);
+      res.status(500).json({ message: "Failed to update profile" });
+    }
+  });
+
+  app.post("/api/auth/change-password", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { currentPassword, newPassword } = req.body;
+      
+      if (!currentPassword || !newPassword) {
+        return res.status(400).json({ message: "Current and new password are required" });
+      }
+      
+      const user = await storage.getUserById(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Verify current password
+      const bcrypt = await import("bcrypt");
+      const isValidPassword = await bcrypt.compare(currentPassword, user.password);
+      if (!isValidPassword) {
+        return res.status(400).json({ message: "Current password is incorrect" });
+      }
+      
+      // Hash new password
+      const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+      
+      await storage.updateUser(userId, {
+        password: hashedNewPassword,
+        updatedAt: new Date()
+      });
+      
+      res.json({ message: "Password changed successfully" });
+    } catch (error) {
+      console.error("Error changing password:", error);
+      res.status(500).json({ message: "Failed to change password" });
+    }
+  });
+
+  // Settings Routes
+  app.get("/api/settings", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+      
+      // Get system settings for the company
+      const settings = await storage.getCompanySettings(company.id);
+      res.json(settings || {
+        theme: "light",
+        language: "es",
+        currency: "DOP",
+        timezone: "America/Santo_Domingo",
+        notifications: {
+          email: true,
+          push: true,
+          lowStock: true,
+          sales: true
+        },
+        fiscal: {
+          defaultNCFType: "01",
+          taxRate: 0.18,
+          autoGenerateNCF: true
+        }
+      });
+    } catch (error) {
+      console.error("Error fetching settings:", error);
+      res.status(500).json({ message: "Failed to fetch settings" });
+    }
+  });
+
+  app.patch("/api/settings", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+      
+      const updatedSettings = await storage.updateCompanySettings(company.id, req.body);
+      res.json(updatedSettings);
+    } catch (error) {
+      console.error("Error updating settings:", error);
+      res.status(500).json({ message: "Failed to update settings" });
+    }
+  });
+
   // AI Chat Assistant
   app.post("/api/ai/chat", isAuthenticated, async (req: any, res) => {
     try {

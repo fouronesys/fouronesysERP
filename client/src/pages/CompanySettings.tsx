@@ -173,12 +173,12 @@ export default function CompanySettings() {
   };
 
   return (
-    <div className="flex-1 flex flex-col bg-gray-50 dark:bg-gray-900">
+    <div className="h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
       <Header title="Configuración de Empresa" subtitle="Personaliza la información fiscal y visual de tu empresa" />
       
       <div className="flex-1 overflow-y-auto">
-        <div className={`max-w-4xl mx-auto ${layout.containerPadding} pb-20 ${layout.spacing.lg}`}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className={`${layout.spacing.lg} pb-8`}>
+        <div className={`max-w-4xl mx-auto ${layout.containerPadding} pb-32 ${layout.spacing.lg}`}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className={`${layout.spacing.lg} pb-16`}>
             {/* Logo de la Empresa */}
             <Card>
               <CardHeader>

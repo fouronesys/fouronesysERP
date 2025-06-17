@@ -3300,6 +3300,47 @@ export class DatabaseStorage implements IStorage {
         eq(recipes.companyId, companyId)
       ));
   }
+
+  // Profile and Settings methods
+  async getUserById(userId: string): Promise<SelectUser | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, userId));
+    return user;
+  }
+
+  async updateUser(userId: string, updates: Partial<InsertUser>): Promise<SelectUser | undefined> {
+    const [user] = await db
+      .update(users)
+      .set(updates)
+      .where(eq(users.id, userId))
+      .returning();
+    return user;
+  }
+
+  async getCompanySettings(companyId: number): Promise<any> {
+    // Return default settings - can be extended to use a settings table
+    return {
+      theme: "light",
+      language: "es",
+      currency: "DOP",
+      timezone: "America/Santo_Domingo",
+      notifications: {
+        email: true,
+        push: true,
+        lowStock: true,
+        sales: true
+      },
+      fiscal: {
+        defaultNCFType: "01",
+        taxRate: 0.18,
+        autoGenerateNCF: true
+      }
+    };
+  }
+
+  async updateCompanySettings(companyId: number, settings: any): Promise<any> {
+    // Return the settings - can be extended to persist in database
+    return settings;
+  }
 }
 
 export const storage = new DatabaseStorage();
