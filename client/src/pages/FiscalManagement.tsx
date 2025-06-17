@@ -359,7 +359,7 @@ export default function FiscalManagement() {
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="documents">Documentos Fiscales</TabsTrigger>
             <TabsTrigger value="reports">Reportes 606/607</TabsTrigger>
-            <TabsTrigger value="analytics">Análisis Fiscal</TabsTrigger>
+            <TabsTrigger value="analytics">Herramienta DGII</TabsTrigger>
             <TabsTrigger value="settings">Configuración</TabsTrigger>
           </TabsList>
 
@@ -892,6 +892,8 @@ export default function FiscalManagement() {
                           placeholder="202412"
                           maxLength={6}
                           className="font-mono"
+                          value={period606}
+                          onChange={(e) => setPeriod606(e.target.value.replace(/\D/g, ''))}
                         />
                       </div>
                       <div className="space-y-2">
@@ -912,9 +914,14 @@ export default function FiscalManagement() {
                           <li>• Formas de pago</li>
                         </ul>
                       </div>
-                      <Button className="w-full" variant="outline">
-                        <FileSpreadsheet className="h-4 w-4 mr-2" />
-                        Generar Formato 606
+                      <Button 
+                        className="w-full" 
+                        variant="outline"
+                        onClick={() => generateDGIIReport('606', period606)}
+                        disabled={isGenerating606}
+                      >
+                        <FileText className="h-4 w-4 mr-2" />
+                        {isGenerating606 ? "Generando..." : "Generar Formato 606"}
                       </Button>
                     </CardContent>
                   </Card>
@@ -936,6 +943,8 @@ export default function FiscalManagement() {
                           placeholder="202412"
                           maxLength={6}
                           className="font-mono"
+                          value={period607}
+                          onChange={(e) => setPeriod607(e.target.value.replace(/\D/g, ''))}
                         />
                       </div>
                       <div className="space-y-2">
@@ -956,9 +965,14 @@ export default function FiscalManagement() {
                           <li>• Formas de pago</li>
                         </ul>
                       </div>
-                      <Button className="w-full" variant="outline">
-                        <FileSpreadsheet className="h-4 w-4 mr-2" />
-                        Generar Formato 607
+                      <Button 
+                        className="w-full" 
+                        variant="outline"
+                        onClick={() => generateDGIIReport('607', period607)}
+                        disabled={isGenerating607}
+                      >
+                        <FileText className="h-4 w-4 mr-2" />
+                        {isGenerating607 ? "Generando..." : "Generar Formato 607"}
                       </Button>
                     </CardContent>
                   </Card>
