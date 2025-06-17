@@ -926,6 +926,17 @@ export const paymentSubmissions = pgTable("payment_submissions", {
   adminNotes: text("admin_notes"),
 });
 
+// Exchange Rates for Multi-Currency Support
+export const exchangeRates = pgTable("exchange_rates", {
+  id: serial("id").primaryKey(),
+  currency: varchar("currency", { length: 3 }).notNull(), // ISO 4217 currency code
+  rate: decimal("rate", { precision: 15, scale: 8 }).notNull(), // Exchange rate
+  baseCurrency: varchar("base_currency", { length: 3 }).notNull().default("DOP"),
+  lastUpdated: timestamp("last_updated").defaultNow(),
+  isFallback: boolean("is_fallback").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const comprobantes606 = pgTable("comprobantes_606", {
   id: serial("id").primaryKey(),
   companyId: integer("company_id").notNull().references(() => companies.id),
