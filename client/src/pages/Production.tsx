@@ -478,7 +478,7 @@ export default function Production() {
           </div>
         </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className={`grid w-full ${isRestaurant ? 'grid-cols-3' : 'grid-cols-2'}`}>
           <TabsTrigger value="orders" className="flex items-center gap-2">
             <Factory className="w-4 h-4" />
@@ -1322,6 +1322,9 @@ export default function Production() {
           )}
         </DialogContent>
       </Dialog>
+
+        </TabsContent>
+      </Tabs>
       </div>
     </div>
   );
