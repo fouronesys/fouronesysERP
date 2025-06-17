@@ -39,13 +39,11 @@ import Notifications from "@/pages/Notifications";
 import Settings from "@/pages/Settings";
 import Employees from "@/pages/Employees";
 import Payroll from "@/pages/Payroll";
-import FiscalDocuments from "@/pages/FiscalDocuments";
 import FiscalManagement from "@/pages/FiscalManagement";
 import AIInsights from "@/pages/AIInsights";
 import SubscriptionPlans from "@/pages/SubscriptionPlans";
 import CompanyAnalytics from "@/pages/CompanyAnalytics";
 import Purchases from "@/pages/Purchases";
-import FiscalReports from "@/pages/FiscalReports";
 import Accounting from "@/pages/Accounting";
 import ErrorManagement from "@/pages/ErrorManagement";
 import Inventory from "@/pages/Inventory";
@@ -248,7 +246,6 @@ function Router() {
           <Route path="/movements" component={Movements} />
           <Route path="/recipes" component={Manufacturing} />
           <Route path="/purchases" component={Purchases} />
-          <Route path="/fiscal-reports" component={FiscalReports} />
           <Route path="/fiscal-management" component={FiscalManagement} />
           <Route path="/accounting" component={Accounting} />
           <Route path="/error-management" component={ErrorManagement} />
@@ -257,7 +254,6 @@ function Router() {
 
           <Route path="/employees" component={Employees} />
           <Route path="/payroll" component={Payroll} />
-          <Route path="/fiscal-documents" component={FiscalDocuments} />
           <Route path="/ai-insights" component={AIInsights} />
           <Route path="/plans" component={SubscriptionPlans} />
           <Route path="/chat" component={Chat} />
