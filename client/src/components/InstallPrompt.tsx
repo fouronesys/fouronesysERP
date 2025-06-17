@@ -122,7 +122,8 @@ export function InstallPrompt({ onDismiss }: InstallPromptProps) {
           ],
           primaryAction: {
             label: 'Descargar para Windows',
-            action: handleDownloadWindows
+            action: handleDownloadWindows,
+            available: true
           },
           secondaryAction: {
             label: 'Instalar PWA',
@@ -243,7 +244,7 @@ export function InstallPrompt({ onDismiss }: InstallPromptProps) {
             {content.primaryAction && (
               <Button
                 onClick={content.primaryAction.action}
-                disabled={isInstalling || (content.primaryAction.available === false)}
+                disabled={isInstalling || (content.primaryAction.available !== undefined && !content.primaryAction.available)}
                 className="w-full"
               >
                 {isInstalling ? 'Instalando...' : content.primaryAction.label}

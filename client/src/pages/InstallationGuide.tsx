@@ -144,34 +144,44 @@ export default function InstallationGuide() {
             <CardTitle className="flex items-center gap-3">
               <Monitor className="h-6 w-6" />
               Aplicaciones de Escritorio
-              <Badge variant="outline" className="bg-orange-100 text-orange-800">
-                En desarrollo
+              <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                Windows Disponible
               </Badge>
             </CardTitle>
             <CardDescription>
-              Aplicaciones nativas para Windows, macOS y Linux (próximamente disponibles)
+              Aplicación nativa para Windows con funcionalidad offline completa
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="bg-orange-50 dark:bg-orange-950 p-4 rounded-lg">
+            <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg">
               <div className="flex items-start gap-3">
-                <AlertTriangle className="h-5 w-5 text-orange-600 mt-0.5" />
+                <Download className="h-5 w-5 text-blue-600 mt-0.5" />
                 <div>
-                  <h4 className="font-medium text-orange-900 dark:text-orange-100">
-                    Estado de desarrollo
+                  <h4 className="font-medium text-blue-900 dark:text-blue-100">
+                    Four One ERP para Windows
                   </h4>
-                  <p className="mt-1 text-sm text-orange-800 dark:text-orange-200">
-                    Las aplicaciones de escritorio están en desarrollo activo. Mientras tanto, 
-                    recomendamos usar la versión PWA que ofrece una experiencia similar a una aplicación nativa.
+                  <p className="mt-1 text-sm text-blue-800 dark:text-blue-200">
+                    Descarga la aplicación nativa para Windows con funcionamiento offline completo,
+                    integración con impresoras térmicas y sincronización automática.
                   </p>
+                  <Button 
+                    className="mt-3"
+                    onClick={() => window.open('/download/windows', '_blank')}
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Descargar para Windows
+                  </Button>
                 </div>
               </div>
             </div>
 
             <div className="grid md:grid-cols-3 gap-4">
-              <Card className="opacity-75">
+              <Card className="border-blue-200">
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-lg">Windows</CardTitle>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <CheckCircle className="h-5 w-5 text-green-500" />
+                    Windows
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-muted-foreground mb-3">
@@ -182,7 +192,13 @@ export default function InstallationGuide() {
                     <li>• Sincronización automática</li>
                     <li>• Integración con Windows</li>
                     <li>• Funcionamiento offline completo</li>
+                    <li>• Soporte para impresoras térmicas</li>
                   </ul>
+                  <div className="mt-3">
+                    <Badge variant="secondary" className="text-xs">
+                      Requiere Windows 10+
+                    </Badge>
+                  </div>
                 </CardContent>
               </Card>
 
