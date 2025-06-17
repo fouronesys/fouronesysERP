@@ -50,7 +50,7 @@ import { useThemeContext } from "@/components/ThemeProvider";
 interface SystemSettings {
   theme: "light" | "dark" | "system";
   language: "es" | "en";
-  currency: "DOP" | "USD";
+  currency: "DOP" | "USD" | "EUR";
   dateFormat: "DD/MM/YYYY" | "MM/DD/YYYY" | "YYYY-MM-DD";
   timeFormat: "12h" | "24h";
   autoSave: boolean;
@@ -58,19 +58,41 @@ interface SystemSettings {
   showTooltips: boolean;
   compactMode: boolean;
   highContrast: boolean;
+  soundEnabled: boolean;
+  notificationsEnabled: boolean;
 }
 
 interface SecuritySettings {
   twoFactorEnabled: boolean;
   sessionTimeout: number;
-  passwordExpiry: number;
+  passwordChangeRequired: boolean;
   loginNotifications: boolean;
-  allowRemoteAccess: boolean;
+}
+
+interface PrinterSettings {
+  defaultPrinter: string;
+  paperSize: "58mm" | "80mm";
+  printLogo: boolean;
+  printQR: boolean;
+  autoOpenDrawer: boolean;
+}
+
+interface DataSettings {
+  autoBackupInterval: "daily" | "weekly" | "monthly";
+  backupLocation: "local" | "cloud";
+  dataRetention: number;
+  syncEnabled: boolean;
 }
 
 interface POSSettings {
   printerWidth: "58mm" | "80mm";
   showNCF: boolean;
+  autoOpenCashDrawer: boolean;
+  requireCustomer: boolean;
+  defaultPaymentMethod: "cash" | "card" | "transfer";
+  receiptFooter: string;
+  showCompanyLogo: boolean;
+}
   autoOpenCashDrawer: boolean;
   requireCustomer: boolean;
   defaultPaymentMethod: "cash" | "card" | "transfer";
