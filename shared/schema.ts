@@ -1721,4 +1721,12 @@ export type InsertCostCenter = z.infer<typeof insertCostCenterSchema>;
 export type AutoJournalTemplate = typeof autoJournalTemplates.$inferSelect;
 export type InsertAutoJournalTemplate = z.infer<typeof insertAutoJournalTemplateSchema>;
 
+// Exchange Rate schema
+export const insertExchangeRateSchema = createInsertSchema(exchangeRates).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertExchangeRate = z.infer<typeof insertExchangeRateSchema>;
+export type ExchangeRate = typeof exchangeRates.$inferSelect;
+
 // Tipos del módulo de compras movidos a shared/purchases-schema.ts

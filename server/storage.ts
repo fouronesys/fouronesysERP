@@ -46,6 +46,7 @@ import {
   journalEntryLines,
   journals,
   paymentSubmissions,
+  exchangeRates,
   type User,
   type UpsertUser,
   type Company,
@@ -117,6 +118,8 @@ import {
   type InsertRNCRegistry,
   type AIChatMessage,
   type InsertAIChatMessage,
+  type ExchangeRate,
+  type InsertExchangeRate,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, sql, gte, lte, lt, count, sum, isNull, like, or, asc, inArray, ilike } from "drizzle-orm";
@@ -285,6 +288,16 @@ export interface IStorage {
   bulkCreateRNCRegistry(records: InsertRNCRegistry[]): Promise<{ inserted: number; skipped: number }>;
   getRNCRegistryCount(): Promise<number>;
   clearRNCRegistry(): Promise<void>;
+
+  // Exchange Rate operations for Multi-Currency
+  getExchangeRate(currency: string): Promise<ExchangeRate | undefined>;
+  getAllExchangeRates(): Promise<ExchangeRate[]>;
+  upsertExchangeRate(rateData: InsertExchangeRate): Promise<ExchangeRate>;
+  deleteExchangeRate(currency: string): Promise<void>;
+
+  // Period-based data operations for fiscal reports
+  getPOSSalesByPeriod(companyId: number, startDate: Date, endDate: Date): Promise<POSSale[]>;
+  getPurchasesByPeriod(companyId: number, startDate: Date, endDate: Date): Promise<any[]>;
 
   // NCF Sequence operations for Fiscal Receipts
   getNextNCF(companyId: number, ncfType: string): Promise<string | null>;
@@ -3085,6 +3098,78 @@ export class DatabaseStorage implements IStorage {
       .returning();
     
     return updatedCompany;
+  }
+
+  // Exchange Rate operations for Multi-Currency
+  async getExchangeRate(currency: string): Promise<ExchangeRate | undefined> {
+    const [rate] = await db
+      .select()
+      .from(exchangeRates)
+      .where(eq(exchangeRates.currency, currency))
+      .orderBy(desc(exchangeRates.lastUpdated))
+      .limit(1);
+    return rate;
+  }
+
+  async getAllExchangeRates(): Promise<ExchangeRate[]> {
+    return await db
+      .select()
+      .from(exchangeRates)
+      .orderBy(asc(exchangeRates.currency));
+  }
+
+  async upsertExchangeRate(rateData: InsertExchangeRate): Promise<ExchangeRate> {
+    // Check if rate exists
+    const existing = await this.getExchangeRate(rateData.currency);
+    
+    if (existing) {
+      // Update existing rate
+      const [updated] = await db
+        .update(exchangeRates)
+        .set({
+          rate: rateData.rate,
+          lastUpdated: rateData.lastUpdated || new Date(),
+          isFallback: rateData.isFallback || false,
+          baseCurrency: rateData.baseCurrency || 'DOP'
+        })
+        .where(eq(exchangeRates.currency, rateData.currency))
+        .returning();
+      return updated;
+    } else {
+      // Insert new rate
+      const [inserted] = await db
+        .insert(exchangeRates)
+        .values(rateData)
+        .returning();
+      return inserted;
+    }
+  }
+
+  async deleteExchangeRate(currency: string): Promise<void> {
+    await db
+      .delete(exchangeRates)
+      .where(eq(exchangeRates.currency, currency));
+  }
+
+  // Period-based data operations for fiscal reports
+  async getPOSSalesByPeriod(companyId: number, startDate: Date, endDate: Date): Promise<POSSale[]> {
+    return await db
+      .select()
+      .from(posSales)
+      .where(
+        and(
+          eq(posSales.companyId, companyId),
+          gte(posSales.createdAt, startDate),
+          lte(posSales.createdAt, endDate)
+        )
+      )
+      .orderBy(desc(posSales.createdAt));
+  }
+
+  async getPurchasesByPeriod(companyId: number, startDate: Date, endDate: Date): Promise<any[]> {
+    // This method should be implemented when purchase module is created
+    // For now, return empty array
+    return [];
   }
   // MANUFACTURING MODULE METHODS
 
