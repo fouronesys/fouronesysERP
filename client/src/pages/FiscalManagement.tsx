@@ -572,9 +572,9 @@ export default function FiscalManagement() {
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="sm:max-w-[500px]">
-                  <DialogHeader>
-                    <DialogTitle>Generar Reporte Fiscal</DialogTitle>
-                  </DialogHeader>
+                    <DialogHeader>
+                      <DialogTitle>Generar Reporte Fiscal</DialogTitle>
+                    </DialogHeader>
                   <Form {...reportForm}>
                     <form onSubmit={reportForm.handleSubmit(onSubmitReport)} className="space-y-4">
                       <FormField
@@ -676,8 +676,9 @@ export default function FiscalManagement() {
                       </div>
                     </form>
                   </Form>
-                </DialogContent>
-              </Dialog>
+                  </DialogContent>
+                </Dialog>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

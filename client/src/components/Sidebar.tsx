@@ -93,12 +93,7 @@ const navigation = [
       { name: "Contabilidad", href: "/accounting", icon: Calculator },
     ],
   },
-  {
-    category: "Cumplimiento Fiscal",
-    items: [
-      { name: "Comprobantes Fiscales", href: "/fiscal-documents", icon: FileText },
-    ],
-  },
+
   {
     category: "Inteligencia Artificial",
     items: [
