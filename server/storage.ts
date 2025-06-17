@@ -3209,6 +3209,8 @@ export class DatabaseStorage implements IStorage {
     const materials = [];
     
     for (const bomItem of bomItems) {
+      if (!bomItem.material) continue;
+      
       const materialQuantity = parseFloat(bomItem.quantity.toString()) * quantity;
       const materialCost = parseFloat(bomItem.material.price.toString()) * materialQuantity;
       totalMaterialCost += materialCost;

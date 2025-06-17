@@ -187,12 +187,15 @@ export default function Production() {
   // Mutaciones para órdenes de producción
   const createOrderMutation = useMutation({
     mutationFn: async (data: ProductionOrderFormData) => {
-      return apiRequest("POST", "/api/production-orders", {
-        productId: parseInt(data.productId),
-        quantity: parseInt(data.quantity),
-        plannedStartDate: data.plannedStartDate,
-        plannedEndDate: data.plannedEndDate,
-        notes: data.notes,
+      return apiRequest("/api/production-orders", {
+        method: "POST",
+        body: {
+          productId: parseInt(data.productId),
+          quantity: parseInt(data.quantity),
+          plannedStartDate: data.plannedStartDate,
+          plannedEndDate: data.plannedEndDate,
+          notes: data.notes,
+        }
       });
     },
     onSuccess: () => {
@@ -479,7 +482,7 @@ export default function Production() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className={`grid w-full ${isRestaurant ? 'grid-cols-3' : 'grid-cols-2'}`}>
+          <TabsList className={`grid w-full ${isRestaurant ? 'grid-cols-3' : 'grid-cols-2'}`}>
           <TabsTrigger value="orders" className="flex items-center gap-2">
             <Factory className="w-4 h-4" />
             <span className="hidden sm:inline">Órdenes de Producción</span>
@@ -1244,7 +1247,6 @@ export default function Production() {
           </div>
           </TabsContent>
         )}
-      </Tabs>
 
       {/* Diálogo de Cálculo de Costos */}
       <Dialog open={showCostDialog} onOpenChange={setShowCostDialog}>
@@ -1322,6 +1324,8 @@ export default function Production() {
           )}
         </DialogContent>
       </Dialog>
+      
+      </Tabs>
       </div>
     </div>
   );
