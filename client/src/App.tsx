@@ -13,6 +13,7 @@ import { useQuery } from "@tanstack/react-query";
 import { registerSW } from "@/lib/serviceWorkerRegistration";
 import InstallPrompt from "@/components/InstallPrompt";
 import { errorLogger } from "@/lib/errorLogger";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 // Pages
 import Landing from "@/pages/Landing";
@@ -284,14 +285,16 @@ function App() {
   }, []);
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Router />
-        </TooltipProvider>
-      </ThemeProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Router />
+          </TooltipProvider>
+        </ThemeProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
 
