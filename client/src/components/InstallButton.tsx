@@ -112,7 +112,7 @@ export function InstallButton() {
         'Instalador profesional',
         'Integración con Windows'
       ],
-      downloadUrl: '/downloads/Four-One-Solutions-Setup.exe',
+      downloadUrl: '/download/windows',
       installSteps: [
         'Descargar el instalador',
         'Ejecutar como administrador',
@@ -258,8 +258,9 @@ export function InstallButton() {
       // Already using the web app, show message
       alert('Ya estás usando la aplicación web. Puedes crear un marcador para acceso rápido.');
     } else if (option.downloadUrl) {
-      // For desktop downloads, show development notice
-      alert('Las descargas de aplicaciones de escritorio estarán disponibles próximamente. Por ahora, puedes usar la versión web o instalar como PWA.');
+      // Open download URL in new tab for desktop applications
+      window.open(option.downloadUrl, '_blank');
+      setIsOpen(false);
     }
   };
 
