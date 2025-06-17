@@ -2,6 +2,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { errorHandlerMiddleware } from "./error-management";
+import { dgiiRegistryUpdater } from "./dgii-registry-updater";
 
 const app = express();
 app.use(express.json());
@@ -70,5 +71,9 @@ app.use((req, res, next) => {
     reusePort: true,
   }, () => {
     log(`serving on port ${port}`);
+    
+    // Start the DGII registry auto-updater
+    dgiiRegistryUpdater.startAutoUpdate();
+    log("DGII RNC registry auto-updater initialized (updates every 24 hours)");
   });
 })();

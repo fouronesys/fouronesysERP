@@ -27,6 +27,7 @@ import { accountingService } from "./accounting-service";
 import { assetManager, type IconSet, type AssetOptimizationConfig } from "./asset-manager";
 import { sendPasswordSetupEmail } from "./email-service";
 import { initializeAdminUser } from "./init-admin";
+import { dgiiRegistryUpdater } from "./dgii-registry-updater";
 import QRCode from "qrcode";
 import multer from "multer";
 import path from "path";
