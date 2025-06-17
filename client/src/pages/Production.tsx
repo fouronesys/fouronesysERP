@@ -211,12 +211,15 @@ export default function Production() {
 
   const updateOrderMutation = useMutation({
     mutationFn: async (data: ProductionOrderFormData) => {
-      return apiRequest("PATCH", `/api/production-orders/${editingOrder?.id}`, {
-        productId: parseInt(data.productId),
-        quantity: parseInt(data.quantity),
-        plannedStartDate: data.plannedStartDate,
-        plannedEndDate: data.plannedEndDate,
-        notes: data.notes,
+      return apiRequest(`/api/production-orders/${editingOrder?.id}`, {
+        method: "PATCH",
+        body: {
+          productId: parseInt(data.productId),
+          quantity: parseInt(data.quantity),
+          plannedStartDate: data.plannedStartDate,
+          plannedEndDate: data.plannedEndDate,
+          notes: data.notes,
+        }
       });
     },
     onSuccess: () => {
@@ -233,7 +236,9 @@ export default function Production() {
 
   const deleteOrderMutation = useMutation({
     mutationFn: async (orderId: number) => {
-      return apiRequest("DELETE", `/api/production-orders/${orderId}`, {});
+      return apiRequest(`/api/production-orders/${orderId}`, {
+        method: "DELETE"
+      });
     },
     onSuccess: () => {
       toast({
@@ -247,12 +252,15 @@ export default function Production() {
   // Mutaciones para BOM
   const createBOMMutation = useMutation({
     mutationFn: async (data: BOMItemFormData) => {
-      return apiRequest("POST", "/api/bom", {
-        productId: parseInt(data.productId),
-        materialId: parseInt(data.materialId),
-        quantity: parseFloat(data.quantity),
-        unit: data.unit,
-        notes: data.notes,
+      return apiRequest("/api/bom", {
+        method: "POST",
+        body: {
+          productId: parseInt(data.productId),
+          materialId: parseInt(data.materialId),
+          quantity: parseFloat(data.quantity),
+          unit: data.unit,
+          notes: data.notes,
+        }
       });
     },
     onSuccess: () => {
@@ -268,12 +276,15 @@ export default function Production() {
 
   const updateBOMMutation = useMutation({
     mutationFn: async (data: BOMItemFormData) => {
-      return apiRequest("PATCH", `/api/bom/${editingBOM?.id}`, {
-        productId: parseInt(data.productId),
-        materialId: parseInt(data.materialId),
-        quantity: parseFloat(data.quantity),
-        unit: data.unit,
-        notes: data.notes,
+      return apiRequest(`/api/bom/${editingBOM?.id}`, {
+        method: "PATCH",
+        body: {
+          productId: parseInt(data.productId),
+          materialId: parseInt(data.materialId),
+          quantity: parseFloat(data.quantity),
+          unit: data.unit,
+          notes: data.notes,
+        }
       });
     },
     onSuccess: () => {
@@ -290,7 +301,9 @@ export default function Production() {
 
   const deleteBOMMutation = useMutation({
     mutationFn: async (bomId: number) => {
-      return apiRequest("DELETE", `/api/bom/${bomId}`, {});
+      return apiRequest(`/api/bom/${bomId}`, {
+        method: "DELETE"
+      });
     },
     onSuccess: () => {
       toast({
@@ -304,15 +317,18 @@ export default function Production() {
   // Mutaciones para recetas
   const createRecipeMutation = useMutation({
     mutationFn: async (data: RecipeFormData) => {
-      return apiRequest("POST", "/api/recipes", {
-        productId: parseInt(data.productId),
-        name: data.name,
-        description: data.description,
-        instructions: data.instructions,
-        preparationTime: data.preparationTime ? parseInt(data.preparationTime) : null,
-        cookingTime: data.cookingTime ? parseInt(data.cookingTime) : null,
-        servings: data.servings ? parseInt(data.servings) : null,
-        difficulty: data.difficulty,
+      return apiRequest("/api/recipes", {
+        method: "POST",
+        body: {
+          productId: parseInt(data.productId),
+          name: data.name,
+          description: data.description,
+          instructions: data.instructions,
+          preparationTime: data.preparationTime ? parseInt(data.preparationTime) : null,
+          cookingTime: data.cookingTime ? parseInt(data.cookingTime) : null,
+          servings: data.servings ? parseInt(data.servings) : null,
+          difficulty: data.difficulty,
+        }
       });
     },
     onSuccess: () => {
@@ -328,15 +344,18 @@ export default function Production() {
 
   const updateRecipeMutation = useMutation({
     mutationFn: async (data: RecipeFormData) => {
-      return apiRequest("PATCH", `/api/recipes/${editingRecipe?.id}`, {
-        productId: parseInt(data.productId),
-        name: data.name,
-        description: data.description,
-        instructions: data.instructions,
-        preparationTime: data.preparationTime ? parseInt(data.preparationTime) : null,
-        cookingTime: data.cookingTime ? parseInt(data.cookingTime) : null,
-        servings: data.servings ? parseInt(data.servings) : null,
-        difficulty: data.difficulty,
+      return apiRequest(`/api/recipes/${editingRecipe?.id}`, {
+        method: "PATCH",
+        body: {
+          productId: parseInt(data.productId),
+          name: data.name,
+          description: data.description,
+          instructions: data.instructions,
+          preparationTime: data.preparationTime ? parseInt(data.preparationTime) : null,
+          cookingTime: data.cookingTime ? parseInt(data.cookingTime) : null,
+          servings: data.servings ? parseInt(data.servings) : null,
+          difficulty: data.difficulty,
+        }
       });
     },
     onSuccess: () => {
