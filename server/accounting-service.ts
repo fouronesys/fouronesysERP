@@ -116,6 +116,7 @@ export class AccountingService {
     // Create default fiscal period (current year)
     const currentYear = new Date().getFullYear();
     await db.insert(fiscalPeriods).values({
+      companyId,
       name: `Período Fiscal ${currentYear}`,
       startDate: new Date(`${currentYear}-01-01`).toISOString().split('T')[0],
       endDate: new Date(`${currentYear}-12-31`).toISOString().split('T')[0],
@@ -267,16 +268,14 @@ export class AccountingService {
         entryNumber,
         reference: `POS-${saleData.saleNumber}`,
         description: `Venta POS #${saleData.saleNumber} - ${saleData.paymentMethod}`,
-        date: new Date(saleData.createdAt || new Date()),
+        date: new Date(saleData.createdAt || new Date()).toISOString().split('T')[0],
+        totalAmount: total.toFixed(2),
         totalDebit: total.toFixed(2),
         totalCredit: total.toFixed(2),
-        isBalanced: true,
         status: 'posted',
         sourceModule: 'POS',
         sourceId: saleId,
         createdBy: userId,
-        postedBy: userId,
-        postedAt: new Date(),
       })
       .returning({ id: journalEntries.id });
 
@@ -320,7 +319,7 @@ export class AccountingService {
       });
 
       // Update account balance
-      const currentBalance = parseFloat(account[0].currentBalance);
+      const currentBalance = parseFloat(account[0].currentBalance || '0');
       const newBalance = line.type === 'debit' 
         ? currentBalance + amount 
         : currentBalance - amount;

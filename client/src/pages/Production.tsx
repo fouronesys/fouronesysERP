@@ -465,17 +465,18 @@ export default function Production() {
   };
 
   return (
-    <div className="container mx-auto p-4 space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
-            Módulo de Producción
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            Gestiona órdenes de producción, listas de materiales y recetas
-          </p>
+    <div className="h-screen overflow-y-auto">
+      <div className="container mx-auto p-4 space-y-6 pb-20">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+              Módulo de Producción
+            </h1>
+            <p className="text-gray-600 dark:text-gray-400">
+              Gestiona órdenes de producción, listas de materiales y recetas
+            </p>
+          </div>
         </div>
-      </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className={`grid w-full ${isRestaurant ? 'grid-cols-3' : 'grid-cols-2'}`}>
@@ -1321,6 +1322,7 @@ export default function Production() {
           )}
         </DialogContent>
       </Dialog>
+      </div>
     </div>
   );
 }
