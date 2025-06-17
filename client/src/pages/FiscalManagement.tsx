@@ -563,14 +563,15 @@ export default function FiscalManagement() {
                   className="pl-10"
                 />
               </div>
-              <Dialog open={showReportDialog} onOpenChange={setShowReportDialog}>
-                <DialogTrigger asChild>
-                  <Button>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Generar Reporte
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[500px]">
+              <div className="flex gap-2">
+                <Dialog open={showReportDialog} onOpenChange={setShowReportDialog}>
+                  <DialogTrigger asChild>
+                    <Button>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Generar Reportes (606/607)
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-[500px]">
                   <DialogHeader>
                     <DialogTitle>Generar Reporte Fiscal</DialogTitle>
                   </DialogHeader>

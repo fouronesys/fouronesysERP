@@ -78,7 +78,6 @@ const navigation = [
     category: "Fiscal",
     items: [
       { name: "Gestión Fiscal", href: "/fiscal-management", icon: FileText },
-      { name: "Reportes 606/607", href: "/fiscal-reports", icon: FileText },
     ],
   },
   {
