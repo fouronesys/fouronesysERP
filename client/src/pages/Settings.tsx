@@ -142,7 +142,10 @@ export default function Settings() {
 
   const updatePOSMutation = useMutation({
     mutationFn: async (settings: POSSettings) => {
-      await apiRequest("PUT", "/api/pos/print-settings", settings);
+      return await apiRequest("/api/pos/print-settings", {
+        method: "PUT",
+        body: settings
+      });
     },
     onSuccess: () => {
       toast({
@@ -154,7 +157,10 @@ export default function Settings() {
 
   const changePasswordMutation = useMutation({
     mutationFn: async (data: typeof passwordForm) => {
-      await apiRequest("PUT", "/api/auth/change-password", data);
+      return await apiRequest("/api/auth/change-password", {
+        method: "PUT",
+        body: data
+      });
     },
     onSuccess: () => {
       toast({

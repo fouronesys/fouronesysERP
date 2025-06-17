@@ -40,6 +40,7 @@ import Settings from "@/pages/Settings";
 import Employees from "@/pages/Employees";
 import Payroll from "@/pages/Payroll";
 import FiscalDocuments from "@/pages/FiscalDocuments";
+import FiscalManagement from "@/pages/FiscalManagement";
 import AIInsights from "@/pages/AIInsights";
 import SubscriptionPlans from "@/pages/SubscriptionPlans";
 import CompanyAnalytics from "@/pages/CompanyAnalytics";
