@@ -72,8 +72,8 @@ app.use((req, res, next) => {
   }, () => {
     log(`serving on port ${port}`);
     
-    // Start the DGII registry auto-updater
-    dgiiRegistryUpdater.startAutoUpdate();
-    log("DGII RNC registry auto-updater initialized (updates every 24 hours)");
+    // Start the DGII registry auto-updater (disabled temporarily due to network issues)
+    // dgiiRegistryUpdater.startAutoUpdate();
+    log("DGII RNC registry system initialized (auto-update temporarily disabled)");
   });
 })();

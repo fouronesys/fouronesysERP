@@ -68,9 +68,13 @@ function DGIIRegistryManagement() {
 
   const updateMutation = useMutation({
     mutationFn: async () => {
-      return await apiRequest('/api/dgii/registry/update', {
+      const response = await fetch('/api/dgii/registry/update', {
         method: 'POST',
       });
+      if (!response.ok) {
+        throw new Error('Failed to trigger registry update');
+      }
+      return response.json();
     },
     onSuccess: () => {
       toast({
@@ -90,13 +94,17 @@ function DGIIRegistryManagement() {
 
   const toggleAutoUpdateMutation = useMutation({
     mutationFn: async (enabled: boolean) => {
-      return await apiRequest('/api/dgii/registry/auto-update/toggle', {
+      const response = await fetch('/api/dgii/registry/auto-update/toggle', {
         method: 'POST',
-        body: JSON.stringify({ enabled }),
         headers: {
           'Content-Type': 'application/json',
         },
+        body: JSON.stringify({ enabled }),
       });
+      if (!response.ok) {
+        throw new Error('Failed to toggle auto-update');
+      }
+      return response.json();
     },
     onSuccess: (data: any) => {
       toast({
