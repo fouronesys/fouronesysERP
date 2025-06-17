@@ -1440,11 +1440,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
           printerWidth: "80mm",
           showNCF: true,
           showCustomerInfo: true,
+          showLogo: true,
+          showQRCode: true,
+          autoprint: false,
         },
       );
     } catch (error) {
       console.error("Error fetching POS print settings:", error);
       res.status(500).json({ message: "Failed to fetch POS print settings" });
+    }
+  });
+
+  app.put("/api/pos/print-settings", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      const validatedData = insertPOSPrintSettingsSchema.parse(req.body);
+      const settings = await storage.upsertPOSPrintSettings(company.id, validatedData);
+      
+      res.json(settings);
+    } catch (error) {
+      console.error("Error updating POS print settings:", error);
+      res.status(500).json({ message: "Failed to update POS print settings" });
     }
   });
 
@@ -2811,6 +2832,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     },
   );
+
+  // DGII Fiscal Validation Functions
+  app.post("/api/fiscal/validate-data", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      const { type, period, year } = req.body;
+      
+      // Pre-validate fiscal data before report generation
+      const validationResults = await validateFiscalData(company.id, type, period, year);
+      
+      res.json(validationResults);
+    } catch (error) {
+      console.error("Error validating fiscal data:", error);
+      res.status(500).json({ message: "Failed to validate fiscal data" });
+    }
+  });
+
+  app.post("/api/fiscal/generate-txt", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      const { type, period, year, includeZeroValues } = req.body;
+      
+      // Generate DGII-compliant TXT file
+      const txtContent = await generateDGIITxtFile(company, type, period, year, includeZeroValues);
+      
+      res.setHeader('Content-Type', 'text/plain');
+      res.setHeader('Content-Disposition', `attachment; filename="Formato_${type}_${year}${period.padStart(2, '0')}.txt"`);
+      res.send(txtContent);
+    } catch (error) {
+      console.error("Error generating DGII TXT file:", error);
+      res.status(500).json({ message: "Failed to generate TXT file" });
+    }
+  });
+
+  app.post("/api/fiscal/prepare-submission", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      const { type, period, year } = req.body;
+      
+      // Prepare data for DGII submission
+      const submissionData = await prepareDGIISubmission(company, type, period, year);
+      
+      res.json(submissionData);
+    } catch (error) {
+      console.error("Error preparing DGII submission:", error);
+      res.status(500).json({ message: "Failed to prepare submission" });
+    }
+  });
 
   // DGII Registry Management Routes
   app.get("/api/dgii/registry/status", isAuthenticated, async (req: any, res) => {
@@ -4709,6 +4793,138 @@ export async function registerRoutes(app: Express): Promise<Server> {
     return {
       content: reportLines.join("\n"),
       recordCount: reportLines.length
+    };
+  }
+
+  // Fiscal validation helper functions
+  async function validateFiscalData(companyId: number, type: string, period: string, year: string) {
+    const startDate = new Date(parseInt(year), parseInt(period) - 1, 1);
+    const endDate = new Date(parseInt(year), parseInt(period), 0);
+
+    let validationResults = {
+      isValid: true,
+      errors: [] as string[],
+      warnings: [] as string[],
+      recordCount: 0,
+      totalAmount: 0,
+      details: {}
+    };
+
+    try {
+      if (type === '606') {
+        // Validate purchases data
+        const purchases = await storage.getPurchasesByPeriod(companyId, startDate, endDate);
+        validationResults.recordCount = purchases.length;
+        
+        for (const purchase of purchases) {
+          if (!purchase.supplierRnc || purchase.supplierRnc.length < 9) {
+            validationResults.warnings.push(`Compra ${purchase.id}: RNC del proveedor incompleto`);
+          }
+          if (!purchase.ncf) {
+            validationResults.warnings.push(`Compra ${purchase.id}: NCF faltante`);
+          }
+          validationResults.totalAmount += parseFloat(purchase.total || '0');
+        }
+      } else if (type === '607') {
+        // Validate sales data
+        const sales = await storage.getPOSSalesByPeriod(companyId, startDate, endDate);
+        validationResults.recordCount = sales.length;
+        
+        for (const sale of sales) {
+          if (!sale.ncf) {
+            validationResults.errors.push(`Venta ${sale.id}: NCF obligatorio faltante`);
+            validationResults.isValid = false;
+          }
+          if (sale.customerRnc && sale.customerRnc.length < 9) {
+            validationResults.warnings.push(`Venta ${sale.id}: RNC del cliente incompleto`);
+          }
+          validationResults.totalAmount += parseFloat(sale.total || '0');
+        }
+      }
+
+      return validationResults;
+    } catch (error) {
+      validationResults.isValid = false;
+      validationResults.errors.push(`Error en validación: ${error}`);
+      return validationResults;
+    }
+  }
+
+  async function generateDGIITxtFile(company: any, type: string, period: string, year: string, includeZeroValues: boolean = false) {
+    const startDate = new Date(parseInt(year), parseInt(period) - 1, 1);
+    const endDate = new Date(parseInt(year), parseInt(period), 0);
+    const periodCode = `${year}${period.padStart(2, '0')}`;
+    
+    let txtContent = '';
+
+    if (type === '606') {
+      // Generate 606 format (purchases)
+      const purchases = await storage.getPurchasesByPeriod(company.id, startDate, endDate);
+      
+      for (const purchase of purchases) {
+        if (!includeZeroValues && parseFloat(purchase.total || '0') === 0) continue;
+        
+        const line = [
+          company.rnc || '',
+          periodCode,
+          purchase.supplierRnc || '',
+          purchase.ncf || '',
+          purchase.date ? new Date(purchase.date).toISOString().split('T')[0].replace(/-/g, '') : '',
+          purchase.total || '0',
+          purchase.itbis || '0',
+          purchase.serviceCost || '0',
+          purchase.goodsCost || '0',
+          purchase.otherTaxes || '0',
+          purchase.legalTip || '0',
+          purchase.advanceCash || '0',
+          purchase.advanceReceived || '0',
+          purchase.withholdingITBIS || '0',
+          purchase.withholdingISR || '0',
+          purchase.otherWithholdings || '0',
+          '0', // Reserved field
+        ].join('|');
+        
+        txtContent += line + '\n';
+      }
+    } else if (type === '607') {
+      // Generate 607 format (sales)
+      const sales = await storage.getPOSSalesByPeriod(company.id, startDate, endDate);
+      
+      for (const sale of sales) {
+        if (!includeZeroValues && parseFloat(sale.total || '0') === 0) continue;
+        
+        const line = [
+          company.rnc || '',
+          periodCode,
+          sale.customerRnc || '',
+          sale.ncf || '',
+          sale.createdAt ? new Date(sale.createdAt).toISOString().split('T')[0].replace(/-/g, '') : '',
+          sale.total || '0',
+          sale.itbis || '0',
+          '0', // Reserved field
+        ].join('|');
+        
+        txtContent += line + '\n';
+      }
+    }
+
+    return txtContent;
+  }
+
+  async function prepareDGIISubmission(company: any, type: string, period: string, year: string) {
+    const validation = await validateFiscalData(company.id, type, period, year);
+    const txtContent = await generateDGIITxtFile(company, type, period, year, false);
+    
+    return {
+      isValid: validation.isValid,
+      errors: validation.errors,
+      warnings: validation.warnings,
+      recordCount: validation.recordCount,
+      totalAmount: validation.totalAmount,
+      fileName: `Formato_${type}_${year}${period.padStart(2, '0')}.txt`,
+      fileSize: Buffer.byteLength(txtContent, 'utf8'),
+      submissionReady: validation.isValid && validation.errors.length === 0,
+      generatedAt: new Date().toISOString()
     };
   }
 

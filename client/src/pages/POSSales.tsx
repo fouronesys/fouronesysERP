@@ -76,13 +76,417 @@ export default function POSSales() {
   };
 
   const handlePrint = () => {
-    window.print();
+    if (!printingSale) return;
+    
+    // Enhanced print function with mobile Bluetooth support
+    const printContent = generatePrintContent(printingSale);
+    
+    if (isMobile) {
+      // Mobile Bluetooth printing
+      handleMobilePrint(printContent);
+    } else {
+      // Desktop printing
+      handleDesktopPrint(printContent);
+    }
+    
     setShowPrintPreview(false);
     setPrintingSale(null);
     toast({
       title: "Éxito",
-      description: "Factura enviada a la impresora",
+      description: "Recibo enviado a la impresora",
     });
+  };
+
+  const generatePrintContent = (sale: POSSale) => {
+    const printerWidth = printSettings?.printerWidth || "80mm";
+    const is58mm = printerWidth === "58mm";
+    const logoUrl = company?.logoUrl;
+    
+    return `
+      <div class="receipt" style="width: ${is58mm ? '58mm' : '80mm'}; max-width: ${is58mm ? '220px' : '300px'};">
+        ${logoUrl ? `
+          <div class="logo-container">
+            <img src="${logoUrl}" alt="Logo" class="logo" style="max-width: ${is58mm ? '80px' : '100px'};" />
+          </div>
+        ` : ''}
+        
+        <div class="company-info">
+          <div class="bold" style="font-size: ${is58mm ? '14px' : '16px'};">${company?.name || 'Four One System'}</div>
+          ${company?.address ? `<div style="font-size: ${is58mm ? '10px' : '11px'};">${company.address}</div>` : ''}
+          ${company?.phone ? `<div style="font-size: ${is58mm ? '10px' : '11px'};">Tel: ${company.phone}</div>` : ''}
+          ${company?.rnc ? `<div style="font-size: ${is58mm ? '10px' : '11px'};">RNC: ${company.rnc}</div>` : ''}
+        </div>
+
+        <div class="document-header" style="font-size: ${is58mm ? '12px' : '14px'};">
+          RECIBO DE VENTA
+        </div>
+
+        <table style="width: 100%; margin: 8px 0;">
+          <tr>
+            <td style="font-size: ${is58mm ? '10px' : '11px'};">Recibo #:</td>
+            <td class="right bold" style="font-size: ${is58mm ? '10px' : '11px'};">${sale.id}</td>
+          </tr>
+          <tr>
+            <td style="font-size: ${is58mm ? '10px' : '11px'};">Fecha:</td>
+            <td class="right" style="font-size: ${is58mm ? '10px' : '11px'};">${new Date(sale.createdAt || new Date()).toLocaleString('es-DO')}</td>
+          </tr>
+          ${sale.customerName ? `
+          <tr>
+            <td style="font-size: ${is58mm ? '10px' : '11px'};">Cliente:</td>
+            <td class="right" style="font-size: ${is58mm ? '10px' : '11px'};">${sale.customerName}</td>
+          </tr>
+          ` : ''}
+          ${sale.ncf ? `
+          <tr>
+            <td colspan="2" class="ncf-section" style="font-size: ${is58mm ? '9px' : '10px'};">
+              NCF: <span class="bold">${sale.ncf}</span>
+            </td>
+          </tr>
+          ` : ''}
+        </table>
+
+        <div class="line"></div>
+
+        <table style="width: 100%;">
+          ${printingItems?.map(item => `
+            <tr class="item-row">
+              <td style="font-size: ${is58mm ? '9px' : '10px'};" class="item-name">${getProductName(item.productId)}</td>
+            </tr>
+            <tr class="item-row">
+              <td style="font-size: ${is58mm ? '9px' : '10px'};">${item.quantity}x ${formatCurrency(parseFloat(item.price))}</td>
+              <td class="right bold" style="font-size: ${is58mm ? '9px' : '10px'};">${formatCurrency(parseFloat(item.subtotal))}</td>
+            </tr>
+          `).join('') || ''}
+        </table>
+
+        <div class="double-line"></div>
+
+        <div class="total-section">
+          <table style="width: 100%;">
+            <tr>
+              <td class="bold" style="font-size: ${is58mm ? '11px' : '12px'};">TOTAL:</td>
+              <td class="right bold total-amount" style="font-size: ${is58mm ? '14px' : '16px'};">${formatCurrency(parseFloat(sale.total))}</td>
+            </tr>
+          </table>
+        </div>
+
+        <div class="payment-section">
+          <table style="width: 100%;">
+            <tr>
+              <td style="font-size: ${is58mm ? '10px' : '11px'};">Método de pago:</td>
+              <td class="right" style="font-size: ${is58mm ? '10px' : '11px'};">${sale.paymentMethod || 'Efectivo'}</td>
+            </tr>
+            <tr>
+              <td style="font-size: ${is58mm ? '10px' : '11px'};">Pagado:</td>
+              <td class="right" style="font-size: ${is58mm ? '10px' : '11px'};">${formatCurrency(parseFloat(sale.amountPaid || sale.total))}</td>
+            </tr>
+            ${parseFloat(sale.change || '0') > 0 ? `
+            <tr>
+              <td style="font-size: ${is58mm ? '10px' : '11px'};">Cambio:</td>
+              <td class="right" style="font-size: ${is58mm ? '10px' : '11px'};">${formatCurrency(parseFloat(sale.change))}</td>
+            </tr>
+            ` : ''}
+          </table>
+        </div>
+
+        ${sale.qrCode ? `
+        <div class="qr-section">
+          <div style="font-size: ${is58mm ? '9px' : '10px'}; margin-bottom: 8px;">CÓDIGO QR DE VERIFICACIÓN</div>
+          <div style="font-size: ${is58mm ? '8px' : '9px'};">Escanea para verificar esta venta</div>
+          <div style="margin: 8px 0; font-family: monospace; font-size: ${is58mm ? '6px' : '7px'};">${sale.qrCode}</div>
+        </div>
+        ` : ''}
+
+        <div class="footer">
+          <div class="thank-you" style="font-size: ${is58mm ? '11px' : '12px'};">¡GRACIAS POR SU COMPRA!</div>
+          <div style="font-size: ${is58mm ? '8px' : '9px'}; margin-top: 4px;">
+            Powered by Four One System<br/>
+            ${new Date().toLocaleString('es-DO')}
+          </div>
+        </div>
+      </div>
+    `;
+  };
+
+  const handleMobilePrint = (content: string) => {
+    // Enhanced mobile Bluetooth printing
+    const printWindow = window.open('', '_blank', 'width=400,height=600');
+    if (printWindow) {
+      const printerWidth = printSettings?.printerWidth || "80mm";
+      const is58mm = printerWidth === "58mm";
+      
+      printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Recibo POS #${printingSale?.id}</title>
+            <style>
+              @media print {
+                @page { 
+                  margin: 0; 
+                  size: ${is58mm ? '58mm' : '80mm'} auto;
+                }
+                body { 
+                  margin: 0; 
+                  padding: 4px; 
+                  font-family: 'Courier New', monospace; 
+                  font-size: ${is58mm ? '9px' : '10px'};
+                  line-height: 1.2;
+                  width: ${is58mm ? '58mm' : '80mm'};
+                  max-width: ${is58mm ? '220px' : '300px'};
+                }
+              }
+              
+              body { 
+                font-family: -apple-system, BlinkMacSystemFont, sans-serif; 
+                margin: 0; 
+                padding: 10px; 
+                background: #f5f5f5;
+              }
+              
+              .receipt { 
+                width: 100%;
+                max-width: ${is58mm ? '220px' : '300px'};
+                margin: 0 auto;
+                background: white;
+                padding: 12px;
+                border-radius: 8px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+              }
+              
+              .center { text-align: center; }
+              .right { text-align: right; }
+              .bold { font-weight: 600; }
+              .line { border-bottom: 1px dotted #ccc; margin: 8px 0; }
+              .double-line { border-bottom: 2px solid #333; margin: 10px 0; }
+              
+              table { width: 100%; border-collapse: collapse; margin: 6px 0; }
+              td { padding: 2px 0; vertical-align: top; }
+              
+              .company-info {
+                text-align: center;
+                margin-bottom: 12px;
+                padding: 8px;
+                background: #f8f9fa;
+                border-radius: 6px;
+              }
+              
+              .document-header {
+                text-align: center;
+                font-weight: 700;
+                margin: 10px 0;
+                padding: 8px;
+                background: #e3f2fd;
+                border-radius: 6px;
+              }
+              
+              .total-section {
+                margin: 10px 0;
+                padding: 8px;
+                background: #f0f9ff;
+                border-radius: 6px;
+                border: 1px solid #0ea5e9;
+              }
+              
+              .payment-section {
+                margin: 8px 0;
+                padding: 8px;
+                background: #fefce8;
+                border-radius: 6px;
+                border: 1px solid #eab308;
+              }
+              
+              .qr-section {
+                text-align: center;
+                margin: 10px 0;
+                padding: 8px;
+                border: 1px dashed #666;
+                border-radius: 6px;
+              }
+              
+              .footer {
+                text-align: center;
+                margin-top: 12px;
+                border-top: 1px solid #ddd;
+                padding-top: 8px;
+              }
+              
+              .ncf-section {
+                text-align: center;
+                padding: 6px;
+                background: #f0f5ff;
+                border: 1px solid #3b82f6;
+                border-radius: 4px;
+                margin: 6px 0;
+              }
+              
+              .logo-container { text-align: center; margin-bottom: 8px; }
+              .logo { max-height: ${is58mm ? '40px' : '50px'}; width: auto; }
+              
+              .item-row td {
+                padding: 3px 0;
+                border-bottom: 1px solid #eee;
+              }
+              
+              .total-amount { color: #0ea5e9; font-size: larger; }
+              .thank-you { font-weight: 700; margin: 6px 0; }
+            </style>
+          </head>
+          <body onload="window.print(); window.close();">
+            ${content}
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+    }
+  };
+
+  const handleDesktopPrint = (content: string) => {
+    // Enhanced desktop printing
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      const printerWidth = printSettings?.printerWidth || "80mm";
+      const is58mm = printerWidth === "58mm";
+      
+      printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <meta charset="utf-8">
+            <title>Recibo POS #${printingSale?.id}</title>
+            <style>
+              @media print {
+                @page { 
+                  margin: 0; 
+                  size: ${is58mm ? '58mm' : '80mm'} auto;
+                }
+                body { 
+                  margin: 0; 
+                  padding: 6px; 
+                  font-family: 'Courier New', monospace; 
+                  font-size: ${is58mm ? '8px' : '9px'};
+                  line-height: 1.1;
+                  width: ${is58mm ? '58mm' : '80mm'};
+                  max-width: ${is58mm ? '220px' : '300px'};
+                }
+              }
+              
+              body { 
+                font-family: -apple-system, BlinkMacSystemFont, sans-serif; 
+                margin: 0; 
+                padding: 20px; 
+                background: #f9fafb;
+              }
+              
+              .receipt { 
+                width: 100%;
+                max-width: ${is58mm ? '240px' : '320px'};
+                margin: 0 auto;
+                background: white;
+                padding: 16px;
+                border-radius: 12px;
+                box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+                border: 1px solid #e5e7eb;
+              }
+              
+              .center { text-align: center; }
+              .right { text-align: right; }
+              .bold { font-weight: 600; }
+              .line { border-bottom: 1px dotted #d1d5db; margin: 10px 0; }
+              .double-line { border-bottom: 2px solid #374151; margin: 12px 0; }
+              
+              table { width: 100%; border-collapse: collapse; margin: 8px 0; }
+              td { padding: 3px 0; vertical-align: top; font-size: ${is58mm ? '10px' : '11px'}; }
+              
+              .company-info {
+                text-align: center;
+                margin-bottom: 16px;
+                padding: 12px;
+                background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+                border-radius: 8px;
+              }
+              
+              .document-header {
+                text-align: center;
+                font-weight: 700;
+                margin: 12px 0;
+                padding: 10px;
+                background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+                border-radius: 8px;
+                color: #1e40af;
+              }
+              
+              .total-section {
+                margin: 12px 0;
+                padding: 12px;
+                background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+                border-radius: 8px;
+                border: 2px solid #0ea5e9;
+              }
+              
+              .payment-section {
+                margin: 10px 0;
+                padding: 10px;
+                background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+                border-radius: 8px;
+                border: 1px solid #f59e0b;
+              }
+              
+              .qr-section {
+                text-align: center;
+                margin: 12px 0;
+                padding: 10px;
+                border: 2px dashed #6b7280;
+                border-radius: 8px;
+                background: #f9fafb;
+              }
+              
+              .footer {
+                text-align: center;
+                margin-top: 16px;
+                border-top: 2px solid #d1d5db;
+                padding-top: 12px;
+                color: #6b7280;
+              }
+              
+              .ncf-section {
+                text-align: center;
+                padding: 8px;
+                background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+                border: 1px solid #3b82f6;
+                border-radius: 6px;
+                margin: 8px 0;
+              }
+              
+              .logo-container { text-align: center; margin-bottom: 10px; }
+              .logo { max-height: ${is58mm ? '50px' : '60px'}; width: auto; }
+              
+              .item-row td {
+                padding: 4px 0;
+                border-bottom: 1px solid #f3f4f6;
+              }
+              
+              .total-amount { color: #0ea5e9; font-weight: 700; }
+              .thank-you { font-weight: 700; margin: 8px 0; color: #1f2937; }
+            </style>
+          </head>
+          <body>
+            ${content}
+            <script>
+              window.onload = function() {
+                setTimeout(function() {
+                  window.print();
+                  window.close();
+                }, 500);
+              };
+            </script>
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+    }
   };
 
   const getTodaySales = () => {
