@@ -15,7 +15,7 @@ import {
   type AutoJournalTemplate,
   type POSSale,
 } from '@shared/schema';
-import { eq, and, desc, sum, sql, gte, lte } from 'drizzle-orm';
+import { eq, and, desc, sum, sql, gte, lte, isNotNull } from 'drizzle-orm';
 
 export class AccountingService {
   // Initialize default chart of accounts for a company
@@ -116,10 +116,9 @@ export class AccountingService {
     // Create default fiscal period (current year)
     const currentYear = new Date().getFullYear();
     await db.insert(fiscalPeriods).values({
-      companyId,
       name: `Período Fiscal ${currentYear}`,
-      startDate: new Date(`${currentYear}-01-01`),
-      endDate: new Date(`${currentYear}-12-31`),
+      startDate: new Date(`${currentYear}-01-01`).toISOString().split('T')[0],
+      endDate: new Date(`${currentYear}-12-31`).toISOString().split('T')[0],
     });
 
     // Create auto journal templates for POS integration
@@ -268,7 +267,7 @@ export class AccountingService {
         entryNumber,
         reference: `POS-${saleData.saleNumber}`,
         description: `Venta POS #${saleData.saleNumber} - ${saleData.paymentMethod}`,
-        entryDate: new Date(saleData.saleDate),
+        date: new Date(saleData.createdAt || new Date()),
         totalDebit: total.toFixed(2),
         totalCredit: total.toFixed(2),
         isBalanced: true,
@@ -360,7 +359,7 @@ export class AccountingService {
     .leftJoin(journalEntries, and(
       eq(journalEntryLines.journalEntryId, journalEntries.id),
       eq(journalEntries.status, 'posted'),
-      lte(journalEntries.entryDate, endDate)
+      sql`${journalEntries.date} <= ${endDate}`
     ))
     .where(
       and(
@@ -491,8 +490,22 @@ export class AccountingService {
 
   // Get General Ledger for specific account
   async getGeneralLedger(companyId: number, accountId: number, startDate?: Date, endDate?: Date) {
-    let query = db.select({
-      entryDate: journalEntries.entryDate,
+    const conditions = [
+      eq(journalEntryLines.accountId, accountId),
+      eq(journalEntries.companyId, companyId),
+      eq(journalEntries.status, 'posted')
+    ];
+
+    if (startDate) {
+      conditions.push(sql`${journalEntries.date} >= ${startDate}`);
+    }
+    
+    if (endDate) {
+      conditions.push(sql`${journalEntries.date} <= ${endDate}`);
+    }
+
+    const transactions = await db.select({
+      entryDate: journalEntries.date,
       entryNumber: journalEntries.entryNumber,
       reference: journalEntries.reference,
       description: journalEntryLines.description,
@@ -501,23 +514,8 @@ export class AccountingService {
     })
     .from(journalEntryLines)
     .leftJoin(journalEntries, eq(journalEntryLines.journalEntryId, journalEntries.id))
-    .where(
-      and(
-        eq(journalEntryLines.accountId, accountId),
-        eq(journalEntries.companyId, companyId),
-        eq(journalEntries.status, 'posted')
-      )
-    );
-
-    if (startDate) {
-      query = query.where(gte(journalEntries.date, startDate));
-    }
-    
-    if (endDate) {
-      query = query.where(lte(journalEntries.date, endDate));
-    }
-
-    const transactions = await query.orderBy(journalEntries.date, journalEntries.entryNumber);
+    .where(and(...conditions))
+    .orderBy(journalEntries.date, journalEntries.entryNumber);
 
     // Calculate running balance
     let runningBalance = 0;
