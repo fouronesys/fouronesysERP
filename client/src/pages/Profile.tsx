@@ -162,6 +162,34 @@ export default function Profile() {
     return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase() || "U";
   };
 
+  const upgradePlanMutation = useMutation({
+    mutationFn: async (planId: string) => {
+      return await apiRequest("/api/billing/upgrade-plan", {
+        method: "POST",
+        body: { planId }
+      });
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Plan actualizado",
+        description: data.message,
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/companies/current"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/billing/history"] });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "No se pudo actualizar el plan. Inténtalo de nuevo.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleUpgradePlan = (planId: string) => {
+    upgradePlanMutation.mutate(planId);
+  };
+
   const getPlanBadgeColor = () => {
     switch (currentPlan) {
       case "annual":
@@ -459,9 +487,9 @@ export default function Profile() {
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold">Historial de Facturación</h3>
                   
-                  {billingHistory && billingHistory.length > 0 ? (
+                  {billingHistory && Array.isArray(billingHistory.billingHistory) && billingHistory.billingHistory.length > 0 ? (
                     <div className="space-y-3">
-                      {billingHistory.map((bill: any, index: number) => (
+                      {billingHistory.billingHistory.map((bill: any, index: number) => (
                         <Card key={index}>
                           <CardContent className="flex items-center justify-between p-4">
                             <div className="flex items-center space-x-3">
@@ -473,19 +501,46 @@ export default function Profile() {
                                   {bill.description || "Pago de suscripción"}
                                 </p>
                                 <p className="text-sm text-gray-500">
-                                  {new Date(bill.date).toLocaleDateString("es-DO")}
+                                  {new Date(bill.date).toLocaleDateString("es-DO", {
+                                    timeZone: "America/Santo_Domingo",
+                                    year: "numeric",
+                                    month: "long",
+                                    day: "numeric"
+                                  })}
                                 </p>
                               </div>
                             </div>
                             <div className="text-right">
-                              <p className="font-medium">RD${bill.amount}</p>
+                              <p className="font-medium">RD${bill.amount.toLocaleString()}</p>
                               <Badge variant="outline" className="text-xs">
-                                {bill.status || "Pagado"}
+                                {bill.status === 'paid' ? "Pagado" : bill.status}
                               </Badge>
                             </div>
                           </CardContent>
                         </Card>
                       ))}
+                      
+                      <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-medium text-blue-900 dark:text-blue-100">
+                              Próximo pago: {billingHistory.currentPlan === 'annual' ? 'RD$24,000' : 'RD$3,500'}
+                            </p>
+                            <p className="text-sm text-blue-600 dark:text-blue-300">
+                              Vence: {new Date(billingHistory.expirationDate).toLocaleDateString("es-DO", {
+                                timeZone: "America/Santo_Domingo",
+                                year: "numeric",
+                                month: "long",
+                                day: "numeric"
+                              })}
+                            </p>
+                          </div>
+                          <Button variant="outline" size="sm">
+                            <CreditCard className="h-4 w-4 mr-2" />
+                            Ver Historial
+                          </Button>
+                        </div>
+                      </div>
                     </div>
                   ) : (
                     <Card>
