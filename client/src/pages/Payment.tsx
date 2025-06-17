@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -8,11 +8,21 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, CreditCard, Building, Phone, Mail, Copy, Check, AlertCircle, LogOut } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { CheckCircle, CreditCard, Building, Phone, Mail, Copy, Check, AlertCircle, LogOut, Banknote } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/useAuth";
 import { useLocation } from "wouter";
+
+// Stripe imports
+import { loadStripe } from '@stripe/stripe-js';
+import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
+
+// Initialize Stripe
+const stripePromise = import.meta.env.VITE_STRIPE_PUBLIC_KEY 
+  ? loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY)
+  : null;
 
 const paymentSchema = z.object({
   fullName: z.string().min(2, "El nombre completo es requerido"),
@@ -407,63 +417,100 @@ export default function Payment() {
             </CardContent>
           </Card>
 
-          {/* Información de Cuentas Bancarias */}
+          {/* Opciones de Pago */}
           <div className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <CreditCard className="h-5 w-5" />
-                  Cuentas Bancarias
-                </CardTitle>
+                <CardTitle>Método de Pago</CardTitle>
                 <CardDescription>
-                  Realiza tu pago a cualquiera de estas cuentas
+                  Elige cómo deseas realizar tu pago
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                {bankAccounts.map((account, index) => (
-                  <div key={index} className="p-4 border rounded-lg bg-gray-50 dark:bg-gray-800">
-                    <div className="flex justify-between items-start mb-3">
-                      <h4 className="font-semibold text-gray-900 dark:text-white">
-                        {account.bank}
-                      </h4>
-                      <Badge variant="secondary">{account.accountType}</Badge>
-                    </div>
-                    
-                    <div className="space-y-2 mb-3">
-                      <p className="text-sm text-gray-600 dark:text-gray-300">
-                        <strong>Titular:</strong> {account.accountHolder}
-                      </p>
-                      <p className="text-sm text-gray-600 dark:text-gray-300">
-                        <strong>Cédula:</strong> {account.cedula}
-                      </p>
-                      {account.note && (
-                        <p className="text-xs text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 p-2 rounded">
-                          <strong>Nota:</strong> {account.note}
+              <CardContent>
+                <Tabs defaultValue="card" className="w-full">
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="card" className="flex items-center gap-2">
+                      <CreditCard className="h-4 w-4" />
+                      Tarjeta de Crédito/Débito
+                    </TabsTrigger>
+                    <TabsTrigger value="transfer" className="flex items-center gap-2">
+                      <Banknote className="h-4 w-4" />
+                      Transferencia Bancaria
+                    </TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="card" className="mt-6">
+                    {stripePromise ? (
+                      <Elements stripe={stripePromise}>
+                        <CreditCardPaymentForm 
+                          planId={form.watch("plan")} 
+                          amount={form.watch("plan") === "annual" ? 24000 : 3500}
+                          formData={form.getValues()}
+                        />
+                      </Elements>
+                    ) : (
+                      <div className="text-center py-8">
+                        <AlertCircle className="h-12 w-12 text-yellow-500 mx-auto mb-4" />
+                        <h3 className="text-lg font-semibold mb-2">Pagos con Tarjeta No Disponibles</h3>
+                        <p className="text-gray-600 mb-4">
+                          El sistema de pagos con tarjeta no está configurado actualmente.
                         </p>
-                      )}
-                    </div>
-                    
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Número de Cuenta</p>
-                        <span className="font-mono text-lg font-semibold">
-                          {account.accountNumber}
-                        </span>
+                        <p className="text-sm text-gray-500">
+                          Por favor usa transferencia bancaria o contacta soporte.
+                        </p>
                       </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => copyToClipboard(account.accountNumber, account.bank)}
-                      >
-                        {copiedAccount === account.bank ? (
-                          <Check className="h-4 w-4" />
-                        ) : (
-                          <Copy className="h-4 w-4" />
-                        )}
-                      </Button>
+                    )}
+                  </TabsContent>
+                  
+                  <TabsContent value="transfer" className="mt-6">
+                    <div className="space-y-4">
+                      {bankAccounts.map((account, index) => (
+                        <div key={index} className="p-4 border rounded-lg bg-gray-50 dark:bg-gray-800">
+                          <div className="flex justify-between items-start mb-3">
+                            <h4 className="font-semibold text-gray-900 dark:text-white">
+                              {account.bank}
+                            </h4>
+                            <Badge variant="secondary">{account.accountType}</Badge>
+                          </div>
+                          
+                          <div className="space-y-2 mb-3">
+                            <p className="text-sm text-gray-600 dark:text-gray-300">
+                              <strong>Titular:</strong> {account.accountHolder}
+                            </p>
+                            <p className="text-sm text-gray-600 dark:text-gray-300">
+                              <strong>Cédula:</strong> {account.cedula}
+                            </p>
+                            {account.note && (
+                              <p className="text-xs text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 p-2 rounded">
+                                <strong>Nota:</strong> {account.note}
+                              </p>
+                            )}
+                          </div>
+                          
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Número de Cuenta</p>
+                              <span className="font-mono text-lg font-semibold">
+                                {account.accountNumber}
+                              </span>
+                            </div>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => copyToClipboard(account.accountNumber, account.bank)}
+                            >
+                              {copiedAccount === account.bank ? (
+                                <Check className="h-4 w-4" />
+                              ) : (
+                                <Copy className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  </div>
-                ))}
+                  </TabsContent>
+                </Tabs>
               </CardContent>
             </Card>
 
@@ -515,6 +562,217 @@ export default function Payment() {
                 </div>
               </CardContent>
             </Card>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Credit Card Payment Form Component
+function CreditCardPaymentForm({ 
+  planId, 
+  amount, 
+  formData 
+}: { 
+  planId: string; 
+  amount: number; 
+  formData: PaymentFormData 
+}) {
+  const stripe = useStripe();
+  const elements = useElements();
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
+  const { toast } = useToast();
+  const [, setLocation] = useLocation();
+
+  const handleCardPayment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!stripe || !elements) {
+      setPaymentError("Stripe no está cargado correctamente. Recarga la página.");
+      return;
+    }
+
+    if (!planId || !amount) {
+      setPaymentError("Por favor selecciona un plan antes de proceder.");
+      return;
+    }
+
+    setIsProcessing(true);
+    setPaymentError(null);
+
+    try {
+      // Create payment intent
+      const response = await apiRequest("POST", "/api/stripe/create-payment-intent", {
+        amount,
+        planId,
+        type: new URLSearchParams(window.location.search).get('type') || 'subscription'
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Error creando intención de pago");
+      }
+
+      const { clientSecret } = await response.json();
+
+      // Confirm payment with Stripe
+      const cardElement = elements.getElement(CardElement);
+      if (!cardElement) {
+        throw new Error("No se pudo cargar el elemento de tarjeta");
+      }
+
+      const { error, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
+        payment_method: {
+          card: cardElement,
+          billing_details: {
+            name: formData.fullName,
+            email: formData.email,
+            phone: formData.phone,
+          },
+        },
+      });
+
+      if (error) {
+        setPaymentError(error.message || "Error procesando el pago");
+      } else if (paymentIntent?.status === 'succeeded') {
+        // Confirm payment on backend
+        const confirmResponse = await apiRequest("POST", "/api/stripe/confirm-payment", {
+          paymentIntentId: paymentIntent.id
+        });
+
+        if (confirmResponse.ok) {
+          toast({
+            title: "¡Pago Exitoso!",
+            description: "Tu suscripción ha sido activada. Redirigiendo al dashboard...",
+          });
+
+          // Redirect to dashboard after successful payment
+          setTimeout(() => {
+            setLocation("/dashboard");
+          }, 2000);
+        } else {
+          const errorData = await confirmResponse.json();
+          setPaymentError(errorData.message || "Error confirmando el pago");
+        }
+      }
+    } catch (error) {
+      console.error("Payment error:", error);
+      setPaymentError((error as Error).message || "Error procesando el pago");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const cardElementOptions = {
+    style: {
+      base: {
+        fontSize: '16px',
+        color: '#424770',
+        '::placeholder': {
+          color: '#aab7c4',
+        },
+      },
+      invalid: {
+        color: '#9e2146',
+      },
+    },
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+        <div className="flex items-center gap-2 mb-2">
+          <CreditCard className="h-5 w-5 text-blue-600" />
+          <h3 className="font-semibold text-blue-900 dark:text-blue-100">
+            Pago Seguro con Tarjeta
+          </h3>
+        </div>
+        <p className="text-sm text-blue-700 dark:text-blue-300">
+          Procesado de forma segura por Stripe. Todas las transacciones están encriptadas.
+        </p>
+      </div>
+
+      {/* Plan Summary */}
+      <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+        <div className="flex justify-between items-center">
+          <div>
+            <h4 className="font-semibold">
+              {planId === 'annual' ? 'Plan Anual' : 'Plan Mensual'}
+            </h4>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              {planId === 'annual' ? 'Facturación anual' : 'Facturación mensual'}
+            </p>
+          </div>
+          <div className="text-right">
+            <p className="text-2xl font-bold text-blue-600">
+              RD${amount.toLocaleString()}
+            </p>
+            <p className="text-sm text-gray-500">
+              {planId === 'annual' ? 'por año' : 'por mes'}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <form onSubmit={handleCardPayment} className="space-y-6">
+        <div className="space-y-4">
+          <Label htmlFor="card-element">Información de la Tarjeta</Label>
+          <div className="p-3 border rounded-md bg-white dark:bg-gray-900">
+            <CardElement
+              id="card-element"
+              options={cardElementOptions}
+            />
+          </div>
+        </div>
+
+        {paymentError && (
+          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-red-600" />
+              <p className="text-red-700 dark:text-red-300 text-sm">{paymentError}</p>
+            </div>
+          </div>
+        )}
+
+        <div className="space-y-3">
+          <Button 
+            type="submit" 
+            className="w-full" 
+            disabled={!stripe || isProcessing}
+            size="lg"
+          >
+            {isProcessing ? (
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                Procesando Pago...
+              </div>
+            ) : (
+              `Pagar RD$${amount.toLocaleString()}`
+            )}
+          </Button>
+          
+          <p className="text-xs text-gray-500 text-center">
+            Al proceder, aceptas nuestros términos de servicio y política de privacidad.
+            El cargo aparecerá en tu estado de cuenta como "Four One Solutions".
+          </p>
+        </div>
+      </form>
+
+      <div className="border-t pt-4">
+        <div className="flex items-center justify-center gap-4 text-sm text-gray-600 dark:text-gray-400">
+          <div className="flex items-center gap-1">
+            <CheckCircle className="h-4 w-4 text-green-500" />
+            <span>Seguro SSL</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <CheckCircle className="h-4 w-4 text-green-500" />
+            <span>Encriptado 256-bit</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <CheckCircle className="h-4 w-4 text-green-500" />
+            <span>PCI Compliant</span>
           </div>
         </div>
       </div>
