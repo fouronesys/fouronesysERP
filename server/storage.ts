@@ -289,7 +289,7 @@ export interface IStorage {
   getNextNCF(companyId: number, ncfType: string): Promise<string | null>;
   getNCFSequences(companyId: number): Promise<NCFSequence[]>;
   createNCFSequence(ncfData: InsertNCFSequence): Promise<NCFSequence>;
-  updateNCFSequence(id: number, sequence: number): Promise<void>;
+  updateNCFSequence(id: number, updateData: Partial<InsertNCFSequence>, companyId: number): Promise<NCFSequence | undefined>;
   incrementNCFSequence(companyId: number, ncfType: string): Promise<void>;
 
   // POS Multi-Station operations

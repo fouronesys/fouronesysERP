@@ -616,6 +616,8 @@ export const stockReservations = pgTable("stock_reservations", {
   releasedAt: timestamp("released_at"),
 });
 
+// NCF Sequences table already defined elsewhere in the file
+
 // POS Print Settings table
 export const posPrintSettings = pgTable("pos_print_settings", {
   id: serial("id").primaryKey(),
