@@ -999,12 +999,6 @@ export const rncRegistry = pgTable("rnc_registry", {
   lastUpdated: timestamp("last_updated").defaultNow(),
 });
 
-export const insertNCFSequenceSchema = createInsertSchema(ncfSequences).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
-
 export const insertComprobante605Schema = createInsertSchema(comprobantes605).omit({
   id: true,
   createdAt: true,
@@ -1032,6 +1026,12 @@ export const insertRNCRegistrySchema = createInsertSchema(rncRegistry).omit({
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
 export type NCFSequence = typeof ncfSequences.$inferSelect;
+export const insertNCFSequenceSchema = createInsertSchema(ncfSequences).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export type InsertNCFSequence = z.infer<typeof insertNCFSequenceSchema>;
 export type RNCRegistry = typeof rncRegistry.$inferSelect;
 export type InsertRNCRegistry = z.infer<typeof insertRNCRegistrySchema>;

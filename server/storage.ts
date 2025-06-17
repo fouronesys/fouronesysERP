@@ -1700,7 +1700,13 @@ export class DatabaseStorage implements IStorage {
     const newSequence = currentSeq + 1;
     
     // Update sequence
-    await this.updateNCFSequence(sequence.id, newSequence);
+    await db
+      .update(ncfSequences)
+      .set({ 
+        currentSequence: newSequence,
+        updatedAt: new Date()
+      })
+      .where(eq(ncfSequences.id, sequence.id));
 
     // Format NCF: B01 + 8-digit sequence
     const ncf = `${ncfType}${newSequence.toString().padStart(8, '0')}`;
@@ -1716,14 +1722,16 @@ export class DatabaseStorage implements IStorage {
     return sequence;
   }
 
-  async updateNCFSequence(id: number, sequence: number): Promise<void> {
-    await db
+  async updateNCFSequence(id: number, updateData: Partial<InsertNCFSequence>, companyId: number): Promise<NCFSequence | undefined> {
+    const [updated] = await db
       .update(ncfSequences)
       .set({ 
-        currentSequence: sequence,
+        ...updateData,
         updatedAt: new Date()
       })
-      .where(eq(ncfSequences.id, id));
+      .where(and(eq(ncfSequences.id, id), eq(ncfSequences.companyId, companyId)))
+      .returning();
+    return updated;
   }
 
   async incrementNCFSequence(companyId: number, ncfType: string): Promise<void> {

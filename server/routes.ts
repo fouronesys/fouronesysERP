@@ -665,21 +665,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Company not found" });
       }
 
-      const { ncfType, prefix, currentSequence, endSequence, isActive } = req.body;
+      const { ncfType, currentSequence, maxSequence, isActive } = req.body;
 
-      if (!ncfType || !prefix || currentSequence === undefined || endSequence === undefined) {
+      if (!ncfType || currentSequence === undefined || maxSequence === undefined) {
         return res.status(400).json({ message: "Missing required NCF sequence data" });
       }
+
+      // Generate fiscal period for current date
+      const currentDate = new Date();
+      const fiscalPeriod = currentDate.getFullYear().toString() + 
+                          (currentDate.getMonth() + 1).toString().padStart(2, '0') + 
+                          currentDate.getDate().toString().padStart(2, '0');
 
       const sequenceData = {
         companyId: company.id,
         ncfType,
-        prefix,
+        fiscalPeriod,
         currentSequence: parseInt(currentSequence),
-        endSequence: parseInt(endSequence),
+        maxSequence: parseInt(maxSequence),
         isActive: isActive !== false,
-        createdAt: new Date(),
-        updatedAt: new Date(),
       };
 
       const sequence = await storage.createNCFSequence(sequenceData);
@@ -710,14 +714,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const sequenceId = parseInt(req.params.id);
-      const { prefix, currentSequence, endSequence, isActive } = req.body;
+      const { currentSequence, maxSequence, isActive } = req.body;
 
       const updateData = {
-        prefix,
         currentSequence: parseInt(currentSequence),
-        endSequence: parseInt(endSequence),
+        maxSequence: parseInt(maxSequence),
         isActive,
-        updatedAt: new Date(),
       };
 
       const sequence = await storage.updateNCFSequence(sequenceId, updateData, company.id);
