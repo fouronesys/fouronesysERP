@@ -411,16 +411,15 @@ export class AccountingService {
     .from(accounts)
     .leftJoin(accountTypes, eq(accounts.accountTypeId, accountTypes.id))
     .leftJoin(journalEntryLines, eq(accounts.id, journalEntryLines.accountId))
-    .leftJoin(journalEntries, and(
-      eq(journalEntryLines.journalEntryId, journalEntries.id),
-      eq(journalEntries.status, 'posted'),
-      gte(journalEntries.entryDate, startDate),
-      lte(journalEntries.entryDate, endDate)
-    ))
+    .leftJoin(journalEntries, eq(journalEntryLines.journalEntryId, journalEntries.id))
     .where(
       and(
         eq(accounts.companyId, companyId),
-        sql`${accountTypes.code} IN ('INGRESOS', 'GASTOS')`
+        sql`${accountTypes.code} IN ('INGRESOS', 'GASTOS')`,
+        isNotNull(journalEntries.id),
+        eq(journalEntries.status, 'posted'),
+        sql`${journalEntries.date} >= ${startDate}`,
+        sql`${journalEntries.date} <= ${endDate}`
       )
     )
     .groupBy(accounts.id, accounts.code, accounts.name, accountTypes.name)
