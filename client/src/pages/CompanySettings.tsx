@@ -73,28 +73,29 @@ export default function CompanySettings() {
 
   useEffect(() => {
     if (company) {
+      const companyData = company as any;
       form.reset({
-        name: company.name || "",
-        businessName: company.business_name || "",
-        rnc: company.rnc || "",
-        industry: company.industry || "",
-        businessType: company.business_type || "general",
-        address: company.address || "",
-        phone: company.phone || "",
-        email: company.email || "",
-        website: company.website || "",
-        logo: company.logo || "",
+        name: companyData.name || "",
+        businessName: companyData.business_name || "",
+        rnc: companyData.rnc || "",
+        industry: companyData.industry || "",
+        businessType: companyData.business_type || "general",
+        address: companyData.address || "",
+        phone: companyData.phone || "",
+        email: companyData.email || "",
+        website: companyData.website || "",
+        logo: companyData.logo || "",
       });
 
-      if (company.logo) {
-        setLogoPreview(company.logo);
+      if (companyData.logo) {
+        setLogoPreview(companyData.logo);
       }
     }
   }, [company, form]);
 
   const mutation = useMutation({
     mutationFn: async (data: CompanySettingsFormData) => {
-      const response = await apiRequest("PUT", "/api/companies/current", { 
+      const response = await apiRequest("/api/companies/current", { 
         method: "PUT",
         body: data 
       });

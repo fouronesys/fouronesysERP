@@ -372,7 +372,9 @@ export default function Production() {
 
   const deleteRecipeMutation = useMutation({
     mutationFn: async (recipeId: number) => {
-      return apiRequest("DELETE", `/api/recipes/${recipeId}`, {});
+      return apiRequest(`/api/recipes/${recipeId}`, {
+        method: "DELETE"
+      });
     },
     onSuccess: () => {
       toast({
@@ -386,9 +388,12 @@ export default function Production() {
   // Cálculo de costos
   const calculateCostMutation = useMutation({
     mutationFn: async ({ productId, quantity }: { productId: number; quantity: number }) => {
-      const response = await apiRequest("POST", "/api/manufacturing/calculate-cost", {
-        productId,
-        quantity,
+      const response = await apiRequest("/api/manufacturing/calculate-cost", {
+        method: "POST",
+        body: {
+          productId,
+          quantity,
+        }
       });
       return response;
     },
