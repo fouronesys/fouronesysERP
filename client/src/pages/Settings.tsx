@@ -93,12 +93,6 @@ interface POSSettings {
   receiptFooter: string;
   showCompanyLogo: boolean;
 }
-  autoOpenCashDrawer: boolean;
-  requireCustomer: boolean;
-  defaultPaymentMethod: "cash" | "card" | "transfer";
-  receiptFooter: string;
-  showCompanyLogo: boolean;
-}
 
 export default function Settings() {
   const { toast } = useToast();
@@ -121,12 +115,14 @@ export default function Settings() {
     showTooltips: true,
     compactMode: false,
     highContrast: false,
+    soundEnabled: true,
+    notificationsEnabled: true,
   });
 
   const [securitySettings, setSecuritySettings] = useState<SecuritySettings>({
     twoFactorEnabled: false,
     sessionTimeout: 30,
-    passwordExpiry: 90,
+    passwordChangeRequired: false,
     loginNotifications: true,
     allowRemoteAccess: true,
   });
