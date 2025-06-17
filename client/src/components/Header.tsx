@@ -66,11 +66,12 @@ export function Header({ title, subtitle }: HeaderProps) {
             databases.map(db => {
               if (db.name) {
                 const deleteReq = indexedDB.deleteDatabase(db.name);
-                return new Promise((resolve) => {
+                return new Promise<boolean>((resolve) => {
                   deleteReq.onsuccess = () => resolve(true);
                   deleteReq.onerror = () => resolve(false);
                 });
               }
+              return Promise.resolve(true);
             })
           );
         } catch (idbError) {
