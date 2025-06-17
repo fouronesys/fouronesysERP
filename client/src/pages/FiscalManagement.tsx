@@ -15,7 +15,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { 
   Plus, Search, FileText, Download, Upload, Calendar as CalendarIcon, 
   Receipt, Building2, TrendingUp, AlertTriangle, CheckCircle, X, Eye, Edit,
-  Calculator, FileSpreadsheet, Shield
+  Calculator, FileSpreadsheet, Shield, RefreshCw, Database, Settings
 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";

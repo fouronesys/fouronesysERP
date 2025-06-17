@@ -63,6 +63,7 @@ import {
   insertJournalEntryLineSchema,
   insertFiscalPeriodSchema,
   insertBudgetSchema,
+  type InsertCompany,
 } from "@shared/schema";
 
 // Initialize with sample DGII RNC data for fast startup
@@ -871,7 +872,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validatedData = insertCompanySchema
         .omit({ ownerId: true })
         .partial()
-        .parse(updateData);
+        .parse(updateData) as Partial<InsertCompany>;
       console.log("Validated update data:", validatedData);
 
       const updatedCompany = await storage.updateCompany(
