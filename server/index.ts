@@ -5,6 +5,9 @@ import { errorHandlerMiddleware } from "./error-management";
 import { dgiiRegistryUpdater } from "./dgii-registry-updater";
 import { dgiiMonitor } from "./dgii-monitor";
 
+// Set server timezone to GMT-4:00 (Atlantic Standard Time / Dominican Republic)
+process.env.TZ = 'America/Santo_Domingo';
+
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));

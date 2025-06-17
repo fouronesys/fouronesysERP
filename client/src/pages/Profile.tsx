@@ -74,64 +74,48 @@ export default function Profile() {
 
   const subscriptionPlans = [
     {
-      id: 'starter',
-      name: 'Starter',
-      price: 2499,
+      id: 'monthly',
+      name: 'Plan Mensual',
+      price: 3500,
       currency: 'DOP',
       period: 'mes',
-      description: 'Perfecto para pequeñas empresas que inician',
+      description: 'Solución completa para empresas dominicanas',
       features: [
-        'Hasta 100 productos',
-        'POS básico',
-        'Reportes estándar',
-        'Soporte por email',
-        '1 usuario'
+        'POS completo con impresión térmica',
+        'Facturación electrónica NCF',
+        'Reportes DGII 606/607',
+        'Multi-moneda automática',
+        'Inventario completo',
+        'Usuarios ilimitados',
+        'Soporte técnico completo',
+        'Todas las funcionalidades'
       ],
       icon: Zap,
       color: 'bg-blue-500',
       popular: false
     },
     {
-      id: 'professional',
-      name: 'Professional',
-      price: 4999,
+      id: 'annual',
+      name: 'Plan Anual',
+      price: 24000,
       currency: 'DOP',
-      period: 'mes',
-      description: 'Para empresas en crecimiento',
+      period: 'año',
+      description: 'Ahorra con el plan anual completo',
+      originalPrice: 42000,
+      savings: 18000,
       features: [
-        'Productos ilimitados',
-        'POS avanzado con impresión',
-        'Reportes DGII automáticos',
-        'Multi-moneda',
-        'Inventario avanzado',
-        'Hasta 5 usuarios',
-        'Soporte prioritario',
-        'App móvil'
-      ],
-      icon: Star,
-      color: 'bg-purple-500',
-      popular: true
-    },
-    {
-      id: 'enterprise',
-      name: 'Enterprise',
-      price: 9999,
-      currency: 'DOP',
-      period: 'mes',
-      description: 'Solución completa para grandes empresas',
-      features: [
-        'Todo de Professional',
-        'Usuarios ilimitados',
-        'API personalizada',
-        'Integración contable',
-        'Reportes personalizados',
-        'Soporte 24/7',
-        'Capacitación dedicada',
-        'Servidor dedicado'
+        'Todas las funcionalidades del plan mensual',
+        'Ahorro de RD$18,000 al año',
+        'Soporte prioritario 24/7',
+        'Capacitación personalizada',
+        'Actualizaciones automáticas',
+        'Backup en la nube incluido',
+        'Integración contable avanzada',
+        'Reportes personalizados'
       ],
       icon: Crown,
-      color: 'bg-gold-500',
-      popular: false
+      color: 'bg-purple-500',
+      popular: true
     }
   ];
 
@@ -427,9 +411,14 @@ export default function Profile() {
                               <CardTitle className="text-lg">{plan.name}</CardTitle>
                               <div className="space-y-1">
                                 <div className="text-3xl font-bold">
-                                  RD${(plan.price / 100).toLocaleString()}
+                                  RD${plan.price.toLocaleString()}
                                 </div>
                                 <div className="text-sm text-gray-500">por {plan.period}</div>
+                                {plan.savings && (
+                                  <div className="text-sm text-green-600 font-medium">
+                                    Ahorras RD${plan.savings.toLocaleString()}
+                                  </div>
+                                )}
                               </div>
                             </CardHeader>
                             
@@ -451,6 +440,7 @@ export default function Profile() {
                                 className="w-full" 
                                 variant={isCurrentPlan ? "outline" : "default"}
                                 disabled={isCurrentPlan}
+                                onClick={() => handleUpgradePlan(plan.id)}
                               >
                                 {isCurrentPlan ? "Plan Actual" : "Elegir Plan"}
                                 {!isCurrentPlan && <ArrowRight className="h-4 w-4 ml-2" />}

@@ -128,7 +128,14 @@ export default function POSSales() {
           </tr>
           <tr>
             <td style="font-size: ${is58mm ? '10px' : '11px'};">Fecha:</td>
-            <td class="right" style="font-size: ${is58mm ? '10px' : '11px'};">${new Date(sale.createdAt || new Date()).toLocaleString('es-DO')}</td>
+            <td class="right" style="font-size: ${is58mm ? '10px' : '11px'};">${new Date(sale.createdAt || new Date()).toLocaleString('es-DO', {
+              timeZone: 'America/Santo_Domingo',
+              year: 'numeric',
+              month: '2-digit',
+              day: '2-digit',
+              hour: '2-digit',
+              minute: '2-digit'
+            })}</td>
           </tr>
           ${sale.customerName ? `
           <tr>

@@ -2024,6 +2024,112 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Billing endpoints
+  app.get("/api/billing/history", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      // Calculate expiration dates based on current plan
+      const currentDate = new Date();
+      const expirationDate = new Date(currentDate);
+      
+      if (company.subscriptionPlan === 'monthly') {
+        expirationDate.setMonth(currentDate.getMonth() + 1);
+      } else if (company.subscriptionPlan === 'annual') {
+        expirationDate.setFullYear(currentDate.getFullYear() + 1);
+      }
+
+      // Generate billing history based on plan
+      const billingHistory = [];
+      if (company.subscriptionPlan === 'monthly') {
+        billingHistory.push({
+          id: `BILL_${Date.now()}`,
+          amount: 3500,
+          currency: 'DOP',
+          description: 'Plan Mensual - Four One System',
+          date: currentDate.toISOString(),
+          status: 'paid',
+          invoiceNumber: `INV-${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-001`,
+          paymentMethod: 'Tarjeta de Crédito'
+        });
+      } else if (company.subscriptionPlan === 'annual') {
+        billingHistory.push({
+          id: `BILL_${Date.now()}`,
+          amount: 24000,
+          currency: 'DOP',
+          description: 'Plan Anual - Four One System (Ahorro RD$18,000)',
+          date: currentDate.toISOString(),
+          status: 'paid',
+          invoiceNumber: `INV-${currentDate.getFullYear()}-ANNUAL-001`,
+          paymentMethod: 'Transferencia Bancaria'
+        });
+      }
+
+      res.json({
+        billingHistory,
+        currentPlan: company.subscriptionPlan || 'monthly',
+        expirationDate: expirationDate.toISOString(),
+        nextBillingAmount: company.subscriptionPlan === 'annual' ? 24000 : 3500
+      });
+    } catch (error) {
+      console.error("Error fetching billing history:", error);
+      res.status(500).json({ message: "Error fetching billing history" });
+    }
+  });
+
+  app.post("/api/billing/upgrade-plan", isAuthenticated, async (req: any, res) => {
+    try {
+      const { planId } = req.body;
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      // Validate plan
+      const validPlans = ['monthly', 'annual'];
+      if (!validPlans.includes(planId)) {
+        return res.status(400).json({ message: "Invalid plan selected" });
+      }
+
+      // Update company subscription plan
+      await storage.updateCompany(company.id, {
+        subscriptionPlan: planId,
+        subscriptionStatus: 'active'
+      });
+
+      // Log the action
+      const { auditLogger } = await import('./audit-logger');
+      await auditLogger.logAuthAction(
+        userId,
+        'plan_upgraded',
+        { 
+          oldPlan: company.subscriptionPlan,
+          newPlan: planId,
+          amount: planId === 'annual' ? 24000 : 3500
+        },
+        req
+      );
+
+      res.json({
+        success: true,
+        message: `Plan actualizado a ${planId === 'annual' ? 'Plan Anual' : 'Plan Mensual'} exitosamente`,
+        newPlan: planId,
+        amount: planId === 'annual' ? 24000 : 3500
+      });
+
+    } catch (error) {
+      console.error("Error upgrading plan:", error);
+      res.status(500).json({ message: "Error upgrading plan", error: (error as Error).message });
+    }
+  });
+
   app.post("/api/pos/cart", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.id;
