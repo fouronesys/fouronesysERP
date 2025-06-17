@@ -95,14 +95,10 @@ export default function CompanySettings() {
 
   const mutation = useMutation({
     mutationFn: async (data: CompanySettingsFormData) => {
-      const response = await apiRequest("/api/companies/current", { 
+      return await apiRequest("/api/companies/current", { 
         method: "PUT",
         body: data 
       });
-      if (!response.ok) {
-        throw new Error("Error al guardar la configuración");
-      }
-      return response.json();
     },
     onSuccess: () => {
       toast({
@@ -148,8 +144,7 @@ export default function CompanySettings() {
     
     setIsVerifyingRNC(true);
     try {
-      const response = await apiRequest("GET", `/api/rnc/validate?rnc=${encodeURIComponent(rnc)}`);
-      const result = await response.json();
+      const result = await apiRequest(`/api/rnc/validate?rnc=${encodeURIComponent(rnc)}`);
       setRncValidationResult(result);
     } catch (error) {
       console.error("RNC validation error:", error);

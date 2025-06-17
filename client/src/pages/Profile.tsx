@@ -46,7 +46,10 @@ export default function Profile() {
 
   const updateProfileMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
-      await apiRequest("PATCH", "/api/auth/profile", data);
+      return await apiRequest("/api/auth/profile", {
+        method: "PATCH",
+        body: data
+      });
     },
     onSuccess: () => {
       toast({
@@ -108,7 +111,7 @@ export default function Profile() {
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
               <div className="relative">
                 <Avatar className="h-16 w-16 sm:h-20 sm:w-20">
-                  <AvatarImage src={user?.profileImageUrl} />
+                  <AvatarImage src={(user as any)?.profileImageUrl} />
                   <AvatarFallback className="text-lg sm:text-xl bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300">
                     {getInitials()}
                   </AvatarFallback>
@@ -249,7 +252,7 @@ export default function Profile() {
                     <div>
                       <p className="text-sm text-gray-500 dark:text-gray-400">Miembro desde</p>
                       <p className="font-medium">
-                        {user?.createdAt ? new Date(user.createdAt).toLocaleDateString('es-DO') : 'N/A'}
+                        {(user as any)?.createdAt ? new Date((user as any).createdAt).toLocaleDateString('es-DO') : 'N/A'}
                       </p>
                     </div>
                   </div>

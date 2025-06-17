@@ -112,7 +112,10 @@ export default function Settings() {
 
   const updateSystemMutation = useMutation({
     mutationFn: async (settings: SystemSettings) => {
-      await apiRequest("PUT", "/api/settings/system", settings);
+      return await apiRequest("/api/settings/system", {
+        method: "PUT",
+        body: settings
+      });
     },
     onSuccess: () => {
       toast({
@@ -124,7 +127,10 @@ export default function Settings() {
 
   const updateSecurityMutation = useMutation({
     mutationFn: async (settings: SecuritySettings) => {
-      await apiRequest("PUT", "/api/settings/security", settings);
+      return await apiRequest("/api/settings/security", {
+        method: "PUT",
+        body: settings
+      });
     },
     onSuccess: () => {
       toast({
