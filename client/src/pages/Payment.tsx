@@ -15,14 +15,8 @@ import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/useAuth";
 import { useLocation } from "wouter";
 
-// Stripe imports
-import { loadStripe } from '@stripe/stripe-js';
-import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
-
-// Initialize Stripe
-const stripePromise = import.meta.env.VITE_STRIPE_PUBLIC_KEY 
-  ? loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY)
-  : null;
+// PayPal imports
+import PayPalButton from '@/components/PayPalButton';
 
 const paymentSchema = z.object({
   fullName: z.string().min(2, "El nombre completo es requerido"),
@@ -440,26 +434,11 @@ export default function Payment() {
                   </TabsList>
                   
                   <TabsContent value="card" className="mt-6">
-                    {stripePromise ? (
-                      <Elements stripe={stripePromise}>
-                        <CreditCardPaymentForm 
-                          planId={form.watch("plan")} 
-                          amount={form.watch("plan") === "annual" ? 24000 : 3500}
-                          formData={form.getValues()}
-                        />
-                      </Elements>
-                    ) : (
-                      <div className="text-center py-8">
-                        <AlertCircle className="h-12 w-12 text-yellow-500 mx-auto mb-4" />
-                        <h3 className="text-lg font-semibold mb-2">Pagos con Tarjeta No Disponibles</h3>
-                        <p className="text-gray-600 mb-4">
-                          El sistema de pagos con tarjeta no está configurado actualmente.
-                        </p>
-                        <p className="text-sm text-gray-500">
-                          Por favor usa transferencia bancaria o contacta soporte.
-                        </p>
-                      </div>
-                    )}
+                    <PayPalPaymentForm 
+                      planId={form.watch("plan")} 
+                      amount={form.watch("plan") === "annual" ? 24000 : 3500}
+                      formData={form.getValues()}
+                    />
                   </TabsContent>
                   
                   <TabsContent value="transfer" className="mt-6">
@@ -569,8 +548,8 @@ export default function Payment() {
   );
 }
 
-// Credit Card Payment Form Component
-function CreditCardPaymentForm({ 
+// PayPal Payment Form Component
+function PayPalPaymentForm({ 
   planId, 
   amount, 
   formData 
@@ -579,106 +558,192 @@ function CreditCardPaymentForm({
   amount: number; 
   formData: PaymentFormData 
 }) {
-  const stripe = useStripe();
-  const elements = useElements();
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentError, setPaymentError] = useState<string | null>(null);
+  const [paymentSuccess, setPaymentSuccess] = useState(false);
   const { toast } = useToast();
   const [, setLocation] = useLocation();
 
-  const handleCardPayment = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!stripe || !elements) {
-      setPaymentError("Stripe no está cargado correctamente. Recarga la página.");
-      return;
-    }
-
-    if (!planId || !amount) {
-      setPaymentError("Por favor selecciona un plan antes de proceder.");
-      return;
-    }
-
-    setIsProcessing(true);
-    setPaymentError(null);
-
-    try {
-      // Create payment intent
-      const response = await apiRequest("POST", "/api/stripe/create-payment-intent", {
-        amount,
-        planId,
-        type: new URLSearchParams(window.location.search).get('type') || 'subscription'
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Error creando intención de pago");
-      }
-
-      const { clientSecret } = await response.json();
-
-      // Confirm payment with Stripe
-      const cardElement = elements.getElement(CardElement);
-      if (!cardElement) {
-        throw new Error("No se pudo cargar el elemento de tarjeta");
-      }
-
-      const { error, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
-        payment_method: {
-          card: cardElement,
-          billing_details: {
-            name: formData.fullName,
-            email: formData.email,
-            phone: formData.phone,
-          },
-        },
-      });
-
-      if (error) {
-        setPaymentError(error.message || "Error procesando el pago");
-      } else if (paymentIntent?.status === 'succeeded') {
-        // Confirm payment on backend
-        const confirmResponse = await apiRequest("POST", "/api/stripe/confirm-payment", {
-          paymentIntentId: paymentIntent.id
+  // Custom PayPal component with enhanced integration
+  const PayPalCustomButton = () => {
+    const createOrder = async () => {
+      const orderPayload = {
+        amount: amount.toString(),
+        currency: "USD", // PayPal funciona mejor con USD en RD
+        intent: "CAPTURE",
+      };
+      
+      try {
+        const response = await fetch("/paypal/order", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(orderPayload),
         });
+        const output = await response.json();
+        return { orderId: output.id };
+      } catch (error) {
+        setPaymentError("Error creando la orden de pago");
+        throw error;
+      }
+    };
 
-        if (confirmResponse.ok) {
-          toast({
-            title: "¡Pago Exitoso!",
-            description: "Tu suscripción ha sido activada. Redirigiendo al dashboard...",
+    const captureOrder = async (orderId: string) => {
+      try {
+        const response = await fetch(`/paypal/order/${orderId}/capture`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+        const data = await response.json();
+        return data;
+      } catch (error) {
+        setPaymentError("Error procesando el pago");
+        throw error;
+      }
+    };
+
+    const onApprove = async (data: any) => {
+      setIsProcessing(true);
+      try {
+        const orderData = await captureOrder(data.orderId);
+        
+        if (orderData.status === 'COMPLETED') {
+          // Update plan on backend
+          const upgradeResponse = await apiRequest("POST", "/api/paypal/upgrade-plan", {
+            orderID: data.orderId,
+            planId
           });
 
-          // Redirect to dashboard after successful payment
-          setTimeout(() => {
-            setLocation("/dashboard");
-          }, 2000);
-        } else {
-          const errorData = await confirmResponse.json();
-          setPaymentError(errorData.message || "Error confirmando el pago");
+          if (upgradeResponse.ok) {
+            setPaymentSuccess(true);
+            toast({
+              title: "¡Pago Exitoso!",
+              description: "Tu suscripción ha sido activada. Redirigiendo al dashboard...",
+            });
+
+            setTimeout(() => {
+              setLocation("/dashboard");
+            }, 2000);
+          } else {
+            setPaymentError("Error activando la suscripción");
+          }
         }
+      } catch (error) {
+        setPaymentError("Error completando el pago");
+      } finally {
+        setIsProcessing(false);
       }
-    } catch (error) {
-      console.error("Payment error:", error);
-      setPaymentError((error as Error).message || "Error procesando el pago");
-    } finally {
-      setIsProcessing(false);
-    }
+    };
+
+    const onCancel = (data: any) => {
+      setPaymentError("Pago cancelado por el usuario");
+    };
+
+    const onError = (error: any) => {
+      setPaymentError("Error procesando el pago con PayPal");
+      console.error("PayPal error:", error);
+    };
+
+    useEffect(() => {
+      const loadPayPalSDK = async () => {
+        try {
+          if (!(window as any).paypal) {
+            const script = document.createElement("script");
+            script.src = import.meta.env.PROD
+              ? "https://www.paypal.com/web-sdk/v6/core"
+              : "https://www.sandbox.paypal.com/web-sdk/v6/core";
+            script.async = true;
+            script.onload = () => initPayPal();
+            document.body.appendChild(script);
+          } else {
+            await initPayPal();
+          }
+        } catch (e) {
+          setPaymentError("Error cargando PayPal SDK");
+          console.error("Failed to load PayPal SDK", e);
+        }
+      };
+
+      const initPayPal = async () => {
+        try {
+          const clientToken: string = await fetch("/paypal/setup")
+            .then((res) => res.json())
+            .then((data) => data.clientToken);
+            
+          const sdkInstance = await (window as any).paypal.createInstance({
+            clientToken,
+            components: ["paypal-payments"],
+          });
+
+          const paypalCheckout = sdkInstance.createPayPalOneTimePaymentSession({
+            onApprove,
+            onCancel,
+            onError,
+          });
+
+          const onClick = async () => {
+            try {
+              setPaymentError(null);
+              const checkoutOptionsPromise = createOrder();
+              await paypalCheckout.start(
+                { paymentFlow: "auto" },
+                checkoutOptionsPromise,
+              );
+            } catch (e) {
+              setPaymentError("Error iniciando el pago");
+              console.error(e);
+            }
+          };
+
+          const paypalButton = document.getElementById("paypal-button");
+          if (paypalButton) {
+            paypalButton.addEventListener("click", onClick);
+          }
+
+          return () => {
+            if (paypalButton) {
+              paypalButton.removeEventListener("click", onClick);
+            }
+          };
+        } catch (e) {
+          setPaymentError("Error inicializando PayPal");
+          console.error(e);
+        }
+      };
+
+      loadPayPalSDK();
+    }, []);
+
+    return <paypal-button id="paypal-button">Pagar con PayPal</paypal-button>;
   };
 
-  const cardElementOptions = {
-    style: {
-      base: {
-        fontSize: '16px',
-        color: '#424770',
-        '::placeholder': {
-          color: '#aab7c4',
-        },
-      },
-      invalid: {
-        color: '#9e2146',
-      },
-    },
-  };
+  if (!planId || !amount) {
+    return (
+      <div className="text-center py-8">
+        <AlertCircle className="h-12 w-12 text-yellow-500 mx-auto mb-4" />
+        <h3 className="text-lg font-semibold mb-2">Selecciona un Plan</h3>
+        <p className="text-gray-600">
+          Por favor selecciona un plan antes de proceder al pago.
+        </p>
+      </div>
+    );
+  }
+
+  if (paymentSuccess) {
+    return (
+      <div className="text-center py-8">
+        <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
+        <h3 className="text-xl font-semibold mb-2">¡Pago Exitoso!</h3>
+        <p className="text-gray-600 mb-4">
+          Tu suscripción ha sido activada correctamente.
+        </p>
+        <p className="text-sm text-gray-500">
+          Redirigiendo al dashboard...
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -686,11 +751,11 @@ function CreditCardPaymentForm({
         <div className="flex items-center gap-2 mb-2">
           <CreditCard className="h-5 w-5 text-blue-600" />
           <h3 className="font-semibold text-blue-900 dark:text-blue-100">
-            Pago Seguro con Tarjeta
+            Pago Seguro con PayPal
           </h3>
         </div>
         <p className="text-sm text-blue-700 dark:text-blue-300">
-          Procesado de forma segura por Stripe. Todas las transacciones están encriptadas.
+          Acepta tarjetas dominicanas e internacionales. Procesado de forma segura por PayPal.
         </p>
       </div>
 
@@ -716,49 +781,41 @@ function CreditCardPaymentForm({
         </div>
       </div>
 
-      <form onSubmit={handleCardPayment} className="space-y-6">
-        <div className="space-y-4">
-          <Label htmlFor="card-element">Información de la Tarjeta</Label>
-          <div className="p-3 border rounded-md bg-white dark:bg-gray-900">
-            <CardElement
-              id="card-element"
-              options={cardElementOptions}
-            />
+      {paymentError && (
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="h-5 w-5 text-red-600" />
+            <p className="text-red-700 dark:text-red-300 text-sm">{paymentError}</p>
           </div>
         </div>
+      )}
 
-        {paymentError && (
-          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
-            <div className="flex items-center gap-2">
-              <AlertCircle className="h-5 w-5 text-red-600" />
-              <p className="text-red-700 dark:text-red-300 text-sm">{paymentError}</p>
+      <div className="space-y-4">
+        <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center">
+          {isProcessing ? (
+            <div className="flex flex-col items-center gap-4">
+              <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+              <p className="text-lg font-semibold">Procesando Pago...</p>
+              <p className="text-sm text-gray-500">No cierres esta ventana</p>
             </div>
-          </div>
-        )}
-
-        <div className="space-y-3">
-          <Button 
-            type="submit" 
-            className="w-full" 
-            disabled={!stripe || isProcessing}
-            size="lg"
-          >
-            {isProcessing ? (
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                Procesando Pago...
+          ) : (
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Pagar con PayPal</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Haz clic en el botón para proceder al pago seguro
+              </p>
+              <div className="flex justify-center">
+                <PayPalCustomButton />
               </div>
-            ) : (
-              `Pagar RD$${amount.toLocaleString()}`
-            )}
-          </Button>
-          
-          <p className="text-xs text-gray-500 text-center">
-            Al proceder, aceptas nuestros términos de servicio y política de privacidad.
-            El cargo aparecerá en tu estado de cuenta como "Four One Solutions".
-          </p>
+            </div>
+          )}
         </div>
-      </form>
+        
+        <p className="text-xs text-gray-500 text-center">
+          Al proceder, aceptas nuestros términos de servicio y política de privacidad.
+          Puedes pagar con cualquier tarjeta de crédito/débito sin necesidad de cuenta PayPal.
+        </p>
+      </div>
 
       <div className="border-t pt-4">
         <div className="flex items-center justify-center gap-4 text-sm text-gray-600 dark:text-gray-400">
@@ -768,11 +825,11 @@ function CreditCardPaymentForm({
           </div>
           <div className="flex items-center gap-1">
             <CheckCircle className="h-4 w-4 text-green-500" />
-            <span>Encriptado 256-bit</span>
+            <span>Tarjetas RD</span>
           </div>
           <div className="flex items-center gap-1">
             <CheckCircle className="h-4 w-4 text-green-500" />
-            <span>PCI Compliant</span>
+            <span>PayPal Verified</span>
           </div>
         </div>
       </div>

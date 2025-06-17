@@ -19,14 +19,7 @@ import { LogoProcessor } from "./logo-processor";
 import { ThermalLogoProcessor } from "./thermal-logo";
 import { ThermalQRProcessor } from "./thermal-qr";
 
-// Stripe initialization
-let stripe: any = null;
-if (process.env.STRIPE_SECRET_KEY) {
-  const Stripe = require('stripe');
-  stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-    apiVersion: '2023-10-16',
-  });
-}
+import { createPaypalOrder, capturePaypalOrder, loadPaypalDefault } from "./paypal";
 import { ErrorManager } from "./error-management";
 import { auditLogger } from "./audit-logger";
 import { InvoiceHTMLService } from "./invoice-html-service";
@@ -2124,129 +2117,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Stripe payment endpoints
-  app.post("/api/stripe/create-payment-intent", isAuthenticated, async (req: any, res) => {
+  // PayPal payment endpoints
+  app.get("/paypal/setup", async (req, res) => {
+    await loadPaypalDefault(req, res);
+  });
+
+  app.post("/paypal/order", async (req, res) => {
+    // Request body should contain: { intent, amount, currency }
+    await createPaypalOrder(req, res);
+  });
+
+  app.post("/paypal/order/:orderID/capture", async (req, res) => {
+    await capturePaypalOrder(req, res);
+  });
+
+  // PayPal plan upgrade endpoint
+  app.post("/api/paypal/upgrade-plan", isAuthenticated, async (req: any, res) => {
     try {
-      if (!stripe) {
-        return res.status(503).json({ 
-          message: "Stripe no está configurado. Contacte al administrador.",
-          error: "STRIPE_NOT_CONFIGURED" 
-        });
-      }
-
-      const { amount, planId, type } = req.body;
+      const { orderID, planId } = req.body;
       const userId = req.user.id;
-      const user = await storage.getUser(userId);
       const company = await storage.getCompanyByUserId(userId);
-
-      if (!user || !company) {
-        return res.status(404).json({ message: "Usuario o empresa no encontrada" });
+      
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
       }
 
-      // Create payment intent
-      const paymentIntent = await stripe.paymentIntents.create({
-        amount: Math.round(amount * 100), // Convert to centavos
-        currency: 'dop', // Dominican Peso
-        metadata: {
-          userId: user.id,
-          companyId: company.id.toString(),
-          planId: planId || 'unknown',
-          type: type || 'subscription',
-          userEmail: user.email || '',
-          companyName: company.name || ''
-        },
-        description: `${type === 'upgrade' ? 'Actualización' : 'Suscripción'} a ${planId === 'annual' ? 'Plan Anual' : 'Plan Mensual'} - ${company.name}`
+      // Validate plan
+      const validPlans = ['monthly', 'annual'];
+      if (!validPlans.includes(planId)) {
+        return res.status(400).json({ message: "Invalid plan selected" });
+      }
+
+      // Update company subscription plan
+      await storage.updateCompany(company.id, {
+        subscriptionPlan: planId
       });
 
       await auditLogger.logAuthAction(
         userId,
-        'stripe_payment_intent_created',
+        'paypal_payment_completed',
         {
-          paymentIntentId: paymentIntent.id,
-          amount,
+          orderID,
           planId,
-          type,
+          oldPlan: company.subscriptionPlan,
+          newPlan: planId,
+          amount: planId === 'annual' ? 24000 : 3500,
           companyId: company.id
         },
         req
       );
 
       res.json({
-        clientSecret: paymentIntent.client_secret,
-        paymentIntentId: paymentIntent.id
+        success: true,
+        message: `Plan actualizado a ${planId === 'annual' ? 'Plan Anual' : 'Plan Mensual'} exitosamente`,
+        planId
       });
 
     } catch (error) {
-      console.error("Error creating payment intent:", error);
+      console.error("Error processing PayPal plan upgrade:", error);
       res.status(500).json({ 
-        message: "Error creando intención de pago", 
-        error: (error as Error).message 
-      });
-    }
-  });
-
-  app.post("/api/stripe/confirm-payment", isAuthenticated, async (req: any, res) => {
-    try {
-      if (!stripe) {
-        return res.status(503).json({ 
-          message: "Stripe no está configurado. Contacte al administrador.",
-          error: "STRIPE_NOT_CONFIGURED" 
-        });
-      }
-
-      const { paymentIntentId } = req.body;
-      const userId = req.user.id;
-
-      // Retrieve payment intent from Stripe
-      const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
-
-      if (paymentIntent.status === 'succeeded') {
-        const { planId, type, companyId } = paymentIntent.metadata;
-        
-        if (type === 'upgrade' && companyId) {
-          // Update company subscription plan
-          await storage.updateCompany(parseInt(companyId), {
-            subscriptionPlan: planId
-          });
-
-          await auditLogger.logAuthAction(
-            userId,
-            'stripe_payment_completed',
-            {
-              paymentIntentId,
-              planId,
-              type,
-              amount: paymentIntent.amount / 100,
-              companyId: parseInt(companyId)
-            },
-            req
-          );
-
-          res.json({
-            success: true,
-            message: `Plan actualizado a ${planId === 'annual' ? 'Plan Anual' : 'Plan Mensual'} exitosamente`,
-            planId,
-            paymentStatus: 'succeeded'
-          });
-        } else {
-          res.json({
-            success: true,
-            message: "Pago procesado exitosamente",
-            paymentStatus: 'succeeded'
-          });
-        }
-      } else {
-        res.status(400).json({
-          success: false,
-          message: "El pago no se completó exitosamente",
-          paymentStatus: paymentIntent.status
-        });
-      }
-
-    } catch (error) {
-      console.error("Error confirming payment:", error);
-      res.status(500).json({ 
-        message: "Error confirmando pago", 
+        message: "Error procesando actualización de plan", 
         error: (error as Error).message 
       });
     }
