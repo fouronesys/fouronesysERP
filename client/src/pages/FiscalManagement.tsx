@@ -151,18 +151,42 @@ export default function FiscalManagement() {
 
   const generateReportMutation = useMutation({
     mutationFn: async (data: ReportConfigFormData) => {
-      return await apiRequest("/api/fiscal/generate-report", {
+      // Generate DGII-compliant .txt file
+      const response = await fetch("/api/fiscal-reports/generate", {
         method: "POST",
-        body: data
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          type: data.type,
+          period: `${data.year}${data.period.padStart(2, '0')}`,
+        }),
       });
+
+      if (!response.ok) {
+        throw new Error("Failed to generate fiscal report");
+      }
+
+      // Download the file
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${data.type}_${data.year}${data.period.padStart(2, '0')}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      return { success: true };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/fiscal/reports'] });
       setShowReportDialog(false);
       reportForm.reset();
       toast({
-        title: "Reporte generado",
-        description: "El reporte fiscal ha sido generado exitosamente.",
+        title: "Reporte DGII generado",
+        description: "El archivo .txt ha sido descargado con formato DGII oficial.",
       });
     },
     onError: () => {
