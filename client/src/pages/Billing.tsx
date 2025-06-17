@@ -259,7 +259,19 @@ export default function Billing() {
 
   const handleNewInvoice = () => {
     setEditingInvoice(null);
-    form.reset();
+    form.reset({
+      customerId: "",
+      number: "",
+      ncf: "",
+      date: new Date().toISOString().split('T')[0],
+      dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      status: "pending",
+      items: [],
+      subtotal: "0",
+      tax: "0",
+      total: "0",
+      notes: "",
+    });
     setIsDialogOpen(true);
   };
 
@@ -482,7 +494,7 @@ export default function Billing() {
 
         {/* Invoice Form Dialog */}
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="w-[95vw] max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
                 {editingInvoice ? "Editar Factura" : "Nueva Factura"}
