@@ -343,6 +343,12 @@ export interface IStorage {
   
   // Manufacturing cost calculation
   calculateManufacturingCosts(productId: number, quantity: number, companyId: number): Promise<any>;
+  
+  // Profile and Settings operations
+  getUserById(userId: string): Promise<User | undefined>;
+  updateUser(userId: string, updates: Partial<UpsertUser>): Promise<User | undefined>;
+  getCompanySettings(companyId: number): Promise<any>;
+  updateCompanySettings(companyId: number, settings: any): Promise<any>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -3302,12 +3308,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Profile and Settings methods
-  async getUserById(userId: string): Promise<SelectUser | undefined> {
+  async getUserById(userId: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, userId));
     return user;
   }
 
-  async updateUser(userId: string, updates: Partial<InsertUser>): Promise<SelectUser | undefined> {
+  async updateUser(userId: string, updates: Partial<UpsertUser>): Promise<User | undefined> {
     const [user] = await db
       .update(users)
       .set(updates)

@@ -3234,8 +3234,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         firstName,
         lastName,
         email,
-        phone,
-        avatar,
+        profileImageUrl: avatar,
         updatedAt: new Date()
       });
       

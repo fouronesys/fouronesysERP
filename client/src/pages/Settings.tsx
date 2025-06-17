@@ -242,10 +242,10 @@ export default function Settings() {
   ];
 
   return (
-    <div className="w-full">
+    <div className="h-screen flex flex-col">
       <Header title="Configuración" subtitle="Personaliza tu experiencia y ajustes del sistema" />
       
-      <div className="p-3 sm:p-6 space-y-4 sm:space-y-6">
+      <div className="flex-1 overflow-y-auto p-3 sm:p-6 space-y-4 sm:space-y-6 pb-32">
         {/* Tab Navigation */}
         <div className="flex flex-wrap gap-2 bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
           {tabs.map((tab) => {

@@ -98,10 +98,10 @@ export default function Profile() {
   };
 
   return (
-    <div className="w-full">
+    <div className="h-screen flex flex-col">
       <Header title="Mi Perfil" subtitle="Gestiona tu información personal y configuración" />
       
-      <div className="p-3 sm:p-6 space-y-4 sm:space-y-6">
+      <div className="flex-1 overflow-y-auto p-3 sm:p-6 space-y-4 sm:space-y-6 pb-32">
         {/* Profile Overview */}
         <Card>
           <CardHeader className="pb-4">
