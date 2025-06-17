@@ -158,8 +158,9 @@ export default function CompanyManagement() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="h-screen overflow-y-auto">
+      <div className="space-y-6 p-6">
+        <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Gestión de Empresas</h1>
           <p className="text-muted-foreground">
@@ -389,6 +390,7 @@ export default function CompanyManagement() {
           </div>
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 }
