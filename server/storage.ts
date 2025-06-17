@@ -284,6 +284,7 @@ export interface IStorage {
   createRNCRegistry(rncData: InsertRNCRegistry): Promise<RNCRegistry>;
   bulkCreateRNCRegistry(records: InsertRNCRegistry[]): Promise<{ inserted: number; skipped: number }>;
   getRNCRegistryCount(): Promise<number>;
+  clearRNCRegistry(): Promise<void>;
 
   // NCF Sequence operations for Fiscal Receipts
   getNextNCF(companyId: number, ncfType: string): Promise<string | null>;
@@ -2364,6 +2365,11 @@ export class DatabaseStorage implements IStorage {
       .select({ count: sql`count(*)` })
       .from(rncRegistry);
     return Number(result[0].count);
+  }
+
+  async clearRNCRegistry(): Promise<void> {
+    await db.delete(rncRegistry);
+    console.log('RNC registry cleared');
   }
 
   // Purchases Module Implementation

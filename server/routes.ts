@@ -478,7 +478,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const validatedData = insertCompanySchema
           .omit({ ownerId: true })
           .partial()
-          .parse(updateData);
+          .parse(updateData) as Partial<InsertCompany>;
         const company = await storage.updateCompany(id, validatedData);
         res.json(company);
       } catch (error) {
@@ -2810,6 +2810,106 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     },
   );
+
+  // DGII Registry Management Routes
+  app.get("/api/dgii/registry/status", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const isSuperAdmin = await storage.isUserSuperAdmin(userId);
+
+      if (!isSuperAdmin) {
+        return res.status(403).json({ message: "Access denied. Super admin required." });
+      }
+
+      const status = dgiiRegistryUpdater.getUpdateStatus();
+      const registryCount = await storage.getRNCRegistryCount();
+
+      res.json({
+        ...status,
+        registryCount,
+        autoUpdateEnabled: true,
+        updateInterval: "24 hours"
+      });
+    } catch (error) {
+      console.error("Error fetching DGII registry status:", error);
+      res.status(500).json({ message: "Failed to fetch registry status" });
+    }
+  });
+
+  app.post("/api/dgii/registry/update", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const isSuperAdmin = await storage.isUserSuperAdmin(userId);
+
+      if (!isSuperAdmin) {
+        return res.status(403).json({ message: "Access denied. Super admin required." });
+      }
+
+      // Trigger manual update
+      const success = await dgiiRegistryUpdater.performUpdate();
+
+      if (success) {
+        await auditLogger.logFiscalAction(
+          userId,
+          0,
+          'dgii_registry_manual_update',
+          'rnc_registry',
+          'manual_trigger',
+          { triggeredBy: userId, timestamp: new Date() }
+        );
+
+        res.json({ 
+          success: true, 
+          message: "DGII registry update completed successfully" 
+        });
+      } else {
+        res.status(500).json({ 
+          success: false, 
+          message: "DGII registry update failed" 
+        });
+      }
+    } catch (error) {
+      console.error("Error triggering DGII registry update:", error);
+      res.status(500).json({ message: "Failed to trigger registry update" });
+    }
+  });
+
+  app.post("/api/dgii/registry/auto-update/toggle", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const isSuperAdmin = await storage.isUserSuperAdmin(userId);
+
+      if (!isSuperAdmin) {
+        return res.status(403).json({ message: "Access denied. Super admin required." });
+      }
+
+      const { enabled } = req.body;
+
+      if (enabled) {
+        dgiiRegistryUpdater.startAutoUpdate();
+      } else {
+        dgiiRegistryUpdater.stopAutoUpdate();
+      }
+
+      await auditLogger.logFiscalAction(
+        userId,
+        0,
+        'dgii_registry_auto_update_toggle',
+        'rnc_registry',
+        'configuration',
+        { enabled, triggeredBy: userId, timestamp: new Date() }
+      );
+
+      res.json({ 
+        success: true, 
+        message: `DGII registry auto-update ${enabled ? 'enabled' : 'disabled'}`,
+        autoUpdateEnabled: enabled
+      });
+    } catch (error) {
+      console.error("Error toggling DGII registry auto-update:", error);
+      res.status(500).json({ message: "Failed to toggle auto-update" });
+    }
+  });
 
   // Create sample products endpoint
   app.post(
