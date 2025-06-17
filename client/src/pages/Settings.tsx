@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Header } from "@/components/Header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,6 +8,10 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { 
@@ -27,7 +31,18 @@ import {
   Shield,
   Key,
   Eye,
-  EyeOff
+  EyeOff,
+  Bell,
+  Printer,
+  Wifi,
+  HardDrive,
+  Clock,
+  CheckCircle,
+  AlertTriangle,
+  Info,
+  Zap,
+  Volume2,
+  VolumeX
 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useThemeContext } from "@/components/ThemeProvider";

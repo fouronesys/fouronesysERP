@@ -3112,6 +3112,103 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
   );
 
+  // Currency Management Routes
+  app.get("/api/currency/rates", isAuthenticated, async (req: any, res) => {
+    try {
+      const rates = await storage.getAllExchangeRates();
+      res.json(rates);
+    } catch (error) {
+      console.error("Error fetching exchange rates:", error);
+      res.status(500).json({ message: "Failed to fetch exchange rates" });
+    }
+  });
+
+  app.get("/api/currency/rate/:currency", isAuthenticated, async (req: any, res) => {
+    try {
+      const { currency } = req.params;
+      const rate = await storage.getExchangeRate(currency);
+      
+      if (!rate) {
+        return res.status(404).json({ message: `Exchange rate for ${currency} not found` });
+      }
+      
+      res.json(rate);
+    } catch (error) {
+      console.error("Error fetching exchange rate:", error);
+      res.status(500).json({ message: "Failed to fetch exchange rate" });
+    }
+  });
+
+  app.post("/api/currency/update-rates", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const isSuperAdmin = await storage.isUserSuperAdmin(userId);
+      
+      if (!isSuperAdmin) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      const { currencyService } = await import('./currency-service');
+      const success = await currencyService.updateExchangeRates();
+      
+      res.json({ 
+        success, 
+        message: success ? "Exchange rates updated successfully" : "Update failed, using fallback rates",
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error("Error updating exchange rates:", error);
+      res.status(500).json({ message: "Failed to update exchange rates" });
+    }
+  });
+
+  app.get("/api/currency/convert", isAuthenticated, async (req: any, res) => {
+    try {
+      const { amount, from, to } = req.query;
+      
+      if (!amount || !from || !to) {
+        return res.status(400).json({ message: "Missing required parameters: amount, from, to" });
+      }
+
+      const { currencyService } = await import('./currency-service');
+      const convertedAmount = await currencyService.convertCurrency(
+        parseFloat(amount as string),
+        from as string,
+        to as string
+      );
+      
+      res.json({
+        originalAmount: parseFloat(amount as string),
+        fromCurrency: from,
+        toCurrency: to,
+        convertedAmount,
+        exchangeRate: convertedAmount / parseFloat(amount as string),
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error("Error converting currency:", error);
+      res.status(500).json({ message: "Failed to convert currency" });
+    }
+  });
+
+  app.get("/api/currency/status", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const isSuperAdmin = await storage.isUserSuperAdmin(userId);
+      
+      if (!isSuperAdmin) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      const { currencyService } = await import('./currency-service');
+      const status = currencyService.getStatus();
+      res.json(status);
+    } catch (error) {
+      console.error("Error fetching currency service status:", error);
+      res.status(500).json({ message: "Failed to fetch status" });
+    }
+  });
+
   // AI Integration Routes
 
   // Generate product description with AI

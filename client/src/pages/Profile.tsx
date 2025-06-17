@@ -8,6 +8,9 @@ import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Progress } from "@/components/ui/progress";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useToast } from "@/hooks/use-toast";
@@ -21,7 +24,22 @@ import {
   Edit3, 
   Save, 
   X,
-  Camera
+  Camera,
+  CreditCard,
+  TrendingUp,
+  Star,
+  Check,
+  ArrowRight,
+  Gift,
+  Zap,
+  Shield,
+  Users,
+  Database,
+  Smartphone,
+  FileText,
+  BarChart3,
+  Palette,
+  Globe
 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import type { User as UserType, Company } from "@shared/schema";
@@ -43,6 +61,79 @@ export default function Profile() {
   const { data: company } = useQuery<Company>({
     queryKey: ["/api/companies/current"],
   });
+
+  const { data: billingHistory } = useQuery({
+    queryKey: ["/api/billing/history"],
+    enabled: !!user,
+  });
+
+  const { data: exchangeRates } = useQuery({
+    queryKey: ["/api/currency/rates"],
+    enabled: !!user,
+  });
+
+  const subscriptionPlans = [
+    {
+      id: 'starter',
+      name: 'Starter',
+      price: 2499,
+      currency: 'DOP',
+      period: 'mes',
+      description: 'Perfecto para pequeñas empresas que inician',
+      features: [
+        'Hasta 100 productos',
+        'POS básico',
+        'Reportes estándar',
+        'Soporte por email',
+        '1 usuario'
+      ],
+      icon: Zap,
+      color: 'bg-blue-500',
+      popular: false
+    },
+    {
+      id: 'professional',
+      name: 'Professional',
+      price: 4999,
+      currency: 'DOP',
+      period: 'mes',
+      description: 'Para empresas en crecimiento',
+      features: [
+        'Productos ilimitados',
+        'POS avanzado con impresión',
+        'Reportes DGII automáticos',
+        'Multi-moneda',
+        'Inventario avanzado',
+        'Hasta 5 usuarios',
+        'Soporte prioritario',
+        'App móvil'
+      ],
+      icon: Star,
+      color: 'bg-purple-500',
+      popular: true
+    },
+    {
+      id: 'enterprise',
+      name: 'Enterprise',
+      price: 9999,
+      currency: 'DOP',
+      period: 'mes',
+      description: 'Solución completa para grandes empresas',
+      features: [
+        'Todo de Professional',
+        'Usuarios ilimitados',
+        'API personalizada',
+        'Integración contable',
+        'Reportes personalizados',
+        'Soporte 24/7',
+        'Capacitación dedicada',
+        'Servidor dedicado'
+      ],
+      icon: Crown,
+      color: 'bg-gold-500',
+      popular: false
+    }
+  ];
 
   const updateProfileMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
@@ -166,6 +257,263 @@ export default function Profile() {
               </Button>
             </div>
           </CardHeader>
+
+          <CardContent>
+            <Tabs defaultValue="profile" className="w-full">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="profile">Perfil</TabsTrigger>
+                <TabsTrigger value="subscription">Suscripción</TabsTrigger>
+                <TabsTrigger value="billing">Facturación</TabsTrigger>
+              </TabsList>
+
+              {/* Profile Tab */}
+              <TabsContent value="profile" className="space-y-4 mt-6">
+                <div className="grid gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="firstName">Nombre</Label>
+                      {isEditing ? (
+                        <Input
+                          id="firstName"
+                          value={formData.firstName}
+                          onChange={(e) =>
+                            setFormData({ ...formData, firstName: e.target.value })
+                          }
+                          placeholder="Ingresa tu nombre"
+                        />
+                      ) : (
+                        <div className="flex items-center space-x-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-md">
+                          <User className="h-4 w-4 text-gray-500" />
+                          <span>{user?.firstName || "No especificado"}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="lastName">Apellido</Label>
+                      {isEditing ? (
+                        <Input
+                          id="lastName"
+                          value={formData.lastName}
+                          onChange={(e) =>
+                            setFormData({ ...formData, lastName: e.target.value })
+                          }
+                          placeholder="Ingresa tu apellido"
+                        />
+                      ) : (
+                        <div className="flex items-center space-x-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-md">
+                          <User className="h-4 w-4 text-gray-500" />
+                          <span>{user?.lastName || "No especificado"}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    {isEditing ? (
+                      <Input
+                        id="email"
+                        type="email"
+                        value={formData.email}
+                        onChange={(e) =>
+                          setFormData({ ...formData, email: e.target.value })
+                        }
+                        placeholder="Ingresa tu email"
+                      />
+                    ) : (
+                      <div className="flex items-center space-x-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-md">
+                        <Mail className="h-4 w-4 text-gray-500" />
+                        <span>{user?.email}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {company && (
+                    <div className="space-y-2">
+                      <Label>Empresa</Label>
+                      <div className="flex items-center space-x-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-md">
+                        <Building2 className="h-4 w-4 text-gray-500" />
+                        <span>{company.name}</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {user?.createdAt && (
+                    <div className="space-y-2">
+                      <Label>Miembro desde</Label>
+                      <div className="flex items-center space-x-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-md">
+                        <Calendar className="h-4 w-4 text-gray-500" />
+                        <span>
+                          {new Date(user.createdAt).toLocaleDateString("es-DO", {
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                          })}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  {isEditing && (
+                    <div className="flex justify-end space-x-2 pt-4">
+                      <Button variant="outline" onClick={handleCancel}>
+                        Cancelar
+                      </Button>
+                      <Button
+                        onClick={handleSave}
+                        disabled={updateProfileMutation.isPending}
+                      >
+                        {updateProfileMutation.isPending ? (
+                          <>Guardando...</>
+                        ) : (
+                          <>
+                            <Save className="h-4 w-4 mr-2" />
+                            Guardar
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </TabsContent>
+
+              {/* Subscription Tab */}
+              <TabsContent value="subscription" className="space-y-6 mt-6">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-semibold">Plan Actual</h3>
+                    <Badge className={getPlanBadgeColor()}>
+                      {currentPlan === "trial" ? "Prueba Gratuita" : 
+                       currentPlan === "monthly" ? "Plan Mensual" : "Plan Anual"}
+                    </Badge>
+                  </div>
+
+                  {daysUntilExpiry !== null && (
+                    <div className="p-4 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg">
+                      <div className="flex items-center space-x-2">
+                        <Crown className="h-5 w-5 text-orange-600" />
+                        <span className="font-medium text-orange-800 dark:text-orange-200">
+                          Tu plan vence en {daysUntilExpiry} días
+                        </span>
+                      </div>
+                      <p className="text-sm text-orange-600 dark:text-orange-300 mt-1">
+                        Actualiza tu plan para continuar disfrutando de todas las funciones.
+                      </p>
+                    </div>
+                  )}
+
+                  <Separator />
+
+                  <div className="space-y-4">
+                    <h4 className="font-semibold">Planes Disponibles</h4>
+                    <div className="grid gap-4 md:grid-cols-3">
+                      {subscriptionPlans.map((plan) => {
+                        const IconComponent = plan.icon;
+                        const isCurrentPlan = company?.subscriptionPlan === plan.id;
+                        
+                        return (
+                          <Card key={plan.id} className={`relative ${plan.popular ? 'ring-2 ring-purple-500' : ''}`}>
+                            {plan.popular && (
+                              <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                                <Badge className="bg-purple-500 text-white">Más Popular</Badge>
+                              </div>
+                            )}
+                            
+                            <CardHeader className="text-center pb-2">
+                              <div className={`w-12 h-12 ${plan.color} rounded-lg flex items-center justify-center mx-auto mb-2`}>
+                                <IconComponent className="h-6 w-6 text-white" />
+                              </div>
+                              <CardTitle className="text-lg">{plan.name}</CardTitle>
+                              <div className="space-y-1">
+                                <div className="text-3xl font-bold">
+                                  RD${(plan.price / 100).toLocaleString()}
+                                </div>
+                                <div className="text-sm text-gray-500">por {plan.period}</div>
+                              </div>
+                            </CardHeader>
+                            
+                            <CardContent className="space-y-4">
+                              <p className="text-sm text-gray-600 dark:text-gray-400 text-center">
+                                {plan.description}
+                              </p>
+                              
+                              <ul className="space-y-2">
+                                {plan.features.map((feature, index) => (
+                                  <li key={index} className="flex items-center space-x-2 text-sm">
+                                    <Check className="h-4 w-4 text-green-500 flex-shrink-0" />
+                                    <span>{feature}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                              
+                              <Button 
+                                className="w-full" 
+                                variant={isCurrentPlan ? "outline" : "default"}
+                                disabled={isCurrentPlan}
+                              >
+                                {isCurrentPlan ? "Plan Actual" : "Elegir Plan"}
+                                {!isCurrentPlan && <ArrowRight className="h-4 w-4 ml-2" />}
+                              </Button>
+                            </CardContent>
+                          </Card>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              </TabsContent>
+
+              {/* Billing Tab */}
+              <TabsContent value="billing" className="space-y-6 mt-6">
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold">Historial de Facturación</h3>
+                  
+                  {billingHistory && billingHistory.length > 0 ? (
+                    <div className="space-y-3">
+                      {billingHistory.map((bill: any, index: number) => (
+                        <Card key={index}>
+                          <CardContent className="flex items-center justify-between p-4">
+                            <div className="flex items-center space-x-3">
+                              <div className="w-10 h-10 bg-green-100 dark:bg-green-900/20 rounded-lg flex items-center justify-center">
+                                <CreditCard className="h-5 w-5 text-green-600" />
+                              </div>
+                              <div>
+                                <p className="font-medium">
+                                  {bill.description || "Pago de suscripción"}
+                                </p>
+                                <p className="text-sm text-gray-500">
+                                  {new Date(bill.date).toLocaleDateString("es-DO")}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <p className="font-medium">RD${bill.amount}</p>
+                              <Badge variant="outline" className="text-xs">
+                                {bill.status || "Pagado"}
+                              </Badge>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  ) : (
+                    <Card>
+                      <CardContent className="text-center py-8">
+                        <CreditCard className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                        <h4 className="font-medium text-gray-900 dark:text-white mb-2">
+                          No hay historial de facturación
+                        </h4>
+                        <p className="text-gray-500 text-sm">
+                          Los pagos y facturas aparecerán aquí una vez que realices tu primera transacción.
+                        </p>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
+              </TabsContent>
+            </Tabs>
+          </CardContent>
         </Card>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
