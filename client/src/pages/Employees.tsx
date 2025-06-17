@@ -93,7 +93,7 @@ export default function Employees() {
     },
   });
 
-  const filteredEmployees = employees.filter((employee: Employee) =>
+  const filteredEmployees = (employees as Employee[]).filter((employee: Employee) =>
     `${employee.firstName} ${employee.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
     employee.employeeId.toLowerCase().includes(searchTerm.toLowerCase()) ||
     employee.position.toLowerCase().includes(searchTerm.toLowerCase()) ||

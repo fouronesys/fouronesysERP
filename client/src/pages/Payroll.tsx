@@ -152,7 +152,7 @@ export default function Payroll() {
   };
 
   const getEmployeeName = (employeeId: number) => {
-    const employee = employees.find((emp: Employee) => emp.id === employeeId);
+    const employee = (employees as Employee[]).find((emp: Employee) => emp.id === employeeId);
     return employee ? `${employee.firstName} ${employee.lastName}` : "Empleado no encontrado";
   };
 
@@ -276,7 +276,7 @@ export default function Payroll() {
               </div>
             ) : (
               <div className="grid gap-4">
-                {periods.map((period: PayrollPeriod) => (
+                {(periods as PayrollPeriod[]).map((period: PayrollPeriod) => (
                   <Card key={period.id}>
                     <CardHeader>
                       <div className="flex justify-between items-start">
@@ -335,7 +335,7 @@ export default function Payroll() {
                   </Card>
                 ))}
 
-                {periods.length === 0 && (
+                {(periods as PayrollPeriod[]).length === 0 && (
                   <Card>
                     <CardContent className="text-center py-12">
                       <Calendar className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
