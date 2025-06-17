@@ -119,10 +119,11 @@ export default function SystemMonitoring() {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Monitoreo del Sistema</h1>
-        <div className="flex items-center gap-2">
+    <div className="h-screen overflow-y-auto">
+      <div className="container mx-auto p-6 space-y-6 pb-20">
+        <div className="flex justify-between items-center">
+          <h1 className="text-3xl font-bold">Monitoreo del Sistema</h1>
+          <div className="flex items-center gap-2">
           <Button
             variant="outline"
             size="sm"
@@ -382,6 +383,7 @@ export default function SystemMonitoring() {
           </Card>
         </TabsContent>
       </Tabs>
+      </div>
     </div>
   );
 }

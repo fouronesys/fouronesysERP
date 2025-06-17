@@ -352,9 +352,11 @@ export default function SalesReports() {
           </Card>
         )}
         
-        {/* Filters Section */}
-          <Card className="border-gray-200 dark:border-gray-700">
-            <CardHeader className="pb-3 sm:pb-4">
+        {!hasNoData && (
+          <>
+            {/* Filters Section */}
+            <Card className="border-gray-200 dark:border-gray-700">
+              <CardHeader className="pb-3 sm:pb-4">
               <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
                 <Filter className="h-4 w-4 sm:h-5 sm:w-5" />
                 Filtros de Reporte

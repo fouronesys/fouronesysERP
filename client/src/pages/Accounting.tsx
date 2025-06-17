@@ -170,23 +170,24 @@ export default function Accounting() {
   };
 
   return (
-    <div className="container mx-auto p-4 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Módulo de Contabilidad</h1>
-          <p className="text-muted-foreground">
-            Sistema completo de contabilidad con plan de cuentas, asientos contables y reportes financieros
-          </p>
+    <div className="h-screen overflow-y-auto">
+      <div className="container mx-auto p-4 space-y-6 pb-20">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Módulo de Contabilidad</h1>
+            <p className="text-muted-foreground">
+              Sistema completo de contabilidad con plan de cuentas, asientos contables y reportes financieros
+            </p>
+          </div>
+          <Button
+            onClick={() => initializeAccountingMutation.mutate()}
+            disabled={initializeAccountingMutation.isPending}
+            variant="outline"
+          >
+            <Building2 className="h-4 w-4 mr-2" />
+            Inicializar Sistema Contable
+          </Button>
         </div>
-        <Button
-          onClick={() => initializeAccountingMutation.mutate()}
-          disabled={initializeAccountingMutation.isPending}
-          variant="outline"
-        >
-          <Building2 className="h-4 w-4 mr-2" />
-          Inicializar Sistema Contable
-        </Button>
-      </div>
 
       <Tabs defaultValue="accounts" className="space-y-4">
         <TabsList className="grid w-full grid-cols-2 lg:grid-cols-6 gap-1">
@@ -793,6 +794,7 @@ export default function Accounting() {
           </Card>
         </TabsContent>
       </Tabs>
+      </div>
     </div>
   );
 }
