@@ -467,11 +467,19 @@ export default function Profile() {
                               <Button 
                                 className="w-full" 
                                 variant={isCurrentPlan ? "outline" : "default"}
-                                disabled={isCurrentPlan}
+                                disabled={isCurrentPlan || upgradePlanMutation.isPending}
                                 onClick={() => handleUpgradePlan(plan.id)}
                               >
-                                {isCurrentPlan ? "Plan Actual" : "Elegir Plan"}
-                                {!isCurrentPlan && <ArrowRight className="h-4 w-4 ml-2" />}
+                                {upgradePlanMutation.isPending ? (
+                                  "Procesando..."
+                                ) : isCurrentPlan ? (
+                                  "Plan Actual"
+                                ) : (
+                                  <>
+                                    Elegir Plan
+                                    <ArrowRight className="h-4 w-4 ml-2" />
+                                  </>
+                                )}
                               </Button>
                             </CardContent>
                           </Card>
@@ -535,7 +543,11 @@ export default function Profile() {
                               })}
                             </p>
                           </div>
-                          <Button variant="outline" size="sm">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => window.open('/billing-history', '_blank')}
+                          >
                             <CreditCard className="h-4 w-4 mr-2" />
                             Ver Historial
                           </Button>

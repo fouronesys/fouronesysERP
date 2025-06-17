@@ -2100,8 +2100,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Update company subscription plan
       await storage.updateCompany(company.id, {
-        subscriptionPlan: planId,
-        subscriptionStatus: 'active'
+        subscriptionPlan: planId
       });
 
       // Log the action
@@ -2127,6 +2126,82 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error upgrading plan:", error);
       res.status(500).json({ message: "Error upgrading plan", error: (error as Error).message });
+    }
+  });
+
+  // Data cleanup endpoint for Four One company
+  app.post("/api/admin/cleanup-fourone-data", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const user = await storage.getUser(userId);
+      
+      if (!user || user.email !== 'admin@fourone.com.do') {
+        return res.status(403).json({ message: "Access denied. Four One admin only." });
+      }
+
+      // Get Four One company
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Four One company not found" });
+      }
+
+      // Clean up company data
+      const cleanupResults = {
+        salesDeleted: 0,
+        productsDeleted: 0,
+        customersDeleted: 0,
+        invoicesDeleted: 0
+      };
+
+      // Delete POS sales
+      const sales = await storage.getPOSSales(company.id);
+      for (const sale of sales) {
+        await storage.deletePOSSale(sale.id);
+        cleanupResults.salesDeleted++;
+      }
+
+      // Delete products
+      const products = await storage.getProducts(company.id);
+      for (const product of products) {
+        await storage.deleteProduct(product.id, company.id);
+        cleanupResults.productsDeleted++;
+      }
+
+      // Delete customers
+      const customers = await storage.getCustomers(company.id);
+      for (const customer of customers) {
+        await storage.deleteCustomer(customer.id, company.id);
+        cleanupResults.customersDeleted++;
+      }
+
+      // Delete invoices
+      const invoices = await storage.getInvoices(company.id);
+      for (const invoice of invoices) {
+        await storage.deleteInvoice(invoice.id, company.id);
+        cleanupResults.invoicesDeleted++;
+      }
+
+      // Log the cleanup action
+      const { auditLogger } = await import('./audit-logger');
+      await auditLogger.logAuthAction(
+        userId,
+        'data_cleanup',
+        { 
+          companyId: company.id,
+          cleanupResults
+        },
+        req
+      );
+
+      res.json({
+        success: true,
+        message: "Datos de Four One limpiados exitosamente",
+        results: cleanupResults
+      });
+
+    } catch (error) {
+      console.error("Error cleaning up Four One data:", error);
+      res.status(500).json({ message: "Error cleaning up data", error: (error as Error).message });
     }
   });
 

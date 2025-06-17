@@ -388,7 +388,7 @@ export function setupAuth(app: Express) {
 // Authentication middleware
 export function isAuthenticated(req: any, res: any, next: any) {
   if (!req.isAuthenticated() || !req.user) {
-    return res.status(401).json({ message: "Unauthorized" });
+    return res.status(401).json({ message: "Not authenticated" });
   }
   next();
 }
