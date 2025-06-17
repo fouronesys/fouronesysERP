@@ -2098,29 +2098,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid plan selected" });
       }
 
-      // Update company subscription plan
-      await storage.updateCompany(company.id, {
-        subscriptionPlan: planId
-      });
-
-      // Log the action
-      const { auditLogger } = await import('./audit-logger');
-      await auditLogger.logAuthAction(
-        userId,
-        'plan_upgraded',
-        { 
-          oldPlan: company.subscriptionPlan,
-          newPlan: planId,
-          amount: planId === 'annual' ? 24000 : 3500
-        },
-        req
-      );
-
-      res.json({
+      // Redirect to payment page instead of immediate plan upgrade
+      const amount = planId === 'annual' ? 24000 : 3500;
+      
+      res.json({ 
         success: true,
-        message: `Plan actualizado a ${planId === 'annual' ? 'Plan Anual' : 'Plan Mensual'} exitosamente`,
-        newPlan: planId,
-        amount: planId === 'annual' ? 24000 : 3500
+        message: "Redirigiendo a página de pago",
+        redirectTo: `/payment?plan=${planId}&amount=${amount}&type=upgrade`,
+        planId,
+        amount
       });
 
     } catch (error) {

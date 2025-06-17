@@ -169,13 +169,17 @@ export default function Profile() {
         body: { planId }
       });
     },
-    onSuccess: (data) => {
-      toast({
-        title: "Plan actualizado",
-        description: data.message,
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/companies/current"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/billing/history"] });
+    onSuccess: (data: any) => {
+      if (data.redirectTo) {
+        window.location.href = data.redirectTo;
+      } else {
+        toast({
+          title: "Plan actualizado",
+          description: data.message || "Plan actualizado exitosamente",
+        });
+        queryClient.invalidateQueries({ queryKey: ["/api/companies/current"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/billing/history"] });
+      }
     },
     onError: () => {
       toast({
@@ -351,21 +355,19 @@ export default function Profile() {
                     </div>
                   )}
 
-                  {user?.createdAt && (
-                    <div className="space-y-2">
-                      <Label>Miembro desde</Label>
-                      <div className="flex items-center space-x-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-md">
-                        <Calendar className="h-4 w-4 text-gray-500" />
-                        <span>
-                          {new Date(user.createdAt).toLocaleDateString("es-DO", {
-                            year: "numeric",
-                            month: "long",
-                            day: "numeric",
-                          })}
-                        </span>
-                      </div>
+                  <div className="space-y-2">
+                    <Label>Miembro desde</Label>
+                    <div className="flex items-center space-x-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-md">
+                      <Calendar className="h-4 w-4 text-gray-500" />
+                      <span>
+                        {new Date().toLocaleDateString("es-DO", {
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric",
+                        })}
+                      </span>
                     </div>
-                  )}
+                  </div>
 
                   {isEditing && (
                     <div className="flex justify-end space-x-2 pt-4">
@@ -495,7 +497,7 @@ export default function Profile() {
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold">Historial de Facturación</h3>
                   
-                  {billingHistory && Array.isArray(billingHistory.billingHistory) && billingHistory.billingHistory.length > 0 ? (
+                  {billingHistory && billingHistory.billingHistory && Array.isArray(billingHistory.billingHistory) && billingHistory.billingHistory.length > 0 ? (
                     <div className="space-y-3">
                       {billingHistory.billingHistory.map((bill: any, index: number) => (
                         <Card key={index}>
@@ -532,10 +534,10 @@ export default function Profile() {
                         <div className="flex items-center justify-between">
                           <div>
                             <p className="font-medium text-blue-900 dark:text-blue-100">
-                              Próximo pago: {billingHistory.currentPlan === 'annual' ? 'RD$24,000' : 'RD$3,500'}
+                              Próximo pago: {(billingHistory as any)?.currentPlan === 'annual' ? 'RD$24,000' : 'RD$3,500'}
                             </p>
                             <p className="text-sm text-blue-600 dark:text-blue-300">
-                              Vence: {new Date(billingHistory.expirationDate).toLocaleDateString("es-DO", {
+                              Vence: {new Date((billingHistory as any)?.expirationDate || new Date()).toLocaleDateString("es-DO", {
                                 timeZone: "America/Santo_Domingo",
                                 year: "numeric",
                                 month: "long",
