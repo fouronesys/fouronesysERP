@@ -612,6 +612,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+
+
   app.put("/api/companies/current", isAuthenticated, async (req: any, res) => {
     try {
       console.log("PUT /api/companies/current - Request body:", req.body);
@@ -629,10 +631,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log("Existing company:", company);
 
-      // Don't include ownerId in update data since it shouldn't change
-      const updateData = {
-        ...req.body,
-      };
+      // Don't exclude logo from update data - we need to update it
+      const updateData = req.body;
 
       console.log("Update data before validation:", updateData);
 

@@ -95,11 +95,10 @@ export default function CompanySettings() {
 
   const mutation = useMutation({
     mutationFn: async (data: CompanySettingsFormData) => {
-      // Remove large fields to prevent request entity too large error
-      const { logo, ...companyData } = data;
+      // Include logo in the request since we need to update it
       return await apiRequest("/api/companies/current", { 
         method: "PUT",
-        body: companyData 
+        body: data 
       });
     },
     onSuccess: () => {
