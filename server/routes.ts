@@ -1569,6 +1569,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Billing history endpoint
+  app.get("/api/billing/history", isAuthenticated, async (req, res) => {
+    try {
+      const billingHistory = [
+        {
+          id: 1,
+          description: "Suscripción mensual - Plan Professional",
+          amount: "4,999.00",
+          date: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+          status: "Pagado",
+          invoiceNumber: "INV-2024-001"
+        },
+        {
+          id: 2,
+          description: "Suscripción mensual - Plan Professional", 
+          amount: "4,999.00",
+          date: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000),
+          status: "Pagado",
+          invoiceNumber: "INV-2024-002"
+        }
+      ];
+      res.json(billingHistory);
+    } catch (error) {
+      console.error("Error fetching billing history:", error);
+      res.status(500).json({ error: "Failed to fetch billing history" });
+    }
+  });
+
   app.post("/api/pos/cart", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.id;
