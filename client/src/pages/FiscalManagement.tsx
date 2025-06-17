@@ -49,6 +49,226 @@ const reportConfigSchema = z.object({
 type FiscalDocumentFormData = z.infer<typeof fiscalDocumentSchema>;
 type ReportConfigFormData = z.infer<typeof reportConfigSchema>;
 
+// DGII Registry Management Component
+function DGIIRegistryManagement() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const { data: registryStatus, isLoading: isStatusLoading } = useQuery({
+    queryKey: ['/api/dgii/registry/status'],
+    queryFn: async () => {
+      const response = await fetch('/api/dgii/registry/status');
+      if (!response.ok) {
+        throw new Error('Failed to fetch registry status');
+      }
+      return response.json();
+    },
+    refetchInterval: 30000, // Refresh every 30 seconds
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest('/api/dgii/registry/update', {
+        method: 'POST',
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Actualización iniciada",
+        description: "El proceso de actualización del registro RNC se ha iniciado exitosamente.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/dgii/registry/status'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error en actualización",
+        description: error.message || "No se pudo iniciar la actualización del registro RNC.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const toggleAutoUpdateMutation = useMutation({
+    mutationFn: async (enabled: boolean) => {
+      return await apiRequest('/api/dgii/registry/auto-update/toggle', {
+        method: 'POST',
+        body: JSON.stringify({ enabled }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+    },
+    onSuccess: (data: any) => {
+      toast({
+        title: "Configuración actualizada",
+        description: `Actualización automática ${data.autoUpdateEnabled ? 'habilitada' : 'deshabilitada'}.`,
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/dgii/registry/status'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error en configuración",
+        description: error.message || "No se pudo cambiar la configuración de actualización automática.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  if (isStatusLoading) {
+    return (
+      <div className="flex justify-center items-center py-8">
+        <RefreshCw className="h-6 w-6 animate-spin" />
+        <span className="ml-2">Cargando estado del registro...</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Status Overview */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Database className="h-4 w-4" />
+              Registros RNC
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {registryStatus?.registryCount?.toLocaleString() || '0'}
+            </div>
+            <p className="text-xs text-muted-foreground">Total de registros</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <RefreshCw className="h-4 w-4" />
+              Última Actualización
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-sm font-medium">
+              {registryStatus?.lastUpdate 
+                ? format(new Date(registryStatus.lastUpdate), "dd/MM/yyyy HH:mm", { locale: es })
+                : 'Nunca'
+              }
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {registryStatus?.updateInterval || 'Cada 24 horas'}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Settings className="h-4 w-4" />
+              Estado del Sistema
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-2">
+              {registryStatus?.autoUpdateEnabled ? (
+                <Badge variant="default" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">
+                  <CheckCircle className="h-3 w-3 mr-1" />
+                  Activo
+                </Badge>
+              ) : (
+                <Badge variant="secondary">
+                  <X className="h-3 w-3 mr-1" />
+                  Inactivo
+                </Badge>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {registryStatus?.isUpdating ? 'Actualizando...' : 'Listo'}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Control Panel */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Settings className="h-5 w-5" />
+            Panel de Control
+          </CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Gestiona las actualizaciones del registro RNC de DGII
+          </p>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col sm:flex-row gap-4">
+            <Button
+              onClick={() => updateMutation.mutate()}
+              disabled={updateMutation.isPending || registryStatus?.isUpdating}
+              className="flex-1"
+            >
+              {updateMutation.isPending || registryStatus?.isUpdating ? (
+                <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Download className="mr-2 h-4 w-4" />
+              )}
+              Actualizar Ahora
+            </Button>
+
+            <Button
+              variant="outline"
+              onClick={() => toggleAutoUpdateMutation.mutate(!registryStatus?.autoUpdateEnabled)}
+              disabled={toggleAutoUpdateMutation.isPending}
+              className="flex-1"
+            >
+              {toggleAutoUpdateMutation.isPending ? (
+                <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+              ) : registryStatus?.autoUpdateEnabled ? (
+                <X className="mr-2 h-4 w-4" />
+              ) : (
+                <CheckCircle className="mr-2 h-4 w-4" />
+              )}
+              {registryStatus?.autoUpdateEnabled ? 'Deshabilitar Auto-actualización' : 'Habilitar Auto-actualización'}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* System Information */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Shield className="h-5 w-5" />
+            Información del Sistema
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <h4 className="font-medium">Configuración de Actualización</h4>
+              <ul className="text-sm text-muted-foreground space-y-1">
+                <li>• Frecuencia: {registryStatus?.updateInterval || 'Cada 24 horas'}</li>
+                <li>• Respaldos automáticos: Habilitados</li>
+                <li>• Reintentos máximos: 3 intentos</li>
+                <li>• Timeout de descarga: 30 segundos</li>
+              </ul>
+            </div>
+            <div className="space-y-2">
+              <h4 className="font-medium">Estado de Conexión</h4>
+              <ul className="text-sm text-muted-foreground space-y-1">
+                <li>• Servidor DGII: {registryStatus?.isConnected ? 'Conectado' : 'Desconectado'}</li>
+                <li>• Última verificación: {registryStatus?.lastCheck ? format(new Date(registryStatus.lastCheck), "HH:mm") : 'N/A'}</li>
+                <li>• Próxima actualización: {registryStatus?.nextUpdate ? format(new Date(registryStatus.nextUpdate), "dd/MM HH:mm") : 'N/A'}</li>
+              </ul>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 interface FiscalDocument {
   id: number;
   type: string;
@@ -356,9 +576,10 @@ export default function FiscalManagement() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="documents">Documentos Fiscales</TabsTrigger>
             <TabsTrigger value="reports">Reportes 606/607</TabsTrigger>
+            <TabsTrigger value="registry">Registro RNC</TabsTrigger>
             <TabsTrigger value="analytics">Herramienta DGII</TabsTrigger>
             <TabsTrigger value="settings">Configuración</TabsTrigger>
           </TabsList>
@@ -858,6 +1079,23 @@ export default function FiscalManagement() {
                     </TableBody>
                   </Table>
                 </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="registry" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Database className="h-5 w-5" />
+                  Registro RNC DGII
+                </CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Sistema automatizado de actualización del registro RNC de DGII cada 24 horas
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <DGIIRegistryManagement />
               </CardContent>
             </Card>
           </TabsContent>
