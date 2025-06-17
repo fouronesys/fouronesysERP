@@ -1,16 +1,56 @@
 {
-  "name": "Four One Solutions - Sistema de Gestión Empresarial",
-  "short_name": "Four One Solutions",
-  "description": "Sistema integral de gestión empresarial para República Dominicana con POS, contabilidad y cumplimiento fiscal",
+  "name": "Four One Solutions - Sistema ERP Dominicano",
+  "short_name": "Four One ERP",
+  "description": "Sistema completo de gestión empresarial para República Dominicana. POS, contabilidad, inventario, facturación con NCF y cumplimiento fiscal DGII.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#3b82f6",
-  "orientation": "portrait-primary",
+  "orientation": "any",
   "scope": "/",
   "lang": "es-DO",
-  "categories": ["business", "finance", "productivity"],
+  "categories": ["business", "finance", "productivity", "utilities"],
+  "dir": "ltr",
+  "edge_side_panel": {
+    "preferred_width": 320
+  },
   "icons": [
+    {
+      "src": "/fourone-logo-72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/fourone-logo-96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/fourone-logo-128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/fourone-logo-144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/fourone-logo-152.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/fourone-logo-180.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    },
     {
       "src": "/fourone-logo-192.png",
       "sizes": "192x192",
@@ -18,15 +58,16 @@
       "purpose": "any maskable"
     },
     {
+      "src": "/fourone-logo-384.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
       "src": "/fourone-logo-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
-    },
-    {
-      "src": "/fourone-logo-180.png",
-      "sizes": "180x180",
-      "type": "image/png"
     }
   ],
   "screenshots": [

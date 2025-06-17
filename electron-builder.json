@@ -1,7 +1,10 @@
 {
-  "appId": "com.fourone.solutions",
-  "productName": "Four One Solutions",
+  "appId": "com.fourone.solutions.erp",
+  "productName": "Four One ERP",
   "copyright": "Copyright © 2025 Four One Solutions",
+  "description": "Sistema integral de gestión empresarial para República Dominicana",
+  "author": "Four One Solutions <info@fourone.com.do>",
+  "homepage": "https://fourone.com.do",
   "directories": {
     "output": "dist-electron"
   },

@@ -2182,6 +2182,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Windows download endpoint
+  app.get("/download/windows", async (req, res) => {
+    try {
+      const downloadUrl = "https://github.com/fourone-solutions/four-one-erp/releases/latest/download/Four-One-ERP-Setup-latest-x64.exe";
+      
+      // Log download request
+      const { auditLogger } = await import('./audit-logger');
+      await auditLogger.logAuthAction(
+        undefined,
+        'windows_download_requested',
+        {
+          userAgent: req.headers['user-agent'],
+          ip: req.ip
+        },
+        req
+      );
+
+      // Redirect to latest release
+      res.redirect(downloadUrl);
+    } catch (error) {
+      console.error("Error handling Windows download:", error);
+      res.status(500).json({ message: "Error downloading Windows app" });
+    }
+  });
+
+  // Download info endpoint
+  app.get("/api/downloads/available", async (req, res) => {
+    try {
+      const downloads = [
+        {
+          platform: "windows",
+          name: "Four One ERP para Windows",
+          description: "Aplicación nativa para Windows con funcionalidad offline completa",
+          url: "/download/windows",
+          size: "~85 MB",
+          version: "1.0.0",
+          requirements: "Windows 10 o superior",
+          features: [
+            "Funcionamiento offline",
+            "Integración con impresoras térmicas",
+            "Sincronización automática",
+            "Notificaciones de escritorio",
+            "Mejor rendimiento"
+          ]
+        },
+        {
+          platform: "android",
+          name: "Four One ERP PWA",
+          description: "Aplicación web progresiva para Android",
+          url: req.protocol + '://' + req.get('host'),
+          size: "~5 MB",
+          version: "1.0.0",
+          requirements: "Android 5.0 o superior",
+          features: [
+            "Instalación directa desde navegador",
+            "Funcionamiento offline",
+            "Notificaciones push",
+            "Actualizaciones automáticas",
+            "Acceso desde pantalla de inicio"
+          ]
+        }
+      ];
+
+      res.json({ downloads });
+    } catch (error) {
+      console.error("Error fetching downloads:", error);
+      res.status(500).json({ message: "Error fetching downloads" });
+    }
+  });
+
   // Data cleanup endpoint for Four One company
   app.post("/api/admin/cleanup-fourone-data", isAuthenticated, async (req: any, res) => {
     try {
