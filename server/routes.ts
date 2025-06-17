@@ -1823,7 +1823,204 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     } catch (error) {
       console.error("Error preparing DGII submission:", error);
-      res.status(500).json({ message: "Error preparando envío", error: error.message });
+      res.status(500).json({ message: "Error preparando envío", error: (error as Error).message });
+    }
+  });
+
+  // DGII Server Status endpoint
+  app.get("/api/dgii/server-status", isAuthenticated, async (req, res) => {
+    try {
+      const { dgiiMonitor } = await import('./dgii-monitor');
+      const status = dgiiMonitor.getStatus();
+      res.json(status);
+    } catch (error) {
+      console.error("Error getting DGII server status:", error);
+      res.status(500).json({ message: "Error obteniendo estado del servidor DGII" });
+    }
+  });
+
+  // User Management - Create User endpoint for administrators
+  app.post("/api/admin/users", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const user = await storage.getUser(userId);
+      
+      if (!user || (user.role !== 'admin' && user.role !== 'super_admin' && user.email !== 'admin@fourone.com.do')) {
+        return res.status(403).json({ message: "Access denied. Administrator privileges required." });
+      }
+
+      const { email, firstName, lastName, password, role, permissions } = req.body;
+      
+      // Check if user already exists
+      const existingUser = await storage.getUserByEmail(email);
+      if (existingUser) {
+        return res.status(400).json({ message: "User with this email already exists" });
+      }
+
+      // Hash password
+      const bcrypt = require('bcrypt');
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      // Get company for the admin user
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      // Create new user
+      const newUser = await storage.createUser({
+        email,
+        firstName,
+        lastName,
+        password: hashedPassword,
+        companyId: company.id,
+        role: role || 'user'
+      });
+
+      // Log the action
+      const { auditLogger } = await import('./audit-logger');
+      await auditLogger.logAuthAction(
+        userId,
+        'user_created',
+        { targetUserId: newUser.id, email, role },
+        req
+      );
+
+      res.json({
+        success: true,
+        user: {
+          id: newUser.id,
+          email: newUser.email,
+          firstName: newUser.firstName,
+          lastName: newUser.lastName,
+          role: newUser.role,
+          createdAt: newUser.createdAt
+        },
+        message: "Usuario creado exitosamente"
+      });
+
+    } catch (error) {
+      console.error("Error creating user:", error);
+      res.status(500).json({ message: "Error creating user", error: (error as Error).message });
+    }
+  });
+
+  // Chat Channels endpoints
+  app.get("/api/chat/channels", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      // Mock data for chat channels
+      const channels = [
+        {
+          id: 1,
+          name: "general",
+          description: "Canal general de la empresa",
+          type: "public",
+          createdAt: new Date().toISOString(),
+          unreadCount: 0
+        },
+        {
+          id: 2,
+          name: "ventas",
+          description: "Discusiones sobre ventas y clientes",
+          type: "public",
+          createdAt: new Date().toISOString(),
+          unreadCount: 2
+        },
+        {
+          id: 3,
+          name: "soporte",
+          description: "Canal de soporte técnico",
+          type: "private",
+          createdAt: new Date().toISOString(),
+          unreadCount: 1
+        }
+      ];
+
+      res.json(channels);
+    } catch (error) {
+      console.error("Error fetching chat channels:", error);
+      res.status(500).json({ message: "Error fetching chat channels" });
+    }
+  });
+
+  app.get("/api/chat/channels/:channelId/messages", isAuthenticated, async (req: any, res) => {
+    try {
+      const { channelId } = req.params;
+      const userId = req.user.id;
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Mock data for chat messages
+      const messages = [
+        {
+          id: 1,
+          content: "¡Hola a todos! ¿Cómo están hoy?",
+          senderId: "admin-fourone-001",
+          senderName: "Administrador",
+          senderLastName: "Sistema",
+          createdAt: new Date(Date.now() - 60000).toISOString(),
+          messageType: "text",
+          isEdited: false
+        },
+        {
+          id: 2,
+          content: "Todo bien por aquí, trabajando en los reportes del mes.",
+          senderId: user.id,
+          senderName: user.firstName,
+          senderLastName: user.lastName,
+          createdAt: new Date(Date.now() - 30000).toISOString(),
+          messageType: "text",
+          isEdited: false
+        }
+      ];
+
+      res.json(messages);
+    } catch (error) {
+      console.error("Error fetching chat messages:", error);
+      res.status(500).json({ message: "Error fetching chat messages" });
+    }
+  });
+
+  app.post("/api/chat/channels/:channelId/messages", isAuthenticated, async (req: any, res) => {
+    try {
+      const { channelId } = req.params;
+      const { content } = req.body;
+      const userId = req.user.id;
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Mock message creation
+      const newMessage = {
+        id: Date.now(),
+        content,
+        senderId: user.id,
+        senderName: user.firstName,
+        senderLastName: user.lastName,
+        createdAt: new Date().toISOString(),
+        messageType: "text",
+        isEdited: false
+      };
+
+      res.json({
+        success: true,
+        message: newMessage
+      });
+    } catch (error) {
+      console.error("Error sending chat message:", error);
+      res.status(500).json({ message: "Error sending message" });
     }
   });
 

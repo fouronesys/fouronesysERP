@@ -30,6 +30,15 @@ import {
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 
+const createUserSchema = z.object({
+  email: z.string().email("Email válido requerido"),
+  firstName: z.string().min(1, "Nombre requerido"),
+  lastName: z.string().min(1, "Apellido requerido"),
+  password: z.string().min(8, "Contraseña debe tener al menos 8 caracteres"),
+  role: z.string().min(1, "Rol requerido"),
+  permissions: z.array(z.string()).default([])
+});
+
 const createUserRoleSchema = z.object({
   name: z.string().min(1, "Role name is required"),
   description: z.string().optional(),
@@ -40,6 +49,8 @@ const updateUserPermissionsSchema = z.object({
   userId: z.string().min(1, "User ID is required"),
   permissions: z.array(z.string())
 });
+
+type CreateUserForm = z.infer<typeof createUserSchema>;
 
 type CreateUserRoleForm = z.infer<typeof createUserRoleSchema>;
 type UpdateUserPermissionsForm = z.infer<typeof updateUserPermissionsSchema>;

@@ -3,6 +3,7 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { errorHandlerMiddleware } from "./error-management";
 import { dgiiRegistryUpdater } from "./dgii-registry-updater";
+import { dgiiMonitor } from "./dgii-monitor";
 
 const app = express();
 app.use(express.json());
@@ -75,5 +76,14 @@ app.use((req, res, next) => {
     // Start the DGII registry auto-updater (disabled temporarily due to network issues)
     // dgiiRegistryUpdater.startAutoUpdate();
     log("DGII RNC registry system initialized (auto-update temporarily disabled)");
+    
+    // Start DGII server monitoring
+    dgiiMonitor.startMonitoring();
+    dgiiMonitor.on('server_online', (status) => {
+      log(`DGII server is online - Response time: ${status.responseTime}ms`);
+    });
+    dgiiMonitor.on('server_offline', (status) => {
+      log(`DGII server is offline - Last error: ${status.lastError}`);
+    });
   });
 })();
