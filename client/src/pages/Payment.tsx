@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CheckCircle, CreditCard, Building, Phone, Mail, Copy, Check, AlertCircle, LogOut, Banknote } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/useAuth";
 import { useLocation } from "wouter";
 
@@ -85,19 +85,64 @@ export default function Payment() {
 
   const handleLogout = async () => {
     try {
-      await fetch("/api/logout", {
+      // Call logout endpoint
+      const response = await fetch("/api/logout", {
         method: "POST",
         credentials: "include",
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
       });
-      // Clear any cached data
+      
+      // Clear React Query cache completely
+      queryClient.clear();
+      queryClient.invalidateQueries();
+      queryClient.removeQueries();
+      
+      // Clear all browser storage
       window.localStorage.clear();
       window.sessionStorage.clear();
-      // Force redirect to auth page
-      window.location.href = "/auth";
+      
+      // Clear IndexedDB if exists
+      if ('indexedDB' in window) {
+        try {
+          const databases = await indexedDB.databases();
+          await Promise.all(
+            databases.map(db => {
+              if (db.name) {
+                const deleteReq = indexedDB.deleteDatabase(db.name);
+                return new Promise<boolean>((resolve) => {
+                  deleteReq.onsuccess = () => resolve(true);
+                  deleteReq.onerror = () => resolve(false);
+                });
+              }
+              return Promise.resolve(true);
+            })
+          );
+        } catch (idbError) {
+          console.log('IndexedDB cleanup skipped');
+        }
+      }
+      
+      // Clear service worker cache if available
+      if ('serviceWorker' in navigator && 'caches' in window) {
+        try {
+          const cacheNames = await caches.keys();
+          await Promise.all(
+            cacheNames.map(cacheName => caches.delete(cacheName))
+          );
+        } catch (cacheError) {
+          console.log('Cache cleanup skipped');
+        }
+      }
+      
+      // Force hard reload and redirect
+      window.location.replace("/auth");
     } catch (error) {
       console.error("Logout error:", error);
       // Force redirect even if logout fails
-      window.location.href = "/auth";
+      window.location.replace("/auth");
     }
   };
 

@@ -213,7 +213,39 @@ export function setupAuth(app: Express) {
   const logoutHandler = (req: any, res: any, next: any) => {
     req.logout((err: any) => {
       if (err) return next(err);
-      res.json({ message: "Logged out successfully" });
+      
+      // Destroy session completely
+      req.session.destroy((sessionErr: any) => {
+        if (sessionErr) {
+          console.error("Session destruction error:", sessionErr);
+        }
+        
+        // Clear all cookies
+        res.clearCookie('connect.sid', {
+          path: '/',
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax'
+        });
+        
+        // Clear any other auth-related cookies
+        res.clearCookie('session', { path: '/' });
+        res.clearCookie('token', { path: '/' });
+        res.clearCookie('auth', { path: '/' });
+        
+        // Set cache control headers to prevent caching
+        res.set({
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        });
+        
+        res.json({ 
+          message: "Logged out successfully",
+          clearCache: true,
+          timestamp: new Date().toISOString()
+        });
+      });
     });
   };
   

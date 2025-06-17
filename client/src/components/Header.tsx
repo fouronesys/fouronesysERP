@@ -4,6 +4,7 @@ import { useThemeContext } from "./ThemeProvider";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useLocation } from "wouter";
+import { queryClient } from "@/lib/queryClient";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -38,15 +39,59 @@ export function Header({ title, subtitle }: HeaderProps) {
 
   const handleLogout = async () => {
     try {
-      await fetch("/api/logout", {
+      // Call logout endpoint
+      const response = await fetch("/api/logout", {
         method: "POST",
         credentials: "include",
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
       });
-      // Clear any cached data
+      
+      // Clear React Query cache completely
+      queryClient.clear();
+      queryClient.invalidateQueries();
+      queryClient.removeQueries();
+      
+      // Clear all browser storage
       window.localStorage.clear();
       window.sessionStorage.clear();
-      // Force redirect to auth page
-      window.location.href = "/auth";
+      
+      // Clear IndexedDB if exists
+      if ('indexedDB' in window) {
+        try {
+          const databases = await indexedDB.databases();
+          await Promise.all(
+            databases.map(db => {
+              if (db.name) {
+                const deleteReq = indexedDB.deleteDatabase(db.name);
+                return new Promise((resolve) => {
+                  deleteReq.onsuccess = () => resolve(true);
+                  deleteReq.onerror = () => resolve(false);
+                });
+              }
+            })
+          );
+        } catch (idbError) {
+          console.log('IndexedDB cleanup skipped');
+        }
+      }
+      
+      // Clear service worker cache if available
+      if ('serviceWorker' in navigator && 'caches' in window) {
+        try {
+          const cacheNames = await caches.keys();
+          await Promise.all(
+            cacheNames.map(cacheName => caches.delete(cacheName))
+          );
+        } catch (cacheError) {
+          console.log('Cache cleanup skipped');
+        }
+      }
+      
+      // Force hard reload and redirect
+      window.location.replace("/auth");
     } catch (error) {
       console.error("Logout error:", error);
       // Force redirect even if logout fails
