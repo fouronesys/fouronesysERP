@@ -14,7 +14,8 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { 
   Plus, Search, FileText, Download, Upload, Calendar as CalendarIcon, 
-  Receipt, Building2, TrendingUp, AlertTriangle, CheckCircle, X, Eye, Edit
+  Receipt, Building2, TrendingUp, AlertTriangle, CheckCircle, X, Eye, Edit,
+  Calculator, FileSpreadsheet, Shield
 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -82,6 +83,10 @@ export default function FiscalManagement() {
   const [showReportDialog, setShowReportDialog] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date>();
   const [reportType, setReportType] = useState<'606' | '607'>('606');
+  const [period606, setPeriod606] = useState("");
+  const [period607, setPeriod607] = useState("");
+  const [isGenerating606, setIsGenerating606] = useState(false);
+  const [isGenerating607, setIsGenerating607] = useState(false);
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -204,6 +209,62 @@ export default function FiscalManagement() {
 
   const onSubmitReport = (data: ReportConfigFormData) => {
     generateReportMutation.mutate(data);
+  };
+
+  const generateDGIIReport = async (type: '606' | '607', period: string) => {
+    if (!period || period.length !== 6) {
+      toast({
+        title: "Error",
+        description: "El período debe tener formato AAAAMM (ejemplo: 202412)",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const setLoading = type === '606' ? setIsGenerating606 : setIsGenerating607;
+    setLoading(true);
+
+    try {
+      const response = await fetch("/api/fiscal-reports/generate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          type,
+          period,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to generate fiscal report");
+      }
+
+      // Download the file
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `DGII_F_${type}_${period}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      toast({
+        title: "Reporte DGII generado",
+        description: `El archivo ${type}_${period}.txt ha sido descargado exitosamente.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "No se pudo generar el reporte fiscal.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const getDocumentStatusBadge = (status: string) => {
@@ -802,97 +863,141 @@ export default function FiscalManagement() {
           </TabsContent>
 
           <TabsContent value="analytics" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Facturación Mensual</CardTitle>
-                  <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">RD$ 2,450,000</div>
-                  <p className="text-xs text-muted-foreground">+12.5% vs mes anterior</p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">ITBIS Cobrado</CardTitle>
-                  <Receipt className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">RD$ 441,000</div>
-                  <p className="text-xs text-muted-foreground">18% del total facturado</p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Compras del Mes</CardTitle>
-                  <Building2 className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">RD$ 850,000</div>
-                  <p className="text-xs text-muted-foreground">-5.2% vs mes anterior</p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">ITBIS Pagado</CardTitle>
-                  <AlertTriangle className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">RD$ 153,000</div>
-                  <p className="text-xs text-muted-foreground">18% de las compras</p>
-                </CardContent>
-              </Card>
-            </div>
-
             <Card>
               <CardHeader>
-                <CardTitle>Cumplimiento Fiscal</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <Calculator className="h-5 w-5" />
+                  Herramienta de Generación DGII
+                </CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Replica las herramientas oficiales de DGII para generar reportes 606 y 607 con validación automática
+                </p>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <CheckCircle className="h-5 w-5 text-green-500" />
-                      <div>
-                        <p className="font-medium">Reporte 607 - Enero 2024</p>
-                        <p className="text-sm text-gray-500">Enviado el 15/02/2024</p>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Formato 606 - Compras */}
+                  <Card className="border-2 border-blue-200 dark:border-blue-800">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-lg text-blue-700 dark:text-blue-300">
+                        Formato 606 - Compras
+                      </CardTitle>
+                      <p className="text-sm text-muted-foreground">
+                        Compras de Bienes y Servicios (NG-07-2018)
+                      </p>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Período (AAAAMM)</label>
+                        <Input
+                          placeholder="202412"
+                          maxLength={6}
+                          className="font-mono"
+                        />
                       </div>
-                    </div>
-                    <Badge className="bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300">
-                      Completado
-                    </Badge>
-                  </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">RNC/Cédula Empresa</label>
+                        <Input
+                          value={(companyInfo as any)?.rnc || ""}
+                          disabled
+                          className="bg-muted"
+                        />
+                      </div>
+                      <div className="bg-blue-50 dark:bg-blue-950/20 p-3 rounded-lg">
+                        <h4 className="font-medium text-sm mb-2">Campos incluidos:</h4>
+                        <ul className="text-xs space-y-1 text-muted-foreground">
+                          <li>• RNC/Cédula del proveedor</li>
+                          <li>• Tipo de bienes y servicios</li>
+                          <li>• NCF del comprobante</li>
+                          <li>• Montos facturados y ITBIS</li>
+                          <li>• Formas de pago</li>
+                        </ul>
+                      </div>
+                      <Button className="w-full" variant="outline">
+                        <FileSpreadsheet className="h-4 w-4 mr-2" />
+                        Generar Formato 606
+                      </Button>
+                    </CardContent>
+                  </Card>
 
-                  <div className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <AlertTriangle className="h-5 w-5 text-yellow-500" />
-                      <div>
-                        <p className="font-medium">Reporte 606 - Febrero 2024</p>
-                        <p className="text-sm text-gray-500">Vence el 15/03/2024</p>
+                  {/* Formato 607 - Ventas */}
+                  <Card className="border-2 border-green-200 dark:border-green-800">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-lg text-green-700 dark:text-green-300">
+                        Formato 607 - Ventas
+                      </CardTitle>
+                      <p className="text-sm text-muted-foreground">
+                        Ventas de Bienes y Servicios (NG-07-2018)
+                      </p>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Período (AAAAMM)</label>
+                        <Input
+                          placeholder="202412"
+                          maxLength={6}
+                          className="font-mono"
+                        />
                       </div>
-                    </div>
-                    <Badge className="bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300">
-                      Pendiente
-                    </Badge>
-                  </div>
-
-                  <div className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <X className="h-5 w-5 text-red-500" />
-                      <div>
-                        <p className="font-medium">Reporte 607 - Diciembre 2023</p>
-                        <p className="text-sm text-gray-500">Venció el 15/01/2024</p>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">RNC/Cédula Empresa</label>
+                        <Input
+                          value={(companyInfo as any)?.rnc || ""}
+                          disabled
+                          className="bg-muted"
+                        />
                       </div>
-                    </div>
-                    <Badge className="bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300">
-                      Vencido
-                    </Badge>
-                  </div>
+                      <div className="bg-green-50 dark:bg-green-950/20 p-3 rounded-lg">
+                        <h4 className="font-medium text-sm mb-2">Campos incluidos:</h4>
+                        <ul className="text-xs space-y-1 text-muted-foreground">
+                          <li>• RNC/Cédula del cliente</li>
+                          <li>• NCF del comprobante</li>
+                          <li>• Montos de servicios y bienes</li>
+                          <li>• ITBIS y retenciones</li>
+                          <li>• Formas de pago</li>
+                        </ul>
+                      </div>
+                      <Button className="w-full" variant="outline">
+                        <FileSpreadsheet className="h-4 w-4 mr-2" />
+                        Generar Formato 607
+                      </Button>
+                    </CardContent>
+                  </Card>
                 </div>
+
+                {/* Validación y Envío */}
+                <Card className="border border-orange-200 dark:border-orange-800">
+                  <CardHeader>
+                    <CardTitle className="text-orange-700 dark:text-orange-300">
+                      Validación y Envío
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <Button variant="outline" className="w-full">
+                        <Shield className="h-4 w-4 mr-2" />
+                        Pre-validar Datos
+                      </Button>
+                      <Button variant="outline" className="w-full">
+                        <FileText className="h-4 w-4 mr-2" />
+                        Generar TXT
+                      </Button>
+                      <Button variant="outline" className="w-full">
+                        <Upload className="h-4 w-4 mr-2" />
+                        Preparar Envío
+                      </Button>
+                    </div>
+                    <div className="bg-orange-50 dark:bg-orange-950/20 p-4 rounded-lg">
+                      <h4 className="font-medium text-sm mb-2">Instrucciones de Envío:</h4>
+                      <ol className="text-xs space-y-1 text-muted-foreground list-decimal list-inside">
+                        <li>Complete los datos del período correspondiente</li>
+                        <li>Valide que todos los comprobantes tengan NCF válidos</li>
+                        <li>Pre-valide los datos antes de generar el archivo</li>
+                        <li>Genere el archivo TXT con formato oficial DGII</li>
+                        <li>Envíe a través de la Oficina Virtual de DGII</li>
+                      </ol>
+                    </div>
+                  </CardContent>
+                </Card>
               </CardContent>
             </Card>
           </TabsContent>
