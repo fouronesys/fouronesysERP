@@ -100,7 +100,6 @@ export default function Settings() {
   const isMobile = useIsMobile();
   const { theme, setTheme } = useThemeContext();
   
-  const [activeTab, setActiveTab] = useState<"system" | "security" | "pos" | "backup">("system");
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
 
@@ -124,7 +123,6 @@ export default function Settings() {
     sessionTimeout: 30,
     passwordChangeRequired: false,
     loginNotifications: true,
-    allowRemoteAccess: true,
   });
 
   const [posSettings, setPosSettings] = useState<POSSettings>({
@@ -259,7 +257,7 @@ export default function Settings() {
   const exportSettings = () => {
     const allSettings = {
       system: systemSettings,
-      security: { ...securitySettings, twoFactorEnabled: false }, // Don't export 2FA
+      security: { ...securitySettings, twoFactorEnabled: false },
       pos: posSettings,
       exportDate: new Date().toISOString(),
     };
@@ -279,40 +277,33 @@ export default function Settings() {
     });
   };
 
-  const tabs = [
-    { id: "system", label: "Sistema", icon: SettingsIcon },
-    { id: "security", label: "Seguridad", icon: Shield },
-    { id: "pos", label: "Punto de Venta", icon: Monitor },
-    { id: "backup", label: "Respaldo", icon: Database },
-  ];
-
   return (
     <div className="h-screen flex flex-col">
       <Header title="Configuración" subtitle="Personaliza tu experiencia y ajustes del sistema" />
       
       <div className="flex-1 overflow-y-auto p-3 sm:p-6 space-y-4 sm:space-y-6 pb-32">
-        {/* Tab Navigation */}
-        <div className="flex flex-wrap gap-2 bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
-          {tabs.map((tab) => {
-            const Icon = tab.icon;
-            return (
-              <Button
-                key={tab.id}
-                variant={activeTab === tab.id ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setActiveTab(tab.id as any)}
-                className="flex items-center gap-2 flex-1 sm:flex-initial"
-              >
-                <Icon className="h-4 w-4" />
-                <span className="hidden sm:inline">{tab.label}</span>
-              </Button>
-            );
-          })}
-        </div>
+        <Tabs defaultValue="system" className="w-full">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="system" className="flex items-center gap-2">
+              <SettingsIcon className="h-4 w-4" />
+              Sistema
+            </TabsTrigger>
+            <TabsTrigger value="security" className="flex items-center gap-2">
+              <Shield className="h-4 w-4" />
+              Seguridad
+            </TabsTrigger>
+            <TabsTrigger value="pos" className="flex items-center gap-2">
+              <Monitor className="h-4 w-4" />
+              POS
+            </TabsTrigger>
+            <TabsTrigger value="data" className="flex items-center gap-2">
+              <Database className="h-4 w-4" />
+              Datos
+            </TabsTrigger>
+          </TabsList>
 
-        {activeTab === "system" && (
-          <div className="space-y-6">
-            {/* Appearance */}
+          {/* System Settings Tab */}
+          <TabsContent value="system" className="space-y-6 mt-6">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -321,18 +312,13 @@ export default function Settings() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label>Tema</Label>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      Selecciona el tema de la interfaz
-                    </p>
-                  </div>
+                <div className="space-y-2">
+                  <Label>Tema</Label>
                   <Select
                     value={systemSettings.theme}
                     onValueChange={(value) => handleSystemSettingChange("theme", value)}
                   >
-                    <SelectTrigger className="w-32">
+                    <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -350,7 +336,7 @@ export default function Settings() {
                       </SelectItem>
                       <SelectItem value="system">
                         <div className="flex items-center gap-2">
-                          <Monitor className="h-4 w-4" />
+                          <Smartphone className="h-4 w-4" />
                           Sistema
                         </div>
                       </SelectItem>
@@ -358,14 +344,10 @@ export default function Settings() {
                   </Select>
                 </div>
 
-                <Separator />
-
                 <div className="flex items-center justify-between">
-                  <div>
-                    <Label>Modo Compacto</Label>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      Reduce el espaciado entre elementos
-                    </p>
+                  <div className="space-y-0.5">
+                    <Label>Modo compacto</Label>
+                    <p className="text-sm text-gray-500">Reduce el espaciado entre elementos</p>
                   </div>
                   <Switch
                     checked={systemSettings.compactMode}
@@ -374,137 +356,142 @@ export default function Settings() {
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <div>
-                    <Label>Alto Contraste</Label>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      Mejora la visibilidad con mayor contraste
-                    </p>
+                  <div className="space-y-0.5">
+                    <Label>Sonidos habilitados</Label>
+                    <p className="text-sm text-gray-500">Reproduce sonidos de notificación</p>
                   </div>
                   <Switch
-                    checked={systemSettings.highContrast}
-                    onCheckedChange={(checked) => handleSystemSettingChange("highContrast", checked)}
+                    checked={systemSettings.soundEnabled}
+                    onCheckedChange={(checked) => handleSystemSettingChange("soundEnabled", checked)}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Notificaciones habilitadas</Label>
+                    <p className="text-sm text-gray-500">Permite mostrar notificaciones del sistema</p>
+                  </div>
+                  <Switch
+                    checked={systemSettings.notificationsEnabled}
+                    onCheckedChange={(checked) => handleSystemSettingChange("notificationsEnabled", checked)}
                   />
                 </div>
               </CardContent>
             </Card>
 
-            {/* Regional Settings */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Globe className="h-5 w-5" />
-                  Configuración Regional
+                  Región y Formato
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <Label>Idioma</Label>
-                    <Select
-                      value={systemSettings.language}
-                      onValueChange={(value) => handleSystemSettingChange("language", value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="es">Español</SelectItem>
-                        <SelectItem value="en">English</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                <div className="space-y-2">
+                  <Label>Idioma</Label>
+                  <Select
+                    value={systemSettings.language}
+                    onValueChange={(value) => handleSystemSettingChange("language", value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="es">Español</SelectItem>
+                      <SelectItem value="en">English</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
-                  <div>
-                    <Label>Moneda</Label>
-                    <Select
-                      value={systemSettings.currency}
-                      onValueChange={(value) => handleSystemSettingChange("currency", value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="DOP">Peso Dominicano (DOP)</SelectItem>
-                        <SelectItem value="USD">Dólar Americano (USD)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                <div className="space-y-2">
+                  <Label>Moneda</Label>
+                  <Select
+                    value={systemSettings.currency}
+                    onValueChange={(value) => handleSystemSettingChange("currency", value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="DOP">Peso Dominicano (RD$)</SelectItem>
+                      <SelectItem value="USD">Dólar Americano (US$)</SelectItem>
+                      <SelectItem value="EUR">Euro (€)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
-                  <div>
-                    <Label>Formato de Fecha</Label>
-                    <Select
-                      value={systemSettings.dateFormat}
-                      onValueChange={(value) => handleSystemSettingChange("dateFormat", value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="DD/MM/YYYY">DD/MM/YYYY</SelectItem>
-                        <SelectItem value="MM/DD/YYYY">MM/DD/YYYY</SelectItem>
-                        <SelectItem value="YYYY-MM-DD">YYYY-MM-DD</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div>
-                    <Label>Formato de Hora</Label>
-                    <Select
-                      value={systemSettings.timeFormat}
-                      onValueChange={(value) => handleSystemSettingChange("timeFormat", value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="12h">12 horas (AM/PM)</SelectItem>
-                        <SelectItem value="24h">24 horas</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                <div className="space-y-2">
+                  <Label>Formato de fecha</Label>
+                  <Select
+                    value={systemSettings.dateFormat}
+                    onValueChange={(value) => handleSystemSettingChange("dateFormat", value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="DD/MM/YYYY">DD/MM/YYYY</SelectItem>
+                      <SelectItem value="MM/DD/YYYY">MM/DD/YYYY</SelectItem>
+                      <SelectItem value="YYYY-MM-DD">YYYY-MM-DD</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
 
-            {/* General Preferences */}
+          {/* Security Settings Tab */}
+          <TabsContent value="security" className="space-y-6 mt-6">
             <Card>
               <CardHeader>
-                <CardTitle>Preferencias Generales</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <Lock className="h-5 w-5" />
+                  Autenticación y Seguridad
+                </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <div>
-                    <Label>Guardado Automático</Label>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      Guarda automáticamente los cambios
-                    </p>
+                  <div className="space-y-0.5">
+                    <Label>Autenticación de dos factores</Label>
+                    <p className="text-sm text-gray-500">Añade una capa extra de seguridad</p>
                   </div>
                   <Switch
-                    checked={systemSettings.autoSave}
-                    onCheckedChange={(checked) => handleSystemSettingChange("autoSave", checked)}
+                    checked={securitySettings.twoFactorEnabled}
+                    onCheckedChange={(checked) => handleSecuritySettingChange("twoFactorEnabled", checked)}
                   />
                 </div>
 
+                <div className="space-y-2">
+                  <Label>Tiempo de sesión (minutos)</Label>
+                  <Select
+                    value={securitySettings.sessionTimeout.toString()}
+                    onValueChange={(value) => handleSecuritySettingChange("sessionTimeout", parseInt(value))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="15">15 minutos</SelectItem>
+                      <SelectItem value="30">30 minutos</SelectItem>
+                      <SelectItem value="60">1 hora</SelectItem>
+                      <SelectItem value="120">2 horas</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 <div className="flex items-center justify-between">
-                  <div>
-                    <Label>Mostrar Consejos</Label>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      Muestra consejos útiles en la interfaz
-                    </p>
+                  <div className="space-y-0.5">
+                    <Label>Notificaciones de inicio de sesión</Label>
+                    <p className="text-sm text-gray-500">Recibe alertas cuando alguien accede</p>
                   </div>
                   <Switch
-                    checked={systemSettings.showTooltips}
-                    onCheckedChange={(checked) => handleSystemSettingChange("showTooltips", checked)}
+                    checked={securitySettings.loginNotifications}
+                    onCheckedChange={(checked) => handleSecuritySettingChange("loginNotifications", checked)}
                   />
                 </div>
               </CardContent>
             </Card>
-          </div>
-        )}
 
-        {activeTab === "security" && (
-          <div className="space-y-6">
-            {/* Password */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -514,20 +501,18 @@ export default function Settings() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="current-password">Contraseña Actual</Label>
+                  <Label>Contraseña actual</Label>
                   <div className="relative">
                     <Input
-                      id="current-password"
                       type={showCurrentPassword ? "text" : "password"}
                       value={passwordForm.currentPassword}
-                      onChange={(e) => setPasswordForm(prev => ({ ...prev, currentPassword: e.target.value }))}
+                      onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
                       placeholder="Ingresa tu contraseña actual"
                     />
                     <Button
-                      type="button"
                       variant="ghost"
                       size="sm"
-                      className="absolute right-0 top-0 h-full px-3"
+                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                       onClick={() => setShowCurrentPassword(!showCurrentPassword)}
                     >
                       {showCurrentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -536,20 +521,18 @@ export default function Settings() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="new-password">Nueva Contraseña</Label>
+                  <Label>Nueva contraseña</Label>
                   <div className="relative">
                     <Input
-                      id="new-password"
                       type={showNewPassword ? "text" : "password"}
                       value={passwordForm.newPassword}
-                      onChange={(e) => setPasswordForm(prev => ({ ...prev, newPassword: e.target.value }))}
-                      placeholder="Ingresa tu nueva contraseña"
+                      onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
+                      placeholder="Ingresa una nueva contraseña"
                     />
                     <Button
-                      type="button"
                       variant="ghost"
                       size="sm"
-                      className="absolute right-0 top-0 h-full px-3"
+                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                       onClick={() => setShowNewPassword(!showNewPassword)}
                     >
                       {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -557,269 +540,190 @@ export default function Settings() {
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="confirm-password">Confirmar Nueva Contraseña</Label>
-                  <Input
-                    id="confirm-password"
-                    type="password"
-                    value={passwordForm.confirmPassword}
-                    onChange={(e) => setPasswordForm(prev => ({ ...prev, confirmPassword: e.target.value }))}
-                    placeholder="Confirma tu nueva contraseña"
-                  />
-                </div>
-
                 <Button
                   onClick={handlePasswordChange}
-                  disabled={changePasswordMutation.isPending || !passwordForm.currentPassword || !passwordForm.newPassword || !passwordForm.confirmPassword}
+                  disabled={!passwordForm.currentPassword || !passwordForm.newPassword || changePasswordMutation.isPending}
                   className="w-full"
                 >
-                  <Key className="h-4 w-4 mr-2" />
-                  Cambiar Contraseña
+                  {changePasswordMutation.isPending ? "Cambiando..." : "Cambiar Contraseña"}
                 </Button>
               </CardContent>
             </Card>
+          </TabsContent>
 
-            {/* Security Settings */}
+          {/* POS Settings Tab */}
+          <TabsContent value="pos" className="space-y-6 mt-6">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Lock className="h-5 w-5" />
-                  Configuración de Seguridad
+                  <Printer className="h-5 w-5" />
+                  Configuración de Impresión
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Tamaño de papel</Label>
+                  <Select
+                    value={posSettings.printerWidth}
+                    onValueChange={(value) => handlePOSSettingChange("printerWidth", value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="58mm">58mm (Móvil)</SelectItem>
+                      <SelectItem value="80mm">80mm (Estándar)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 <div className="flex items-center justify-between">
-                  <div>
-                    <Label>Autenticación de Dos Factores</Label>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      Añade una capa extra de seguridad a tu cuenta
-                    </p>
+                  <div className="space-y-0.5">
+                    <Label>Mostrar NCF en recibos</Label>
+                    <p className="text-sm text-gray-500">Incluye números de comprobante fiscal</p>
                   </div>
                   <Switch
-                    checked={securitySettings.twoFactorEnabled}
-                    onCheckedChange={(checked) => handleSecuritySettingChange("twoFactorEnabled", checked)}
+                    checked={posSettings.showNCF}
+                    onCheckedChange={(checked) => handlePOSSettingChange("showNCF", checked)}
                   />
                 </div>
 
-                <Separator />
-
                 <div className="flex items-center justify-between">
-                  <div>
-                    <Label>Notificaciones de Inicio de Sesión</Label>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      Recibe alertas cuando alguien acceda a tu cuenta
-                    </p>
+                  <div className="space-y-0.5">
+                    <Label>Mostrar logo de empresa</Label>
+                    <p className="text-sm text-gray-500">Incluye el logo en recibos</p>
                   </div>
                   <Switch
-                    checked={securitySettings.loginNotifications}
-                    onCheckedChange={(checked) => handleSecuritySettingChange("loginNotifications", checked)}
+                    checked={posSettings.showCompanyLogo}
+                    onCheckedChange={(checked) => handlePOSSettingChange("showCompanyLogo", checked)}
                   />
-                </div>
-
-                <Separator />
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <Label>Tiempo de Sesión (minutos)</Label>
-                    <Select
-                      value={securitySettings.sessionTimeout.toString()}
-                      onValueChange={(value) => handleSecuritySettingChange("sessionTimeout", parseInt(value))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="15">15 minutos</SelectItem>
-                        <SelectItem value="30">30 minutos</SelectItem>
-                        <SelectItem value="60">1 hora</SelectItem>
-                        <SelectItem value="240">4 horas</SelectItem>
-                        <SelectItem value="480">8 horas</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div>
-                    <Label>Expiración de Contraseña (días)</Label>
-                    <Select
-                      value={securitySettings.passwordExpiry.toString()}
-                      onValueChange={(value) => handleSecuritySettingChange("passwordExpiry", parseInt(value))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="30">30 días</SelectItem>
-                        <SelectItem value="60">60 días</SelectItem>
-                        <SelectItem value="90">90 días</SelectItem>
-                        <SelectItem value="180">180 días</SelectItem>
-                        <SelectItem value="365">1 año</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
-        {activeTab === "pos" && (
-          <div className="space-y-6">
-            {/* Printer Settings */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Configuración de Impresión</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <Label>Ancho de Impresora</Label>
-                    <Select
-                      value={posSettings.printerWidth}
-                      onValueChange={(value) => handlePOSSettingChange("printerWidth", value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="58mm">58mm</SelectItem>
-                        <SelectItem value="80mm">80mm</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div>
-                    <Label>Método de Pago por Defecto</Label>
-                    <Select
-                      value={posSettings.defaultPaymentMethod}
-                      onValueChange={(value) => handlePOSSettingChange("defaultPaymentMethod", value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="cash">Efectivo</SelectItem>
-                        <SelectItem value="card">Tarjeta</SelectItem>
-                        <SelectItem value="transfer">Transferencia</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="receipt-footer">Pie de Página del Recibo</Label>
+                  <Label>Pie de página personalizado</Label>
                   <Input
-                    id="receipt-footer"
                     value={posSettings.receiptFooter}
                     onChange={(e) => handlePOSSettingChange("receiptFooter", e.target.value)}
                     placeholder="Mensaje que aparece al final del recibo"
                   />
                 </div>
+              </CardContent>
+            </Card>
 
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label>Mostrar NCF</Label>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
-                        Incluir Número de Comprobante Fiscal en los recibos
-                      </p>
-                    </div>
-                    <Switch
-                      checked={posSettings.showNCF}
-                      onCheckedChange={(checked) => handlePOSSettingChange("showNCF", checked)}
-                    />
-                  </div>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Monitor className="h-5 w-5" />
+                  Configuración de Ventas
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Método de pago por defecto</Label>
+                  <Select
+                    value={posSettings.defaultPaymentMethod}
+                    onValueChange={(value) => handlePOSSettingChange("defaultPaymentMethod", value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="cash">Efectivo</SelectItem>
+                      <SelectItem value="card">Tarjeta</SelectItem>
+                      <SelectItem value="transfer">Transferencia</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label>Mostrar Logo de la Empresa</Label>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
-                        Incluir el logo en los recibos impresos
-                      </p>
-                    </div>
-                    <Switch
-                      checked={posSettings.showCompanyLogo}
-                      onCheckedChange={(checked) => handlePOSSettingChange("showCompanyLogo", checked)}
-                    />
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Requerir cliente</Label>
+                    <p className="text-sm text-gray-500">Obliga a seleccionar cliente para cada venta</p>
                   </div>
+                  <Switch
+                    checked={posSettings.requireCustomer}
+                    onCheckedChange={(checked) => handlePOSSettingChange("requireCustomer", checked)}
+                  />
+                </div>
 
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label>Abrir Cajón Automáticamente</Label>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
-                        Abrir el cajón de dinero al completar una venta
-                      </p>
-                    </div>
-                    <Switch
-                      checked={posSettings.autoOpenCashDrawer}
-                      onCheckedChange={(checked) => handlePOSSettingChange("autoOpenCashDrawer", checked)}
-                    />
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Abrir cajón automáticamente</Label>
+                    <p className="text-sm text-gray-500">Abre el cajón al completar una venta</p>
                   </div>
-
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label>Requerir Cliente</Label>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
-                        Obligar a seleccionar un cliente para cada venta
-                      </p>
-                    </div>
-                    <Switch
-                      checked={posSettings.requireCustomer}
-                      onCheckedChange={(checked) => handlePOSSettingChange("requireCustomer", checked)}
-                    />
-                  </div>
+                  <Switch
+                    checked={posSettings.autoOpenCashDrawer}
+                    onCheckedChange={(checked) => handlePOSSettingChange("autoOpenCashDrawer", checked)}
+                  />
                 </div>
               </CardContent>
             </Card>
-          </div>
-        )}
+          </TabsContent>
 
-        {activeTab === "backup" && (
-          <div className="space-y-6">
+          {/* Data Settings Tab */}
+          <TabsContent value="data" className="space-y-6 mt-6">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Database className="h-5 w-5" />
-                  Respaldo y Restauración
+                  Respaldo y Exportación
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label>Respaldo Automático</Label>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      Crear respaldos automáticos de la configuración
-                    </p>
-                  </div>
-                  <Switch
-                    checked={systemSettings.autoBackup}
-                    onCheckedChange={(checked) => handleSystemSettingChange("autoBackup", checked)}
-                  />
-                </div>
-
-                <Separator />
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <Button onClick={exportSettings} className="flex items-center gap-2">
-                    <Download className="h-4 w-4" />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Button onClick={exportSettings} variant="outline">
+                    <Download className="h-4 w-4 mr-2" />
                     Exportar Configuración
                   </Button>
-
-                  <Button variant="outline" className="flex items-center gap-2">
-                    <Upload className="h-4 w-4" />
+                  <Button variant="outline">
+                    <Upload className="h-4 w-4 mr-2" />
                     Importar Configuración
                   </Button>
                 </div>
 
-                <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
-                  <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                    <strong>Nota:</strong> La importación de configuración sobrescribirá tus ajustes actuales. 
-                    Se recomienda exportar la configuración actual antes de importar.
+                <Separator />
+
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label>Guardado automático</Label>
+                      <p className="text-sm text-gray-500">Guarda cambios automáticamente</p>
+                    </div>
+                    <Switch
+                      checked={systemSettings.autoSave}
+                      onCheckedChange={(checked) => handleSystemSettingChange("autoSave", checked)}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label>Respaldo automático</Label>
+                      <p className="text-sm text-gray-500">Crea respaldos de forma automática</p>
+                    </div>
+                    <Switch
+                      checked={systemSettings.autoBackup}
+                      onCheckedChange={(checked) => handleSystemSettingChange("autoBackup", checked)}
+                    />
+                  </div>
+                </div>
+
+                <div className="text-center py-6 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                  <HardDrive className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="font-medium text-gray-900 dark:text-white mb-2">
+                    Respaldo Manual
+                  </h3>
+                  <p className="text-gray-500 text-sm mb-4">
+                    Crear un respaldo completo de todos los datos
                   </p>
+                  <Button>
+                    <Download className="h-4 w-4 mr-2" />
+                    Crear Respaldo
+                  </Button>
                 </div>
               </CardContent>
             </Card>
-          </div>
-        )}
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
