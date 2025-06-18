@@ -56,12 +56,12 @@ export default function Landing() {
         <div className="text-center mb-12 sm:mb-16">
           <div className="max-w-4xl mx-auto mb-6 sm:mb-8">
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-4 sm:mb-6 leading-tight">
-              Sistema integral de gestión empresarial
+              Sistema ERP #1 República Dominicana - Facturación NCF Automática DGII
             </h1>
             <p className="text-lg sm:text-xl text-gray-300 mb-6 sm:mb-8 leading-relaxed">
-              Gestiona tu empresa con herramientas inteligentes: facturación automatizada, generación de imágenes 
-              de productos con IA, verificación automática de RNC y asistente virtual. Adaptado específicamente 
-              para las normativas dominicanas.
+              <strong>Four One Solutions</strong> es el sistema ERP líder en República Dominicana con facturación automática NCF para DGII, 
+              POS especializado para restaurantes, gestión inteligente de inventarios y contabilidad empresarial completa. 
+              Cumple 100% con las normativas fiscales dominicanas y ofrece integración con impresoras térmicas.
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center items-center">
@@ -96,10 +96,10 @@ export default function Landing() {
                 </svg>
               </div>
               <h3 className="text-base sm:text-lg font-semibold text-white mb-2">
-                Verificación RNC Automática
+                Verificación RNC DGII Automática
               </h3>
               <p className="text-sm sm:text-base text-gray-300">
-                Validación en tiempo real con registro DGII, búsqueda y verificación instantánea
+                Validación automática de RNC con base de datos oficial DGII República Dominicana. Verificación instantánea de estatus tributario.
               </p>
             </CardContent>
           </Card>

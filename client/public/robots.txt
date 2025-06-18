@@ -1,0 +1,47 @@
+User-agent: *
+Allow: /
+
+# Prioritize key pages for crawling
+Allow: /billing
+Allow: /pos
+Allow: /inventory
+Allow: /accounting
+Allow: /products
+Allow: /customers
+Allow: /suppliers
+Allow: /reports
+Allow: /dgii-reports
+Allow: /payment
+Allow: /download/windows
+
+# Block unnecessary pages from indexing
+Disallow: /api/
+Disallow: /_vite/
+Disallow: /node_modules/
+Disallow: /src/
+Disallow: /admin/
+Disallow: /super-admin/
+Disallow: /setup/
+Disallow: /profile/
+Disallow: /company-settings/
+
+# Special crawlers
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 1
+
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 2
+
+User-agent: facebookexternalhit
+Allow: /
+
+User-agent: Twitterbot
+Allow: /
+
+# Sitemap location
+Sitemap: https://fourone.com.do/sitemap.xml
+
+# Host preference (helps with www vs non-www)
+Host: https://fourone.com.do
