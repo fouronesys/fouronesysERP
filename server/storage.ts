@@ -22,6 +22,7 @@ import {
   ncfSequences,
   aiChatMessages,
   notifications,
+  notificationSettings,
   employees,
   payrollPeriods,
   payrollEntries,
@@ -3713,13 +3714,13 @@ export class DatabaseStorage implements IStorage {
 
   async markNotificationAsRead(notificationId: number, userId: string) {
     await db.update(notifications)
-      .set({ isRead: true, readAt: new Date() })
+      .set({ read: true, readAt: new Date() })
       .where(and(eq(notifications.id, notificationId), eq(notifications.userId, userId)));
   }
 
   async markAllNotificationsAsRead(userId: string) {
     await db.update(notifications)
-      .set({ isRead: true, readAt: new Date() })
+      .set({ read: true, readAt: new Date() })
       .where(eq(notifications.userId, userId));
   }
 

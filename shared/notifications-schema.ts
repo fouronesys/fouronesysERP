@@ -11,7 +11,7 @@ export const notifications = pgTable("notifications", {
   message: text("message").notNull(),
   type: varchar("type", { length: 20 }).notNull(), // info, success, warning, error
   category: varchar("category", { length: 50 }).notNull(), // sales, inventory, system, financial, user_activity
-  isRead: boolean("is_read").default(false),
+  read: boolean("read").default(false),
   actionUrl: varchar("action_url", { length: 500 }),
   actionText: varchar("action_text", { length: 100 }),
   metadata: jsonb("metadata").default({}),

@@ -24,7 +24,7 @@ interface Notification {
   message: string;
   type: 'info' | 'success' | 'warning' | 'error';
   category: string;
-  isRead: boolean;
+  read: boolean;
   createdAt: string;
   actionUrl?: string;
   actionText?: string;
@@ -110,7 +110,7 @@ export function NotificationCenter() {
     },
   });
 
-  const unreadCount = notifications.filter(n => !n.isRead).length;
+  const unreadCount = notifications.filter(n => !n.read).length;
 
   const handleMarkAsRead = (notificationId: string) => {
     markAsReadMutation.mutate(notificationId);
@@ -211,7 +211,7 @@ export function NotificationCenter() {
                               animate={{ opacity: 1, x: 0 }}
                               exit={{ opacity: 0, x: 20 }}
                               className={`p-3 mb-2 rounded-lg border transition-colors ${
-                                notification.isRead
+                                notification.read
                                   ? "bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700"
                                   : "bg-white dark:bg-gray-800 border-blue-200 dark:border-blue-700 shadow-sm"
                               }`}
@@ -222,12 +222,12 @@ export function NotificationCenter() {
                                   <div className="flex items-start justify-between">
                                     <div className="flex-1">
                                       <h5 className={`text-sm font-medium ${
-                                        notification.isRead ? "text-gray-600 dark:text-gray-400" : "text-gray-900 dark:text-white"
+                                        notification.read ? "text-gray-600 dark:text-gray-400" : "text-gray-900 dark:text-white"
                                       }`}>
                                         {notification.title}
                                       </h5>
                                       <p className={`text-xs mt-1 ${
-                                        notification.isRead ? "text-gray-500 dark:text-gray-500" : "text-gray-700 dark:text-gray-300"
+                                        notification.read ? "text-gray-500 dark:text-gray-500" : "text-gray-700 dark:text-gray-300"
                                       }`}>
                                         {notification.message}
                                       </p>
@@ -256,7 +256,7 @@ export function NotificationCenter() {
                                       </div>
                                     </div>
                                     <div className="flex gap-1 ml-2">
-                                      {!notification.isRead && (
+                                      {!notification.read && (
                                         <Button
                                           variant="ghost"
                                           size="sm"
