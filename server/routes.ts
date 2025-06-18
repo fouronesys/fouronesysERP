@@ -18,6 +18,7 @@ import {
 import { LogoProcessor } from "./logo-processor";
 import { ThermalLogoProcessor } from "./thermal-logo";
 import { ThermalQRProcessor } from "./thermal-qr";
+import { DR_TAX_TYPES } from "@shared/schema";
 
 import { createPaypalOrder, capturePaypalOrder, loadPaypalDefault } from "./paypal";
 import { ErrorManager } from "./error-management";
@@ -1211,13 +1212,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Company not found" });
       }
 
+      // Calculate taxes based on the selected tax type
+      const taxType = req.body.taxType || 'itbis_18';
+      const taxInfo = DR_TAX_TYPES[taxType as keyof typeof DR_TAX_TYPES];
+      const subtotal = parseFloat(req.body.subtotal);
+      const taxAmount = (subtotal * taxInfo.rate) / 100;
+      const total = subtotal + taxAmount;
+
       // Convert string values to appropriate types for validation
       const processedData = {
         ...req.body,
         customerId: parseInt(req.body.customerId),
-        subtotal: req.body.subtotal.toString(),
-        itbis: req.body.tax ? req.body.tax.toString() : "0",
-        total: req.body.total.toString(),
+        subtotal: subtotal.toString(),
+        itbis: taxType.startsWith('itbis') ? taxAmount.toString() : "0",
+        selectiveConsumptionTax: taxType === 'selective_consumption' ? taxAmount.toString() : "0",
+        otherTaxes: (!taxType.startsWith('itbis') && taxType !== 'selective_consumption' && taxType !== 'exempt') ? taxAmount.toString() : "0",
+        total: total.toString(),
         companyId: company.id,
       };
 

@@ -92,10 +92,13 @@ export default function Billing() {
   // Calculate totals when items change
   const calculateTotals = () => {
     const items = form.getValues("items");
+    const taxType = form.getValues("taxType") || "itbis_18";
     const subtotal = items.reduce((sum, item) => {
       return sum + (parseFloat(item.quantity) * parseFloat(item.unitPrice));
     }, 0);
-    const tax = subtotal * 0.18; // 18% ITBIS
+    
+    const taxInfo = DR_TAX_TYPES[taxType as keyof typeof DR_TAX_TYPES];
+    const tax = taxType === "exempt" ? 0 : (subtotal * taxInfo.rate) / 100;
     const total = subtotal + tax;
     
     form.setValue("subtotal", subtotal.toFixed(2));
@@ -662,7 +665,13 @@ export default function Billing() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Tipo de Impuesto *</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select 
+                          onValueChange={(value) => {
+                            field.onChange(value);
+                            setTimeout(calculateTotals, 0); // Recalculate when tax type changes
+                          }} 
+                          defaultValue={field.value}
+                        >
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Seleccionar tipo de impuesto" />
