@@ -849,6 +849,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
 
+  app.get("/api/companies/current", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims?.sub || req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+      
+      res.json(company);
+    } catch (error) {
+      console.error("Error fetching company:", error);
+      res.status(500).json({ message: "Failed to fetch company" });
+    }
+  });
+
   app.put("/api/companies/current", isAuthenticated, async (req: any, res) => {
     try {
       console.log("PUT /api/companies/current - Request body:", req.body);

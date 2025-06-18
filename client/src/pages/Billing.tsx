@@ -17,7 +17,7 @@ import { z } from "zod";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
-import type { Invoice, Customer, Product } from "@shared/schema";
+import type { Invoice, Customer, Product, Company } from "@shared/schema";
 import { DR_TAX_TYPES } from "@shared/schema";
 
 const invoiceItemSchema = z.object({
@@ -66,7 +66,7 @@ export default function Billing() {
     queryKey: ["/api/products"],
   });
 
-  const { data: company } = useQuery({
+  const { data: company } = useQuery<Company>({
     queryKey: ["/api/companies/current"],
   });
 
@@ -97,7 +97,7 @@ export default function Billing() {
   const getAvailableTaxTypes = () => {
     const baseTaxTypes = Object.entries(DR_TAX_TYPES).filter(([key]) => key !== 'tip_10');
     
-    if (company?.businessType === 'restaurant') {
+    if (company && 'businessType' in company && company.businessType === 'restaurant') {
       return Object.entries(DR_TAX_TYPES); // Include all tax types including tip for restaurants
     }
     
