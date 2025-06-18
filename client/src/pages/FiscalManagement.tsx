@@ -584,10 +584,10 @@ export default function FiscalManagement() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-1">
-            <TabsTrigger value="documents" className="text-xs sm:text-sm px-2 py-2">
-              <span className="hidden sm:inline">Documentos Fiscales</span>
-              <span className="sm:hidden">Documentos</span>
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-1 mb-6">
+            <TabsTrigger value="ncf-sequences" className="text-xs sm:text-sm px-2 py-2">
+              <span className="hidden sm:inline">Secuencias NCF</span>
+              <span className="sm:hidden">NCF</span>
             </TabsTrigger>
             <TabsTrigger value="reports" className="text-xs sm:text-sm px-2 py-2">
               <span className="hidden sm:inline">Reportes 606/607</span>
@@ -607,12 +607,12 @@ export default function FiscalManagement() {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="documents" className="space-y-6">
-            <div className="flex flex-col sm:flex-row gap-4">
+          <TabsContent value="ncf-sequences" className="space-y-6">
+            <div className="flex flex-col sm:flex-row gap-4 mb-6">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                 <Input
-                  placeholder="Buscar documentos por número, cliente o RNC..."
+                  placeholder="Buscar secuencias NCF por tipo o número..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
@@ -622,12 +622,12 @@ export default function FiscalManagement() {
                 <DialogTrigger asChild>
                   <Button>
                     <Plus className="h-4 w-4 mr-2" />
-                    Nuevo Documento
+                    Nueva Secuencia NCF
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
-                    <DialogTitle>Crear Documento Fiscal</DialogTitle>
+                    <DialogTitle>Nueva Secuencia NCF</DialogTitle>
                   </DialogHeader>
                   <Form {...documentForm}>
                     <form onSubmit={documentForm.handleSubmit(onSubmitDocument)} className="space-y-4">
@@ -637,7 +637,7 @@ export default function FiscalManagement() {
                           name="type"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Tipo de Documento</FormLabel>
+                              <FormLabel>Tipo de NCF</FormLabel>
                               <Select onValueChange={field.onChange} defaultValue={field.value}>
                                 <FormControl>
                                   <SelectTrigger>
@@ -645,11 +645,15 @@ export default function FiscalManagement() {
                                   </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
-                                  {documentTypes.map((type) => (
-                                    <SelectItem key={type.value} value={type.value}>
-                                      {type.label}
-                                    </SelectItem>
-                                  ))}
+                                  <SelectItem value="B01">B01 - Factura de Crédito Fiscal</SelectItem>
+                                  <SelectItem value="B02">B02 - Factura de Consumo</SelectItem>
+                                  <SelectItem value="B03">B03 - Nota de Débito</SelectItem>
+                                  <SelectItem value="B04">B04 - Nota de Crédito</SelectItem>
+                                  <SelectItem value="B11">B11 - Factura de Régimen Especial</SelectItem>
+                                  <SelectItem value="B12">B12 - Factura Gubernamental</SelectItem>
+                                  <SelectItem value="B13">B13 - Factura de Exportación</SelectItem>
+                                  <SelectItem value="B14">B14 - Factura para Regímenes Especiales</SelectItem>
+                                  <SelectItem value="B15">B15 - Comprobante de Compras</SelectItem>
                                 </SelectContent>
                               </Select>
                               <FormMessage />
@@ -662,9 +666,9 @@ export default function FiscalManagement() {
                           name="series"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Serie</FormLabel>
+                              <FormLabel>Serie/Prefijo</FormLabel>
                               <FormControl>
-                                <Input placeholder="B01" {...field} />
+                                <Input placeholder="001" {...field} />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -675,12 +679,12 @@ export default function FiscalManagement() {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <FormField
                           control={documentForm.control}
-                          name="number"
+                          name="rangeStart"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Número</FormLabel>
+                              <FormLabel>Número Inicial</FormLabel>
                               <FormControl>
-                                <Input placeholder="00000001" {...field} />
+                                <Input type="number" placeholder="00000001" {...field} />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -689,12 +693,12 @@ export default function FiscalManagement() {
                         
                         <FormField
                           control={documentForm.control}
-                          name="customerRnc"
+                          name="rangeEnd"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>RNC/Cédula Cliente</FormLabel>
+                              <FormLabel>Número Final</FormLabel>
                               <FormControl>
-                                <Input placeholder="131234567" {...field} />
+                                <Input type="number" placeholder="00001000" {...field} />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -704,12 +708,12 @@ export default function FiscalManagement() {
 
                       <FormField
                         control={documentForm.control}
-                        name="customerName"
+                        name="currentNumber"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Nombre del Cliente</FormLabel>
+                            <FormLabel>Número Actual</FormLabel>
                             <FormControl>
-                              <Input placeholder="Nombre completo del cliente" {...field} />
+                              <Input type="number" placeholder="00000001" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -719,13 +723,41 @@ export default function FiscalManagement() {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <FormField
                           control={documentForm.control}
-                          name="amount"
+                          name="expirationDate"
                           render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Monto</FormLabel>
-                              <FormControl>
-                                <Input type="number" step="0.01" placeholder="0.00" {...field} />
-                              </FormControl>
+                            <FormItem className="flex flex-col">
+                              <FormLabel>Fecha de Vencimiento</FormLabel>
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <FormControl>
+                                    <Button
+                                      variant="outline"
+                                      className={cn(
+                                        "w-full pl-3 text-left font-normal",
+                                        !field.value && "text-muted-foreground"
+                                      )}
+                                    >
+                                      {field.value ? (
+                                        format(field.value, "PPP", { locale: es })
+                                      ) : (
+                                        <span>Seleccionar fecha</span>
+                                      )}
+                                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                    </Button>
+                                  </FormControl>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0" align="start">
+                                  <Calendar
+                                    mode="single"
+                                    selected={field.value}
+                                    onSelect={field.onChange}
+                                    disabled={(date) =>
+                                      date <= new Date()
+                                    }
+                                    initialFocus
+                                  />
+                                </PopoverContent>
+                              </Popover>
                               <FormMessage />
                             </FormItem>
                           )}
@@ -733,60 +765,25 @@ export default function FiscalManagement() {
                         
                         <FormField
                           control={documentForm.control}
-                          name="itbis"
+                          name="isActive"
                           render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>ITBIS</FormLabel>
+                            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                              <div className="space-y-0.5">
+                                <FormLabel>Estado Activo</FormLabel>
+                                <div className="text-sm text-muted-foreground">
+                                  Permitir uso en facturación
+                                </div>
+                              </div>
                               <FormControl>
-                                <Input type="number" step="0.01" placeholder="0.00" {...field} />
+                                <Switch
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
+                                />
                               </FormControl>
-                              <FormMessage />
                             </FormItem>
                           )}
                         />
                       </div>
-
-                      <FormField
-                        control={documentForm.control}
-                        name="date"
-                        render={({ field }) => (
-                          <FormItem className="flex flex-col">
-                            <FormLabel>Fecha</FormLabel>
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <FormControl>
-                                  <Button
-                                    variant="outline"
-                                    className={cn(
-                                      "w-full pl-3 text-left font-normal",
-                                      !field.value && "text-muted-foreground"
-                                    )}
-                                  >
-                                    {field.value ? (
-                                      format(field.value, "PPP", { locale: es })
-                                    ) : (
-                                      <span>Seleccionar fecha</span>
-                                    )}
-                                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                  </Button>
-                                </FormControl>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-auto p-0" align="start">
-                                <Calendar
-                                  mode="single"
-                                  selected={field.value}
-                                  onSelect={field.onChange}
-                                  disabled={(date) =>
-                                    date > new Date() || date < new Date("1900-01-01")
-                                  }
-                                  initialFocus
-                                />
-                              </PopoverContent>
-                            </Popover>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
 
                       <FormField
                         control={documentForm.control}
@@ -815,7 +812,7 @@ export default function FiscalManagement() {
                           Cancelar
                         </Button>
                         <Button type="submit" disabled={createDocumentMutation.isPending}>
-                          {createDocumentMutation.isPending ? "Creando..." : "Crear Documento"}
+                          {createDocumentMutation.isPending ? "Creando..." : "Crear Secuencia NCF"}
                         </Button>
                       </div>
                     </form>
@@ -828,7 +825,7 @@ export default function FiscalManagement() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Receipt className="h-5 w-5" />
-                  Documentos Fiscales
+                  Secuencias NCF Configuradas
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -836,44 +833,72 @@ export default function FiscalManagement() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Tipo</TableHead>
-                        <TableHead>Serie/Número</TableHead>
-                        <TableHead>Cliente</TableHead>
-                        <TableHead>RNC</TableHead>
-                        <TableHead>Monto</TableHead>
-                        <TableHead>ITBIS</TableHead>
-                        <TableHead>Fecha</TableHead>
+                        <TableHead>Tipo NCF</TableHead>
+                        <TableHead>Serie</TableHead>
+                        <TableHead>Rango</TableHead>
+                        <TableHead>Número Actual</TableHead>
+                        <TableHead>Disponibles</TableHead>
+                        <TableHead>Vencimiento</TableHead>
                         <TableHead>Estado</TableHead>
                         <TableHead>Acciones</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredDocuments.map((doc: FiscalDocument) => (
-                        <TableRow key={doc.id}>
-                          <TableCell>
-                            <Badge variant="outline">{doc.type}</Badge>
-                          </TableCell>
-                          <TableCell className="font-mono">
-                            {doc.series}{doc.number}
-                          </TableCell>
-                          <TableCell>{doc.customerName}</TableCell>
-                          <TableCell className="font-mono">{doc.customerRnc || "N/A"}</TableCell>
-                          <TableCell>RD$ {doc.amount.toLocaleString()}</TableCell>
-                          <TableCell>RD$ {doc.itbis.toLocaleString()}</TableCell>
-                          <TableCell>{format(new Date(doc.date), "dd/MM/yyyy")}</TableCell>
-                          <TableCell>{getDocumentStatusBadge(doc.status)}</TableCell>
-                          <TableCell>
-                            <div className="flex gap-1">
-                              <Button variant="ghost" size="sm">
-                                <Eye className="h-4 w-4" />
-                              </Button>
-                              <Button variant="ghost" size="sm">
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                      {/* Mock data for demonstration */}
+                      <TableRow>
+                        <TableCell>
+                          <Badge variant="outline">B01</Badge>
+                        </TableCell>
+                        <TableCell className="font-mono">001</TableCell>
+                        <TableCell className="font-mono">00000001 - 00001000</TableCell>
+                        <TableCell className="font-mono">00000025</TableCell>
+                        <TableCell>
+                          <span className="text-green-600 font-medium">975</span>
+                        </TableCell>
+                        <TableCell>31/12/2024</TableCell>
+                        <TableCell>
+                          <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
+                            Activo
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-1">
+                            <Button variant="ghost" size="sm">
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="sm">
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell>
+                          <Badge variant="outline">B02</Badge>
+                        </TableCell>
+                        <TableCell className="font-mono">001</TableCell>
+                        <TableCell className="font-mono">00000001 - 00001000</TableCell>
+                        <TableCell className="font-mono">00000156</TableCell>
+                        <TableCell>
+                          <span className="text-green-600 font-medium">844</span>
+                        </TableCell>
+                        <TableCell>31/12/2024</TableCell>
+                        <TableCell>
+                          <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
+                            Activo
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-1">
+                            <Button variant="ghost" size="sm">
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="sm">
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
                     </TableBody>
                   </Table>
                 </div>
