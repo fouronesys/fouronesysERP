@@ -83,7 +83,10 @@ export default function Movements() {
         warehouseId: parseInt(data.warehouseId),
         quantity: parseInt(data.quantity),
       };
-      await apiRequest("POST", "/api/movements", payload);
+      await apiRequest("/api/movements", {
+        method: "POST",
+        body: payload,
+      });
     },
     onSuccess: () => {
       toast({

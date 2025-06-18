@@ -183,7 +183,7 @@ export default function Warehouses() {
   }
 
   return (
-    <div className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900">
+    <div className="h-screen overflow-y-auto bg-gray-50 dark:bg-gray-900">
       <Header title="Almacenes" subtitle="Gestiona tus ubicaciones de inventario" />
       
       <div className="p-6 space-y-6">
@@ -209,10 +209,10 @@ export default function Warehouses() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {products?.filter((p: any) => p.warehouseId).length || 0}
+                {(products && Array.isArray(products)) ? products.filter((p: any) => p.warehouseId).length : 0}
               </div>
               <p className="text-xs text-muted-foreground">
-                de {products?.length || 0} productos totales
+                de {(products && Array.isArray(products)) ? products.length : 0} productos totales
               </p>
             </CardContent>
           </Card>
@@ -224,7 +224,7 @@ export default function Warehouses() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {products?.reduce((sum: number, p: any) => sum + (p.stock || 0), 0) || 0}
+                {(products && Array.isArray(products)) ? products.reduce((sum: number, p: any) => sum + (p.stock || 0), 0) : 0}
               </div>
               <p className="text-xs text-muted-foreground">unidades en inventario</p>
             </CardContent>
