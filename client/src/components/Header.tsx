@@ -1,4 +1,4 @@
-import { Bell, Plus, ChevronDown, LogOut, User, Settings } from "lucide-react";
+import { Plus, ChevronDown, LogOut, User, Settings, Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useThemeContext } from "./ThemeProvider";
 import { useAuth } from "@/hooks/useAuth";
@@ -13,6 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { NotificationCenter } from "./NotificationCenter";
 
 interface HeaderProps {
   title: string;
@@ -39,45 +40,21 @@ export function Header({ title, subtitle }: HeaderProps) {
 
   const handleLogout = async () => {
     try {
+      // Clear React Query cache first
+      queryClient.clear();
+      
       // Call logout endpoint
-      const response = await fetch("/api/logout", {
+      await fetch("/api/logout", {
         method: "POST",
         credentials: "include",
         headers: {
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache'
+          'Content-Type': 'application/json'
         }
       });
       
-      // Clear React Query cache completely
-      queryClient.clear();
-      queryClient.invalidateQueries();
-      queryClient.removeQueries();
-      
-      // Clear all browser storage
-      window.localStorage.clear();
-      window.sessionStorage.clear();
-      
-      // Clear IndexedDB if exists
-      if ('indexedDB' in window) {
-        try {
-          const databases = await indexedDB.databases();
-          await Promise.all(
-            databases.map(db => {
-              if (db.name) {
-                const deleteReq = indexedDB.deleteDatabase(db.name);
-                return new Promise<boolean>((resolve) => {
-                  deleteReq.onsuccess = () => resolve(true);
-                  deleteReq.onerror = () => resolve(false);
-                });
-              }
-              return Promise.resolve(true);
-            })
-          );
-        } catch (idbError) {
-          console.log('IndexedDB cleanup skipped');
-        }
-      }
+      // Clear browser storage
+      localStorage.clear();
+      sessionStorage.clear();
       
       // Clear service worker cache if available
       if ('serviceWorker' in navigator && 'caches' in window) {
@@ -159,17 +136,8 @@ export function Header({ title, subtitle }: HeaderProps) {
           
           {/* User Section */}
           <div className="flex items-center space-x-2 sm:space-x-3">
-            {/* Notifications - Hidden on mobile */}
-            {!isMobile && (
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                onClick={() => setLocation("/notifications")}
-                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 theme-blue:text-blue-100 theme-blue:hover:text-white"
-              >
-                <Bell className="h-4 w-4 lg:h-5 lg:w-5" />
-              </Button>
-            )}
+            {/* Notifications */}
+            {!isMobile && <NotificationCenter />}
             
             {/* User Dropdown */}
             <DropdownMenu>
