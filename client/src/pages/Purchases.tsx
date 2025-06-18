@@ -1,10 +1,17 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { 
   Plus, 
   Search, 
@@ -15,8 +22,74 @@ import {
   Users,
   ShoppingCart,
   Receipt,
-  DollarSign
+  DollarSign,
+  Calendar as CalendarIcon,
+  Edit,
+  Eye,
+  Trash2,
+  Check,
+  X
 } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
+
+// Form schemas
+const supplierSchema = z.object({
+  name: z.string().min(1, "Nombre es requerido"),
+  rnc: z.string().optional(),
+  category: z.string().optional(),
+  contactPerson: z.string().optional(),
+  email: z.string().email("Email inválido").optional().or(z.literal("")),
+  phone: z.string().optional(),
+  address: z.string().optional(),
+  isActive: z.boolean().default(true),
+});
+
+const purchaseOrderSchema = z.object({
+  supplierId: z.string().min(1, "Proveedor es requerido"),
+  orderDate: z.date(),
+  expectedDeliveryDate: z.date().optional(),
+  notes: z.string().optional(),
+  items: z.array(z.object({
+    productId: z.string().min(1, "Producto es requerido"),
+    quantity: z.number().min(1, "Cantidad debe ser mayor a 0"),
+    unitPrice: z.number().min(0, "Precio debe ser mayor o igual a 0"),
+  })).min(1, "Debe agregar al menos un item"),
+});
+
+const purchaseInvoiceSchema = z.object({
+  supplierId: z.string().min(1, "Proveedor es requerido"),
+  invoiceNumber: z.string().min(1, "Número de factura es requerido"),
+  ncf: z.string().optional(),
+  invoiceDate: z.date(),
+  dueDate: z.date().optional(),
+  notes: z.string().optional(),
+  items: z.array(z.object({
+    productId: z.string().min(1, "Producto es requerido"),
+    quantity: z.number().min(1, "Cantidad debe ser mayor a 0"),
+    unitPrice: z.number().min(0, "Precio debe ser mayor o igual a 0"),
+  })).min(1, "Debe agregar al menos un item"),
+});
+
+const paymentSchema = z.object({
+  invoiceId: z.string().min(1, "Factura es requerida"),
+  amount: z.number().min(0.01, "Monto debe ser mayor a 0"),
+  paymentMethod: z.string().min(1, "Método de pago es requerido"),
+  paymentDate: z.date(),
+  reference: z.string().optional(),
+  notes: z.string().optional(),
+});
+
+type SupplierFormData = z.infer<typeof supplierSchema>;
+type PurchaseOrderFormData = z.infer<typeof purchaseOrderSchema>;
+type PurchaseInvoiceFormData = z.infer<typeof purchaseInvoiceSchema>;
+type PaymentFormData = z.infer<typeof paymentSchema>;
 
 // Tipos para evitar errores de TypeScript
 interface Supplier {
@@ -64,6 +137,188 @@ interface Stats {
   expenseChange?: string;
 }
 
+// Dialog components
+const NewSupplierDialog = ({ onSuccess }: { onSuccess: () => void }) => {
+  const [open, setOpen] = useState(false);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const form = useForm<SupplierFormData>({
+    resolver: zodResolver(supplierSchema),
+    defaultValues: {
+      name: "",
+      rnc: "",
+      category: "",
+      contactPerson: "",
+      email: "",
+      phone: "",
+      address: "",
+      isActive: true,
+    },
+  });
+
+  const createSupplierMutation = useMutation({
+    mutationFn: async (data: SupplierFormData) => {
+      const response = await apiRequest("POST", "/api/suppliers", data);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/suppliers"] });
+      toast({
+        title: "Proveedor creado",
+        description: "El proveedor ha sido creado exitosamente.",
+      });
+      setOpen(false);
+      form.reset();
+      onSuccess();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: "No se pudo crear el proveedor.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const onSubmit = (data: SupplierFormData) => {
+    createSupplierMutation.mutate(data);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button>
+          <Plus className="h-4 w-4 mr-2" />
+          Nuevo Proveedor
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Nuevo Proveedor</DialogTitle>
+        </DialogHeader>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Nombre *</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Nombre del proveedor" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="rnc"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>RNC</FormLabel>
+                  <FormControl>
+                    <Input placeholder="RNC del proveedor" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="category"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Categoría</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Categoría del proveedor" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="contactPerson"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Persona de Contacto</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Nombre del contacto" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email</FormLabel>
+                  <FormControl>
+                    <Input placeholder="email@ejemplo.com" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="phone"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Teléfono</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Teléfono de contacto" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="address"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Dirección</FormLabel>
+                  <FormControl>
+                    <Textarea placeholder="Dirección del proveedor" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="flex justify-end space-x-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setOpen(false)}
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                disabled={createSupplierMutation.isPending}
+              >
+                {createSupplierMutation.isPending ? "Creando..." : "Crear Proveedor"}
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
 // Componentes para cada sección del módulo
 const SuppliersSection = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -81,10 +336,7 @@ const SuppliersSection = () => {
             Gestiona tu catálogo de proveedores
           </p>
         </div>
-        <Button>
-          <Plus className="h-4 w-4 mr-2" />
-          Nuevo Proveedor
-        </Button>
+        <NewSupplierDialog onSuccess={() => {}} />
       </div>
 
       <div className="flex items-center space-x-2">
@@ -172,6 +424,578 @@ const SuppliersSection = () => {
   );
 };
 
+const NewPurchaseOrderDialog = ({ onSuccess }: { onSuccess: () => void }) => {
+  const [open, setOpen] = useState(false);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const { data: suppliers = [] } = useQuery<Supplier[]>({
+    queryKey: ["/api/suppliers"],
+  });
+
+  const { data: products = [] } = useQuery({
+    queryKey: ["/api/products"],
+  });
+
+  const form = useForm<PurchaseOrderFormData>({
+    resolver: zodResolver(purchaseOrderSchema),
+    defaultValues: {
+      supplierId: "",
+      orderDate: new Date(),
+      expectedDeliveryDate: undefined,
+      notes: "",
+      items: [{ productId: "", quantity: 1, unitPrice: 0 }],
+    },
+  });
+
+  const createOrderMutation = useMutation({
+    mutationFn: async (data: PurchaseOrderFormData) => {
+      const response = await apiRequest("POST", "/api/purchase-orders", data);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/purchase-orders"] });
+      toast({
+        title: "Orden creada",
+        description: "La orden de compra ha sido creada exitosamente.",
+      });
+      setOpen(false);
+      form.reset();
+      onSuccess();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: "No se pudo crear la orden de compra.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const onSubmit = (data: PurchaseOrderFormData) => {
+    createOrderMutation.mutate(data);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button>
+          <Plus className="h-4 w-4 mr-2" />
+          Nueva Orden
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Nueva Orden de Compra</DialogTitle>
+        </DialogHeader>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="supplierId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Proveedor *</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Seleccionar proveedor" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {suppliers.map((supplier: any) => (
+                          <SelectItem key={supplier.id} value={supplier.id.toString()}>
+                            {supplier.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="orderDate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Fecha de Orden *</FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant={"outline"}
+                            className={cn(
+                              "w-full pl-3 text-left font-normal",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
+                            {field.value ? (
+                              format(field.value, "PPP", { locale: es })
+                            ) : (
+                              <span>Seleccionar fecha</span>
+                            )}
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={field.value}
+                          onSelect={field.onChange}
+                          disabled={(date) =>
+                            date > new Date() || date < new Date("1900-01-01")
+                          }
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <FormField
+              control={form.control}
+              name="notes"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Notas</FormLabel>
+                  <FormControl>
+                    <Textarea placeholder="Notas adicionales" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="flex justify-end space-x-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setOpen(false)}
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                disabled={createOrderMutation.isPending}
+              >
+                {createOrderMutation.isPending ? "Creando..." : "Crear Orden"}
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+const NewInvoiceDialog = ({ onSuccess }: { onSuccess: () => void }) => {
+  const [open, setOpen] = useState(false);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const { data: suppliers = [] } = useQuery<Supplier[]>({
+    queryKey: ["/api/suppliers"],
+  });
+
+  const form = useForm<PurchaseInvoiceFormData>({
+    resolver: zodResolver(purchaseInvoiceSchema),
+    defaultValues: {
+      supplierId: "",
+      invoiceNumber: "",
+      ncf: "",
+      invoiceDate: new Date(),
+      dueDate: undefined,
+      notes: "",
+      items: [{ productId: "", quantity: 1, unitPrice: 0 }],
+    },
+  });
+
+  const createInvoiceMutation = useMutation({
+    mutationFn: async (data: PurchaseInvoiceFormData) => {
+      const response = await apiRequest("POST", "/api/purchase-invoices", data);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/purchase-invoices"] });
+      toast({
+        title: "Factura creada",
+        description: "La factura ha sido creada exitosamente.",
+      });
+      setOpen(false);
+      form.reset();
+      onSuccess();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: "No se pudo crear la factura.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const onSubmit = (data: PurchaseInvoiceFormData) => {
+    createInvoiceMutation.mutate(data);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button>
+          <Plus className="h-4 w-4 mr-2" />
+          Nueva Factura
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Nueva Factura de Compra</DialogTitle>
+        </DialogHeader>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="supplierId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Proveedor *</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Seleccionar proveedor" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {suppliers.map((supplier: any) => (
+                          <SelectItem key={supplier.id} value={supplier.id.toString()}>
+                            {supplier.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="invoiceNumber"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Número de Factura *</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Número de factura" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="invoiceDate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Fecha de Factura *</FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant={"outline"}
+                            className={cn(
+                              "w-full pl-3 text-left font-normal",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
+                            {field.value ? (
+                              format(field.value, "PPP", { locale: es })
+                            ) : (
+                              <span>Seleccionar fecha</span>
+                            )}
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={field.value}
+                          onSelect={field.onChange}
+                          disabled={(date) =>
+                            date > new Date() || date < new Date("1900-01-01")
+                          }
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="ncf"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>NCF</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Comprobante Fiscal" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <FormField
+              control={form.control}
+              name="notes"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Notas</FormLabel>
+                  <FormControl>
+                    <Textarea placeholder="Notas adicionales" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="flex justify-end space-x-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setOpen(false)}
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                disabled={createInvoiceMutation.isPending}
+              >
+                {createInvoiceMutation.isPending ? "Creando..." : "Crear Factura"}
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+const PaymentDialog = ({ invoice, onSuccess }: { invoice: PurchaseInvoice; onSuccess: () => void }) => {
+  const [open, setOpen] = useState(false);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const form = useForm<PaymentFormData>({
+    resolver: zodResolver(paymentSchema),
+    defaultValues: {
+      invoiceId: invoice.id.toString(),
+      amount: 0,
+      paymentMethod: "",
+      paymentDate: new Date(),
+      reference: "",
+      notes: "",
+    },
+  });
+
+  const createPaymentMutation = useMutation({
+    mutationFn: async (data: PaymentFormData) => {
+      const response = await apiRequest("POST", "/api/purchase-payments", data);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/purchase-invoices"] });
+      toast({
+        title: "Pago registrado",
+        description: "El pago ha sido registrado exitosamente.",
+      });
+      setOpen(false);
+      form.reset();
+      onSuccess();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: "No se pudo registrar el pago.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const onSubmit = (data: PaymentFormData) => {
+    createPaymentMutation.mutate(data);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline" size="sm">
+          <CreditCard className="h-4 w-4 mr-2" />
+          Pagar
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Registrar Pago</DialogTitle>
+        </DialogHeader>
+        <div className="mb-4 p-3 bg-muted rounded-lg">
+          <p className="text-sm"><strong>Factura:</strong> {invoice.invoiceNumber}</p>
+          <p className="text-sm"><strong>Proveedor:</strong> {invoice.supplier?.name}</p>
+          <p className="text-sm"><strong>Total:</strong> RD$ {parseFloat(invoice.totalAmount).toLocaleString()}</p>
+          <p className="text-sm"><strong>Pagado:</strong> RD$ {parseFloat(invoice.paidAmount || "0").toLocaleString()}</p>
+          <p className="text-sm font-medium"><strong>Pendiente:</strong> RD$ {(parseFloat(invoice.totalAmount) - parseFloat(invoice.paidAmount || "0")).toLocaleString()}</p>
+        </div>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="amount"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Monto a Pagar *</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      placeholder="0.00"
+                      {...field}
+                      onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="paymentMethod"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Método de Pago *</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleccionar método" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="cash">Efectivo</SelectItem>
+                      <SelectItem value="transfer">Transferencia</SelectItem>
+                      <SelectItem value="check">Cheque</SelectItem>
+                      <SelectItem value="card">Tarjeta</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="paymentDate"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Fecha de Pago *</FormLabel>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant={"outline"}
+                          className={cn(
+                            "w-full pl-3 text-left font-normal",
+                            !field.value && "text-muted-foreground"
+                          )}
+                        >
+                          {field.value ? (
+                            format(field.value, "PPP", { locale: es })
+                          ) : (
+                            <span>Seleccionar fecha</span>
+                          )}
+                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={field.value}
+                        onSelect={field.onChange}
+                        disabled={(date) =>
+                          date > new Date() || date < new Date("1900-01-01")
+                        }
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="reference"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Referencia</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Número de referencia" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="notes"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Notas</FormLabel>
+                  <FormControl>
+                    <Textarea placeholder="Notas del pago" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="flex justify-end space-x-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setOpen(false)}
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                disabled={createPaymentMutation.isPending}
+              >
+                {createPaymentMutation.isPending ? "Registrando..." : "Registrar Pago"}
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
 const PurchaseOrdersSection = () => {
   const { data: orders = [], isLoading } = useQuery({
     queryKey: ["/api/purchase-orders"],
@@ -186,10 +1010,7 @@ const PurchaseOrdersSection = () => {
             Gestiona las órdenes de compra a proveedores
           </p>
         </div>
-        <Button>
-          <Plus className="h-4 w-4 mr-2" />
-          Nueva Orden
-        </Button>
+        <NewPurchaseOrderDialog onSuccess={() => {}} />
       </div>
 
       {isLoading ? (
