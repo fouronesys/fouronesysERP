@@ -257,6 +257,81 @@ export default function UserManagement() {
           <p className="text-muted-foreground">Manage users, roles, and permissions</p>
         </div>
         <div className="flex gap-2">
+          {selectedTab === "users" && (
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button>
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  Añadir Usuario
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Añadir Nuevo Usuario</DialogTitle>
+                </DialogHeader>
+                <Form {...createRoleForm}>
+                  <form className="space-y-4">
+                    <FormField
+                      name="email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Email</FormLabel>
+                          <FormControl>
+                            <Input placeholder="usuario@empresa.com" {...field} />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      name="firstName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Nombre</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Nombre" {...field} />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      name="lastName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Apellido</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Apellido" {...field} />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      name="role"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Rol</FormLabel>
+                          <FormControl>
+                            <Select>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Seleccionar rol" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="admin">Administrador</SelectItem>
+                                <SelectItem value="manager">Gerente</SelectItem>
+                                <SelectItem value="employee">Empleado</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                    <Button type="submit" className="w-full">
+                      Crear Usuario
+                    </Button>
+                  </form>
+                </Form>
+              </DialogContent>
+            </Dialog>
+          )}
           {selectedTab === "roles" && (
             <Dialog open={isCreateRoleOpen} onOpenChange={setIsCreateRoleOpen}>
               <DialogTrigger asChild>

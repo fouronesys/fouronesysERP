@@ -189,13 +189,13 @@ export default function Employees() {
             <DialogTrigger asChild>
               <Button onClick={() => setEditingEmployee(null)}>
                 <Plus className="w-4 h-4 mr-2" />
-                Nuevo Empleado
+                Agregar Empleado
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>
-                  {editingEmployee ? "Editar Empleado" : "Nuevo Empleado"}
+                  {editingEmployee ? "Editar Empleado" : "Agregar Empleado"}
                 </DialogTitle>
               </DialogHeader>
               
