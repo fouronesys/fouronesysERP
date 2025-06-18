@@ -2,6 +2,7 @@ import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useQuery } from "@tanstack/react-query";
 import { 
   BarChart3, 
   FileText, 
@@ -142,6 +143,75 @@ export function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['Ventas']));
 
+  // Fetch active modules to control menu visibility
+  const { data: modulesData } = useQuery({
+    queryKey: ["/api/modules"],
+    retry: false
+  });
+  
+  const activeModules = Array.isArray(modulesData) ? modulesData : [];
+
+  // Helper function to check if a module is active
+  const isModuleActive = (moduleName: string) => {
+    const module = activeModules.find(m => m.name === moduleName);
+    return module ? module.isActive : true; // Default to true if module not found
+  };
+
+  // Filter navigation items based on active modules
+  const getFilteredNavigation = () => {
+    return navigation.map(section => {
+      if (section.category) {
+        const filteredItems = section.items?.filter(item => {
+          // Map menu items to their corresponding modules
+          const moduleMap: { [key: string]: string } = {
+            '/pos': 'Punto de Venta (POS)',
+            '/billing': 'Facturación',
+            '/customers': 'Gestión de Clientes',
+            '/sales-reports': 'Reportes de Ventas',
+            '/products': 'Gestión de Productos',
+            '/inventory': 'Control de Inventario',
+            '/warehouses': 'Gestión de Almacenes',
+            '/movements': 'Movimientos de Inventario',
+            '/production': 'Módulo de Producción',
+            '/purchases': 'Módulo de Compras',
+            '/pos-sales': 'Ventas POS',
+            '/fiscal-management': 'Gestión Fiscal',
+            '/employees': 'Gestión de Empleados',
+            '/payroll': 'Gestión de Nómina',
+            '/accounting': 'Contabilidad',
+            '/ai-insights': 'Insights con IA',
+            '/chat': 'Chat Interno',
+            '/user-management': 'Gestión de Usuarios',
+            '/company-settings': 'Configuración de Empresa',
+            '/error-management': 'Gestión de Errores',
+            '/system-monitoring': 'Monitoreo del Sistema',
+            '/super-admin': 'Super Admin',
+            '/module-manager': 'Gestión de Módulos',
+            '/company-management': 'Gestión de Empresas',
+            '/company-analytics': 'Analytics de Empresas'
+          };
+
+          const moduleName = moduleMap[item.href];
+          return moduleName ? isModuleActive(moduleName) : true;
+        });
+
+        return {
+          ...section,
+          items: filteredItems
+        };
+      }
+      return section;
+    }).filter(section => {
+      // Filter out categories that have no visible items
+      if (section.category && section.items) {
+        return section.items.length > 0;
+      }
+      return true;
+    });
+  };
+
+  const filteredNavigation = getFilteredNavigation();
+
   const toggleCategory = (category: string) => {
     const newExpanded = new Set(expandedCategories);
     if (newExpanded.has(category)) {
@@ -250,7 +320,7 @@ export function Sidebar() {
 
       {/* Navigation */}
       <nav className="flex-1 p-4 space-y-2 overflow-y-auto custom-scrollbar">
-        {navigation.map((item, index) => {
+        {filteredNavigation.map((item, index) => {
           if ("href" in item) {
             const isActive = location === item.href;
             const Icon = item.icon;
