@@ -14,6 +14,7 @@ import { createPaypalOrder, capturePaypalOrder, loadPaypalDefault } from "./payp
 import { auditLogger } from "./audit-logger";
 import { initializeAdminUser } from "./init-admin";
 import { moduleInitializer } from "./module-initializer";
+import { currencyService } from "./currency-service";
 import multer from "multer";
 
 // Notification management system
@@ -634,6 +635,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting notification:", error);
       res.status(500).json({ message: "Error deleting notification" });
+    }
+  });
+
+  // Currency conversion API endpoints
+  app.get("/api/currency/rates", async (req, res) => {
+    try {
+      const rates = await currencyService.getAllExchangeRates();
+      res.json(rates);
+    } catch (error) {
+      console.error("Error fetching exchange rates:", error);
+      res.status(500).json({ message: "Error fetching exchange rates" });
+    }
+  });
+
+  app.post("/api/currency/convert", async (req, res) => {
+    try {
+      const { amount, fromCurrency, toCurrency } = req.body;
+      const convertedAmount = await currencyService.convertCurrency(amount, fromCurrency, toCurrency);
+      res.json({ convertedAmount, fromCurrency, toCurrency, originalAmount: amount });
+    } catch (error) {
+      console.error("Error converting currency:", error);
+      res.status(500).json({ message: "Error converting currency" });
+    }
+  });
+
+  app.post("/api/currency/update-rates", isAuthenticated, async (req, res) => {
+    try {
+      const success = await currencyService.updateExchangeRates();
+      res.json({ success, message: success ? "Exchange rates updated" : "Failed to update rates" });
+    } catch (error) {
+      console.error("Error updating exchange rates:", error);
+      res.status(500).json({ message: "Error updating exchange rates" });
     }
   });
 

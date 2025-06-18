@@ -45,7 +45,10 @@ type ProductFormData = z.infer<typeof productSchema>;
 export default function Products() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isBOMDialogOpen, setIsBOMDialogOpen] = useState(false);
+  const [productTypeFilter, setProductTypeFilter] = useState("all");
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [selectedProductForBOM, setSelectedProductForBOM] = useState<Product | null>(null);
   const [currentImageUrl, setCurrentImageUrl] = useState("");
   const { toast } = useToast();
   const queryClient = useQueryClient();

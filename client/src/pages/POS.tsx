@@ -34,13 +34,37 @@ import type { Product, Customer, POSPrintSettings, Company } from "@shared/schem
 
 import { useResponsiveLayout, getResponsiveClass, getCardGridClass } from "@/hooks/useResponsiveLayout";
 
-// Funciones utilitarias
-const formatDOP = (amount: number) => {
-  return new Intl.NumberFormat('es-DO', {
+// Funciones utilitarias - Multi-currency support
+const formatCurrency = (amount: number, currency: string = 'DOP') => {
+  const currencyMap = {
+    'DOP': 'es-DO',
+    'USD': 'en-US',
+    'EUR': 'de-DE'
+  };
+  
+  return new Intl.NumberFormat(currencyMap[currency as keyof typeof currencyMap] || 'es-DO', {
     style: 'currency',
-    currency: 'DOP'
+    currency: currency
   }).format(amount);
 };
+
+const convertCurrency = async (amount: number, fromCurrency: string, toCurrency: string) => {
+  if (fromCurrency === toCurrency) return amount;
+  
+  try {
+    const data = await apiRequest(`/api/currency/convert`, {
+      method: 'POST',
+      body: { amount, fromCurrency, toCurrency }
+    });
+    return data.convertedAmount;
+  } catch (error) {
+    console.error('Currency conversion failed:', error);
+    return amount;
+  }
+};
+
+// Legacy function for backward compatibility
+const formatDOP = (amount: number) => formatCurrency(amount, 'DOP');
 
 const calculateITBIS = (subtotal: number) => {
   return subtotal * 0.18;
@@ -74,6 +98,8 @@ export default function POS() {
   const [showPrintModal, setShowPrintModal] = useState(false);
   const [lastSaleId, setLastSaleId] = useState<number | null>(null);
   const [lastSaleNumber, setLastSaleNumber] = useState("");
+  const [selectedCurrency, setSelectedCurrency] = useState("DOP");
+  const [exchangeRates, setExchangeRates] = useState<any>({});
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -94,6 +120,10 @@ export default function POS() {
 
   const { data: ncfSequences = [] } = useQuery({
     queryKey: ["/api/fiscal/ncf-sequences"],
+  });
+
+  const { data: currencyRates = [] } = useQuery({
+    queryKey: ["/api/currency/rates"],
   });
 
   // POS customers query
