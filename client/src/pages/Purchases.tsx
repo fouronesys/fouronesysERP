@@ -52,28 +52,41 @@ const supplierSchema = z.object({
 });
 
 const purchaseOrderSchema = z.object({
+  orderNumber: z.string().optional(), // Auto-generated
   supplierId: z.string().min(1, "Proveedor es requerido"),
   orderDate: z.date(),
-  expectedDeliveryDate: z.date().optional(),
+  expectedDeliveryDate: z.date({
+    required_error: "Fecha de entrega es requerida",
+  }),
+  driverName: z.string().min(1, "Chofer/encargado de entrega es requerido"),
   notes: z.string().optional(),
   items: z.array(z.object({
     productId: z.string().min(1, "Producto es requerido"),
     quantity: z.number().min(1, "Cantidad debe ser mayor a 0"),
-    unitPrice: z.number().min(0, "Precio debe ser mayor o igual a 0"),
+    unitPrice: z.number().min(0, "Costo debe ser mayor o igual a 0"),
+    taxType: z.enum(["itbis_18", "itbis_16", "itbis_8", "exempt", "tip_10"] as const, {
+      required_error: "Tipo de impuesto es requerido",
+    }),
   })).min(1, "Debe agregar al menos un item"),
 });
 
 const purchaseInvoiceSchema = z.object({
   supplierId: z.string().min(1, "Proveedor es requerido"),
   invoiceNumber: z.string().min(1, "Número de factura es requerido"),
-  ncf: z.string().optional(),
+  ncfPrefix: z.enum(["B01", "B02", "B03", "B04", "B11", "B12", "B13", "B14", "B15", "B16"] as const, {
+    required_error: "Prefijo NCF es requerido",
+  }),
+  ncfSequence: z.string().min(8, "Secuencia NCF debe tener 8 dígitos").max(8, "Secuencia NCF debe tener 8 dígitos"),
   invoiceDate: z.date(),
   dueDate: z.date().optional(),
   notes: z.string().optional(),
   items: z.array(z.object({
     productId: z.string().min(1, "Producto es requerido"),
     quantity: z.number().min(1, "Cantidad debe ser mayor a 0"),
-    unitPrice: z.number().min(0, "Precio debe ser mayor o igual a 0"),
+    unitPrice: z.number().min(0, "Costo debe ser mayor o igual a 0"),
+    taxType: z.enum(["itbis_18", "itbis_16", "itbis_8", "exempt", "tip_10"] as const, {
+      required_error: "Tipo de impuesto es requerido",
+    }),
   })).min(1, "Debe agregar al menos un item"),
 });
 
@@ -193,109 +206,119 @@ const NewSupplierDialog = ({ onSuccess }: { onSuccess: () => void }) => {
           Nuevo Proveedor
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-4xl">
         <DialogHeader>
           <DialogTitle>Nuevo Proveedor</DialogTitle>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nombre *</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Nombre del proveedor" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             
-            <FormField
-              control={form.control}
-              name="rnc"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>RNC</FormLabel>
-                  <FormControl>
-                    <Input placeholder="RNC del proveedor" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {/* Primera fila - Información básica */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nombre *</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Nombre del proveedor" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="rnc"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>RNC</FormLabel>
+                    <FormControl>
+                      <Input placeholder="RNC del proveedor" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-            <FormField
-              control={form.control}
-              name="category"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Categoría</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Categoría del proveedor" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+              <FormField
+                control={form.control}
+                name="category"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Categoría</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Categoría del proveedor" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
-            <FormField
-              control={form.control}
-              name="contactPerson"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Persona de Contacto</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Nombre del contacto" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {/* Segunda fila - Información de contacto */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <FormField
+                control={form.control}
+                name="contactPerson"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Persona de Contacto</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Nombre del contacto" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input placeholder="email@ejemplo.com" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input placeholder="email@ejemplo.com" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-            <FormField
-              control={form.control}
-              name="phone"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Teléfono</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Teléfono de contacto" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+              <FormField
+                control={form.control}
+                name="phone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Teléfono</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Teléfono de contacto" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
-            <FormField
-              control={form.control}
-              name="address"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Dirección</FormLabel>
-                  <FormControl>
-                    <Textarea placeholder="Dirección del proveedor" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {/* Tercera fila - Dirección */}
+            <div className="grid grid-cols-1 gap-4">
+              <FormField
+                control={form.control}
+                name="address"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Dirección</FormLabel>
+                    <FormControl>
+                      <Textarea placeholder="Dirección del proveedor" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             <div className="flex justify-end space-x-2">
               <Button
@@ -440,11 +463,13 @@ const NewPurchaseOrderDialog = ({ onSuccess }: { onSuccess: () => void }) => {
   const form = useForm<PurchaseOrderFormData>({
     resolver: zodResolver(purchaseOrderSchema),
     defaultValues: {
+      orderNumber: `ORD-${Date.now()}`, // Auto-generated
       supplierId: "",
       orderDate: new Date(),
-      expectedDeliveryDate: undefined,
+      expectedDeliveryDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from today
+      driverName: "",
       notes: "",
-      items: [{ productId: "", quantity: 1, unitPrice: 0 }],
+      items: [{ productId: "", quantity: 1, unitPrice: 0, taxType: "itbis_18" }],
     },
   });
 
@@ -484,13 +509,29 @@ const NewPurchaseOrderDialog = ({ onSuccess }: { onSuccess: () => void }) => {
           Nueva Orden
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Nueva Orden de Compra</DialogTitle>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            
+            {/* Primera fila - Información básica */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <FormField
+                control={form.control}
+                name="orderNumber"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Número de Orden</FormLabel>
+                    <FormControl>
+                      <Input {...field} disabled className="bg-muted" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
               <FormField
                 control={form.control}
                 name="supplierId"
@@ -516,6 +557,23 @@ const NewPurchaseOrderDialog = ({ onSuccess }: { onSuccess: () => void }) => {
                 )}
               />
 
+              <FormField
+                control={form.control}
+                name="driverName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Chofer/Encargado de Entrega *</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Nombre del chofer o encargado" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* Segunda fila - Fechas */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="orderDate"
@@ -557,6 +615,182 @@ const NewPurchaseOrderDialog = ({ onSuccess }: { onSuccess: () => void }) => {
                   </FormItem>
                 )}
               />
+
+              <FormField
+                control={form.control}
+                name="expectedDeliveryDate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Fecha de Entrega *</FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant={"outline"}
+                            className={cn(
+                              "w-full pl-3 text-left font-normal",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
+                            {field.value ? (
+                              format(field.value, "PPP", { locale: es })
+                            ) : (
+                              <span>Seleccionar fecha de entrega</span>
+                            )}
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={field.value}
+                          onSelect={field.onChange}
+                          disabled={(date) => date < new Date()}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* Sección de productos */}
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <h4 className="text-lg font-semibold">Productos</h4>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const currentItems = form.getValues("items");
+                    form.setValue("items", [
+                      ...currentItems,
+                      { productId: "", quantity: 1, unitPrice: 0, taxType: "itbis_18" }
+                    ]);
+                  }}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Agregar Producto
+                </Button>
+              </div>
+
+              <div className="space-y-3">
+                {form.watch("items").map((_, index) => (
+                  <div key={index} className="grid grid-cols-1 md:grid-cols-5 gap-3 p-4 border rounded-lg">
+                    <FormField
+                      control={form.control}
+                      name={`items.${index}.productId`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Producto *</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Seleccionar producto" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {products.map((product: any) => (
+                                <SelectItem key={product.id} value={product.id.toString()}>
+                                  {product.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name={`items.${index}.quantity`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Cantidad *</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              min="1"
+                              step="1"
+                              {...field}
+                              onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name={`items.${index}.unitPrice`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Costo Unitario *</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              placeholder="0.00"
+                              {...field}
+                              onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name={`items.${index}.taxType`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Tipo de Impuesto *</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Seleccionar impuesto" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="itbis_18">ITBIS 18%</SelectItem>
+                              <SelectItem value="itbis_16">ITBIS 16%</SelectItem>
+                              <SelectItem value="itbis_8">ITBIS 8%</SelectItem>
+                              <SelectItem value="exempt">Exento</SelectItem>
+                              <SelectItem value="tip_10">Propina 10%</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <div className="flex items-end">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const currentItems = form.getValues("items");
+                          if (currentItems.length > 1) {
+                            form.setValue("items", currentItems.filter((_, i) => i !== index));
+                          }
+                        }}
+                        disabled={form.watch("items").length === 1}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
 
             <FormField
@@ -566,7 +800,7 @@ const NewPurchaseOrderDialog = ({ onSuccess }: { onSuccess: () => void }) => {
                 <FormItem>
                   <FormLabel>Notas</FormLabel>
                   <FormControl>
-                    <Textarea placeholder="Notas adicionales" {...field} />
+                    <Textarea placeholder="Notas adicionales sobre la orden" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
