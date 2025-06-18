@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Dialog,
   DialogContent,
@@ -316,18 +317,19 @@ export default function Warehouses() {
           </CardHeader>
           <CardContent>
             {warehouses && warehouses.length > 0 ? (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Nombre</TableHead>
-                    <TableHead>Ubicación</TableHead>
-                    <TableHead>Encargado</TableHead>
-                    <TableHead>Productos</TableHead>
-                    <TableHead>Estado</TableHead>
-                    <TableHead className="text-right">Acciones</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
+              <ScrollArea className="h-[600px]">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Nombre</TableHead>
+                      <TableHead>Ubicación</TableHead>
+                      <TableHead>Encargado</TableHead>
+                      <TableHead>Productos</TableHead>
+                      <TableHead>Estado</TableHead>
+                      <TableHead className="text-right">Acciones</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
                   {warehouses.map((warehouse) => (
                     <TableRow key={warehouse.id}>
                       <TableCell className="font-medium">
@@ -386,7 +388,8 @@ export default function Warehouses() {
                     </TableRow>
                   ))}
                 </TableBody>
-              </Table>
+                </Table>
+              </ScrollArea>
             ) : (
               <div className="text-center py-12">
                 <Building2 className="mx-auto h-12 w-12 text-gray-400" />

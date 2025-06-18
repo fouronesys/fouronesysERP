@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Search, Package, Edit, Trash2, AlertTriangle } from "lucide-react";
+import { Plus, Search, Package, Edit, Trash2, AlertTriangle, List, Calculator, Wrench } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -36,6 +36,7 @@ const productSchema = z.object({
     .refine((val) => parseInt(val) >= 0, "El stock mínimo no puede ser negativo"),
   unit: z.string().default("unit"),
   isManufactured: z.boolean().default(false),
+  productType: z.enum(["product", "raw_material"]).default("product"),
   imageUrl: z.string().optional(),
 });
 
