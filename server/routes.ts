@@ -2197,20 +2197,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
         req
       );
 
-      // Check if we have a built Windows executable
+      // Check if we have a Windows installer
       const fs = await import('fs');
       const path = await import('path');
-      const distDir = path.join(process.cwd(), 'dist-electron');
+      const { fileURLToPath } = await import('url');
+      
+      // Get current file directory for ES modules
+      const __filename = fileURLToPath(import.meta.url);
+      const __dirname = path.dirname(__filename);
+      const distDir = path.join(__dirname, '../dist-electron');
       
       if (fs.existsSync(distDir)) {
         const files = fs.readdirSync(distDir);
         const windowsInstaller = files.find(file => 
-          file.endsWith('.exe') && file.includes('Setup')
+          (file.endsWith('.exe') || file.endsWith('.bat')) && file.includes('Setup')
         );
         
         if (windowsInstaller) {
           const filePath = path.join(distDir, windowsInstaller);
-          return res.download(filePath, 'Four-One-Solutions-Setup.exe');
+          const downloadName = windowsInstaller.endsWith('.bat') 
+            ? 'Four-One-Solutions-Setup.bat' 
+            : 'Four-One-Solutions-Setup.exe';
+          
+          res.setHeader('Content-Type', 'application/octet-stream');
+          res.setHeader('Content-Disposition', `attachment; filename="${downloadName}"`);
+          return res.download(filePath, downloadName);
         }
       }
       
