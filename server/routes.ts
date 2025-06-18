@@ -13,6 +13,7 @@ import {
 import { createPaypalOrder, capturePaypalOrder, loadPaypalDefault } from "./paypal";
 import { auditLogger } from "./audit-logger";
 import { initializeAdminUser } from "./init-admin";
+import { moduleInitializer } from "./module-initializer";
 import multer from "multer";
 
 // Notification management system
@@ -33,6 +34,9 @@ const upload = multer({
 export async function registerRoutes(app: Express): Promise<Server> {
   // Initialize admin user
   await initializeAdminUser();
+  
+  // Initialize system modules and configuration
+  await moduleInitializer.initializeSystem();
   console.log("RNC registry initialized successfully");
 
   // Setup authentication
@@ -385,6 +389,172 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error uploading file:", error);
       res.status(500).json({ message: "Error uploading file" });
+    }
+  });
+
+  // Module Management API Routes
+  
+  // Get all system modules
+  app.get("/api/admin/modules", isAuthenticated, async (req: any, res) => {
+    try {
+      const user = req.user;
+      if (user.role !== "super_admin") {
+        return res.status(403).json({ message: "Acceso denegado. Se requieren permisos de super administrador." });
+      }
+
+      const modules = await storage.getSystemModules();
+      res.json({ modules });
+    } catch (error) {
+      console.error("Error fetching system modules:", error);
+      res.status(500).json({ message: "Error fetching modules" });
+    }
+  });
+
+  // Create new system module
+  app.post("/api/admin/modules", isAuthenticated, async (req: any, res) => {
+    try {
+      const user = req.user;
+      if (user.role !== "super_admin") {
+        return res.status(403).json({ message: "Acceso denegado. Se requieren permisos de super administrador." });
+      }
+
+      const moduleData = req.body;
+      const module = await storage.createSystemModule(moduleData);
+      
+      await auditLogger.logUserAction(user.id, 0, "create_system_module", "system_modules", module.id.toString(), null, moduleData, req);
+      
+      res.json({ module });
+    } catch (error) {
+      console.error("Error creating system module:", error);
+      res.status(500).json({ message: "Error creating module" });
+    }
+  });
+
+  // Update system module
+  app.put("/api/admin/modules/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const user = req.user;
+      if (user.role !== "super_admin") {
+        return res.status(403).json({ message: "Acceso denegado. Se requieren permisos de super administrador." });
+      }
+
+      const moduleId = parseInt(req.params.id);
+      const updates = req.body;
+      
+      const module = await storage.updateSystemModule(moduleId, updates);
+      
+      if (!module) {
+        return res.status(404).json({ message: "Module not found" });
+      }
+      
+      await auditLogger.logUserAction(user.id, 0, "update_system_module", "system_modules", moduleId.toString(), null, updates, req);
+      
+      res.json({ module });
+    } catch (error) {
+      console.error("Error updating system module:", error);
+      res.status(500).json({ message: "Error updating module" });
+    }
+  });
+
+  // Get company modules
+  app.get("/api/admin/company/:companyId/modules", isAuthenticated, async (req: any, res) => {
+    try {
+      const user = req.user;
+      if (user.role !== "super_admin") {
+        return res.status(403).json({ message: "Acceso denegado. Se requieren permisos de super administrador." });
+      }
+
+      const companyId = parseInt(req.params.companyId);
+      const modules = await storage.getCompanyModules(companyId);
+      
+      res.json({ modules });
+    } catch (error) {
+      console.error("Error fetching company modules:", error);
+      res.status(500).json({ message: "Error fetching company modules" });
+    }
+  });
+
+  // Enable module for company
+  app.post("/api/admin/company/:companyId/modules/:moduleId/enable", isAuthenticated, async (req: any, res) => {
+    try {
+      const user = req.user;
+      if (user.role !== "super_admin") {
+        return res.status(403).json({ message: "Acceso denegado. Se requieren permisos de super administrador." });
+      }
+
+      const companyId = parseInt(req.params.companyId);
+      const moduleId = parseInt(req.params.moduleId);
+      
+      const companyModule = await storage.enableCompanyModule(companyId, moduleId, user.id);
+      
+      await auditLogger.logUserAction(user.id, companyId, "enable_module", "company_modules", moduleId.toString(), null, { moduleId, enabled: true }, req);
+      
+      res.json({ companyModule });
+    } catch (error) {
+      console.error("Error enabling company module:", error);
+      res.status(500).json({ message: "Error enabling module" });
+    }
+  });
+
+  // Disable module for company
+  app.post("/api/admin/company/:companyId/modules/:moduleId/disable", isAuthenticated, async (req: any, res) => {
+    try {
+      const user = req.user;
+      if (user.role !== "super_admin") {
+        return res.status(403).json({ message: "Acceso denegado. Se requieren permisos de super administrador." });
+      }
+
+      const companyId = parseInt(req.params.companyId);
+      const moduleId = parseInt(req.params.moduleId);
+      
+      const companyModule = await storage.disableCompanyModule(companyId, moduleId, user.id);
+      
+      await auditLogger.logUserAction(user.id, companyId, "disable_module", "company_modules", moduleId.toString(), null, { moduleId, enabled: false }, req);
+      
+      res.json({ companyModule });
+    } catch (error) {
+      console.error("Error disabling company module:", error);
+      res.status(500).json({ message: "Error disabling module" });
+    }
+  });
+
+  // Get system configuration
+  app.get("/api/admin/config", isAuthenticated, async (req: any, res) => {
+    try {
+      const user = req.user;
+      if (user.role !== "super_admin") {
+        return res.status(403).json({ message: "Acceso denegado. Se requieren permisos de super administrador." });
+      }
+
+      const category = req.query.category as string;
+      const configs = await storage.getSystemConfigs(category);
+      
+      res.json({ configs });
+    } catch (error) {
+      console.error("Error fetching system configs:", error);
+      res.status(500).json({ message: "Error fetching system configuration" });
+    }
+  });
+
+  // Update system configuration
+  app.put("/api/admin/config/:key", isAuthenticated, async (req: any, res) => {
+    try {
+      const user = req.user;
+      if (user.role !== "super_admin") {
+        return res.status(403).json({ message: "Acceso denegado. Se requieren permisos de super administrador." });
+      }
+
+      const key = req.params.key;
+      const configData = req.body;
+      
+      const config = await storage.upsertSystemConfig({ key, ...configData });
+      
+      await auditLogger.logUserAction(user.id, 0, "update_system_config", "system_config", key, null, configData, req);
+      
+      res.json({ config });
+    } catch (error) {
+      console.error("Error updating system config:", error);
+      res.status(500).json({ message: "Error updating system configuration" });
     }
   });
 

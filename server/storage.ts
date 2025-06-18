@@ -3517,6 +3517,174 @@ export class DatabaseStorage implements IStorage {
     // Return the settings - can be extended to persist in database
     return settings;
   }
+
+  // Module Management Storage Methods
+  async getSystemModules(): Promise<SystemModule[]> {
+    return await db.select().from(systemModules).orderBy(systemModules.sortOrder, systemModules.category);
+  }
+
+  async getSystemModule(id: number): Promise<SystemModule | undefined> {
+    const [module] = await db.select().from(systemModules).where(eq(systemModules.id, id));
+    return module;
+  }
+
+  async createSystemModule(module: InsertSystemModule): Promise<SystemModule> {
+    const [created] = await db.insert(systemModules).values(module).returning();
+    return created;
+  }
+
+  async updateSystemModule(id: number, updates: Partial<InsertSystemModule>): Promise<SystemModule | undefined> {
+    const [updated] = await db
+      .update(systemModules)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(systemModules.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteSystemModule(id: number): Promise<void> {
+    await db.delete(systemModules).where(eq(systemModules.id, id));
+  }
+
+  // Company Module Operations
+  async getCompanyModules(companyId: number): Promise<(CompanyModule & { module: SystemModule })[]> {
+    return await db
+      .select({
+        id: companyModules.id,
+        companyId: companyModules.companyId,
+        moduleId: companyModules.moduleId,
+        isEnabled: companyModules.isEnabled,
+        enabledAt: companyModules.enabledAt,
+        enabledBy: companyModules.enabledBy,
+        disabledAt: companyModules.disabledAt,
+        disabledBy: companyModules.disabledBy,
+        settings: companyModules.settings,
+        createdAt: companyModules.createdAt,
+        updatedAt: companyModules.updatedAt,
+        module: {
+          id: systemModules.id,
+          name: systemModules.name,
+          displayName: systemModules.displayName,
+          description: systemModules.description,
+          category: systemModules.category,
+          icon: systemModules.icon,
+          version: systemModules.version,
+          isCore: systemModules.isCore,
+          requiresSubscription: systemModules.requiresSubscription,
+          subscriptionTiers: systemModules.subscriptionTiers,
+          dependencies: systemModules.dependencies,
+          isActive: systemModules.isActive,
+          sortOrder: systemModules.sortOrder,
+          createdAt: systemModules.createdAt,
+          updatedAt: systemModules.updatedAt
+        }
+      })
+      .from(companyModules)
+      .innerJoin(systemModules, eq(companyModules.moduleId, systemModules.id))
+      .where(eq(companyModules.companyId, companyId))
+      .orderBy(systemModules.category, systemModules.sortOrder);
+  }
+
+  async getCompanyModule(companyId: number, moduleId: number): Promise<CompanyModule | undefined> {
+    const [module] = await db
+      .select()
+      .from(companyModules)
+      .where(and(eq(companyModules.companyId, companyId), eq(companyModules.moduleId, moduleId)));
+    return module;
+  }
+
+  async enableCompanyModule(companyId: number, moduleId: number, enabledBy: string): Promise<CompanyModule> {
+    // Check if module permission already exists
+    const existing = await this.getCompanyModule(companyId, moduleId);
+    
+    if (existing) {
+      const [updated] = await db
+        .update(companyModules)
+        .set({
+          isEnabled: true,
+          enabledAt: new Date(),
+          enabledBy,
+          disabledAt: null,
+          disabledBy: null,
+          updatedAt: new Date()
+        })
+        .where(and(eq(companyModules.companyId, companyId), eq(companyModules.moduleId, moduleId)))
+        .returning();
+      return updated;
+    } else {
+      const [created] = await db
+        .insert(companyModules)
+        .values({
+          companyId,
+          moduleId,
+          isEnabled: true,
+          enabledBy,
+          enabledAt: new Date()
+        })
+        .returning();
+      return created;
+    }
+  }
+
+  async disableCompanyModule(companyId: number, moduleId: number, disabledBy: string): Promise<CompanyModule> {
+    const [updated] = await db
+      .update(companyModules)
+      .set({
+        isEnabled: false,
+        disabledAt: new Date(),
+        disabledBy,
+        updatedAt: new Date()
+      })
+      .where(and(eq(companyModules.companyId, companyId), eq(companyModules.moduleId, moduleId)))
+      .returning();
+    return updated;
+  }
+
+  async updateCompanyModuleSettings(companyId: number, moduleId: number, settings: any): Promise<CompanyModule | undefined> {
+    const [updated] = await db
+      .update(companyModules)
+      .set({ settings, updatedAt: new Date() })
+      .where(and(eq(companyModules.companyId, companyId), eq(companyModules.moduleId, moduleId)))
+      .returning();
+    return updated;
+  }
+
+  // System Configuration Operations
+  async getSystemConfigs(category?: string): Promise<SystemConfig[]> {
+    if (category) {
+      return await db.select().from(systemConfig).where(eq(systemConfig.category, category));
+    }
+    return await db.select().from(systemConfig).orderBy(systemConfig.category, systemConfig.key);
+  }
+
+  async getSystemConfig(key: string): Promise<SystemConfig | undefined> {
+    const [config] = await db.select().from(systemConfig).where(eq(systemConfig.key, key));
+    return config;
+  }
+
+  async upsertSystemConfig(config: InsertSystemConfig): Promise<SystemConfig> {
+    const [result] = await db
+      .insert(systemConfig)
+      .values(config)
+      .onConflictDoUpdate({
+        target: systemConfig.key,
+        set: {
+          value: config.value,
+          valueType: config.valueType,
+          category: config.category,
+          description: config.description,
+          isEditable: config.isEditable,
+          isPublic: config.isPublic,
+          updatedAt: new Date()
+        }
+      })
+      .returning();
+    return result;
+  }
+
+  async deleteSystemConfig(key: string): Promise<void> {
+    await db.delete(systemConfig).where(eq(systemConfig.key, key));
+  }
 }
 
 export const storage = new DatabaseStorage();
