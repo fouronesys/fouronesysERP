@@ -576,60 +576,48 @@ export default function FiscalManagement() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      <TableRow>
-                        <TableCell>
-                          <Badge variant="outline">B01</Badge>
-                        </TableCell>
-                        <TableCell className="font-mono">001</TableCell>
-                        <TableCell className="font-mono">1 - 1000</TableCell>
-                        <TableCell className="font-mono">25</TableCell>
-                        <TableCell>
-                          <span className="text-green-600 font-medium">975</span>
-                        </TableCell>
-                        <TableCell>31/12/2024</TableCell>
-                        <TableCell>
-                          <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
-                            Activo
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex gap-1">
-                            <Button variant="ghost" size="sm">
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="sm">
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                      <TableRow>
-                        <TableCell>
-                          <Badge variant="outline">B02</Badge>
-                        </TableCell>
-                        <TableCell className="font-mono">001</TableCell>
-                        <TableCell className="font-mono">1 - 1000</TableCell>
-                        <TableCell className="font-mono">156</TableCell>
-                        <TableCell>
-                          <span className="text-green-600 font-medium">844</span>
-                        </TableCell>
-                        <TableCell>31/12/2024</TableCell>
-                        <TableCell>
-                          <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
-                            Activo
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex gap-1">
-                            <Button variant="ghost" size="sm">
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="sm">
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
+                      {ncfSequences && ncfSequences.length > 0 ? (
+                        ncfSequences.map((sequence: any) => (
+                          <TableRow key={sequence.id}>
+                            <TableCell>
+                              <Badge variant="outline">{sequence.type}</Badge>
+                            </TableCell>
+                            <TableCell className="font-mono">{sequence.series}</TableCell>
+                            <TableCell className="font-mono">{sequence.rangeStart} - {sequence.rangeEnd}</TableCell>
+                            <TableCell className="font-mono">{sequence.currentNumber}</TableCell>
+                            <TableCell>
+                              <span className="text-green-600 font-medium">
+                                {sequence.rangeEnd - sequence.currentNumber + 1}
+                              </span>
+                            </TableCell>
+                            <TableCell>{format(new Date(sequence.expirationDate), "dd/MM/yyyy")}</TableCell>
+                            <TableCell>
+                              <Badge className={sequence.isActive 
+                                ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
+                                : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300"
+                              }>
+                                {sequence.isActive ? "Activo" : "Inactivo"}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex gap-1">
+                                <Button variant="ghost" size="sm">
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                                <Button variant="ghost" size="sm">
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      ) : (
+                        <TableRow>
+                          <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                            No hay secuencias NCF configuradas
+                          </TableCell>
+                        </TableRow>
+                      )}
                     </TableBody>
                   </Table>
                 </div>
@@ -766,28 +754,43 @@ export default function FiscalManagement() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      <TableRow>
-                        <TableCell>
-                          <Badge variant="outline">606</Badge>
-                        </TableCell>
-                        <TableCell>Diciembre 2024</TableCell>
-                        <TableCell>
-                          <Badge className="bg-green-100 text-green-800">Generado</Badge>
-                        </TableCell>
-                        <TableCell>45</TableCell>
-                        <TableCell>RD$ 2,450,000</TableCell>
-                        <TableCell>15/12/2024</TableCell>
-                        <TableCell>
-                          <div className="flex gap-1">
-                            <Button variant="ghost" size="sm">
-                              <Download className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="sm">
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
+                      {fiscalReports && fiscalReports.length > 0 ? (
+                        fiscalReports.map((report: any) => (
+                          <TableRow key={report.id}>
+                            <TableCell>
+                              <Badge variant="outline">{report.type}</Badge>
+                            </TableCell>
+                            <TableCell>{report.period}</TableCell>
+                            <TableCell>
+                              <Badge className={report.status === 'generated' 
+                                ? "bg-green-100 text-green-800" 
+                                : "bg-yellow-100 text-yellow-800"
+                              }>
+                                {report.status === 'generated' ? 'Generado' : 'Pendiente'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>{report.recordCount}</TableCell>
+                            <TableCell>RD$ {report.totalAmount?.toLocaleString()}</TableCell>
+                            <TableCell>{format(new Date(report.generatedAt), "dd/MM/yyyy")}</TableCell>
+                            <TableCell>
+                              <div className="flex gap-1">
+                                <Button variant="ghost" size="sm">
+                                  <Download className="h-4 w-4" />
+                                </Button>
+                                <Button variant="ghost" size="sm">
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      ) : (
+                        <TableRow>
+                          <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                            No hay reportes generados
+                          </TableCell>
+                        </TableRow>
+                      )}
                     </TableBody>
                   </Table>
                 </div>

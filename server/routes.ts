@@ -638,6 +638,189 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Fiscal report endpoints
+  app.get("/api/fiscal/ncf-sequences", isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const company = await storage.getCompanyByUserId(user.id);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+      
+      // Return empty array for now - NCF sequences will be implemented
+      res.json([]);
+    } catch (error) {
+      console.error("Error fetching NCF sequences:", error);
+      res.status(500).json({ message: "Error fetching NCF sequences" });
+    }
+  });
+
+  app.get("/api/fiscal/reports", isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const company = await storage.getCompanyByUserId(user.id);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+      
+      // Return empty array - no mock data
+      res.json([]);
+    } catch (error) {
+      console.error("Error fetching fiscal reports:", error);
+      res.status(500).json({ message: "Error fetching fiscal reports" });
+    }
+  });
+
+  app.get("/api/company/info", isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const company = await storage.getCompanyByUserId(user.id);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+      
+      res.json({
+        id: company.id,
+        name: company.name,
+        rnc: company.rnc || "",
+        address: company.address || "",
+        phone: company.phone || "",
+        email: company.email || ""
+      });
+    } catch (error) {
+      console.error("Error fetching company info:", error);
+      res.status(500).json({ message: "Error fetching company info" });
+    }
+  });
+
+  app.post("/api/fiscal-reports/generate", isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const company = await storage.getCompanyByUserId(user.id);
+      
+      if (!company) {
+        return res.status(400).json({ message: "Company not found" });
+      }
+
+      const { type, period } = req.body;
+
+      // Validate input parameters
+      if (!type || !period) {
+        return res.status(400).json({ message: "Type and period are required" });
+      }
+
+      if (!["606", "607"].includes(type)) {
+        return res.status(400).json({ message: "Invalid report type. Must be 606 or 607" });
+      }
+
+      // Validate period format (YYYYMM)
+      if (!/^\d{6}$/.test(period)) {
+        return res.status(400).json({ message: "Invalid period format. Must be YYYYMM" });
+      }
+
+      // Validate company has required fiscal data
+      if (!company.rnc) {
+        return res.status(400).json({ 
+          message: "Company RNC is required for DGII reports. Please configure in Company Settings." 
+        });
+      }
+
+      const year = period.substring(0, 4);
+      const month = period.substring(4, 6);
+
+      let reportContent = "";
+      let recordCount = 0;
+
+      if (type === "606") {
+        // Generate 606 report (Purchases/Expenses)
+        const startDate = new Date(parseInt(year), parseInt(month) - 1, 1);
+        const endDate = new Date(parseInt(year), parseInt(month), 0);
+        
+        // Get purchase data from invoices/expenses for the period
+        const purchases = await storage.getInvoices(company.id);
+
+        const reportLines: string[] = [];
+
+        for (const purchase of purchases) {
+          // Filter by date range
+          const purchaseDate = new Date(purchase.date);
+          if (purchaseDate >= startDate && purchaseDate <= endDate) {
+            // DGII 606 format: RNC|TIPO|NCF|NCF_MODIFICADO|FECHA_COMPROBANTE|FECHA_PAGO|MONTO_FACTURADO|ITBIS_FACTURADO|ITBIS_RETENIDO|TIPO_BIENES_SERVICIOS|RETENCION_RENTA|FORMA_PAGO
+            const subtotalAmount = parseFloat(purchase.subtotal || "0");
+            const taxAmount = parseFloat(purchase.taxes || "0");
+            
+            const line = [
+              "00000000000", // RNC del suplidor (default)
+              "01", // Tipo de comprobante (01=Factura de crédito fiscal)
+              purchase.ncf || "B0100000001", // NCF
+              "", // NCF modificado (vacío si no aplica)
+              purchase.date ? new Date(purchase.date).toISOString().split('T')[0].replace(/-/g, '') : "", // Fecha comprobante YYYYMMDD
+              purchase.date ? new Date(purchase.date).toISOString().split('T')[0].replace(/-/g, '') : "", // Fecha pago YYYYMMDD
+              subtotalAmount.toFixed(2), // Monto facturado
+              taxAmount.toFixed(2), // ITBIS facturado
+              "0.00", // ITBIS retenido
+              "01", // Tipo de bienes/servicios (01=Gastos menores)
+              "0.00", // Retención renta
+              "01" // Forma de pago (01=Efectivo)
+            ].join("|");
+
+            reportLines.push(line);
+          }
+        }
+
+        reportContent = reportLines.join("\n");
+        recordCount = reportLines.length;
+
+      } else if (type === "607") {
+        // Generate 607 report (Sales)
+        const startDate = new Date(parseInt(year), parseInt(month) - 1, 1);
+        const endDate = new Date(parseInt(year), parseInt(month), 0);
+        
+        // Get sales data from POS sales for the period
+        const sales = await storage.getPOSSales(company.id);
+
+        const reportLines: string[] = [];
+
+        for (const sale of sales) {
+          // Filter by date range
+          const saleDate = new Date(sale.createdAt || new Date());
+          if (saleDate >= startDate && saleDate <= endDate) {
+            // DGII 607 format: RNC|TIPO|NCF|NCF_MODIFICADO|FECHA_COMPROBANTE|MONTO_FACTURADO|ITBIS_FACTURADO|FORMA_PAGO
+            const totalAmount = parseFloat(sale.total || "0");
+            const taxAmount = parseFloat(sale.taxes || "0");
+            
+            const line = [
+              "00000000000", // RNC del cliente (default)
+              "02", // Tipo de comprobante (02=Factura de consumo)
+              sale.ncf || "B0200000001", // NCF
+              "", // NCF modificado (vacío si no aplica)
+              sale.createdAt ? new Date(sale.createdAt).toISOString().split('T')[0].replace(/-/g, '') : "", // Fecha comprobante YYYYMMDD
+              totalAmount.toFixed(2), // Monto facturado
+              taxAmount.toFixed(2), // ITBIS facturado
+              "01" // Forma de pago (01=Efectivo)
+            ].join("|");
+
+            reportLines.push(line);
+          }
+        }
+
+        reportContent = reportLines.join("\n");
+        recordCount = reportLines.length;
+      }
+
+      // Set proper headers for .txt file download
+      res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+      res.setHeader('Content-Disposition', `attachment; filename="Reporte_${type}_${period}.txt"`);
+      
+      // Send the raw text content
+      res.send(reportContent);
+
+    } catch (error) {
+      console.error("Error generating fiscal report:", error);
+      res.status(500).json({ message: "Error generating fiscal report" });
+    }
+  });
+
   // Currency conversion API endpoints
   app.get("/api/currency/rates", async (req, res) => {
     try {
