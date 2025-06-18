@@ -2153,50 +2153,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
   return httpServer;
 }
-
-      // Validate plan
-      const validPlans = ['monthly', 'annual'];
-      if (!validPlans.includes(planId)) {
-        return res.status(400).json({ message: "Invalid plan selected" });
-      }
-
-      // Redirect to payment page instead of immediate plan upgrade
-      const amount = planId === 'annual' ? 24000 : 3500;
-      
-      res.json({ 
-        success: true,
-        message: "Redirigiendo a página de pago",
-        redirectTo: `/payment?plan=${planId}&amount=${amount}&type=upgrade`,
-        planId,
-        amount
-      });
-
-    } catch (error) {
-      console.error("Error upgrading plan:", error);
-      res.status(500).json({ message: "Error upgrading plan", error: (error as Error).message });
-    }
-  });
-
-  // PayPal payment endpoints
-  app.get("/paypal/setup", async (req, res) => {
-    await loadPaypalDefault(req, res);
-  });
-
-  app.post("/paypal/order", async (req, res) => {
-    // Request body should contain: { intent, amount, currency }
-    await createPaypalOrder(req, res);
-  });
-
-  app.post("/paypal/order/:orderID/capture", async (req, res) => {
-    await capturePaypalOrder(req, res);
-  });
-
-  // PayPal plan upgrade endpoint
-  app.post("/api/paypal/upgrade-plan", isAuthenticated, async (req: any, res) => {
-    try {
-      const { orderID, planId } = req.body;
-      const userId = req.user.id;
-      const company = await storage.getCompanyByUserId(userId);
       
       if (!company) {
         return res.status(404).json({ message: "Company not found" });
