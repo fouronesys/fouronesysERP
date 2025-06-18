@@ -3685,6 +3685,55 @@ export class DatabaseStorage implements IStorage {
   async deleteSystemConfig(key: string): Promise<void> {
     await db.delete(systemConfig).where(eq(systemConfig.key, key));
   }
+
+  // Notification methods
+  async getUserNotifications(userId: string) {
+    return await db.select().from(notifications)
+      .where(eq(notifications.userId, userId))
+      .orderBy(desc(notifications.createdAt));
+  }
+
+  async getNotificationSettings(userId: string) {
+    const [settings] = await db.select().from(notificationSettings)
+      .where(eq(notificationSettings.userId, userId));
+    return settings;
+  }
+
+  async updateNotificationSettings(userId: string, settings: any) {
+    const [result] = await db
+      .insert(notificationSettings)
+      .values({ userId, ...settings })
+      .onConflictDoUpdate({
+        target: notificationSettings.userId,
+        set: { ...settings, updatedAt: new Date() }
+      })
+      .returning();
+    return result;
+  }
+
+  async markNotificationAsRead(notificationId: number, userId: string) {
+    await db.update(notifications)
+      .set({ isRead: true, readAt: new Date() })
+      .where(and(eq(notifications.id, notificationId), eq(notifications.userId, userId)));
+  }
+
+  async markAllNotificationsAsRead(userId: string) {
+    await db.update(notifications)
+      .set({ isRead: true, readAt: new Date() })
+      .where(eq(notifications.userId, userId));
+  }
+
+  async deleteNotification(notificationId: number, userId: string) {
+    await db.delete(notifications)
+      .where(and(eq(notifications.id, notificationId), eq(notifications.userId, userId)));
+  }
+
+  async createNotification(notification: any) {
+    const [result] = await db.insert(notifications)
+      .values(notification)
+      .returning();
+    return result;
+  }
 }
 
 export const storage = new DatabaseStorage();

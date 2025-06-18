@@ -1831,3 +1831,6 @@ export type InsertExchangeRate = z.infer<typeof insertExchangeRateSchema>;
 export type ExchangeRate = typeof exchangeRates.$inferSelect;
 
 // Tipos del módulo de compras movidos a shared/purchases-schema.ts
+
+// Import notifications schema
+export * from "./notifications-schema";

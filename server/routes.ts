@@ -558,5 +558,84 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Notification API endpoints
+  app.get("/api/notifications", isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const notifications = await storage.getUserNotifications(user.id);
+      res.json(notifications);
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+      res.status(500).json({ message: "Error fetching notifications" });
+    }
+  });
+
+  app.get("/api/notifications/settings", isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const settings = await storage.getNotificationSettings(user.id);
+      res.json(settings || {
+        emailNotifications: true,
+        pushNotifications: true,
+        salesAlerts: true,
+        inventoryAlerts: true,
+        systemAlerts: true,
+        financialAlerts: true,
+        userActivityAlerts: false,
+        soundEnabled: true,
+        digestFrequency: 'immediate'
+      });
+    } catch (error) {
+      console.error("Error fetching notification settings:", error);
+      res.status(500).json({ message: "Error fetching notification settings" });
+    }
+  });
+
+  app.put("/api/notifications/settings", isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const settings = await storage.updateNotificationSettings(user.id, req.body);
+      res.json(settings);
+    } catch (error) {
+      console.error("Error updating notification settings:", error);
+      res.status(500).json({ message: "Error updating notification settings" });
+    }
+  });
+
+  app.post("/api/notifications/:id/read", isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const { id } = req.params;
+      await storage.markNotificationAsRead(parseInt(id), user.id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error marking notification as read:", error);
+      res.status(500).json({ message: "Error marking notification as read" });
+    }
+  });
+
+  app.post("/api/notifications/mark-all-read", isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      await storage.markAllNotificationsAsRead(user.id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error marking all notifications as read:", error);
+      res.status(500).json({ message: "Error marking all notifications as read" });
+    }
+  });
+
+  app.delete("/api/notifications/:id", isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const { id } = req.params;
+      await storage.deleteNotification(parseInt(id), user.id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting notification:", error);
+      res.status(500).json({ message: "Error deleting notification" });
+    }
+  });
+
   return httpServer;
 }
