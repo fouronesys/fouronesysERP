@@ -28,6 +28,7 @@ const productFormSchema = z.object({
   unit: z.string().min(1, "La unidad es requerida"),
   imageUrl: z.string().optional(),
   isManufactured: z.boolean().default(false),
+  taxType: z.string().default("itbis_18"),
 });
 
 type ProductFormData = z.infer<typeof productFormSchema>;
@@ -58,6 +59,7 @@ export default function Products() {
       unit: "unit",
       imageUrl: "",
       isManufactured: false,
+      taxType: "itbis_18",
     },
   });
 
@@ -141,6 +143,7 @@ export default function Products() {
       unit: product.unit,
       imageUrl: product.imageUrl || "",
       isManufactured: product.isManufactured,
+      taxType: product.taxType || "itbis_18",
     });
     setCurrentImageUrl(product.imageUrl || "");
     setIsDialogOpen(true);
@@ -399,6 +402,34 @@ export default function Products() {
                             )}
                           />
                         </div>
+                      </div>
+
+                      {/* Tax Type Selection */}
+                      <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+                        <FormField
+                          control={form.control}
+                          name="taxType"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Tipo de Impuesto</FormLabel>
+                              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Seleccionar tipo de impuesto" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {Object.entries(DR_TAX_TYPES).map(([key, value]) => (
+                                    <SelectItem key={key} value={key}>
+                                      {value.label}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
                       </div>
 
                       {/* Manufacturing Option */}

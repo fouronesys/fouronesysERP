@@ -18,6 +18,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
 import type { Invoice, Customer, Product } from "@shared/schema";
+import { DR_TAX_TYPES } from "@shared/schema";
 
 const invoiceItemSchema = z.object({
   productId: z.string().min(1, "Producto requerido"),
@@ -40,6 +41,7 @@ const invoiceSchema = z.object({
   tax: z.string().default("0"),
   total: z.string().min(1, "El total es requerido"),
   notes: z.string().optional(),
+  taxType: z.string().default("itbis_18"),
 });
 
 type InvoiceFormData = z.infer<typeof invoiceSchema>;
@@ -78,6 +80,7 @@ export default function Billing() {
       tax: "0",
       total: "0",
       notes: "",
+      taxType: "itbis_18",
     },
   });
 
