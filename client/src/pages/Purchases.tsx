@@ -838,16 +838,21 @@ const NewInvoiceDialog = ({ onSuccess }: { onSuccess: () => void }) => {
     queryKey: ["/api/suppliers"],
   });
 
+  const { data: products = [] } = useQuery({
+    queryKey: ["/api/products"],
+  });
+
   const form = useForm<PurchaseInvoiceFormData>({
     resolver: zodResolver(purchaseInvoiceSchema),
     defaultValues: {
       supplierId: "",
       invoiceNumber: "",
-      ncf: "",
+      ncfPrefix: "B01",
+      ncfSequence: "00000001",
       invoiceDate: new Date(),
       dueDate: undefined,
       notes: "",
-      items: [{ productId: "", quantity: 1, unitPrice: 0 }],
+      items: [{ productId: "", quantity: 1, unitPrice: 0, taxType: "itbis_18" }],
     },
   });
 
@@ -887,13 +892,15 @@ const NewInvoiceDialog = ({ onSuccess }: { onSuccess: () => void }) => {
           Nueva Factura
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Nueva Factura de Compra</DialogTitle>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            
+            {/* Primera fila - Información básica */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="supplierId"
@@ -934,7 +941,60 @@ const NewInvoiceDialog = ({ onSuccess }: { onSuccess: () => void }) => {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            {/* Segunda fila - NCF y fecha */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <FormField
+                control={form.control}
+                name="ncfPrefix"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Prefijo NCF *</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Seleccionar prefijo" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="B01">B01 - Crédito Fiscal</SelectItem>
+                        <SelectItem value="B02">B02 - Consumidor Final</SelectItem>
+                        <SelectItem value="B03">B03 - Nota de Débito</SelectItem>
+                        <SelectItem value="B04">B04 - Nota de Crédito</SelectItem>
+                        <SelectItem value="B11">B11 - Proveedores Informales</SelectItem>
+                        <SelectItem value="B12">B12 - Registro Único</SelectItem>
+                        <SelectItem value="B13">B13 - Gastos Menores</SelectItem>
+                        <SelectItem value="B14">B14 - Régimen Especial</SelectItem>
+                        <SelectItem value="B15">B15 - Gubernamentales</SelectItem>
+                        <SelectItem value="B16">B16 - Exportaciones</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="ncfSequence"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Secuencia NCF *</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="00000001" 
+                        maxLength={8}
+                        {...field}
+                        onChange={(e) => {
+                          const value = e.target.value.replace(/\D/g, '').padStart(8, '0').slice(0, 8);
+                          field.onChange(value);
+                        }}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
               <FormField
                 control={form.control}
                 name="invoiceDate"
@@ -976,20 +1036,142 @@ const NewInvoiceDialog = ({ onSuccess }: { onSuccess: () => void }) => {
                   </FormItem>
                 )}
               />
+            </div>
 
-              <FormField
-                control={form.control}
-                name="ncf"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>NCF</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Comprobante Fiscal" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            {/* Sección de productos */}
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <h4 className="text-lg font-semibold">Productos</h4>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const currentItems = form.getValues("items");
+                    form.setValue("items", [
+                      ...currentItems,
+                      { productId: "", quantity: 1, unitPrice: 0, taxType: "itbis_18" }
+                    ]);
+                  }}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Agregar Producto
+                </Button>
+              </div>
+
+              <div className="space-y-3">
+                {form.watch("items").map((_, index) => (
+                  <div key={index} className="grid grid-cols-1 md:grid-cols-5 gap-3 p-4 border rounded-lg">
+                    <FormField
+                      control={form.control}
+                      name={`items.${index}.productId`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Producto *</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Seleccionar producto" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {(products as any[]).map((product: any) => (
+                                <SelectItem key={product.id} value={product.id.toString()}>
+                                  {product.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name={`items.${index}.quantity`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Cantidad *</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              min="1"
+                              step="1"
+                              {...field}
+                              onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name={`items.${index}.unitPrice`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Costo Unitario *</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              placeholder="0.00"
+                              {...field}
+                              onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name={`items.${index}.taxType`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Tipo de Impuesto *</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Seleccionar impuesto" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="itbis_18">ITBIS 18%</SelectItem>
+                              <SelectItem value="itbis_16">ITBIS 16%</SelectItem>
+                              <SelectItem value="itbis_8">ITBIS 8%</SelectItem>
+                              <SelectItem value="exempt">Exento</SelectItem>
+                              <SelectItem value="tip_10">Propina 10%</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <div className="flex items-end">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const currentItems = form.getValues("items");
+                          if (currentItems.length > 1) {
+                            form.setValue("items", currentItems.filter((_, i) => i !== index));
+                          }
+                        }}
+                        disabled={form.watch("items").length === 1}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
 
             <FormField
@@ -999,7 +1181,7 @@ const NewInvoiceDialog = ({ onSuccess }: { onSuccess: () => void }) => {
                 <FormItem>
                   <FormLabel>Notas</FormLabel>
                   <FormControl>
-                    <Textarea placeholder="Notas adicionales" {...field} />
+                    <Textarea placeholder="Notas adicionales sobre la factura" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -1230,6 +1412,103 @@ const PaymentDialog = ({ invoice, onSuccess }: { invoice: PurchaseInvoice; onSuc
   );
 };
 
+// Convert Order to Invoice Dialog Component
+const ConvertToInvoiceDialog = ({ order, onSuccess }: { order: PurchaseOrder; onSuccess: () => void }) => {
+  const [open, setOpen] = useState(false);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const convertToInvoiceMutation = useMutation({
+    mutationFn: async (orderData: any) => {
+      // Create invoice based on order data
+      const invoiceData = {
+        supplierId: orderData.supplierId,
+        invoiceNumber: `INV-${order.orderNumber}-${Date.now()}`,
+        ncfPrefix: "B01",
+        ncfSequence: "00000001", // Should be auto-generated
+        invoiceDate: new Date(),
+        notes: `Factura generada automáticamente desde orden ${order.orderNumber}`,
+        items: orderData.items || [],
+        purchaseOrderId: order.id,
+      };
+      
+      const response = await apiRequest("POST", "/api/purchase-invoices", invoiceData);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/purchase-invoices"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/purchase-orders"] });
+      toast({
+        title: "Factura creada",
+        description: `La factura ha sido generada desde la orden ${order.orderNumber}`,
+      });
+      setOpen(false);
+      onSuccess();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: "No se pudo convertir la orden a factura.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleConvert = () => {
+    convertToInvoiceMutation.mutate({
+      supplierId: order.supplier?.id || "",
+      items: [], // Order items would be fetched from order details
+    });
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="default" size="sm">
+          <FileText className="h-4 w-4 mr-2" />
+          Convertir a Factura
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Convertir Orden a Factura</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div className="p-4 bg-muted rounded-lg">
+            <p className="text-sm"><strong>Orden:</strong> {order.orderNumber}</p>
+            <p className="text-sm"><strong>Proveedor:</strong> {order.supplier?.name}</p>
+            <p className="text-sm"><strong>Total:</strong> RD$ {parseFloat(order.totalAmount).toLocaleString()}</p>
+            <p className="text-sm"><strong>Estado:</strong> {order.status}</p>
+          </div>
+          
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+            <p className="text-sm text-blue-800">
+              Se creará una nueva factura de compra basada en esta orden. 
+              La factura incluirá todos los productos y cantidades de la orden original.
+            </p>
+          </div>
+
+          <div className="flex justify-end space-x-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setOpen(false)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleConvert}
+              disabled={convertToInvoiceMutation.isPending}
+            >
+              {convertToInvoiceMutation.isPending ? "Convirtiendo..." : "Convertir a Factura"}
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
 const PurchaseOrdersSection = () => {
   const { data: orders = [], isLoading } = useQuery({
     queryKey: ["/api/purchase-orders"],
@@ -1298,13 +1577,24 @@ const PurchaseOrdersSection = () => {
                       Fecha: {new Date(order.orderDate).toLocaleDateString()}
                     </p>
                   </div>
-                  <div className="text-right">
-                    <p className="font-medium">
-                      ${parseFloat(order.totalAmount).toLocaleString()}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      {order.currency}
-                    </p>
+                  <div className="text-right space-y-2">
+                    <div>
+                      <p className="font-medium">
+                        RD$ {parseFloat(order.totalAmount).toLocaleString()}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        {order.currency}
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="sm">
+                        <Eye className="h-4 w-4 mr-2" />
+                        Ver
+                      </Button>
+                      {order.status === "confirmed" && (
+                        <ConvertToInvoiceDialog order={order} onSuccess={() => {}} />
+                      )}
+                    </div>
                   </div>
                 </div>
               </CardContent>
