@@ -15,6 +15,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Search, Edit, Trash2, Package, AlertTriangle, Camera } from "lucide-react";
 import type { Product } from "@shared/schema";
+import { DR_TAX_TYPES } from "@shared/schema";
 
 const productFormSchema = z.object({
   code: z.string().min(1, "El código es requerido"),

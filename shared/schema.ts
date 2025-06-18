@@ -15,6 +15,22 @@ import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+// Dominican Republic Tax Types
+export const DR_TAX_TYPES = {
+  itbis_18: { rate: 18, label: "ITBIS 18%" },
+  itbis_16: { rate: 16, label: "ITBIS 16%" },
+  itbis_8: { rate: 8, label: "ITBIS 8%" },
+  itbis_0: { rate: 0, label: "ITBIS 0%" },
+  exempt: { rate: 0, label: "Exento de Impuestos" },
+  selective_consumption: { rate: 25, label: "Impuesto Selectivo al Consumo" },
+  luxury_tax: { rate: 15, label: "Impuesto a Artículos de Lujo" },
+  fuel_tax: { rate: 16.18, label: "Impuesto a Combustibles" },
+  alcohol_tax: { rate: 20, label: "Impuesto a Bebidas Alcohólicas" },
+  tobacco_tax: { rate: 25, label: "Impuesto al Tabaco" },
+} as const;
+
+export type TaxType = keyof typeof DR_TAX_TYPES;
+
 // Session storage table.
 // (IMPORTANT) This table is mandatory for Replit Auth, don't drop it.
 export const sessions = pgTable(
@@ -154,8 +170,7 @@ export const products = pgTable("products", {
   imageUrl: varchar("image_url", { length: 1000 }),
   isActive: boolean("is_active").notNull().default(true),
   isManufactured: boolean("is_manufactured").notNull().default(false),
-  itbisIncluded: boolean("itbis_included").notNull().default(true),
-  itbisExempt: boolean("itbis_exempt").notNull().default(false),
+  taxType: varchar("tax_type", { length: 20 }).notNull().default("itbis_18"), // itbis_18, itbis_16, itbis_8, itbis_0, exempt, selective_consumption
   warehouseId: integer("warehouse_id"),
   companyId: integer("company_id").notNull().references(() => companies.id),
   createdAt: timestamp("created_at").defaultNow(),
@@ -185,6 +200,8 @@ export const invoices = pgTable("invoices", {
   dueDate: date("due_date"),
   subtotal: decimal("subtotal", { precision: 10, scale: 2 }).notNull(),
   itbis: decimal("itbis", { precision: 10, scale: 2 }).notNull().default("0"),
+  selectiveConsumptionTax: decimal("selective_consumption_tax", { precision: 10, scale: 2 }).default("0"),
+  otherTaxes: decimal("other_taxes", { precision: 10, scale: 2 }).default("0"),
   total: decimal("total", { precision: 10, scale: 2 }).notNull(),
   status: varchar("status", { length: 20 }).notNull().default("pending"), // pending, paid, overdue, cancelled
   notes: text("notes"),
@@ -200,6 +217,10 @@ export const invoiceItems = pgTable("invoice_items", {
   productId: integer("product_id").notNull().references(() => products.id),
   quantity: integer("quantity").notNull(),
   price: decimal("price", { precision: 10, scale: 2 }).notNull(),
+  subtotal: decimal("subtotal", { precision: 10, scale: 2 }).notNull(),
+  taxType: varchar("tax_type", { length: 20 }).notNull().default("itbis_18"),
+  taxRate: decimal("tax_rate", { precision: 5, scale: 2 }).notNull().default("18.00"),
+  taxAmount: decimal("tax_amount", { precision: 10, scale: 2 }).notNull().default("0"),
   total: decimal("total", { precision: 10, scale: 2 }).notNull(),
 });
 
