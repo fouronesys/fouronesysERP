@@ -38,9 +38,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication
   setupAuth(app);
 
-  // Create WebSocket server for real-time communication
+  // Create HTTP server
   const httpServer = createServer(app);
-  const wss = new WebSocketServer({ server: httpServer });
+  
+  // Create WebSocket server on a different port to avoid conflicts
+  const wss = new WebSocketServer({ port: 3001, host: "0.0.0.0" });
 
   // WebSocket connection handling for chat
   const connectedClients = new Map<string, WebSocket>();
