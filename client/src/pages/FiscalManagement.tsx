@@ -147,11 +147,11 @@ export default function FiscalManagement() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: ncfSequences = [], isLoading: sequencesLoading } = useQuery({
+  const { data: ncfSequences = [], isLoading: sequencesLoading } = useQuery<any[]>({
     queryKey: ['/api/fiscal/ncf-sequences'],
   });
 
-  const { data: fiscalReports = [], isLoading: reportsLoading } = useQuery({
+  const { data: fiscalReports = [], isLoading: reportsLoading } = useQuery<any[]>({
     queryKey: ['/api/fiscal/reports'],
   });
 
