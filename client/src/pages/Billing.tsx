@@ -195,7 +195,9 @@ export default function Billing() {
         title: "Factura eliminada",
         description: "La factura ha sido eliminada exitosamente.",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/invoices"] });
+      // Force cache invalidation and refetch
+      queryClient.invalidateQueries({ queryKey: ["/api/invoices"], exact: true });
+      queryClient.refetchQueries({ queryKey: ["/api/invoices"], exact: true });
     },
     onError: () => {
       toast({

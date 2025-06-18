@@ -1260,6 +1260,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.delete("/api/invoices/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+      
+      const invoiceId = parseInt(req.params.id);
+      await storage.deleteInvoice(invoiceId, company.id);
+      
+      res.status(200).json({ success: true, message: "Invoice deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting invoice:", error);
+      res.status(500).json({ message: "Failed to delete invoice", error: String(error) });
+    }
+  });
+
   // Production order routes
   app.get("/api/production-orders", isAuthenticated, async (req: any, res) => {
     try {

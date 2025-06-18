@@ -211,6 +211,7 @@ export interface IStorage {
   getInvoice(id: number, companyId: number): Promise<Invoice | undefined>;
   createInvoice(invoice: InsertInvoice): Promise<Invoice>;
   updateInvoice(id: number, invoice: Partial<InsertInvoice>, companyId: number): Promise<Invoice | undefined>;
+  deleteInvoice(id: number, companyId: number): Promise<void>;
   
   // Production Order operations
   getProductionOrders(companyId: number): Promise<ProductionOrder[]>;
@@ -856,6 +857,12 @@ export class DatabaseStorage implements IStorage {
       .where(and(eq(invoices.id, id), eq(invoices.companyId, companyId)))
       .returning();
     return invoice;
+  }
+
+  async deleteInvoice(id: number, companyId: number): Promise<void> {
+    await db
+      .delete(invoices)
+      .where(and(eq(invoices.id, id), eq(invoices.companyId, companyId)));
   }
 
 
