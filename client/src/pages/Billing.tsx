@@ -66,6 +66,10 @@ export default function Billing() {
     queryKey: ["/api/products"],
   });
 
+  const { data: company } = useQuery({
+    queryKey: ["/api/companies/current"],
+  });
+
   const form = useForm<InvoiceFormData>({
     resolver: zodResolver(invoiceSchema),
     defaultValues: {
@@ -89,17 +93,45 @@ export default function Billing() {
     name: "items"
   });
 
+  // Filter tax types based on company business type
+  const getAvailableTaxTypes = () => {
+    const baseTaxTypes = Object.entries(DR_TAX_TYPES).filter(([key]) => key !== 'tip_10');
+    
+    if (company?.businessType === 'restaurant') {
+      return Object.entries(DR_TAX_TYPES); // Include all tax types including tip for restaurants
+    }
+    
+    return baseTaxTypes; // Exclude tip for non-restaurant businesses
+  };
+
   // Calculate totals when items change
   const calculateTotals = () => {
     const items = form.getValues("items");
     const taxType = form.getValues("taxType") || "itbis_18";
-    const subtotal = items.reduce((sum, item) => {
+    const totalAmount = items.reduce((sum, item) => {
       return sum + (parseFloat(item.quantity) * parseFloat(item.unitPrice));
     }, 0);
     
     const taxInfo = DR_TAX_TYPES[taxType as keyof typeof DR_TAX_TYPES];
-    const tax = taxType === "exempt" ? 0 : (subtotal * taxInfo.rate) / 100;
-    const total = subtotal + tax;
+    
+    let subtotal, tax, total;
+    
+    if (taxType === "exempt") {
+      subtotal = totalAmount;
+      tax = 0;
+      total = totalAmount;
+    } else if (taxInfo.isInclusive) {
+      // For inclusive taxes, extract tax from the total amount
+      const taxMultiplier = 1 + (taxInfo.rate / 100);
+      subtotal = totalAmount / taxMultiplier;
+      tax = totalAmount - subtotal;
+      total = totalAmount;
+    } else {
+      // For regular taxes, add tax to subtotal
+      subtotal = totalAmount;
+      tax = (subtotal * taxInfo.rate) / 100;
+      total = subtotal + tax;
+    }
     
     form.setValue("subtotal", subtotal.toFixed(2));
     form.setValue("tax", tax.toFixed(2));
@@ -686,7 +718,7 @@ export default function Billing() {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {Object.entries(DR_TAX_TYPES).map(([key, value]) => (
+                            {getAvailableTaxTypes().map(([key, value]) => (
                               <SelectItem key={key} value={key}>
                                 {value.label}
                               </SelectItem>
@@ -857,18 +889,26 @@ export default function Billing() {
                     <FormField
                       control={form.control}
                       name="tax"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>ITBIS (18%)</FormLabel>
-                          <FormControl>
-                            <Input 
-                              {...field}
-                              disabled
-                              className="bg-white dark:bg-gray-700 font-semibold"
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
+                      render={({ field }) => {
+                        const taxType = form.watch("taxType") || "itbis_18";
+                        const taxInfo = DR_TAX_TYPES[taxType as keyof typeof DR_TAX_TYPES];
+                        const taxLabel = taxInfo.isInclusive 
+                          ? `${taxInfo.label} (${taxInfo.rate}% incl.)`
+                          : `${taxInfo.label} (${taxInfo.rate}%)`;
+                        
+                        return (
+                          <FormItem>
+                            <FormLabel>{taxLabel}</FormLabel>
+                            <FormControl>
+                              <Input 
+                                {...field}
+                                disabled
+                                className="bg-white dark:bg-gray-700 font-semibold"
+                              />
+                            </FormControl>
+                          </FormItem>
+                        );
+                      }}
                     />
 
                     <FormField

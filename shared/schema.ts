@@ -17,16 +17,17 @@ import { z } from "zod";
 
 // Dominican Republic Tax Types
 export const DR_TAX_TYPES = {
-  itbis_18: { rate: 18, label: "ITBIS 18%" },
-  itbis_16: { rate: 16, label: "ITBIS 16%" },
-  itbis_8: { rate: 8, label: "ITBIS 8%" },
-  itbis_0: { rate: 0, label: "ITBIS 0%" },
-  exempt: { rate: 0, label: "Exento de Impuestos" },
-  selective_consumption: { rate: 25, label: "Impuesto Selectivo al Consumo" },
-  luxury_tax: { rate: 15, label: "Impuesto a Artículos de Lujo" },
-  fuel_tax: { rate: 16.18, label: "Impuesto a Combustibles" },
-  alcohol_tax: { rate: 20, label: "Impuesto a Bebidas Alcohólicas" },
-  tobacco_tax: { rate: 25, label: "Impuesto al Tabaco" },
+  itbis_18: { rate: 18, label: "ITBIS 18%", isInclusive: false },
+  itbis_16: { rate: 16, label: "ITBIS 16%", isInclusive: false },
+  itbis_8: { rate: 8, label: "ITBIS 8%", isInclusive: false },
+  itbis_incl: { rate: 18, label: "ITBIS Incl.", isInclusive: true },
+  exempt: { rate: 0, label: "Exento de Impuestos", isInclusive: false },
+  selective_consumption: { rate: 25, label: "Impuesto Selectivo al Consumo", isInclusive: false },
+  luxury_tax: { rate: 15, label: "Impuesto a Artículos de Lujo", isInclusive: false },
+  fuel_tax: { rate: 16.18, label: "Impuesto a Combustibles", isInclusive: false },
+  alcohol_tax: { rate: 20, label: "Impuesto a Bebidas Alcohólicas", isInclusive: false },
+  tobacco_tax: { rate: 25, label: "Impuesto al Tabaco", isInclusive: false },
+  tip_10: { rate: 10, label: "Propina 10%", isInclusive: false },
 } as const;
 
 export type TaxType = keyof typeof DR_TAX_TYPES;
