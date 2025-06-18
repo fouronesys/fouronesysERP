@@ -2185,8 +2185,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Windows download endpoint
   app.get("/download/windows", async (req, res) => {
     try {
-      const downloadUrl = "https://github.com/fourone-solutions/four-one-erp/releases/latest/download/Four-One-ERP-Setup-latest-x64.exe";
-      
       // Log download request
       const { auditLogger } = await import('./audit-logger');
       await auditLogger.logAuthAction(
@@ -2199,11 +2197,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
         req
       );
 
-      // Redirect to latest release
-      res.redirect(downloadUrl);
+      // Check if we have a built Windows executable
+      const fs = await import('fs');
+      const path = await import('path');
+      const distDir = path.join(process.cwd(), 'dist-electron');
+      
+      if (fs.existsSync(distDir)) {
+        const files = fs.readdirSync(distDir);
+        const windowsInstaller = files.find(file => 
+          file.endsWith('.exe') && file.includes('Setup')
+        );
+        
+        if (windowsInstaller) {
+          const filePath = path.join(distDir, windowsInstaller);
+          return res.download(filePath, 'Four-One-Solutions-Setup.exe');
+        }
+      }
+      
+      // If no installer found, provide information about building the app
+      res.status(404).json({
+        message: "La aplicación para Windows está en desarrollo",
+        info: "El instalador de Windows estará disponible próximamente. Por ahora puedes usar la versión web o instalar como PWA.",
+        alternatives: [
+          {
+            type: "pwa",
+            name: "Instalar como PWA",
+            description: "Funciona offline y se comporta como una app nativa"
+          },
+          {
+            type: "web",
+            name: "Usar versión web",
+            description: "Acceso completo desde cualquier navegador"
+          }
+        ]
+      });
     } catch (error) {
       console.error("Error handling Windows download:", error);
-      res.status(500).json({ message: "Error downloading Windows app" });
+      res.status(500).json({ message: "Error al procesar descarga de Windows" });
     }
   });
 

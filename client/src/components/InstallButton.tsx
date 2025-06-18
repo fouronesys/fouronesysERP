@@ -251,16 +251,34 @@ export function InstallButton() {
     }
   };
 
-  const handleDownload = (option: InstallOption) => {
+  const handleDownload = async (option: InstallOption) => {
     if (option.type === 'pwa') {
       handlePWAInstall();
     } else if (option.type === 'web') {
       // Already using the web app, show message
       alert('Ya estás usando la aplicación web. Puedes crear un marcador para acceso rápido.');
     } else if (option.downloadUrl) {
-      // Open download URL in new tab for desktop applications
-      window.open(option.downloadUrl, '_blank');
-      setIsOpen(false);
+      try {
+        // For Windows download, check if available first
+        if (option.platform === 'Windows') {
+          const response = await fetch(option.downloadUrl);
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => null);
+            if (errorData?.alternatives) {
+              const message = `${errorData.message}\n\nAlternativas disponibles:\n${errorData.alternatives.map((alt: any) => `• ${alt.name}: ${alt.description}`).join('\n')}`;
+              alert(message);
+              return;
+            }
+          }
+        }
+        
+        // Open download URL in new tab for desktop applications
+        window.open(option.downloadUrl, '_blank');
+        setIsOpen(false);
+      } catch (error) {
+        console.error('Download error:', error);
+        alert('Error al iniciar la descarga. Por favor, intenta usar la versión PWA o web.');
+      }
     }
   };
 
