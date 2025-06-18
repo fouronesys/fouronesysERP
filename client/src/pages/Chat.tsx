@@ -95,17 +95,21 @@ export default function Chat() {
   });
 
   // Fetch chat channels
-  const { data: channels = [], isLoading: channelsLoading } = useQuery({
+  const { data: channelsData, isLoading: channelsLoading } = useQuery({
     queryKey: ["/api/chat/channels"],
     retry: false
   });
+  
+  const channels = Array.isArray(channelsData) ? channelsData : [];
 
   // Fetch messages for selected channel
-  const { data: messages = [], isLoading: messagesLoading } = useQuery({
+  const { data: messagesData, isLoading: messagesLoading } = useQuery({
     queryKey: ["/api/chat/channels", selectedChannel?.id, "messages"],
     enabled: !!selectedChannel,
     retry: false
   });
+  
+  const messages = Array.isArray(messagesData) ? messagesData : [];
 
   // Create channel mutation
   const createChannelMutation = useMutation({
