@@ -1825,15 +1825,526 @@ export default function PurchasesPage() {
         </TabsContent>
 
         <TabsContent value="payments">
-          <div className="text-center py-12">
-            <DollarSign className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <p className="text-muted-foreground mb-4">Módulo de pagos en desarrollo</p>
-            <p className="text-sm text-muted-foreground">
-              Pronto podrás gestionar los pagos a proveedores desde aquí
-            </p>
-          </div>
+          <PurchasePaymentsSection />
         </TabsContent>
       </Tabs>
     </div>
   );
 }
+
+// Purchase Payments Section Component
+const PurchasePaymentsSection = () => {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterStatus, setFilterStatus] = useState("all");
+
+  const { data: payments = [], isLoading } = useQuery({
+    queryKey: ["/api/purchase-payments"],
+  });
+
+  const { data: suppliers = [] } = useQuery({
+    queryKey: ["/api/suppliers"],
+  });
+
+  const { data: invoices = [] } = useQuery({
+    queryKey: ["/api/purchase-invoices"],
+  });
+
+  // Filter payments based on search and status
+  const filteredPayments = (payments as any[]).filter((payment: any) => {
+    const matchesSearch = payment.supplier?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         payment.invoiceNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         payment.reference?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesStatus = filterStatus === "all" || payment.status === filterStatus;
+    
+    return matchesSearch && matchesStatus;
+  });
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h3 className="text-lg font-semibold">Registro de Pagos</h3>
+          <p className="text-sm text-muted-foreground">
+            Historial completo de pagos a proveedores y facturas pendientes
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <NewPaymentDialog onSuccess={() => {}} />
+          <Button variant="outline">
+            <FileText className="h-4 w-4 mr-2" />
+            Exportar
+          </Button>
+        </div>
+      </div>
+
+      {/* Filtros y búsqueda */}
+      <div className="flex flex-col md:flex-row gap-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar por proveedor, factura o referencia..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-8"
+          />
+        </div>
+        
+        <Select value={filterStatus} onValueChange={setFilterStatus}>
+          <SelectTrigger className="w-48">
+            <SelectValue placeholder="Filtrar por estado" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos los pagos</SelectItem>
+            <SelectItem value="completed">Completados</SelectItem>
+            <SelectItem value="pending">Pendientes</SelectItem>
+            <SelectItem value="failed">Fallidos</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Select>
+          <SelectTrigger className="w-48">
+            <SelectValue placeholder="Último mes" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="7d">Últimos 7 días</SelectItem>
+            <SelectItem value="30d">Último mes</SelectItem>
+            <SelectItem value="90d">Últimos 3 meses</SelectItem>
+            <SelectItem value="1y">Último año</SelectItem>
+            <SelectItem value="all">Todo el tiempo</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Resumen de pagos */}
+      <div className="grid gap-4 md:grid-cols-3">
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Total Pagado este Mes
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">
+              RD$ {filteredPayments
+                .filter((p: any) => p.status === "completed" && 
+                  new Date(p.paymentDate).getMonth() === new Date().getMonth())
+                .reduce((sum: number, p: any) => sum + parseFloat(p.amount || "0"), 0)
+                .toLocaleString()}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Pagos Pendientes
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-orange-600">
+              RD$ {(invoices as any[])
+                .filter((inv: any) => inv.paymentStatus !== "paid")
+                .reduce((sum: number, inv: any) => 
+                  sum + (parseFloat(inv.totalAmount) - parseFloat(inv.paidAmount || "0")), 0)
+                .toLocaleString()}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Promedio por Pago
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              RD$ {filteredPayments.length > 0 ? 
+                (filteredPayments.reduce((sum: number, p: any) => 
+                  sum + parseFloat(p.amount || "0"), 0) / filteredPayments.length).toLocaleString() : "0"}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Lista de pagos */}
+      {isLoading ? (
+        <div className="space-y-4">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Card key={i} className="animate-pulse">
+              <CardContent className="p-4">
+                <div className="flex justify-between items-center">
+                  <div className="space-y-2">
+                    <div className="h-4 bg-gray-200 rounded w-48"></div>
+                    <div className="h-3 bg-gray-200 rounded w-32"></div>
+                  </div>
+                  <div className="h-6 bg-gray-200 rounded w-24"></div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : filteredPayments.length === 0 ? (
+        <div className="text-center py-12">
+          <DollarSign className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+          <p className="text-muted-foreground mb-4">
+            {searchTerm || filterStatus !== "all" ? 
+              "No se encontraron pagos con los filtros aplicados" :
+              "No hay pagos registrados"}
+          </p>
+          <NewPaymentDialog onSuccess={() => {}} />
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {filteredPayments.map((payment: any, index: number) => (
+            <Card key={payment.id || index} className="hover:shadow-md transition-shadow">
+              <CardContent className="p-4">
+                <div className="flex justify-between items-start">
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-2">
+                      <h4 className="font-medium">
+                        Pago #{payment.id || `P${index + 1}`}
+                      </h4>
+                      <Badge 
+                        variant={
+                          payment.status === "completed" ? "default" :
+                          payment.status === "pending" ? "secondary" :
+                          payment.status === "failed" ? "destructive" : "outline"
+                        }
+                      >
+                        {payment.status === "completed" ? "Completado" :
+                         payment.status === "pending" ? "Pendiente" :
+                         payment.status === "failed" ? "Fallido" : "Desconocido"}
+                      </Badge>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm text-muted-foreground">
+                      <div>
+                        <span className="font-medium">Proveedor:</span> {payment.supplier?.name || "N/A"}
+                      </div>
+                      <div>
+                        <span className="font-medium">Factura:</span> {payment.invoiceNumber || "N/A"}
+                      </div>
+                      <div>
+                        <span className="font-medium">Método:</span> 
+                        {payment.paymentMethod === "cash" ? " Efectivo" :
+                         payment.paymentMethod === "transfer" ? " Transferencia" :
+                         payment.paymentMethod === "check" ? " Cheque" :
+                         payment.paymentMethod === "card" ? " Tarjeta" : " N/A"}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center space-x-4 text-sm text-muted-foreground">
+                      <div>
+                        <span className="font-medium">Fecha:</span> {
+                          payment.paymentDate ? 
+                          new Date(payment.paymentDate).toLocaleDateString() : 
+                          "N/A"
+                        }
+                      </div>
+                      {payment.reference && (
+                        <div>
+                          <span className="font-medium">Ref:</span> {payment.reference}
+                        </div>
+                      )}
+                    </div>
+
+                    {payment.notes && (
+                      <p className="text-sm text-muted-foreground">
+                        <span className="font-medium">Notas:</span> {payment.notes}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="text-right space-y-2">
+                    <div className="text-2xl font-bold text-green-600">
+                      RD$ {parseFloat(payment.amount || "0").toLocaleString()}
+                    </div>
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="sm">
+                        <Eye className="h-4 w-4 mr-2" />
+                        Ver Detalles
+                      </Button>
+                      <Button variant="outline" size="sm">
+                        <FileText className="h-4 w-4 mr-2" />
+                        Comprobante
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// New Payment Dialog for standalone payments
+const NewPaymentDialog = ({ onSuccess }: { onSuccess: () => void }) => {
+  const [open, setOpen] = useState(false);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const { data: suppliers = [] } = useQuery({
+    queryKey: ["/api/suppliers"],
+  });
+
+  const { data: invoices = [] } = useQuery({
+    queryKey: ["/api/purchase-invoices"],
+  });
+
+  const form = useForm({
+    resolver: zodResolver(z.object({
+      supplierId: z.string().min(1, "Proveedor es requerido"),
+      invoiceId: z.string().optional(),
+      amount: z.number().min(0.01, "Monto debe ser mayor a 0"),
+      paymentMethod: z.enum(["cash", "transfer", "check", "card"], {
+        required_error: "Método de pago es requerido",
+      }),
+      paymentDate: z.date(),
+      reference: z.string().optional(),
+      notes: z.string().optional(),
+    })),
+    defaultValues: {
+      supplierId: "",
+      invoiceId: "",
+      amount: 0,
+      paymentMethod: "transfer",
+      paymentDate: new Date(),
+      reference: "",
+      notes: "",
+    },
+  });
+
+  const createPaymentMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const response = await apiRequest("POST", "/api/purchase-payments", data);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/purchase-payments"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/purchase-invoices"] });
+      toast({
+        title: "Pago registrado",
+        description: "El pago ha sido registrado exitosamente.",
+      });
+      setOpen(false);
+      form.reset();
+      onSuccess();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: "No se pudo registrar el pago.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const onSubmit = (data: any) => {
+    createPaymentMutation.mutate(data);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button>
+          <Plus className="h-4 w-4 mr-2" />
+          Registrar Pago
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Registrar Nuevo Pago</DialogTitle>
+        </DialogHeader>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="supplierId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Proveedor *</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleccionar proveedor" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {(suppliers as any[]).map((supplier: any) => (
+                        <SelectItem key={supplier.id} value={supplier.id.toString()}>
+                          {supplier.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="invoiceId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Factura (Opcional)</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleccionar factura" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="">Sin factura específica</SelectItem>
+                      {(invoices as any[]).map((invoice: any) => (
+                        <SelectItem key={invoice.id} value={invoice.id.toString()}>
+                          {invoice.invoiceNumber} - RD$ {parseFloat(invoice.totalAmount).toLocaleString()}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="amount"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Monto *</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      placeholder="0.00"
+                      {...field}
+                      onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="paymentMethod"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Método de Pago *</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleccionar método" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="cash">Efectivo</SelectItem>
+                      <SelectItem value="transfer">Transferencia</SelectItem>
+                      <SelectItem value="check">Cheque</SelectItem>
+                      <SelectItem value="card">Tarjeta</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="paymentDate"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Fecha de Pago *</FormLabel>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant={"outline"}
+                          className={cn(
+                            "w-full pl-3 text-left font-normal",
+                            !field.value && "text-muted-foreground"
+                          )}
+                        >
+                          {field.value ? (
+                            format(field.value, "PPP", { locale: es })
+                          ) : (
+                            <span>Seleccionar fecha</span>
+                          )}
+                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={field.value}
+                        onSelect={field.onChange}
+                        disabled={(date) =>
+                          date > new Date() || date < new Date("1900-01-01")
+                        }
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="reference"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Referencia</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Número de referencia o cheque" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="notes"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Notas</FormLabel>
+                  <FormControl>
+                    <Textarea placeholder="Notas adicionales sobre el pago" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="flex justify-end space-x-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setOpen(false)}
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                disabled={createPaymentMutation.isPending}
+              >
+                {createPaymentMutation.isPending ? "Registrando..." : "Registrar Pago"}
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  );
+};
