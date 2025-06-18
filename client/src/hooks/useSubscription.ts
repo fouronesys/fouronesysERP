@@ -9,18 +9,6 @@ export interface SubscriptionPlan {
 }
 
 export const SUBSCRIPTION_PLANS: Record<string, SubscriptionPlan> = {
-  trial: {
-    name: "Prueba Gratuita",
-    features: [
-      "dashboard", "pos", "customers", "products", "invoices", "reports", 
-      "warehouses", "manufacturing", "bom", "movements", "suppliers", 
-      "purchase-orders", "admin", "companies", "company-settings", "super-admin",
-      "employees", "payroll", "time-tracking", "leaves", "notifications",
-      "settings", "profile", "billing", "pos-sales"
-    ],
-    maxUsers: 50,
-    maxCompanies: 10,
-  },
   monthly: {
     name: "Plan Mensual",
     features: [
@@ -52,7 +40,7 @@ export function useSubscription() {
     queryKey: ["/api/companies/current"],
   });
 
-  const currentPlan = company?.subscriptionPlan || "trial";
+  const currentPlan = company?.subscriptionPlan || "monthly";
   const planConfig = SUBSCRIPTION_PLANS[currentPlan];
 
   const hasFeature = (feature: string): boolean => {
@@ -64,9 +52,6 @@ export function useSubscription() {
   };
 
   const getBlockedMessage = (feature: string): string => {
-    if (currentPlan === "trial") {
-      return "Esta funcionalidad no está disponible en el plan de prueba. Actualiza a un plan de pago para acceder.";
-    }
     if (currentPlan === "monthly") {
       return "Esta funcionalidad solo está disponible en el plan anual. Actualiza tu suscripción para acceder.";
     }
@@ -80,16 +65,7 @@ export function useSubscription() {
 
   const daysUntilExpiry = (): number => {
     if (!company?.subscriptionExpiry) {
-      // For trial companies without expiry date, assume 15 days from creation
-      if (currentPlan === "trial" && company?.createdAt) {
-        const createdDate = new Date(company.createdAt);
-        const trialExpiryDate = new Date(createdDate.getTime() + (15 * 24 * 60 * 60 * 1000));
-        const today = new Date();
-        const diffTime = trialExpiryDate.getTime() - today.getTime();
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        return Math.max(0, diffDays);
-      }
-      return 0;
+      return 30; // Default 30 days for active subscriptions
     }
     
     const expiryDate = new Date(company.subscriptionExpiry);
