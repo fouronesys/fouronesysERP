@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -30,12 +30,18 @@ import { cn } from "@/lib/utils";
 const ncfSequenceSchema = z.object({
   type: z.string().min(1, "Tipo de NCF requerido"),
   series: z.string().min(1, "Serie requerida"),
-  rangeStart: z.string().min(1, "Rango inicial requerido"),
-  rangeEnd: z.string().min(1, "Rango final requerido"),
-  currentNumber: z.string().min(1, "Número actual requerido"),
+  rangeStart: z.number().min(1, "Rango inicial debe ser mayor a 0"),
+  rangeEnd: z.number().min(1, "Rango final debe ser mayor a 0"),
+  currentNumber: z.number().min(1, "Número actual debe ser mayor a 0"),
   expirationDate: z.date(),
   isActive: z.boolean().default(true),
   description: z.string().optional(),
+}).refine((data) => data.rangeEnd > data.rangeStart, {
+  message: "El rango final debe ser mayor al inicial",
+  path: ["rangeEnd"]
+}).refine((data) => data.currentNumber >= data.rangeStart && data.currentNumber <= data.rangeEnd, {
+  message: "El número actual debe estar dentro del rango definido",
+  path: ["currentNumber"]
 });
 
 const reportConfigSchema = z.object({
@@ -48,6 +54,19 @@ const reportConfigSchema = z.object({
 
 type NCFSequenceFormData = z.infer<typeof ncfSequenceSchema>;
 type ReportConfigFormData = z.infer<typeof reportConfigSchema>;
+
+// Mapping de tipos NCF a series automáticas
+const NCF_SERIES_MAP: Record<string, string> = {
+  "B01": "001", // Factura de Crédito Fiscal
+  "B02": "001", // Factura de Consumo
+  "B03": "001", // Nota de Débito
+  "B04": "001", // Nota de Crédito
+  "B11": "001", // Factura de Régimen Especial
+  "B12": "001", // Factura Gubernamental
+  "B13": "001", // Factura de Exportación
+  "B14": "001", // Factura para Regímenes Especiales
+  "B15": "001", // Comprobante de Compras
+};
 
 // DGII Registry Management Component
 function DGIIRegistryManagement() {
@@ -144,15 +163,25 @@ export default function FiscalManagement() {
     resolver: zodResolver(ncfSequenceSchema),
     defaultValues: {
       type: "",
-      series: "",
-      rangeStart: "",
-      rangeEnd: "",
-      currentNumber: "",
+      series: "001",
+      rangeStart: 1,
+      rangeEnd: 1000,
+      currentNumber: 1,
       expirationDate: new Date(),
       isActive: true,
       description: "",
     },
   });
+
+  // Watch for NCF type changes to auto-assign series
+  const selectedNCFType = ncfSequenceForm.watch("type");
+  
+  // Auto-assign series when NCF type changes
+  useEffect(() => {
+    if (selectedNCFType && NCF_SERIES_MAP[selectedNCFType]) {
+      ncfSequenceForm.setValue("series", NCF_SERIES_MAP[selectedNCFType]);
+    }
+  }, [selectedNCFType, ncfSequenceForm]);
 
   const reportForm = useForm<ReportConfigFormData>({
     resolver: zodResolver(reportConfigSchema),
@@ -348,8 +377,11 @@ export default function FiscalManagement() {
                             <FormItem>
                               <FormLabel>Serie/Prefijo</FormLabel>
                               <FormControl>
-                                <Input placeholder="001" {...field} />
+                                <Input placeholder="001" {...field} readOnly className="bg-gray-50 dark:bg-gray-800" />
                               </FormControl>
+                              <div className="text-xs text-muted-foreground">
+                                Se asigna automáticamente según el tipo NCF
+                              </div>
                               <FormMessage />
                             </FormItem>
                           )}
@@ -362,10 +394,18 @@ export default function FiscalManagement() {
                           name="rangeStart"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Rango Inicial</FormLabel>
+                              <FormLabel>Número Inicial</FormLabel>
                               <FormControl>
-                                <Input placeholder="00000001" {...field} />
+                                <Input 
+                                  type="number" 
+                                  placeholder="1" 
+                                  {...field} 
+                                  onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
+                                />
                               </FormControl>
+                              <div className="text-xs text-muted-foreground">
+                                Ejemplo: 1 (para 00000001)
+                              </div>
                               <FormMessage />
                             </FormItem>
                           )}
@@ -376,10 +416,18 @@ export default function FiscalManagement() {
                           name="rangeEnd"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Rango Final</FormLabel>
+                              <FormLabel>Número Final</FormLabel>
                               <FormControl>
-                                <Input placeholder="00001000" {...field} />
+                                <Input 
+                                  type="number" 
+                                  placeholder="1000" 
+                                  {...field} 
+                                  onChange={(e) => field.onChange(parseInt(e.target.value) || 1000)}
+                                />
                               </FormControl>
+                              <div className="text-xs text-muted-foreground">
+                                Ejemplo: 1000 (para 00001000)
+                              </div>
                               <FormMessage />
                             </FormItem>
                           )}
@@ -393,8 +441,16 @@ export default function FiscalManagement() {
                           <FormItem>
                             <FormLabel>Número Actual</FormLabel>
                             <FormControl>
-                              <Input placeholder="00000001" {...field} />
+                              <Input 
+                                type="number" 
+                                placeholder="1" 
+                                {...field} 
+                                onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
+                              />
                             </FormControl>
+                            <div className="text-xs text-muted-foreground">
+                              Debe estar entre el rango inicial y final
+                            </div>
                             <FormMessage />
                           </FormItem>
                         )}
@@ -525,8 +581,8 @@ export default function FiscalManagement() {
                           <Badge variant="outline">B01</Badge>
                         </TableCell>
                         <TableCell className="font-mono">001</TableCell>
-                        <TableCell className="font-mono">00000001 - 00001000</TableCell>
-                        <TableCell className="font-mono">00000025</TableCell>
+                        <TableCell className="font-mono">1 - 1000</TableCell>
+                        <TableCell className="font-mono">25</TableCell>
                         <TableCell>
                           <span className="text-green-600 font-medium">975</span>
                         </TableCell>
@@ -552,8 +608,8 @@ export default function FiscalManagement() {
                           <Badge variant="outline">B02</Badge>
                         </TableCell>
                         <TableCell className="font-mono">001</TableCell>
-                        <TableCell className="font-mono">00000001 - 00001000</TableCell>
-                        <TableCell className="font-mono">00000156</TableCell>
+                        <TableCell className="font-mono">1 - 1000</TableCell>
+                        <TableCell className="font-mono">156</TableCell>
                         <TableCell>
                           <span className="text-green-600 font-medium">844</span>
                         </TableCell>
