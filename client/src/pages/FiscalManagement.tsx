@@ -584,12 +584,27 @@ export default function FiscalManagement() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="documents">Documentos Fiscales</TabsTrigger>
-            <TabsTrigger value="reports">Reportes 606/607</TabsTrigger>
-            <TabsTrigger value="registry">Registro RNC</TabsTrigger>
-            <TabsTrigger value="analytics">Herramienta DGII</TabsTrigger>
-            <TabsTrigger value="settings">Configuración</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-1">
+            <TabsTrigger value="documents" className="text-xs sm:text-sm px-2 py-2">
+              <span className="hidden sm:inline">Documentos Fiscales</span>
+              <span className="sm:hidden">Documentos</span>
+            </TabsTrigger>
+            <TabsTrigger value="reports" className="text-xs sm:text-sm px-2 py-2">
+              <span className="hidden sm:inline">Reportes 606/607</span>
+              <span className="sm:hidden">Reportes</span>
+            </TabsTrigger>
+            <TabsTrigger value="registry" className="text-xs sm:text-sm px-2 py-2">
+              <span className="hidden sm:inline">Registro RNC</span>
+              <span className="sm:hidden">RNC</span>
+            </TabsTrigger>
+            <TabsTrigger value="analytics" className="text-xs sm:text-sm px-2 py-2">
+              <span className="hidden sm:inline">Herramienta DGII</span>
+              <span className="sm:hidden">DGII</span>
+            </TabsTrigger>
+            <TabsTrigger value="settings" className="text-xs sm:text-sm px-2 py-2">
+              <span className="hidden sm:inline">Configuración</span>
+              <span className="sm:hidden">Config</span>
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="documents" className="space-y-6">
