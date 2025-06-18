@@ -48,6 +48,7 @@ import Purchases from "@/pages/Purchases";
 import Accounting from "@/pages/Accounting";
 import ErrorManagement from "@/pages/ErrorManagement";
 import Inventory from "@/pages/Inventory";
+import ModuleManager from "@/pages/ModuleManager";
 import SystemMonitoring from "@/pages/SystemMonitoring";
 import Payment from "@/pages/Payment";
 import CompanyManagement from "@/pages/CompanyManagement";
@@ -252,6 +253,7 @@ function Router() {
           <Route path="/error-management" component={ErrorManagement} />
           <Route path="/system-monitoring" component={SystemMonitoring} />
           <Route path="/company-management" component={CompanyManagement} />
+          <Route path="/module-manager" component={ModuleManager} />
 
           <Route path="/employees" component={Employees} />
           <Route path="/payroll" component={Payroll} />

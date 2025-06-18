@@ -20,6 +20,7 @@ import {
   Menu,
   X,
   Settings,
+  Shield,
   ShieldCheck,
   Calculator,
   Brain,
@@ -34,7 +35,9 @@ import {
   Crown,
   Sparkles,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Cog,
+  Building2
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -117,6 +120,15 @@ const navigation = [
       { name: "Empresa", href: "/company-settings", icon: Settings },
       { name: "Gestión de Errores", href: "/error-management", icon: Bug },
       { name: "Monitoreo del Sistema", href: "/system-monitoring", icon: Activity },
+    ],
+  },
+  {
+    category: "Administración",
+    items: [
+      { name: "Super Admin", href: "/super-admin", icon: Shield },
+      { name: "Gestión de Módulos", href: "/module-manager", icon: Wrench },
+      { name: "Gestión de Empresas", href: "/company-management", icon: Building },
+      { name: "Analytics de Empresas", href: "/company-analytics", icon: BarChart3 },
     ],
   },
 
