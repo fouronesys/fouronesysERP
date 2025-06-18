@@ -874,6 +874,54 @@ export const passwordResetTokens = pgTable("password_reset_tokens", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// System modules configuration table
+export const systemModules = pgTable("system_modules", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 100 }).unique().notNull(),
+  displayName: varchar("display_name", { length: 150 }).notNull(),
+  description: text("description"),
+  category: varchar("category", { length: 50 }).notNull(), // core, pos, accounting, hr, inventory, etc.
+  icon: varchar("icon", { length: 50 }), // Lucide icon name
+  version: varchar("version", { length: 20 }).default("1.0.0"),
+  isCore: boolean("is_core").default(false), // core modules cannot be disabled
+  requiresSubscription: boolean("requires_subscription").default(false),
+  subscriptionTiers: text("subscription_tiers").array(), // ['monthly', 'annual']
+  dependencies: text("dependencies").array(), // module names this depends on
+  isActive: boolean("is_active").default(true),
+  sortOrder: integer("sort_order").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Company module permissions table
+export const companyModules = pgTable("company_modules", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull().references(() => companies.id, { onDelete: "cascade" }),
+  moduleId: integer("module_id").notNull().references(() => systemModules.id, { onDelete: "cascade" }),
+  isEnabled: boolean("is_enabled").default(true),
+  enabledAt: timestamp("enabled_at").defaultNow(),
+  enabledBy: varchar("enabled_by").references(() => users.id),
+  disabledAt: timestamp("disabled_at"),
+  disabledBy: varchar("disabled_by").references(() => users.id),
+  settings: jsonb("settings"), // module-specific configuration
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// System configuration for global settings
+export const systemConfig = pgTable("system_config", {
+  id: serial("id").primaryKey(),
+  key: varchar("key", { length: 100 }).unique().notNull(),
+  value: text("value"),
+  valueType: varchar("value_type", { length: 20 }).default("string"), // string, number, boolean, json
+  category: varchar("category", { length: 50 }).default("general"),
+  description: text("description"),
+  isEditable: boolean("is_editable").default(true),
+  isPublic: boolean("is_public").default(false), // can be accessed by frontend
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // HR and Payroll Insert Schemas
 export const insertEmployeeSchema = createInsertSchema(employees).omit({
   id: true,
@@ -904,6 +952,35 @@ export const insertLeaveSchema = createInsertSchema(leaves).omit({
   createdAt: true,
   updatedAt: true,
 });
+
+// Module Management Insert Schemas
+export const insertSystemModuleSchema = createInsertSchema(systemModules).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertCompanyModuleSchema = createInsertSchema(companyModules).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertSystemConfigSchema = createInsertSchema(systemConfig).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+// Type exports for module management
+export type SystemModule = typeof systemModules.$inferSelect;
+export type InsertSystemModule = z.infer<typeof insertSystemModuleSchema>;
+
+export type CompanyModule = typeof companyModules.$inferSelect;
+export type InsertCompanyModule = z.infer<typeof insertCompanyModuleSchema>;
+
+export type SystemConfig = typeof systemConfig.$inferSelect;
+export type InsertSystemConfig = z.infer<typeof insertSystemConfigSchema>;
 
 // Remove duplicate ncfSequences table as it's already defined above
 

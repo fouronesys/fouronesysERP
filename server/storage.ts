@@ -47,6 +47,9 @@ import {
   journals,
   paymentSubmissions,
   exchangeRates,
+  systemModules,
+  companyModules,
+  systemConfig,
   type User,
   type UpsertUser,
   type Company,
@@ -86,6 +89,12 @@ import {
   // Supplier types moved to purchases module
   type Product,
   type InsertProduct,
+  type SystemModule,
+  type InsertSystemModule,
+  type CompanyModule,
+  type InsertCompanyModule,
+  type SystemConfig,
+  type InsertSystemConfig,
   type Invoice,
   type InsertInvoice,
   type ProductionOrder,
@@ -364,6 +373,26 @@ export interface IStorage {
   updateUser(userId: string, updates: Partial<UpsertUser>): Promise<User | undefined>;
   getCompanySettings(companyId: number): Promise<any>;
   updateCompanySettings(companyId: number, settings: any): Promise<any>;
+
+  // Module Management operations
+  getSystemModules(): Promise<SystemModule[]>;
+  getSystemModule(id: number): Promise<SystemModule | undefined>;
+  createSystemModule(module: InsertSystemModule): Promise<SystemModule>;
+  updateSystemModule(id: number, updates: Partial<InsertSystemModule>): Promise<SystemModule | undefined>;
+  deleteSystemModule(id: number): Promise<void>;
+  
+  // Company Module operations
+  getCompanyModules(companyId: number): Promise<(CompanyModule & { module: SystemModule })[]>;
+  getCompanyModule(companyId: number, moduleId: number): Promise<CompanyModule | undefined>;
+  enableCompanyModule(companyId: number, moduleId: number, enabledBy: string): Promise<CompanyModule>;
+  disableCompanyModule(companyId: number, moduleId: number, disabledBy: string): Promise<CompanyModule>;
+  updateCompanyModuleSettings(companyId: number, moduleId: number, settings: any): Promise<CompanyModule | undefined>;
+  
+  // System Configuration operations
+  getSystemConfigs(category?: string): Promise<SystemConfig[]>;
+  getSystemConfig(key: string): Promise<SystemConfig | undefined>;
+  upsertSystemConfig(config: InsertSystemConfig): Promise<SystemConfig>;
+  deleteSystemConfig(key: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
