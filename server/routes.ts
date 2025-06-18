@@ -747,7 +747,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (purchaseDate >= startDate && purchaseDate <= endDate) {
             // DGII 606 format: RNC|TIPO|NCF|NCF_MODIFICADO|FECHA_COMPROBANTE|FECHA_PAGO|MONTO_FACTURADO|ITBIS_FACTURADO|ITBIS_RETENIDO|TIPO_BIENES_SERVICIOS|RETENCION_RENTA|FORMA_PAGO
             const subtotalAmount = parseFloat(purchase.subtotal || "0");
-            const taxAmount = parseFloat(purchase.taxes || "0");
+            const taxAmount = parseFloat(purchase.itbis || "0");
             
             const line = [
               "00000000000", // RNC del suplidor (default)
@@ -787,7 +787,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (saleDate >= startDate && saleDate <= endDate) {
             // DGII 607 format: RNC|TIPO|NCF|NCF_MODIFICADO|FECHA_COMPROBANTE|MONTO_FACTURADO|ITBIS_FACTURADO|FORMA_PAGO
             const totalAmount = parseFloat(sale.total || "0");
-            const taxAmount = parseFloat(sale.taxes || "0");
+            const taxAmount = parseFloat(sale.itbis || "0");
             
             const line = [
               "00000000000", // RNC del cliente (default)

@@ -147,11 +147,11 @@ export default function FiscalManagement() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: ncfSequences, isLoading: sequencesLoading } = useQuery({
+  const { data: ncfSequences = [], isLoading: sequencesLoading } = useQuery({
     queryKey: ['/api/fiscal/ncf-sequences'],
   });
 
-  const { data: fiscalReports, isLoading: reportsLoading } = useQuery({
+  const { data: fiscalReports = [], isLoading: reportsLoading } = useQuery({
     queryKey: ['/api/fiscal/reports'],
   });
 
@@ -576,7 +576,7 @@ export default function FiscalManagement() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {ncfSequences && ncfSequences.length > 0 ? (
+                      {Array.isArray(ncfSequences) && ncfSequences.length > 0 ? (
                         ncfSequences.map((sequence: any) => (
                           <TableRow key={sequence.id}>
                             <TableCell>
@@ -754,7 +754,7 @@ export default function FiscalManagement() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {fiscalReports && fiscalReports.length > 0 ? (
+                      {Array.isArray(fiscalReports) && fiscalReports.length > 0 ? (
                         fiscalReports.map((report: any) => (
                           <TableRow key={report.id}>
                             <TableCell>
