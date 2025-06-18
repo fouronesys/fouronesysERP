@@ -56,12 +56,12 @@ export default function Landing() {
         <div className="text-center mb-12 sm:mb-16">
           <div className="max-w-4xl mx-auto mb-6 sm:mb-8">
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-4 sm:mb-6 leading-tight">
-              Sistema ERP #1 República Dominicana - Facturación NCF Automática DGII
+              Sistema ERP República Dominicana - Facturación NCF Automática DGII
             </h1>
             <p className="text-lg sm:text-xl text-gray-300 mb-6 sm:mb-8 leading-relaxed">
-              <strong>Four One Solutions</strong> es el sistema ERP líder en República Dominicana con facturación automática NCF para DGII, 
-              POS especializado para restaurantes, gestión inteligente de inventarios y contabilidad empresarial completa. 
-              Cumple 100% con las normativas fiscales dominicanas y ofrece integración con impresoras térmicas.
+              <strong>Four One Solutions</strong> es un sistema ERP empresarial con facturación automática NCF para DGII, 
+              POS especializado para restaurantes, gestión de inventarios y contabilidad empresarial. 
+              Compatible con las normativas fiscales dominicanas e integración con impresoras térmicas.
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center items-center">
@@ -493,7 +493,7 @@ export default function Landing() {
         <div className="max-w-6xl mx-auto mt-16 mb-12">
           <div className="bg-gradient-to-br from-blue-900/30 to-purple-900/30 rounded-2xl p-8 border border-blue-500/20 backdrop-blur-sm">
             <h2 className="text-3xl font-bold text-white text-center mb-8">
-              ¿Por qué Four One Solutions es el Sistema ERP Líder en República Dominicana?
+              Características Especializadas para República Dominicana
             </h2>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
@@ -548,20 +548,19 @@ export default function Landing() {
 
             <div className="text-center bg-gray-800/50 rounded-xl p-6">
               <h3 className="text-2xl font-bold text-white mb-4">
-                Únete a más de 500+ empresas dominicanas que confían en Four One Solutions
+                Sistema ERP Especializado para Empresas Dominicanas
               </h3>
               <p className="text-gray-300 mb-6">
-                Desde pequeños colmados hasta grandes restaurantes en Santo Domingo, Santiago y todo el país. 
-                Nuestro sistema ERP está diseñado específicamente para el mercado dominicano con características 
-                únicas como integración con bancos locales, soporte para impresoras térmicas populares en RD, 
-                y cumplimiento automático con todas las regulaciones fiscales dominicanas.
+                Four One Solutions está diseñado específicamente para el mercado dominicano con características 
+                especializadas como facturación NCF automática para DGII, soporte para impresoras térmicas, 
+                y cumplimiento total con las regulaciones fiscales de República Dominicana.
               </p>
               <div className="flex flex-wrap justify-center gap-4 text-sm text-gray-400">
-                <span>✓ Santo Domingo</span>
-                <span>✓ Santiago</span>
-                <span>✓ La Romana</span>
-                <span>✓ San Pedro de Macorís</span>
-                <span>✓ Todo el país</span>
+                <span>✓ Compatible DGII</span>
+                <span>✓ NCF Automático</span>
+                <span>✓ Impresión Térmica</span>
+                <span>✓ Reportes 606/607</span>
+                <span>✓ Moneda DOP</span>
               </div>
             </div>
           </div>
