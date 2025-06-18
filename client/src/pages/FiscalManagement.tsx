@@ -12,12 +12,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Switch } from "@/components/ui/switch";
 import { 
   Plus, Search, FileText, Download, Upload, Calendar as CalendarIcon, 
   Receipt, Building2, TrendingUp, AlertTriangle, CheckCircle, X, Eye, Edit,
   Calculator, FileSpreadsheet, Shield, RefreshCw, Database, Settings
 } from "lucide-react";
-import { Switch } from "@/components/ui/switch";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -38,289 +38,85 @@ const ncfSequenceSchema = z.object({
   description: z.string().optional(),
 });
 
-const fiscalDocumentSchema = z.object({
-  type: z.string().min(1, "Tipo de documento requerido"),
-  series: z.string().min(1, "Serie requerida"),
-  number: z.string().min(1, "Número requerido"),
-  customerRnc: z.string().optional(),
-  customerName: z.string().min(1, "Nombre del cliente requerido"),
-  amount: z.string().min(1, "Monto requerido"),
-  itbis: z.string().default("0"),
-  date: z.date(),
-  description: z.string().optional(),
-});
-
 const reportConfigSchema = z.object({
   type: z.enum(["606", "607"]),
   period: z.string().min(1, "Período requerido"),
-  year: z.string().min(1, "Año requerido"),
+  year: z.string().min(4, "Año requerido"),
   includeZeroValues: z.boolean().default(false),
   format: z.enum(["excel", "txt"]).default("excel"),
 });
 
 type NCFSequenceFormData = z.infer<typeof ncfSequenceSchema>;
-type FiscalDocumentFormData = z.infer<typeof fiscalDocumentSchema>;
 type ReportConfigFormData = z.infer<typeof reportConfigSchema>;
 
 // DGII Registry Management Component
 function DGIIRegistryManagement() {
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
+  const [searchRnc, setSearchRnc] = useState("");
+  const [searchResult, setSearchResult] = useState<any>(null);
+  const [isSearching, setIsSearching] = useState(false);
 
-  const { data: registryStatus, isLoading: isStatusLoading } = useQuery({
-    queryKey: ['/api/dgii/registry/status'],
-    queryFn: async () => {
-      const response = await fetch('/api/dgii/registry/status');
-      if (!response.ok) {
-        throw new Error('Failed to fetch registry status');
-      }
-      return response.json();
-    },
-    refetchInterval: 30000, // Refresh every 30 seconds
-  });
-
-  const updateMutation = useMutation({
-    mutationFn: async () => {
-      const response = await fetch('/api/dgii/registry/update', {
-        method: 'POST',
-      });
-      if (!response.ok) {
-        throw new Error('Failed to trigger registry update');
-      }
-      return response.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: "Actualización iniciada",
-        description: "El proceso de actualización del registro RNC se ha iniciado exitosamente.",
-      });
-      queryClient.invalidateQueries({ queryKey: ['/api/dgii/registry/status'] });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error en actualización",
-        description: error.message || "No se pudo iniciar la actualización del registro RNC.",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const toggleAutoUpdateMutation = useMutation({
-    mutationFn: async (enabled: boolean) => {
-      const response = await fetch('/api/dgii/registry/auto-update/toggle', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ enabled }),
-      });
-      if (!response.ok) {
-        throw new Error('Failed to toggle auto-update');
-      }
-      return response.json();
-    },
-    onSuccess: (data: any) => {
-      toast({
-        title: "Configuración actualizada",
-        description: `Actualización automática ${data.autoUpdateEnabled ? 'habilitada' : 'deshabilitada'}.`,
-      });
-      queryClient.invalidateQueries({ queryKey: ['/api/dgii/registry/status'] });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error en configuración",
-        description: error.message || "No se pudo cambiar la configuración de actualización automática.",
-        variant: "destructive",
-      });
-    },
-  });
-
-  if (isStatusLoading) {
-    return (
-      <div className="flex justify-center items-center py-8">
-        <RefreshCw className="h-6 w-6 animate-spin" />
-        <span className="ml-2">Cargando estado del registro...</span>
-      </div>
-    );
-  }
+  const handleRNCSearch = async () => {
+    if (!searchRnc.trim()) return;
+    
+    setIsSearching(true);
+    try {
+      const response = await fetch(`/api/dgii/rnc-lookup?rnc=${searchRnc}`);
+      const data = await response.json();
+      setSearchResult(data);
+    } catch (error) {
+      console.error("Error searching RNC:", error);
+      setSearchResult({ error: "Error al buscar RNC" });
+    } finally {
+      setIsSearching(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
-      {/* Status Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Database className="h-4 w-4" />
-              Registros RNC
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {registryStatus?.registryCount?.toLocaleString() || '0'}
-            </div>
-            <p className="text-xs text-muted-foreground">Total de registros</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <RefreshCw className="h-4 w-4" />
-              Última Actualización
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-sm font-medium">
-              {registryStatus?.lastUpdate 
-                ? format(new Date(registryStatus.lastUpdate), "dd/MM/yyyy HH:mm", { locale: es })
-                : 'Nunca'
-              }
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {registryStatus?.updateInterval || 'Cada 24 horas'}
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Settings className="h-4 w-4" />
-              Estado del Sistema
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-2">
-              {registryStatus?.autoUpdateEnabled ? (
-                <Badge variant="default" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">
-                  <CheckCircle className="h-3 w-3 mr-1" />
-                  Activo
-                </Badge>
-              ) : (
-                <Badge variant="secondary">
-                  <X className="h-3 w-3 mr-1" />
-                  Inactivo
-                </Badge>
-              )}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {registryStatus?.isUpdating ? 'Actualizando...' : 'Listo'}
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Control Panel */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Settings className="h-5 w-5" />
-            Panel de Control
-          </CardTitle>
-          <p className="text-sm text-muted-foreground">
-            Gestiona las actualizaciones del registro RNC de DGII
-          </p>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col sm:flex-row gap-4">
-            <Button
-              onClick={() => updateMutation.mutate()}
-              disabled={updateMutation.isPending || registryStatus?.isUpdating}
-              className="flex-1"
-            >
-              {updateMutation.isPending || registryStatus?.isUpdating ? (
-                <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Download className="mr-2 h-4 w-4" />
-              )}
-              Actualizar Ahora
-            </Button>
-
-            <Button
-              variant="outline"
-              onClick={() => toggleAutoUpdateMutation.mutate(!registryStatus?.autoUpdateEnabled)}
-              disabled={toggleAutoUpdateMutation.isPending}
-              className="flex-1"
-            >
-              {toggleAutoUpdateMutation.isPending ? (
-                <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-              ) : registryStatus?.autoUpdateEnabled ? (
-                <X className="mr-2 h-4 w-4" />
-              ) : (
-                <CheckCircle className="mr-2 h-4 w-4" />
-              )}
-              {registryStatus?.autoUpdateEnabled ? 'Deshabilitar Auto-actualización' : 'Habilitar Auto-actualización'}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* System Information */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Shield className="h-5 w-5" />
-            Información del Sistema
+            <Search className="h-5 w-5" />
+            Búsqueda RNC/Cédula DGII
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <h4 className="font-medium">Configuración de Actualización</h4>
-              <ul className="text-sm text-muted-foreground space-y-1">
-                <li>• Frecuencia: {registryStatus?.updateInterval || 'Cada 24 horas'}</li>
-                <li>• Respaldos automáticos: Habilitados</li>
-                <li>• Reintentos máximos: 3 intentos</li>
-                <li>• Timeout de descarga: 30 segundos</li>
-              </ul>
-            </div>
-            <div className="space-y-2">
-              <h4 className="font-medium">Estado de Conexión</h4>
-              <ul className="text-sm text-muted-foreground space-y-1">
-                <li>• Servidor DGII: {registryStatus?.isConnected ? 'Conectado' : 'Desconectado'}</li>
-                <li>• Última verificación: {registryStatus?.lastCheck ? format(new Date(registryStatus.lastCheck), "HH:mm") : 'N/A'}</li>
-                <li>• Próxima actualización: {registryStatus?.nextUpdate ? format(new Date(registryStatus.nextUpdate), "dd/MM HH:mm") : 'N/A'}</li>
-              </ul>
-            </div>
+        <CardContent className="space-y-4">
+          <div className="flex gap-2">
+            <Input
+              placeholder="Ingrese RNC o cédula..."
+              value={searchRnc}
+              onChange={(e) => setSearchRnc(e.target.value)}
+              className="flex-1"
+            />
+            <Button onClick={handleRNCSearch} disabled={isSearching}>
+              {isSearching ? "Buscando..." : "Buscar"}
+            </Button>
           </div>
+          
+          {searchResult && (
+            <div className="mt-4 p-4 border rounded-lg">
+              {searchResult.error ? (
+                <div className="text-red-600">{searchResult.error}</div>
+              ) : (
+                <div className="space-y-2">
+                  <div><strong>RNC:</strong> {searchResult.rnc}</div>
+                  <div><strong>Razón Social:</strong> {searchResult.name}</div>
+                  <div><strong>Estado:</strong> {searchResult.status}</div>
+                  <div><strong>Régimen:</strong> {searchResult.regime}</div>
+                </div>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
   );
 }
 
-interface FiscalDocument {
-  id: number;
-  type: string;
-  series: string;
-  number: string;
-  customerRnc?: string;
-  customerName: string;
-  amount: number;
-  itbis: number;
-  date: string;
-  description?: string;
-  status: 'active' | 'cancelled' | 'pending';
-  createdAt: string;
-}
-
-interface FiscalReport {
-  id: number;
-  type: '606' | '607';
-  period: string;
-  year: string;
-  status: 'generated' | 'submitted' | 'draft';
-  recordCount: number;
-  totalAmount: number;
-  generatedAt: string;
-  fileName?: string;
-}
-
 export default function FiscalManagement() {
-  const [activeTab, setActiveTab] = useState("documents");
+  const [activeTab, setActiveTab] = useState("ncf-sequences");
   const [searchTerm, setSearchTerm] = useState("");
-  const [showDocumentDialog, setShowDocumentDialog] = useState(false);
+  const [showSequenceDialog, setShowSequenceDialog] = useState(false);
   const [showReportDialog, setShowReportDialog] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date>();
   const [reportType, setReportType] = useState<'606' | '607'>('606');
@@ -332,8 +128,8 @@ export default function FiscalManagement() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: fiscalDocuments, isLoading: documentsLoading } = useQuery({
-    queryKey: ['/api/fiscal/documents'],
+  const { data: ncfSequences, isLoading: sequencesLoading } = useQuery({
+    queryKey: ['/api/fiscal/ncf-sequences'],
   });
 
   const { data: fiscalReports, isLoading: reportsLoading } = useQuery({
@@ -378,7 +174,7 @@ export default function FiscalManagement() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/fiscal/ncf-sequences'] });
-      setShowDocumentDialog(false);
+      setShowSequenceDialog(false);
       ncfSequenceForm.reset();
       toast({
         title: "Secuencia NCF creada",
@@ -396,7 +192,6 @@ export default function FiscalManagement() {
 
   const generateReportMutation = useMutation({
     mutationFn: async (data: ReportConfigFormData) => {
-      // Generate DGII-compliant .txt file
       const response = await fetch("/api/fiscal-reports/generate", {
         method: "POST",
         headers: {
@@ -409,29 +204,24 @@ export default function FiscalManagement() {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to generate fiscal report");
+        throw new Error("Error al generar reporte");
       }
 
-      // Download the file
-      const blob = await response.blob();
+      return response.blob();
+    },
+    onSuccess: (blob, variables) => {
       const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
+      const a = document.createElement('a');
+      a.style.display = 'none';
       a.href = url;
-      a.download = `${data.type}_${data.year}${data.period.padStart(2, '0')}.txt`;
+      a.download = `Reporte_${variables.type}_${variables.year}${variables.period.padStart(2, '0')}.txt`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-
-      return { success: true };
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/fiscal/reports'] });
-      setShowReportDialog(false);
-      reportForm.reset();
+      
       toast({
-        title: "Reporte DGII generado",
-        description: "El archivo .txt ha sido descargado con formato DGII oficial.",
+        title: "Reporte generado",
+        description: "El reporte DGII ha sido descargado exitosamente.",
       });
     },
     onError: () => {
@@ -443,140 +233,18 @@ export default function FiscalManagement() {
     },
   });
 
-  const onSubmitDocument = (data: FiscalDocumentFormData) => {
-    createDocumentMutation.mutate(data);
+  const onSubmitNCFSequence = (data: NCFSequenceFormData) => {
+    createNCFSequenceMutation.mutate(data);
   };
 
   const onSubmitReport = (data: ReportConfigFormData) => {
     generateReportMutation.mutate(data);
   };
 
-  const generateDGIIReport = async (type: '606' | '607', period: string) => {
-    if (!period || period.length !== 6) {
-      toast({
-        title: "Error",
-        description: "El período debe tener formato AAAAMM (ejemplo: 202412)",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const setLoading = type === '606' ? setIsGenerating606 : setIsGenerating607;
-    setLoading(true);
-
-    try {
-      const response = await fetch("/api/fiscal-reports/generate", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          type,
-          period,
-        }),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Failed to generate fiscal report");
-      }
-
-      // Download the file
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `DGII_F_${type}_${period}.txt`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-
-      toast({
-        title: "Reporte DGII generado",
-        description: `El archivo ${type}_${period}.txt ha sido descargado exitosamente.`,
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "No se pudo generar el reporte fiscal.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const getDocumentStatusBadge = (status: string) => {
-    const statusConfig = {
-      active: { label: "Activo", color: "bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300" },
-      cancelled: { label: "Anulado", color: "bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300" },
-      pending: { label: "Pendiente", color: "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300" },
-    };
-
-    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.pending;
-    return <Badge className={config.color}>{config.label}</Badge>;
-  };
-
-  const getReportStatusBadge = (status: string) => {
-    const statusConfig = {
-      generated: { label: "Generado", color: "bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300" },
-      submitted: { label: "Enviado", color: "bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300" },
-      draft: { label: "Borrador", color: "bg-gray-100 dark:bg-gray-900/30 text-gray-800 dark:text-gray-300" },
-    };
-
-    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.draft;
-    return <Badge className={config.color}>{config.label}</Badge>;
-  };
-
-  const filteredDocuments = (fiscalDocuments as FiscalDocument[] | undefined)?.filter((doc: FiscalDocument) =>
-    doc.number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    doc.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    doc.customerRnc?.toLowerCase().includes(searchTerm.toLowerCase())
-  ) || [];
-
-  const filteredReports = (fiscalReports as FiscalReport[] | undefined)?.filter((report: FiscalReport) =>
-    report.type.includes(searchTerm) ||
-    report.period.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    report.year.includes(searchTerm)
-  ) || [];
-
-  const documentTypes = [
-    { value: "01", label: "Factura de Crédito Fiscal" },
-    { value: "02", label: "Factura de Consumo" },
-    { value: "03", label: "Nota de Débito" },
-    { value: "04", label: "Nota de Crédito" },
-    { value: "11", label: "Factura de Régimen Especial" },
-    { value: "12", label: "Factura Gubernamental" },
-    { value: "13", label: "Factura de Exportación" },
-    { value: "14", label: "Factura para Regímenes Especiales" },
-    { value: "15", label: "Comprobante de Compras" },
-  ];
-
-  const months = [
-    { value: "01", label: "Enero" },
-    { value: "02", label: "Febrero" },
-    { value: "03", label: "Marzo" },
-    { value: "04", label: "Abril" },
-    { value: "05", label: "Mayo" },
-    { value: "06", label: "Junio" },
-    { value: "07", label: "Julio" },
-    { value: "08", label: "Agosto" },
-    { value: "09", label: "Septiembre" },
-    { value: "10", label: "Octubre" },
-    { value: "11", label: "Noviembre" },
-    { value: "12", label: "Diciembre" },
-  ];
-
-  if (documentsLoading || reportsLoading) {
+  if (sequencesLoading || reportsLoading) {
     return (
-      <div className="h-screen overflow-y-auto">
-        <div className="container mx-auto p-4 space-y-6 pb-20">
-          <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-2 text-gray-500 dark:text-gray-400">Cargando información fiscal...</p>
-          </div>
-        </div>
+      <div className="h-screen flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
       </div>
     );
   }
@@ -590,7 +258,7 @@ export default function FiscalManagement() {
               Gestión Fiscal
             </h1>
             <p className="text-gray-600 dark:text-gray-400">
-              Administra documentos fiscales y genera reportes 606/607
+              Administra secuencias NCF y genera reportes 606/607
             </p>
           </div>
         </div>
@@ -620,17 +288,17 @@ export default function FiscalManagement() {
           </TabsList>
 
           <TabsContent value="ncf-sequences" className="space-y-6">
-            <div className="flex flex-col sm:flex-row gap-4 mb-6">
+            <div className="flex flex-col sm:flex-row gap-4">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                 <Input
-                  placeholder="Buscar secuencias NCF por tipo o número..."
+                  placeholder="Buscar secuencias por tipo, serie o estado..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
                 />
               </div>
-              <Dialog open={showDocumentDialog} onOpenChange={setShowDocumentDialog}>
+              <Dialog open={showSequenceDialog} onOpenChange={setShowSequenceDialog}>
                 <DialogTrigger asChild>
                   <Button>
                     <Plus className="h-4 w-4 mr-2" />
@@ -641,11 +309,11 @@ export default function FiscalManagement() {
                   <DialogHeader>
                     <DialogTitle>Nueva Secuencia NCF</DialogTitle>
                   </DialogHeader>
-                  <Form {...documentForm}>
-                    <form onSubmit={documentForm.handleSubmit(onSubmitDocument)} className="space-y-4">
+                  <Form {...ncfSequenceForm}>
+                    <form onSubmit={ncfSequenceForm.handleSubmit(onSubmitNCFSequence)} className="space-y-4">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <FormField
-                          control={documentForm.control}
+                          control={ncfSequenceForm.control}
                           name="type"
                           render={({ field }) => (
                             <FormItem>
@@ -674,7 +342,7 @@ export default function FiscalManagement() {
                         />
                         
                         <FormField
-                          control={documentForm.control}
+                          control={ncfSequenceForm.control}
                           name="series"
                           render={({ field }) => (
                             <FormItem>
@@ -690,13 +358,13 @@ export default function FiscalManagement() {
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <FormField
-                          control={documentForm.control}
+                          control={ncfSequenceForm.control}
                           name="rangeStart"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Número Inicial</FormLabel>
+                              <FormLabel>Rango Inicial</FormLabel>
                               <FormControl>
-                                <Input type="number" placeholder="00000001" {...field} />
+                                <Input placeholder="00000001" {...field} />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -704,13 +372,13 @@ export default function FiscalManagement() {
                         />
                         
                         <FormField
-                          control={documentForm.control}
+                          control={ncfSequenceForm.control}
                           name="rangeEnd"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Número Final</FormLabel>
+                              <FormLabel>Rango Final</FormLabel>
                               <FormControl>
-                                <Input type="number" placeholder="00001000" {...field} />
+                                <Input placeholder="00001000" {...field} />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -719,13 +387,13 @@ export default function FiscalManagement() {
                       </div>
 
                       <FormField
-                        control={documentForm.control}
+                        control={ncfSequenceForm.control}
                         name="currentNumber"
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Número Actual</FormLabel>
                             <FormControl>
-                              <Input type="number" placeholder="00000001" {...field} />
+                              <Input placeholder="00000001" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -734,7 +402,7 @@ export default function FiscalManagement() {
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <FormField
-                          control={documentForm.control}
+                          control={ncfSequenceForm.control}
                           name="expirationDate"
                           render={({ field }) => (
                             <FormItem className="flex flex-col">
@@ -776,7 +444,7 @@ export default function FiscalManagement() {
                         />
                         
                         <FormField
-                          control={documentForm.control}
+                          control={ncfSequenceForm.control}
                           name="isActive"
                           render={({ field }) => (
                             <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
@@ -798,17 +466,13 @@ export default function FiscalManagement() {
                       </div>
 
                       <FormField
-                        control={documentForm.control}
+                        control={ncfSequenceForm.control}
                         name="description"
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Descripción (Opcional)</FormLabel>
                             <FormControl>
-                              <Textarea 
-                                placeholder="Descripción adicional del documento..."
-                                rows={3}
-                                {...field} 
-                              />
+                              <Textarea placeholder="Descripción de la secuencia NCF..." {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -819,12 +483,12 @@ export default function FiscalManagement() {
                         <Button
                           type="button"
                           variant="outline"
-                          onClick={() => setShowDocumentDialog(false)}
+                          onClick={() => setShowSequenceDialog(false)}
                         >
                           Cancelar
                         </Button>
-                        <Button type="submit" disabled={createDocumentMutation.isPending}>
-                          {createDocumentMutation.isPending ? "Creando..." : "Crear Secuencia NCF"}
+                        <Button type="submit" disabled={createNCFSequenceMutation.isPending}>
+                          {createNCFSequenceMutation.isPending ? "Creando..." : "Crear Secuencia NCF"}
                         </Button>
                       </div>
                     </form>
@@ -856,7 +520,6 @@ export default function FiscalManagement() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {/* Mock data for demonstration */}
                       <TableRow>
                         <TableCell>
                           <Badge variant="outline">B01</Badge>
@@ -939,159 +602,96 @@ export default function FiscalManagement() {
                   </DialogTrigger>
                   <DialogContent className="sm:max-w-[500px]">
                     <DialogHeader>
-                      <DialogTitle>Generar Reporte Fiscal</DialogTitle>
+                      <DialogTitle>Generar Reporte DGII</DialogTitle>
                     </DialogHeader>
-                  <Form {...reportForm}>
-                    <form onSubmit={reportForm.handleSubmit(onSubmitReport)} className="space-y-4">
-                      <FormField
-                        control={reportForm.control}
-                        name="type"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Tipo de Reporte</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Seleccionar tipo" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                <SelectItem value="606">Reporte 606 - Compras</SelectItem>
-                                <SelectItem value="607">Reporte 607 - Ventas</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <div className="grid grid-cols-2 gap-4">
+                    <Form {...reportForm}>
+                      <form onSubmit={reportForm.handleSubmit(onSubmitReport)} className="space-y-4">
                         <FormField
                           control={reportForm.control}
-                          name="period"
+                          name="type"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Período</FormLabel>
+                              <FormLabel>Tipo de Reporte</FormLabel>
                               <Select onValueChange={field.onChange} defaultValue={field.value}>
                                 <FormControl>
                                   <SelectTrigger>
-                                    <SelectValue placeholder="Mes" />
+                                    <SelectValue />
                                   </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
-                                  {months.map((month) => (
-                                    <SelectItem key={month.value} value={month.value}>
-                                      {month.label}
-                                    </SelectItem>
-                                  ))}
+                                  <SelectItem value="606">606 - Compras y Servicios</SelectItem>
+                                  <SelectItem value="607">607 - Ventas</SelectItem>
                                 </SelectContent>
                               </Select>
                               <FormMessage />
                             </FormItem>
                           )}
                         />
-                        
-                        <FormField
-                          control={reportForm.control}
-                          name="year"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Año</FormLabel>
-                              <FormControl>
-                                <Input placeholder="2024" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
 
-                      <FormField
-                        control={reportForm.control}
-                        name="format"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Formato</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Seleccionar formato" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                <SelectItem value="excel">Excel (.xlsx)</SelectItem>
-                                <SelectItem value="txt">Texto (.txt)</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                        <div className="grid grid-cols-2 gap-4">
+                          <FormField
+                            control={reportForm.control}
+                            name="period"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Mes</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                  <FormControl>
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Mes" />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    {Array.from({ length: 12 }, (_, i) => (
+                                      <SelectItem key={i + 1} value={(i + 1).toString().padStart(2, '0')}>
+                                        {format(new Date(2024, i, 1), 'MMMM', { locale: es })}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
 
-                      <div className="flex gap-2 justify-end">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={() => setShowReportDialog(false)}
-                        >
-                          Cancelar
-                        </Button>
-                        <Button type="submit" disabled={generateReportMutation.isPending}>
-                          {generateReportMutation.isPending ? "Generando..." : "Generar"}
-                        </Button>
-                      </div>
-                    </form>
-                  </Form>
+                          <FormField
+                            control={reportForm.control}
+                            name="year"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Año</FormLabel>
+                                <FormControl>
+                                  <Input {...field} placeholder="2024" />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+
+                        <div className="flex gap-2 justify-end">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setShowReportDialog(false)}
+                          >
+                            Cancelar
+                          </Button>
+                          <Button type="submit" disabled={generateReportMutation.isPending}>
+                            {generateReportMutation.isPending ? "Generando..." : "Generar Reporte"}
+                          </Button>
+                        </div>
+                      </form>
+                    </Form>
                   </DialogContent>
                 </Dialog>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Reportes 606</CardTitle>
-                  <FileText className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
-                    {(fiscalReports as FiscalReport[] | undefined)?.filter((r: FiscalReport) => r.type === '606').length || 0}
-                  </div>
-                  <p className="text-xs text-muted-foreground">Compras generadas</p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Reportes 607</CardTitle>
-                  <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
-                    {(fiscalReports as FiscalReport[] | undefined)?.filter((r: FiscalReport) => r.type === '607').length || 0}
-                  </div>
-                  <p className="text-xs text-muted-foreground">Ventas generadas</p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Documentos</CardTitle>
-                  <Receipt className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
-                    {(fiscalDocuments as FiscalDocument[] | undefined)?.length || 0}
-                  </div>
-                  <p className="text-xs text-muted-foreground">Registrados este mes</p>
-                </CardContent>
-              </Card>
-            </div>
-
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <FileText className="h-5 w-5" />
+                  <FileSpreadsheet className="h-5 w-5" />
                   Reportes Generados
                 </CardTitle>
               </CardHeader>
@@ -1102,40 +702,36 @@ export default function FiscalManagement() {
                       <TableRow>
                         <TableHead>Tipo</TableHead>
                         <TableHead>Período</TableHead>
-                        <TableHead>Año</TableHead>
+                        <TableHead>Estado</TableHead>
                         <TableHead>Registros</TableHead>
                         <TableHead>Total</TableHead>
-                        <TableHead>Estado</TableHead>
-                        <TableHead>Generado</TableHead>
+                        <TableHead>Fecha</TableHead>
                         <TableHead>Acciones</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredReports.map((report: FiscalReport) => (
-                        <TableRow key={report.id}>
-                          <TableCell>
-                            <Badge variant={report.type === '606' ? 'secondary' : 'default'}>
-                              {report.type}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>{report.period}</TableCell>
-                          <TableCell>{report.year}</TableCell>
-                          <TableCell>{report.recordCount.toLocaleString()}</TableCell>
-                          <TableCell>RD$ {report.totalAmount.toLocaleString()}</TableCell>
-                          <TableCell>{getReportStatusBadge(report.status)}</TableCell>
-                          <TableCell>{format(new Date(report.generatedAt), "dd/MM/yyyy HH:mm")}</TableCell>
-                          <TableCell>
-                            <div className="flex gap-1">
-                              <Button variant="ghost" size="sm">
-                                <Download className="h-4 w-4" />
-                              </Button>
-                              <Button variant="ghost" size="sm">
-                                <Eye className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                      <TableRow>
+                        <TableCell>
+                          <Badge variant="outline">606</Badge>
+                        </TableCell>
+                        <TableCell>Diciembre 2024</TableCell>
+                        <TableCell>
+                          <Badge className="bg-green-100 text-green-800">Generado</Badge>
+                        </TableCell>
+                        <TableCell>45</TableCell>
+                        <TableCell>RD$ 2,450,000</TableCell>
+                        <TableCell>15/12/2024</TableCell>
+                        <TableCell>
+                          <div className="flex gap-1">
+                            <Button variant="ghost" size="sm">
+                              <Download className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="sm">
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
                     </TableBody>
                   </Table>
                 </div>
@@ -1144,226 +740,86 @@ export default function FiscalManagement() {
           </TabsContent>
 
           <TabsContent value="registry" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Database className="h-5 w-5" />
-                  Registro RNC DGII
-                </CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  Sistema automatizado de actualización del registro RNC de DGII cada 24 horas
-                </p>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <DGIIRegistryManagement />
-              </CardContent>
-            </Card>
+            <DGIIRegistryManagement />
           </TabsContent>
 
           <TabsContent value="analytics" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Calculator className="h-5 w-5" />
-                  Herramienta de Generación DGII
-                </CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  Replica las herramientas oficiales de DGII para generar reportes 606 y 607 con validación automática
-                </p>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Formato 606 - Compras */}
-                  <Card className="border-2 border-blue-200 dark:border-blue-800">
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-lg text-blue-700 dark:text-blue-300">
-                        Formato 606 - Compras
-                      </CardTitle>
-                      <p className="text-sm text-muted-foreground">
-                        Compras de Bienes y Servicios (NG-07-2018)
-                      </p>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">Período (AAAAMM)</label>
-                        <Input
-                          placeholder="202412"
-                          maxLength={6}
-                          className="font-mono"
-                          value={period606}
-                          onChange={(e) => setPeriod606(e.target.value.replace(/\D/g, ''))}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">RNC/Cédula Empresa</label>
-                        <Input
-                          value={(companyInfo as any)?.rnc || ""}
-                          disabled
-                          className="bg-muted"
-                        />
-                      </div>
-                      <div className="bg-blue-50 dark:bg-blue-950/20 p-3 rounded-lg">
-                        <h4 className="font-medium text-sm mb-2">Campos incluidos:</h4>
-                        <ul className="text-xs space-y-1 text-muted-foreground">
-                          <li>• RNC/Cédula del proveedor</li>
-                          <li>• Tipo de bienes y servicios</li>
-                          <li>• NCF del comprobante</li>
-                          <li>• Montos facturados y ITBIS</li>
-                          <li>• Formas de pago</li>
-                        </ul>
-                      </div>
-                      <Button 
-                        className="w-full" 
-                        variant="outline"
-                        onClick={() => generateDGIIReport('606', period606)}
-                        disabled={isGenerating606}
-                      >
-                        <FileText className="h-4 w-4 mr-2" />
-                        {isGenerating606 ? "Generando..." : "Generar Formato 606"}
-                      </Button>
-                    </CardContent>
-                  </Card>
-
-                  {/* Formato 607 - Ventas */}
-                  <Card className="border-2 border-green-200 dark:border-green-800">
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-lg text-green-700 dark:text-green-300">
-                        Formato 607 - Ventas
-                      </CardTitle>
-                      <p className="text-sm text-muted-foreground">
-                        Ventas de Bienes y Servicios (NG-07-2018)
-                      </p>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">Período (AAAAMM)</label>
-                        <Input
-                          placeholder="202412"
-                          maxLength={6}
-                          className="font-mono"
-                          value={period607}
-                          onChange={(e) => setPeriod607(e.target.value.replace(/\D/g, ''))}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">RNC/Cédula Empresa</label>
-                        <Input
-                          value={(companyInfo as any)?.rnc || ""}
-                          disabled
-                          className="bg-muted"
-                        />
-                      </div>
-                      <div className="bg-green-50 dark:bg-green-950/20 p-3 rounded-lg">
-                        <h4 className="font-medium text-sm mb-2">Campos incluidos:</h4>
-                        <ul className="text-xs space-y-1 text-muted-foreground">
-                          <li>• RNC/Cédula del cliente</li>
-                          <li>• NCF del comprobante</li>
-                          <li>• Montos de servicios y bienes</li>
-                          <li>• ITBIS y retenciones</li>
-                          <li>• Formas de pago</li>
-                        </ul>
-                      </div>
-                      <Button 
-                        className="w-full" 
-                        variant="outline"
-                        onClick={() => generateDGIIReport('607', period607)}
-                        disabled={isGenerating607}
-                      >
-                        <FileText className="h-4 w-4 mr-2" />
-                        {isGenerating607 ? "Generando..." : "Generar Formato 607"}
-                      </Button>
-                    </CardContent>
-                  </Card>
-                </div>
-
-                {/* Validación y Envío */}
-                <Card className="border border-orange-200 dark:border-orange-800">
-                  <CardHeader>
-                    <CardTitle className="text-orange-700 dark:text-orange-300">
-                      Validación y Envío
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <Button variant="outline" className="w-full">
-                        <Shield className="h-4 w-4 mr-2" />
-                        Pre-validar Datos
-                      </Button>
-                      <Button variant="outline" className="w-full">
-                        <FileText className="h-4 w-4 mr-2" />
-                        Generar TXT
-                      </Button>
-                      <Button variant="outline" className="w-full">
-                        <Upload className="h-4 w-4 mr-2" />
-                        Preparar Envío
-                      </Button>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-2">
+                    <FileText className="h-8 w-8 text-blue-600" />
+                    <div>
+                      <div className="text-2xl font-bold">156</div>
+                      <div className="text-sm text-muted-foreground">Documentos Fiscales</div>
                     </div>
-                    <div className="bg-orange-50 dark:bg-orange-950/20 p-4 rounded-lg">
-                      <h4 className="font-medium text-sm mb-2">Instrucciones de Envío:</h4>
-                      <ol className="text-xs space-y-1 text-muted-foreground list-decimal list-inside">
-                        <li>Complete los datos del período correspondiente</li>
-                        <li>Valide que todos los comprobantes tengan NCF válidos</li>
-                        <li>Pre-valide los datos antes de generar el archivo</li>
-                        <li>Genere el archivo TXT con formato oficial DGII</li>
-                        <li>Envíe a través de la Oficina Virtual de DGII</li>
-                      </ol>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-2">
+                    <Calculator className="h-8 w-8 text-green-600" />
+                    <div>
+                      <div className="text-2xl font-bold">RD$ 4.2M</div>
+                      <div className="text-sm text-muted-foreground">Total Facturado</div>
                     </div>
-                  </CardContent>
-                </Card>
-              </CardContent>
-            </Card>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-2">
+                    <Shield className="h-8 w-8 text-purple-600" />
+                    <div>
+                      <div className="text-2xl font-bold">98%</div>
+                      <div className="text-sm text-muted-foreground">Cumplimiento</div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-2">
+                    <TrendingUp className="h-8 w-8 text-orange-600" />
+                    <div>
+                      <div className="text-2xl font-bold">12</div>
+                      <div className="text-sm text-muted-foreground">Reportes Enviados</div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
 
           <TabsContent value="settings" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Configuración Fiscal</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <Settings className="h-5 w-5" />
+                  Configuración Fiscal
+                </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-4">
-                    <h3 className="font-medium">Información de la Empresa</h3>
-                    <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <span className="text-sm text-gray-600">RNC:</span>
-                        <span className="text-sm font-mono">{(companyInfo as any)?.rnc || "No configurado"}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm text-gray-600">Razón Social:</span>
-                        <span className="text-sm">{(companyInfo as any)?.name || "No configurado"}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm text-gray-600">Categoría:</span>
-                        <span className="text-sm">{(companyInfo as any)?.category || "No configurado"}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    <h3 className="font-medium">Configuración de Reportes</h3>
-                    <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <span className="text-sm text-gray-600">Formato por defecto:</span>
-                        <span className="text-sm">Excel</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm text-gray-600">Auto-generar reportes:</span>
-                        <span className="text-sm">Deshabilitado</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm text-gray-600">Incluir valores cero:</span>
-                        <span className="text-sm">No</span>
-                      </div>
-                    </div>
-                  </div>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">RNC de la Empresa</label>
+                  <Input placeholder="130123456" defaultValue="" />
                 </div>
-
-                <div className="pt-4 border-t">
-                  <Button>
-                    <Edit className="h-4 w-4 mr-2" />
-                    Actualizar Configuración
-                  </Button>
+                
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Razón Social</label>
+                  <Input placeholder="Mi Empresa SRL" defaultValue="" />
                 </div>
+                
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Dirección Fiscal</label>
+                  <Textarea placeholder="Calle Principal #123, Ciudad" defaultValue="" />
+                </div>
+                
+                <Button>Guardar Configuración</Button>
               </CardContent>
             </Card>
           </TabsContent>
