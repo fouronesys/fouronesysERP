@@ -1996,37 +1996,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Create chat channel
+  app.post("/api/chat/channels", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      const { name, type, description } = req.body;
+      
+      const channelData = {
+        name,
+        type,
+        description,
+        companyId: company.id,
+        createdBy: userId,
+        isActive: true
+      };
+
+      const channel = await storage.createChatChannel(channelData);
+      res.json(channel);
+    } catch (error) {
+      console.error("Error creating chat channel:", error);
+      res.status(500).json({ message: "Error creating chat channel" });
+    }
+  });
+
+  // Get chat messages
   app.get("/api/chat/channels/:channelId/messages", isAuthenticated, async (req: any, res) => {
     try {
       const { channelId } = req.params;
       const userId = req.user.id;
-      const user = await storage.getUser(userId);
+      const company = await storage.getCompanyByUserId(userId);
       
-      if (!user) {
-        return res.status(404).json({ message: "User not found" });
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
       }
 
-      // Mock data for chat messages
+      // Mock messages for now - in production you'd get from database
       const messages = [
         {
-          id: 1,
-          content: "¡Hola a todos! ¿Cómo están hoy?",
-          senderId: "admin-fourone-001",
-          senderName: "Administrador",
-          senderLastName: "Sistema",
-          createdAt: new Date(Date.now() - 60000).toISOString(),
-          messageType: "text",
-          isEdited: false
+          id: "1",
+          content: "¡Bienvenidos al canal de chat interno!",
+          userId: "system",
+          userName: "Sistema",
+          timestamp: new Date(Date.now() - 3600000).toISOString(),
+          isRead: true,
+          messageType: "text"
         },
         {
-          id: 2,
-          content: "Todo bien por aquí, trabajando en los reportes del mes.",
-          senderId: user.id,
-          senderName: user.firstName,
-          senderLastName: user.lastName,
-          createdAt: new Date(Date.now() - 30000).toISOString(),
-          messageType: "text",
-          isEdited: false
+          id: "2", 
+          content: "Hola a todos, ¿cómo van las ventas hoy?",
+          userId: userId,
+          userName: "Usuario",
+          timestamp: new Date(Date.now() - 1800000).toISOString(),
+          isRead: true,
+          messageType: "text"
         }
       ];
 
@@ -2037,10 +2065,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Send chat message
   app.post("/api/chat/channels/:channelId/messages", isAuthenticated, async (req: any, res) => {
     try {
       const { channelId } = req.params;
-      const { content } = req.body;
+      const { content, messageType = 'text', fileUrl, fileName } = req.body;
       const userId = req.user.id;
       const user = await storage.getUser(userId);
       
@@ -2048,30 +2077,82 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "User not found" });
       }
 
-      // Mock message creation
       const newMessage = {
-        id: Date.now(),
+        id: Date.now().toString(),
         content,
-        senderId: user.id,
-        senderName: user.firstName,
-        senderLastName: user.lastName,
-        createdAt: new Date().toISOString(),
-        messageType: "text",
-        isEdited: false
+        userId,
+        userName: user.firstName || "Usuario",
+        timestamp: new Date().toISOString(),
+        isRead: false,
+        messageType,
+        fileUrl,
+        fileName
       };
 
-      res.json({
-        success: true,
-        message: newMessage
-      });
+      // In production, save to database
+      res.json(newMessage);
     } catch (error) {
       console.error("Error sending chat message:", error);
-      res.status(500).json({ message: "Error sending message" });
+      res.status(500).json({ message: "Error sending chat message" });
     }
   });
 
-  // Billing endpoints
-  app.get("/api/billing/history", isAuthenticated, async (req: any, res) => {
+  // Get online users
+  app.get("/api/chat/users/online", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      // Mock online users - in production get from database/WebSocket tracking
+      const onlineUsers = [
+        {
+          id: userId,
+          username: "Tú",
+          email: "user@company.com",
+          isOnline: true,
+          lastSeen: new Date().toISOString()
+        },
+        {
+          id: "user2",
+          username: "Ana García",
+          email: "ana@company.com", 
+          isOnline: true,
+          lastSeen: new Date().toISOString()
+        },
+        {
+          id: "user3",
+          username: "Carlos López",
+          email: "carlos@company.com",
+          isOnline: false,
+          lastSeen: new Date(Date.now() - 900000).toISOString()
+        }
+      ];
+
+      res.json(onlineUsers);
+    } catch (error) {
+      console.error("Error fetching online users:", error);
+      res.status(500).json({ message: "Error fetching online users" });
+    }
+  });
+
+  // File upload route
+  app.post("/api/upload", isAuthenticated, async (req: any, res) => {
+    try {
+      // Handle file upload logic here
+      res.json({ url: "/uploads/example-file.pdf" });
+    } catch (error) {
+      console.error("Error uploading file:", error);
+      res.status(500).json({ message: "Error uploading file" });
+    }
+  });
+
+  const httpServer = createServer(app);
+  return httpServer;
+}
     try {
       const userId = req.user.id;
       const company = await storage.getCompanyByUserId(userId);

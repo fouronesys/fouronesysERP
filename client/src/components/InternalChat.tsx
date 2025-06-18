@@ -87,17 +87,17 @@ export function InternalChat() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Get chat channels
-  const { data: channels = [], isLoading: channelsLoading } = useQuery({
+  const { data: channels = [], isLoading: channelsLoading } = useQuery<ChatChannel[]>({
     queryKey: ["/api/chat/channels"],
   });
 
   // Get online users
-  const { data: onlineUsers = [] } = useQuery({
+  const { data: onlineUsers = [] } = useQuery<User[]>({
     queryKey: ["/api/chat/users/online"],
   });
 
   // Get messages for selected channel
-  const { data: messages = [], isLoading: messagesLoading } = useQuery({
+  const { data: messages = [], isLoading: messagesLoading } = useQuery<ChatMessage[]>({
     queryKey: ["/api/chat/messages", selectedChannel],
     enabled: !!selectedChannel,
   });
