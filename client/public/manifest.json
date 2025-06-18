@@ -1,119 +1,118 @@
 {
-  "name": "Four One Solutions - Sistema ERP Dominicano",
+  "name": "Four One Solutions - Sistema ERP República Dominicana",
   "short_name": "Four One ERP",
-  "description": "Sistema completo de gestión empresarial para República Dominicana. POS, contabilidad, inventario, facturación con NCF y cumplimiento fiscal DGII.",
+  "description": "Sistema ERP líder en República Dominicana con facturación NCF automática DGII, POS restaurantes, inventario inteligente y contabilidad empresarial.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
+  "background_color": "#1f2937",
   "theme_color": "#3b82f6",
-  "orientation": "any",
-  "scope": "/",
+  "orientation": "portrait-primary",
   "lang": "es-DO",
-  "categories": ["business", "finance", "productivity", "utilities"],
-  "dir": "ltr",
-  "edge_side_panel": {
-    "preferred_width": 320
-  },
+  "scope": "/",
   "icons": [
-    {
-      "src": "/fourone-logo-72.png",
-      "sizes": "72x72",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/fourone-logo-96.png",
-      "sizes": "96x96",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/fourone-logo-128.png",
-      "sizes": "128x128",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/fourone-logo-144.png",
-      "sizes": "144x144",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/fourone-logo-152.png",
-      "sizes": "152x152",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/fourone-logo-180.png",
-      "sizes": "180x180",
-      "type": "image/png",
-      "purpose": "any"
-    },
     {
       "src": "/fourone-logo-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/fourone-logo-384.png",
-      "sizes": "384x384",
-      "type": "image/png",
-      "purpose": "any"
+      "purpose": "maskable any"
     },
     {
       "src": "/fourone-logo-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/fourone-logo-180.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "apple-touch-icon"
     }
+  ],
+  "categories": [
+    "business",
+    "productivity",
+    "finance",
+    "utilities"
   ],
   "screenshots": [
     {
-      "src": "/screenshot-mobile.png",
-      "sizes": "390x844",
+      "src": "/app-screenshot-desktop.png",
+      "sizes": "1280x720",
       "type": "image/png",
-      "form_factor": "narrow",
-      "label": "Interfaz móvil del sistema POS"
+      "platform": "wide",
+      "label": "Vista principal del sistema ERP Four One Solutions"
     },
     {
-      "src": "/screenshot-desktop.png",
-      "sizes": "1920x1080",
+      "src": "/app-screenshot-mobile.png",
+      "sizes": "390x844",
       "type": "image/png",
-      "form_factor": "wide",
-      "label": "Panel de control principal"
+      "platform": "narrow",
+      "label": "Vista móvil del POS para restaurantes"
     }
   ],
   "shortcuts": [
     {
-      "name": "POS Ventas",
+      "name": "Facturación NCF",
+      "short_name": "Facturación",
+      "description": "Crear nueva factura con NCF automático",
+      "url": "/billing",
+      "icons": [
+        {
+          "src": "/fourone-logo-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "POS Restaurante",
       "short_name": "POS",
-      "description": "Acceso rápido al módulo de punto de venta",
+      "description": "Sistema punto de venta para restaurantes",
       "url": "/pos",
-      "icons": [{ "src": "/pos-icon-96x96.png", "sizes": "96x96" }]
+      "icons": [
+        {
+          "src": "/fourone-logo-192.png",
+          "sizes": "192x192"
+        }
+      ]
     },
     {
-      "name": "Contabilidad",
-      "short_name": "Contabilidad",
-      "description": "Acceso rápido al módulo contable",
-      "url": "/accounting",
-      "icons": [{ "src": "/accounting-icon-96x96.png", "sizes": "96x96" }]
-    },
-    {
-      "name": "Comprobantes Fiscales",
-      "short_name": "Fiscales",
-      "description": "Gestión de documentos fiscales",
-      "url": "/fiscal-documents",
-      "icons": [{ "src": "/fiscal-icon-96x96.png", "sizes": "96x96" }]
+      "name": "Inventario",
+      "short_name": "Inventario",
+      "description": "Gestión de productos e inventario",
+      "url": "/inventory",
+      "icons": [
+        {
+          "src": "/fourone-logo-192.png",
+          "sizes": "192x192"
+        }
+      ]
     }
   ],
-  "related_applications": [
+  "share_target": {
+    "action": "/share",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url",
+      "files": [
+        {
+          "name": "files",
+          "accept": ["image/*", ".pdf", ".xlsx", ".txt"]
+        }
+      ]
+    }
+  },
+  "protocol_handlers": [
     {
-      "platform": "windows",
-      "url": "https://four-one-solutions.replit.app/download/windows"
+      "protocol": "web+fourone",
+      "url": "/?handler=%s"
     }
   ],
-  "prefer_related_applications": false
+  "prefer_related_applications": false,
+  "edge_side_panel": {
+    "preferred_width": 400
+  }
 }

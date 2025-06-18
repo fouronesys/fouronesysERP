@@ -19,6 +19,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
 import type { Invoice, Customer, Product, Company } from "@shared/schema";
 import { DR_TAX_TYPES } from "@shared/schema";
+import { SEOHead, SEOConfigs } from "@/components/SEOHead";
 
 const invoiceItemSchema = z.object({
   productId: z.string().min(1, "Producto requerido"),
