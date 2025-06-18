@@ -30,7 +30,7 @@ const invoiceItemSchema = z.object({
 
 const invoiceSchema = z.object({
   customerId: z.string().min(1, "El cliente es requerido"),
-  number: z.string().min(1, "El número es requerido"),
+  number: z.string().optional(), // Made optional for auto-generation
   ncfType: z.string().optional(),
   ncf: z.string().optional(),
   date: z.string().min(1, "La fecha es requerida"),
@@ -550,10 +550,16 @@ export default function Billing() {
                     name="number"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Número *</FormLabel>
+                        <FormLabel>Número de Factura</FormLabel>
                         <FormControl>
-                          <Input placeholder="INV-001" {...field} />
+                          <Input 
+                            placeholder="Se genera automáticamente (opcional)" 
+                            {...field} 
+                          />
                         </FormControl>
+                        <FormDescription className="text-xs">
+                          Deja vacío para generar automáticamente (INV-YYYYMM-0001)
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}

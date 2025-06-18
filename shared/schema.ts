@@ -439,6 +439,8 @@ export const insertInvoiceSchema = createInsertSchema(invoices).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  number: z.string().optional(), // Make invoice number optional for auto-generation
 });
 
 export const insertProductionOrderSchema = createInsertSchema(productionOrders).omit({

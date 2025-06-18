@@ -843,9 +843,42 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createInvoice(invoiceData: InsertInvoice): Promise<Invoice> {
+    // Generate automatic invoice number if not provided
+    if (!invoiceData.number || invoiceData.number.trim() === '') {
+      const currentYear = new Date().getFullYear();
+      const currentMonth = String(new Date().getMonth() + 1).padStart(2, '0');
+      
+      // Get the highest invoice number for this company and year
+      const lastInvoice = await db
+        .select({ number: invoices.number })
+        .from(invoices)
+        .where(and(
+          eq(invoices.companyId, invoiceData.companyId),
+          like(invoices.number, `INV-${currentYear}${currentMonth}-%`)
+        ))
+        .orderBy(desc(invoices.number))
+        .limit(1);
+
+      let nextSequence = 1;
+      if (lastInvoice.length > 0) {
+        const lastNumber = lastInvoice[0].number;
+        const sequencePart = lastNumber.split('-')[2];
+        if (sequencePart) {
+          nextSequence = parseInt(sequencePart) + 1;
+        }
+      }
+
+      // Generate new invoice number: INV-YYYYMM-XXXX
+      const sequenceStr = String(nextSequence).padStart(4, '0');
+      invoiceData.number = `INV-${currentYear}${currentMonth}-${sequenceStr}`;
+    }
+
     const [invoice] = await db
       .insert(invoices)
-      .values(invoiceData)
+      .values({
+        ...invoiceData,
+        number: invoiceData.number!, // Non-null assertion since we ensure it exists above
+      })
       .returning();
     return invoice;
   }
