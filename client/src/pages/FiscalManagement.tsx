@@ -17,6 +17,7 @@ import {
   Receipt, Building2, TrendingUp, AlertTriangle, CheckCircle, X, Eye, Edit,
   Calculator, FileSpreadsheet, Shield, RefreshCw, Database, Settings
 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -25,6 +26,17 @@ import { es } from "date-fns/locale";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+
+const ncfSequenceSchema = z.object({
+  type: z.string().min(1, "Tipo de NCF requerido"),
+  series: z.string().min(1, "Serie requerida"),
+  rangeStart: z.string().min(1, "Rango inicial requerido"),
+  rangeEnd: z.string().min(1, "Rango final requerido"),
+  currentNumber: z.string().min(1, "Número actual requerido"),
+  expirationDate: z.date(),
+  isActive: z.boolean().default(true),
+  description: z.string().optional(),
+});
 
 const fiscalDocumentSchema = z.object({
   type: z.string().min(1, "Tipo de documento requerido"),
@@ -46,6 +58,7 @@ const reportConfigSchema = z.object({
   format: z.enum(["excel", "txt"]).default("excel"),
 });
 
+type NCFSequenceFormData = z.infer<typeof ncfSequenceSchema>;
 type FiscalDocumentFormData = z.infer<typeof fiscalDocumentSchema>;
 type ReportConfigFormData = z.infer<typeof reportConfigSchema>;
 
@@ -331,17 +344,16 @@ export default function FiscalManagement() {
     queryKey: ['/api/company/info'],
   });
 
-  const documentForm = useForm<FiscalDocumentFormData>({
-    resolver: zodResolver(fiscalDocumentSchema),
+  const ncfSequenceForm = useForm<NCFSequenceFormData>({
+    resolver: zodResolver(ncfSequenceSchema),
     defaultValues: {
       type: "",
       series: "",
-      number: "",
-      customerRnc: "",
-      customerName: "",
-      amount: "",
-      itbis: "0",
-      date: new Date(),
+      rangeStart: "",
+      rangeEnd: "",
+      currentNumber: "",
+      expirationDate: new Date(),
+      isActive: true,
       description: "",
     },
   });
@@ -357,26 +369,26 @@ export default function FiscalManagement() {
     },
   });
 
-  const createDocumentMutation = useMutation({
-    mutationFn: async (data: FiscalDocumentFormData) => {
-      return await apiRequest("/api/fiscal/documents", {
+  const createNCFSequenceMutation = useMutation({
+    mutationFn: async (data: NCFSequenceFormData) => {
+      return await apiRequest("/api/fiscal/ncf-sequences", {
         method: "POST",
         body: data
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/fiscal/documents'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/fiscal/ncf-sequences'] });
       setShowDocumentDialog(false);
-      documentForm.reset();
+      ncfSequenceForm.reset();
       toast({
-        title: "Documento fiscal creado",
-        description: "El documento ha sido registrado exitosamente.",
+        title: "Secuencia NCF creada",
+        description: "La secuencia NCF ha sido registrada exitosamente.",
       });
     },
     onError: () => {
       toast({
         title: "Error",
-        description: "No se pudo crear el documento fiscal.",
+        description: "No se pudo crear la secuencia NCF.",
         variant: "destructive",
       });
     },
