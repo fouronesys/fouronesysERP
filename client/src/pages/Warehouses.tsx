@@ -164,7 +164,7 @@ export default function Warehouses() {
   };
 
   const getProductCountForWarehouse = (warehouseId: number) => {
-    if (!products) return 0;
+    if (!products || !Array.isArray(products)) return 0;
     return products.filter((p: any) => p.warehouseId === warehouseId).length;
   };
 

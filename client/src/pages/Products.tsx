@@ -209,10 +209,13 @@ export default function Products() {
     return () => subscription.unsubscribe();
   }, [form]);
 
-  const filteredProducts = products?.filter(product =>
-    product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    product.code.toLowerCase().includes(searchTerm.toLowerCase())
-  ) || [];
+  const filteredProducts = products?.filter(product => {
+    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      product.code.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    if (productTypeFilter === "all") return matchesSearch;
+    return matchesSearch && product.productType === productTypeFilter;
+  }) || [];
 
   const onSubmit = (data: ProductFormData) => {
     if (editingProduct) {
@@ -303,6 +306,16 @@ export default function Products() {
               />
             </div>
           </div>
+          <Select value={productTypeFilter} onValueChange={setProductTypeFilter}>
+            <SelectTrigger className="w-48">
+              <SelectValue placeholder="Filtrar por tipo" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos los productos</SelectItem>
+              <SelectItem value="product">Productos finales</SelectItem>
+              <SelectItem value="raw_material">Materia prima</SelectItem>
+            </SelectContent>
+          </Select>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
               <Button onClick={handleNewProduct} className="bg-blue-600 hover:bg-blue-700 text-white">
@@ -387,6 +400,50 @@ export default function Products() {
                       </FormItem>
                     )}
                   />
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="productType"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Tipo de Producto</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Seleccionar tipo" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="product">Producto Final</SelectItem>
+                              <SelectItem value="raw_material">Materia Prima</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="isManufactured"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                          <div className="space-y-0.5">
+                            <FormLabel>Producto Manufacturado</FormLabel>
+                            <div className="text-sm text-muted-foreground">
+                              Requiere lista de materiales (BOM)
+                            </div>
+                          </div>
+                          <FormControl>
+                            <Switch
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <FormField
