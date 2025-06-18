@@ -422,7 +422,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const moduleData = req.body;
       const module = await storage.createSystemModule(moduleData);
       
-      await auditLogger.logUserAction(user.id, 0, "create_system_module", "system_modules", module.id.toString(), null, moduleData, req);
+      await auditLogger.logUserAction(user.id, 0, "create_system_module", "system_modules", module.id?.toString(), null, moduleData, req);
       
       res.json({ module });
     } catch (error) {

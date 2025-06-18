@@ -190,7 +190,7 @@ export default function Movements() {
   }
 
   return (
-    <div className="w-full">
+    <div className="h-screen overflow-y-auto">
       <Header title="Movimientos de Inventario" subtitle="Gestiona entradas, salidas y transferencias" />
       
       <div className="p-3 sm:p-6 space-y-4 sm:space-y-6">

@@ -56,7 +56,7 @@ const convertCurrency = async (amount: number, fromCurrency: string, toCurrency:
       method: 'POST',
       body: { amount, fromCurrency, toCurrency }
     });
-    return data.convertedAmount;
+    return (data as any).convertedAmount;
   } catch (error) {
     console.error('Currency conversion failed:', error);
     return amount;
@@ -818,6 +818,21 @@ export default function POS() {
                   </div>
 
                   <div className="space-y-3">
+                    <div>
+                      <label className="text-sm font-medium mb-2 block">Moneda</label>
+                      <Select value={selectedCurrency} onValueChange={setSelectedCurrency}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="DOP">DOP - Peso Dominicano</SelectItem>
+                          <SelectItem value="USD">USD - Dólar Americano</SelectItem>
+                          <SelectItem value="EUR">EUR - Euro</SelectItem>
+                          <SelectItem value="CAD">CAD - Dólar Canadiense</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
                     <div>
                       <label className="text-sm font-medium mb-2 block">Método de Pago</label>
                       <Select value={paymentMethod} onValueChange={(value: "cash" | "card") => setPaymentMethod(value)}>
