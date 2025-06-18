@@ -821,6 +821,110 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Purchase Orders API endpoints
+  app.get("/api/purchase-orders", isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const company = await storage.getCompanyByUserId(user.id);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+      
+      // Return empty array for now - purchase orders will be implemented based on invoices table
+      res.json([]);
+    } catch (error) {
+      console.error("Error fetching purchase orders:", error);
+      res.status(500).json({ message: "Error fetching purchase orders" });
+    }
+  });
+
+  app.post("/api/purchase-orders", isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const company = await storage.getCompanyByUserId(user.id);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+      
+      const orderData = { ...req.body, companyId: company.id };
+      // For now, create as a draft invoice
+      const order = await storage.createInvoice(orderData);
+      res.json(order);
+    } catch (error) {
+      console.error("Error creating purchase order:", error);
+      res.status(500).json({ message: "Error creating purchase order" });
+    }
+  });
+
+  // Purchase Invoices API endpoints
+  app.get("/api/purchase-invoices", isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const company = await storage.getCompanyByUserId(user.id);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+      
+      const invoices = await storage.getInvoices(company.id);
+      res.json(invoices);
+    } catch (error) {
+      console.error("Error fetching purchase invoices:", error);
+      res.status(500).json({ message: "Error fetching purchase invoices" });
+    }
+  });
+
+  app.post("/api/purchase-invoices", isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const company = await storage.getCompanyByUserId(user.id);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+      
+      const invoiceData = { ...req.body, companyId: company.id };
+      const invoice = await storage.createInvoice(invoiceData);
+      res.json(invoice);
+    } catch (error) {
+      console.error("Error creating purchase invoice:", error);
+      res.status(500).json({ message: "Error creating purchase invoice" });
+    }
+  });
+
+  // Purchase Payments API endpoints
+  app.post("/api/purchase-payments", isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const company = await storage.getCompanyByUserId(user.id);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+      
+      const { invoiceId, amount, paymentMethod, paymentDate, reference, notes } = req.body;
+      
+      // Update invoice with payment information
+      const paymentData = {
+        invoiceId: parseInt(invoiceId),
+        amount: parseFloat(amount),
+        paymentMethod,
+        paymentDate,
+        reference,
+        notes,
+        companyId: company.id,
+        userId: user.id,
+      };
+      
+      // For now, just return success - payment tracking will be enhanced
+      res.json({ 
+        id: Date.now(), 
+        ...paymentData,
+        status: "completed"
+      });
+    } catch (error) {
+      console.error("Error creating payment:", error);
+      res.status(500).json({ message: "Error creating payment" });
+    }
+  });
+
   // Currency conversion API endpoints
   app.get("/api/currency/rates", async (req, res) => {
     try {

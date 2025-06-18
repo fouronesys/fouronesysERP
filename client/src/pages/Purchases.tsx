@@ -1096,10 +1096,7 @@ const PurchaseInvoicesSection = () => {
             Registra facturas de proveedores y gastos
           </p>
         </div>
-        <Button>
-          <Plus className="h-4 w-4 mr-2" />
-          Nueva Factura
-        </Button>
+        <NewInvoiceDialog onSuccess={() => {}} />
       </div>
 
       {isLoading ? (
@@ -1159,13 +1156,27 @@ const PurchaseInvoicesSection = () => {
                       Fecha: {new Date(invoice.invoiceDate).toLocaleDateString()}
                     </p>
                   </div>
-                  <div className="text-right">
-                    <p className="font-medium">
-                      ${parseFloat(invoice.totalAmount).toLocaleString()}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      Pagado: {invoice.paidAmount || "$0.00"}
-                    </p>
+                  <div className="text-right space-y-2">
+                    <div>
+                      <p className="font-medium">
+                        RD$ {parseFloat(invoice.totalAmount).toLocaleString()}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        Pagado: RD$ {parseFloat(invoice.paidAmount || "0").toLocaleString()}
+                      </p>
+                      <p className="text-sm font-medium text-orange-600">
+                        Pendiente: RD$ {(parseFloat(invoice.totalAmount) - parseFloat(invoice.paidAmount || "0")).toLocaleString()}
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="sm">
+                        <Eye className="h-4 w-4 mr-2" />
+                        Ver
+                      </Button>
+                      {invoice.paymentStatus !== "paid" && (
+                        <PaymentDialog invoice={invoice} onSuccess={() => {}} />
+                      )}
+                    </div>
                   </div>
                 </div>
               </CardContent>
