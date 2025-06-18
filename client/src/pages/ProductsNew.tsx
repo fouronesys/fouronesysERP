@@ -46,6 +46,21 @@ export default function Products() {
     queryKey: ["/api/products"],
   });
 
+  const { data: company } = useQuery<Company>({
+    queryKey: ["/api/companies/current"],
+  });
+
+  // Filter tax types based on company business type
+  const getAvailableTaxTypes = () => {
+    const baseTaxTypes = Object.entries(DR_TAX_TYPES).filter(([key]) => key !== 'tip_10');
+    
+    if (company && 'businessType' in company && company.businessType === 'restaurant') {
+      return Object.entries(DR_TAX_TYPES); // Include all tax types including tip for restaurants
+    }
+    
+    return baseTaxTypes; // Exclude tip for non-restaurant businesses
+  };
+
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productFormSchema),
     defaultValues: {
@@ -419,7 +434,7 @@ export default function Products() {
                                   </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
-                                  {Object.entries(DR_TAX_TYPES).map(([key, value]) => (
+                                  {getAvailableTaxTypes().map(([key, value]) => (
                                     <SelectItem key={key} value={key}>
                                       {value.label}
                                     </SelectItem>
