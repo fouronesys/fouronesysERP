@@ -127,7 +127,7 @@ export default function ApiRegistration() {
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></span>
-                      Todas las llamadas a la API deben incluir el header: Authorization: Bearer {apiKey.substring(0, 10)}...
+                      Todas las llamadas a la API deben incluir el header: Authorization: Bearer {apiKey ? apiKey.substring(0, 10) + '...' : '[tu-api-key]'}
                     </li>
                   </ul>
                 </div>
