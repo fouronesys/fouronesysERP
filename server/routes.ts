@@ -1383,7 +1383,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Exchange Rates API
+  // Exchange Rates API (Public for internal use)
+  app.get("/api/exchange-rates", async (req, res) => {
+    try {
+      const rates = await currencyService.getAllExchangeRates();
+      res.json(rates);
+    } catch (error) {
+      console.error("Error getting exchange rates:", error);
+      res.status(500).json({ message: "Error getting exchange rates" });
+    }
+  });
+
+  // Exchange Rates API (External developers)
   app.get("/api/v1/exchange-rates", validateApiKey, logApiRequest, async (req, res) => {
     try {
       const rates = await currencyService.getAllExchangeRates();
@@ -1403,6 +1414,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: "Error interno del servidor"
       });
     }
+  });
+
+  // PayPal Routes
+  app.get("/api/paypal/setup", async (req, res) => {
+    await loadPaypalDefault(req, res);
+  });
+
+  app.post("/api/paypal/order", async (req, res) => {
+    await createPaypalOrder(req, res);
+  });
+
+  app.post("/api/paypal/order/:orderID/capture", async (req, res) => {
+    await capturePaypalOrder(req, res);
   });
 
   return httpServer;

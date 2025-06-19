@@ -3831,7 +3831,19 @@ export class DatabaseStorage implements IStorage {
     .where(eq(apiDevelopers.id, developerId))
     .limit(1);
     
-    return developer || { requestsCount: 0, lastRequestAt: null };
+    return {
+      requestsCount: developer?.requestsCount || 0,
+      lastRequestAt: developer?.lastRequestAt || null
+    };
+  }
+
+  // Add missing getRNCData method for API
+  async getRNCData(rnc: string): Promise<RNCRegistry | undefined> {
+    const [result] = await db.select()
+      .from(rncRegistry)
+      .where(eq(rncRegistry.rnc, rnc))
+      .limit(1);
+    return result;
   }
 }
 

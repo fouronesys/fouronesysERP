@@ -14,9 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/useAuth";
 import { useLocation } from "wouter";
-
-// PayPal imports - temporarily disabled due to integration issues
-// import PayPalButton from '@/components/PayPalButton';
+import PayPalPayment from "@/components/PayPalPayment";
 
 const paymentSchema = z.object({
   fullName: z.string().min(2, "El nombre completo es requerido"),
@@ -479,16 +477,11 @@ export default function Payment() {
                   </TabsList>
                   
                   <TabsContent value="card" className="mt-6">
-                    <div className="p-6 text-center bg-gray-50 dark:bg-gray-800 rounded-lg">
-                      <AlertCircle className="h-12 w-12 text-yellow-500 mx-auto mb-4" />
-                      <h3 className="text-lg font-semibold mb-2">Procesamiento de Pagos Temporalmente Deshabilitado</h3>
-                      <p className="text-gray-600 dark:text-gray-400 mb-4">
-                        Por favor usa transferencia bancaria para completar tu pago.
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        Una vez realizada la transferencia, contáctanos para activar tu cuenta.
-                      </p>
-                    </div>
+                    <PayPalPayment 
+                      plan={form.watch("plan") || "monthly"}
+                      userEmail={form.watch("email")}
+                      onSuccess={() => setShowSuccess(true)}
+                    />
                   </TabsContent>
                   
                   <TabsContent value="transfer" className="mt-6">

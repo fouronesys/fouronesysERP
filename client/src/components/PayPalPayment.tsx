@@ -31,7 +31,7 @@ export default function PayPalPayment({ plan, userEmail, onSuccess }: PayPalPaym
   useEffect(() => {
     const fetchExchangeRate = async () => {
       try {
-        const response = await apiRequest("GET", "/api/exchange-rates");
+        const response = await fetch("/api/exchange-rates");
         const rates: ExchangeRate[] = await response.json();
         const usdRate = rates.find(r => r.currency === 'USD');
         if (usdRate) {
@@ -57,10 +57,16 @@ export default function PayPalPayment({ plan, userEmail, onSuccess }: PayPalPaym
       const usdAmount = convertToUSD(dopAmount);
 
       // Create PayPal order with USD amount
-      const orderResponse = await apiRequest("POST", "/api/paypal/order", {
-        intent: "CAPTURE",
-        amount: usdAmount.toString(),
-        currency: "USD"
+      const orderResponse = await fetch("/api/paypal/order", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          intent: "CAPTURE",
+          amount: usdAmount.toString(),
+          currency: "USD"
+        })
       });
 
       const orderData = await orderResponse.json();
