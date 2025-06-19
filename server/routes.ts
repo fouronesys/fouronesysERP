@@ -971,5 +971,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // DGII RNC Lookup API endpoint
+  app.get("/api/dgii/rnc-lookup", isAuthenticated, async (req, res) => {
+    try {
+      const { rnc } = req.query;
+      
+      if (!rnc) {
+        return res.status(400).json({
+          error: "RNC parameter is required"
+        });
+      }
+
+      // Clean and validate RNC format
+      const cleanRnc = rnc.toString().replace(/\D/g, "");
+      
+      if (cleanRnc.length < 9 || cleanRnc.length > 11) {
+        return res.json({
+          error: `RNC debe tener entre 9 y 11 dígitos. RNC procesado: ${cleanRnc} (${cleanRnc.length} dígitos)`
+        });
+      }
+
+      // Search in local DGII registry
+      const rncData = await storage.getRNCFromRegistry(cleanRnc);
+      
+      if (rncData) {
+        return res.json({
+          rnc: cleanRnc,
+          name: rncData.razonSocial,
+          status: rncData.estado || "ACTIVO",
+          regime: rncData.categoria || "CONTRIBUYENTE REGISTRADO",
+          businessName: rncData.nombreComercial || rncData.razonSocial,
+          found: true
+        });
+      } else {
+        return res.json({
+          rnc: cleanRnc,
+          error: "RNC no encontrado en el registro oficial de DGII",
+          found: false
+        });
+      }
+    } catch (error) {
+      console.error("Error in RNC lookup:", error);
+      res.status(500).json({
+        error: "Error interno del servidor al buscar RNC"
+      });
+    }
+  });
+
   return httpServer;
 }

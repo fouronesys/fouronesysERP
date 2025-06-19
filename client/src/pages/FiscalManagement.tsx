@@ -115,13 +115,54 @@ function DGIIRegistryManagement() {
           {searchResult && (
             <div className="mt-4 p-4 border rounded-lg">
               {searchResult.error ? (
-                <div className="text-red-600">{searchResult.error}</div>
+                <div className="flex items-center space-x-2 text-red-600">
+                  <AlertTriangle className="h-4 w-4" />
+                  <span>{searchResult.error}</span>
+                </div>
+              ) : searchResult.found ? (
+                <div className="space-y-3">
+                  <div className="flex items-center space-x-2 text-green-600">
+                    <CheckCircle className="h-4 w-4" />
+                    <span className="font-medium">RNC encontrado en el registro DGII</span>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div>
+                      <span className="font-medium text-gray-700">RNC:</span>
+                      <span className="ml-2 font-mono">{searchResult.rnc}</span>
+                    </div>
+                    <div>
+                      <span className="font-medium text-gray-700">Estado:</span>
+                      <Badge 
+                        variant={searchResult.status === "ACTIVO" ? "default" : "secondary"}
+                        className="ml-2"
+                      >
+                        {searchResult.status}
+                      </Badge>
+                    </div>
+                    <div className="md:col-span-2">
+                      <span className="font-medium text-gray-700">Razón Social:</span>
+                      <div className="mt-1 p-2 bg-gray-50 rounded text-sm">
+                        {searchResult.name}
+                      </div>
+                    </div>
+                    {searchResult.businessName && searchResult.businessName !== searchResult.name && (
+                      <div className="md:col-span-2">
+                        <span className="font-medium text-gray-700">Nombre Comercial:</span>
+                        <div className="mt-1 p-2 bg-gray-50 rounded text-sm">
+                          {searchResult.businessName}
+                        </div>
+                      </div>
+                    )}
+                    <div className="md:col-span-2">
+                      <span className="font-medium text-gray-700">Régimen:</span>
+                      <span className="ml-2 text-sm">{searchResult.regime}</span>
+                    </div>
+                  </div>
+                </div>
               ) : (
-                <div className="space-y-2">
-                  <div><strong>RNC:</strong> {searchResult.rnc}</div>
-                  <div><strong>Razón Social:</strong> {searchResult.name}</div>
-                  <div><strong>Estado:</strong> {searchResult.status}</div>
-                  <div><strong>Régimen:</strong> {searchResult.regime}</div>
+                <div className="flex items-center space-x-2 text-amber-600">
+                  <AlertTriangle className="h-4 w-4" />
+                  <span>RNC no encontrado en el registro oficial</span>
                 </div>
               )}
             </div>
