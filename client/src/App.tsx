@@ -10,6 +10,7 @@ import SyncStatusIndicator from "@/components/SyncStatusIndicator";
 import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
+import { useSessionPersistence } from "@/hooks/useSessionPersistence";
 import { registerSW } from "@/lib/serviceWorkerRegistration";
 import InstallPrompt from "@/components/InstallPrompt";
 import { errorLogger } from "@/lib/errorLogger";

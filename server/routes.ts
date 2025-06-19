@@ -44,6 +44,20 @@ function superAdminOnly(req: any, res: any, next: any) {
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication middleware
   setupAuth(app);
+
+  // Session heartbeat endpoint to keep sessions alive during deployments
+  app.post("/api/auth/heartbeat", isAuthenticated, async (req: any, res) => {
+    try {
+      res.json({ 
+        status: 'alive',
+        userId: req.user.id,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error("Heartbeat error:", error);
+      res.status(500).json({ message: "Heartbeat failed" });
+    }
+  });
   
   // Initialize admin user
   await initializeAdminUser();
