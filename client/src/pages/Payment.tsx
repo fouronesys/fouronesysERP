@@ -135,8 +135,14 @@ export default function Payment() {
         }
       }
       
+      // Call logout API endpoint
+      await fetch('/api/logout', {
+        method: 'GET',
+        credentials: 'include'
+      });
+      
       // Force hard reload and redirect
-      window.location.replace("/auth");
+      window.location.href = "/";
     } catch (error) {
       console.error("Logout error:", error);
       // Force redirect even if logout fails

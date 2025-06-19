@@ -1497,5 +1497,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update user profile
+  app.patch("/api/auth/profile", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req as any).user.claims.sub;
+      const { firstName, lastName, email } = req.body;
+
+      const updatedUser = await storage.updateUser(userId, {
+        firstName,
+        lastName,
+        email
+      });
+
+      res.json(updatedUser);
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      res.status(500).json({ message: "Error updating profile" });
+    }
+  });
+
   return httpServer;
 }

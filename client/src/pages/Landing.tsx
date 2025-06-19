@@ -282,6 +282,45 @@ export default function Landing() {
               </CardContent>
             </Card>
 
+            {/* API para Desarrolladores */}
+            <Card className="bg-gradient-to-br from-green-900/60 to-emerald-900/60 border-green-500/40 backdrop-blur-sm">
+              <CardContent className="p-6 sm:p-8">
+                <div className="flex items-center mb-4">
+                  <div className="w-12 h-12 bg-green-500 rounded-lg flex items-center justify-center mr-4">
+                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                    </svg>
+                  </div>
+                  <h3 className="text-xl font-bold text-white">API para Desarrolladores</h3>
+                </div>
+                <p className="text-gray-200 mb-4">
+                  Acceso gratuito a nuestras APIs para verificación de RNC, tasas de cambio y más servicios empresariales.
+                </p>
+                <ul className="space-y-2 text-gray-300">
+                  <li className="flex items-center">
+                    <Check className="h-4 w-4 text-green-400 mr-2" />
+                    API de validación RNC gratis
+                  </li>
+                  <li className="flex items-center">
+                    <Check className="h-4 w-4 text-green-400 mr-2" />
+                    Tasas de cambio en tiempo real
+                  </li>
+                  <li className="flex items-center">
+                    <Check className="h-4 w-4 text-green-400 mr-2" />
+                    Documentación completa
+                  </li>
+                </ul>
+                <div className="mt-4">
+                  <Button 
+                    onClick={() => window.location.href = "/api-registration"}
+                    className="w-full bg-green-600 hover:bg-green-700 text-white"
+                  >
+                    Obtener API Key
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
             {/* Búsqueda Inteligente de Imágenes */}
             <Card className="bg-gradient-to-br from-purple-900/60 to-pink-900/60 border-purple-500/40 backdrop-blur-sm">
               <CardContent className="p-6 sm:p-8">
