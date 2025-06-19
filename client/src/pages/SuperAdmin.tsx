@@ -204,6 +204,12 @@ export default function SuperAdmin() {
     mutationFn: async (data: CompanyFormData) => {
       if (!editingCompany) throw new Error("No company selected for editing");
       const response = await apiRequest("PUT", `/api/admin/companies/${editingCompany.id}`, data);
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+      }
+      
       return response.json();
     },
     onSuccess: (data: any) => {
@@ -217,12 +223,14 @@ export default function SuperAdmin() {
       setIsDialogOpen(false);
       setEditingCompany(null);
       form.reset();
+      setRncValidationResult(null);
       queryClient.invalidateQueries({ queryKey: ["/api/admin/companies"] });
     },
-    onError: () => {
+    onError: (error: Error) => {
+      console.error("Company update error:", error);
       toast({
-        title: "Error",
-        description: "No se pudo actualizar la empresa.",
+        title: "Error al actualizar empresa",
+        description: error.message || "No se pudo actualizar la empresa.",
         variant: "destructive",
       });
     },

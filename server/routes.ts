@@ -628,22 +628,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const updatedCompany = await storage.updateCompany(companyId, updateData);
       
-      // Log company update
-      await auditLogger.logUserAction(
-        user.id,
-        companyId,
-        'COMPANY_UPDATED',
-        'company',
-        companyId.toString(),
-        existingCompany,
-        updateData,
-        req
-      );
-      
       res.json(updatedCompany);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error updating company:", error);
-      res.status(500).json({ message: "No se pudo actualizar empresa", error: error.message });
+      res.status(500).json({ 
+        message: "No se pudo actualizar empresa", 
+        error: error?.message || "Error interno del servidor"
+      });
     }
   });
 
