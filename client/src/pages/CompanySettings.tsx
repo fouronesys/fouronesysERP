@@ -118,25 +118,76 @@ export default function CompanySettings() {
     },
   });
 
-  const handleLogoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const compressImage = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+      
+      if (!ctx) {
+        reject(new Error('Canvas context not available'));
+        return;
+      }
+      
+      img.onload = () => {
+        // Calculate new dimensions (max 400x400 while maintaining aspect ratio)
+        const maxSize = 400;
+        let { width, height } = img;
+        
+        if (width > height) {
+          if (width > maxSize) {
+            height = (height * maxSize) / width;
+            width = maxSize;
+          }
+        } else {
+          if (height > maxSize) {
+            width = (width * maxSize) / height;
+            height = maxSize;
+          }
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        
+        // Draw and compress
+        ctx.drawImage(img, 0, 0, width, height);
+        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.8); // 80% quality
+        resolve(compressedDataUrl);
+      };
+      
+      img.onerror = () => reject(new Error('Failed to load image'));
+      img.src = URL.createObjectURL(file);
+    });
+  };
+
+  const handleLogoChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) {
+      if (file.size > 10 * 1024 * 1024) {
         toast({
           title: "Error",
-          description: "El archivo es demasiado grande. Máximo 5MB.",
+          description: "El archivo es demasiado grande. Máximo 10MB.",
           variant: "destructive",
         });
         return;
       }
 
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const result = e.target?.result as string;
-        setLogoPreview(result);
-        form.setValue("logo", result);
-      };
-      reader.readAsDataURL(file);
+      try {
+        const compressedImage = await compressImage(file);
+        setLogoPreview(compressedImage);
+        form.setValue("logo", compressedImage);
+        
+        toast({
+          title: "Imagen procesada",
+          description: "La imagen ha sido optimizada automáticamente.",
+        });
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "No se pudo procesar la imagen. Inténtalo con otra imagen.",
+          variant: "destructive",
+        });
+      }
     }
   };
 
@@ -214,7 +265,7 @@ export default function CompanySettings() {
                       />
                     </Label>
                     <p className="mt-1 text-xs text-gray-500">
-                      PNG, JPG, GIF hasta 5MB. Recomendado: 200x200px
+                      PNG, JPG, GIF hasta 10MB. Se optimiza automáticamente.
                     </p>
                   </div>
                 </div>

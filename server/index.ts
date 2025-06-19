@@ -9,8 +9,8 @@ import { dgiiMonitor } from "./dgii-monitor";
 process.env.TZ = 'America/Santo_Domingo';
 
 const app = express();
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: false, limit: '50mb' }));
 
 // Debug middleware to log all requests
 app.use((req, res, next) => {
