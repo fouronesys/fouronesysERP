@@ -32,6 +32,8 @@ import {
   comprobantes606,
   rncRegistry,
   passwordResetTokens,
+  apiDevelopers,
+  apiRequests,
   posCartItems,
   chatChannels,
   chatChannelMembers,
@@ -130,6 +132,10 @@ import {
   type InsertAIChatMessage,
   type ExchangeRate,
   type InsertExchangeRate,
+  type ApiDeveloper,
+  type InsertApiDeveloper,
+  type ApiRequest,
+  type InsertApiRequest,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, sql, gte, lte, lt, count, sum, isNull, like, or, asc, inArray, ilike } from "drizzle-orm";
@@ -394,6 +400,14 @@ export interface IStorage {
   getSystemConfig(key: string): Promise<SystemConfig | undefined>;
   upsertSystemConfig(config: InsertSystemConfig): Promise<SystemConfig>;
   deleteSystemConfig(key: string): Promise<void>;
+
+  // API Developer operations
+  createApiDeveloper(developer: InsertApiDeveloper): Promise<ApiDeveloper>;
+  getApiDeveloperByKey(apiKey: string): Promise<ApiDeveloper | undefined>;
+  getApiDeveloperByEmail(email: string): Promise<ApiDeveloper | undefined>;
+  updateApiDeveloper(id: number, updates: Partial<InsertApiDeveloper>): Promise<ApiDeveloper | undefined>;
+  logApiRequest(request: InsertApiRequest): Promise<ApiRequest>;
+  getApiDeveloperStats(developerId: number): Promise<{ requestsCount: number; lastRequestAt: Date | null }>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -3758,6 +3772,66 @@ export class DatabaseStorage implements IStorage {
       .values(notification)
       .returning();
     return result;
+  }
+
+  // API Developer operations
+  async createApiDeveloper(developer: InsertApiDeveloper): Promise<ApiDeveloper> {
+    const [result] = await db.insert(apiDevelopers)
+      .values(developer)
+      .returning();
+    return result;
+  }
+
+  async getApiDeveloperByKey(apiKey: string): Promise<ApiDeveloper | undefined> {
+    const [result] = await db.select()
+      .from(apiDevelopers)
+      .where(eq(apiDevelopers.apiKey, apiKey))
+      .limit(1);
+    return result;
+  }
+
+  async getApiDeveloperByEmail(email: string): Promise<ApiDeveloper | undefined> {
+    const [result] = await db.select()
+      .from(apiDevelopers)
+      .where(eq(apiDevelopers.email, email))
+      .limit(1);
+    return result;
+  }
+
+  async updateApiDeveloper(id: number, updates: Partial<InsertApiDeveloper>): Promise<ApiDeveloper | undefined> {
+    const [result] = await db.update(apiDevelopers)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(apiDevelopers.id, id))
+      .returning();
+    return result;
+  }
+
+  async logApiRequest(request: InsertApiRequest): Promise<ApiRequest> {
+    const [result] = await db.insert(apiRequests)
+      .values(request)
+      .returning();
+    
+    // Update developer's request count and last request time
+    await db.update(apiDevelopers)
+      .set({ 
+        requestsCount: sql`${apiDevelopers.requestsCount} + 1`,
+        lastRequestAt: new Date()
+      })
+      .where(eq(apiDevelopers.id, request.developerId));
+    
+    return result;
+  }
+
+  async getApiDeveloperStats(developerId: number): Promise<{ requestsCount: number; lastRequestAt: Date | null }> {
+    const [developer] = await db.select({
+      requestsCount: apiDevelopers.requestsCount,
+      lastRequestAt: apiDevelopers.lastRequestAt
+    })
+    .from(apiDevelopers)
+    .where(eq(apiDevelopers.id, developerId))
+    .limit(1);
+    
+    return developer || { requestsCount: 0, lastRequestAt: null };
   }
 }
 

@@ -1208,5 +1208,202 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // API Developer Registration and Management
+  app.post("/api/developers/register", async (req, res) => {
+    try {
+      const { email, companyName, contactName, phone, website, description } = req.body;
+
+      // Check if developer already exists
+      const existingDeveloper = await storage.getApiDeveloperByEmail(email);
+      if (existingDeveloper) {
+        return res.status(400).json({ message: "Un desarrollador con este email ya está registrado" });
+      }
+
+      // Generate unique API key
+      const apiKey = `fourOne_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
+
+      const newDeveloper = await storage.createApiDeveloper({
+        email,
+        companyName,
+        contactName,
+        phone: phone || null,
+        website: website || null,
+        description,
+        apiKey,
+      });
+
+      res.json({ 
+        success: true,
+        apiKey: newDeveloper.apiKey,
+        message: "Desarrollador registrado exitosamente"
+      });
+    } catch (error) {
+      console.error("Error registering developer:", error);
+      res.status(500).json({ message: "Error al registrar desarrollador" });
+    }
+  });
+
+  // API Key validation middleware
+  const validateApiKey = async (req: any, res: any, next: any) => {
+    try {
+      const authHeader = req.headers.authorization;
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).json({ success: false, message: "API Key requerida" });
+      }
+
+      const apiKey = authHeader.substring(7);
+      const developer = await storage.getApiDeveloperByKey(apiKey);
+
+      if (!developer) {
+        return res.status(401).json({ success: false, message: "API Key inválida" });
+      }
+
+      if (!developer.isActive) {
+        return res.status(403).json({ success: false, message: "API Key desactivada" });
+      }
+
+      req.developer = developer;
+      next();
+    } catch (error) {
+      console.error("Error validating API key:", error);
+      res.status(500).json({ success: false, message: "Error de autenticación" });
+    }
+  };
+
+  // Log API request middleware
+  const logApiRequest = async (req: any, res: any, next: any) => {
+    const startTime = Date.now();
+    
+    // Override res.json to capture response
+    const originalJson = res.json;
+    let responseData: any;
+    let statusCode = 200;
+
+    res.json = function(body: any) {
+      responseData = body;
+      statusCode = res.statusCode;
+      return originalJson.call(this, body);
+    };
+
+    // Continue to next middleware
+    res.on('finish', async () => {
+      const endTime = Date.now();
+      const responseTime = endTime - startTime;
+
+      try {
+        await storage.logApiRequest({
+          developerId: req.developer.id,
+          endpoint: req.originalUrl,
+          method: req.method,
+          statusCode,
+          responseTime,
+          ipAddress: req.ip || req.connection.remoteAddress,
+          userAgent: req.get('User-Agent'),
+          requestData: req.body,
+          responseData
+        });
+      } catch (error) {
+        console.error("Error logging API request:", error);
+      }
+    });
+
+    next();
+  };
+
+  // Public API Endpoints for External Developers
+  
+  // RNC Validation API
+  app.get("/api/v1/rnc/validate/:rnc", validateApiKey, logApiRequest, async (req, res) => {
+    try {
+      const { rnc } = req.params;
+      
+      if (!rnc || rnc.length < 9 || rnc.length > 11) {
+        return res.status(400).json({
+          success: false,
+          message: "RNC debe tener entre 9 y 11 dígitos"
+        });
+      }
+
+      const rncData = await storage.getRNCData(rnc);
+      
+      if (rncData) {
+        res.json({
+          success: true,
+          data: {
+            rnc: rncData.rnc,
+            razonSocial: rncData.razonSocial,
+            nombreComercial: rncData.nombreComercial,
+            categoria: rncData.categoria,
+            regimen: rncData.regimen,
+            estado: rncData.estado
+          }
+        });
+      } else {
+        res.status(404).json({
+          success: false,
+          message: "RNC no encontrado en el registro de la DGII"
+        });
+      }
+    } catch (error) {
+      console.error("Error validating RNC:", error);
+      res.status(500).json({
+        success: false,
+        message: "Error interno del servidor"
+      });
+    }
+  });
+
+  // NCF Types API
+  app.get("/api/v1/ncf/types", validateApiKey, logApiRequest, async (req, res) => {
+    try {
+      const ncfTypes = [
+        { codigo: "01", descripcion: "Factura de Crédito Fiscal", tipo: "venta" },
+        { codigo: "02", descripcion: "Factura de Consumo", tipo: "venta" },
+        { codigo: "03", descripcion: "Nota de Débito", tipo: "ajuste" },
+        { codigo: "04", descripcion: "Nota de Crédito", tipo: "ajuste" },
+        { codigo: "11", descripcion: "Comprobante de Compras", tipo: "compra" },
+        { codigo: "12", descripcion: "Registro Único de Ingresos", tipo: "ingreso" },
+        { codigo: "13", descripcion: "Comprobante para Gastos Menores", tipo: "gasto" },
+        { codigo: "14", descripcion: "Comprobante de Regímenes Especiales", tipo: "especial" },
+        { codigo: "15", descripcion: "Comprobante Gubernamental", tipo: "gubernamental" },
+        { codigo: "16", descripcion: "Comprobante para Exportaciones", tipo: "exportacion" },
+        { codigo: "17", descripcion: "Comprobante para Pagos al Exterior", tipo: "exterior" }
+      ];
+
+      res.json({
+        success: true,
+        data: ncfTypes
+      });
+    } catch (error) {
+      console.error("Error getting NCF types:", error);
+      res.status(500).json({
+        success: false,
+        message: "Error interno del servidor"
+      });
+    }
+  });
+
+  // Exchange Rates API
+  app.get("/api/v1/exchange-rates", validateApiKey, logApiRequest, async (req, res) => {
+    try {
+      const rates = await currencyService.getAllExchangeRates();
+      
+      res.json({
+        success: true,
+        data: rates.map(rate => ({
+          currency: rate.currency,
+          rate: rate.rate,
+          lastUpdated: rate.lastUpdated
+        }))
+      });
+    } catch (error) {
+      console.error("Error getting exchange rates:", error);
+      res.status(500).json({
+        success: false,
+        message: "Error interno del servidor"
+      });
+    }
+  });
+
   return httpServer;
 }
