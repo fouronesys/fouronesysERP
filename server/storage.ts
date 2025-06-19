@@ -3731,29 +3731,7 @@ export class DatabaseStorage implements IStorage {
     return result;
   }
 
-  async markNotificationAsRead(notificationId: number, userId: string) {
-    await db.update(notifications)
-      .set({ read: true, readAt: new Date() })
-      .where(and(eq(notifications.id, notificationId), eq(notifications.userId, userId)));
-  }
-
-  async markAllNotificationsAsRead(userId: string) {
-    await db.update(notifications)
-      .set({ read: true, readAt: new Date() })
-      .where(eq(notifications.userId, userId));
-  }
-
-  async deleteNotification(notificationId: number, userId: string) {
-    await db.delete(notifications)
-      .where(and(eq(notifications.id, notificationId), eq(notifications.userId, userId)));
-  }
-
-  async createNotification(notification: any) {
-    const [result] = await db.insert(notifications)
-      .values(notification)
-      .returning();
-    return result;
-  }
+  // Notification methods already defined above, removing duplicates
 
   // API Developer operations
   async createApiDeveloper(developer: InsertApiDeveloper): Promise<ApiDeveloper> {
@@ -3827,18 +3805,7 @@ export class DatabaseStorage implements IStorage {
     return result;
   }
 
-  // Update user profile
-  async updateUser(userId: string, userData: Partial<User>): Promise<User> {
-    const [updatedUser] = await db
-      .update(users)
-      .set({
-        ...userData,
-        updatedAt: new Date()
-      })
-      .where(eq(users.id, userId))
-      .returning();
-    return updatedUser;
-  }
+  // updateUser method already defined above - removing duplicate
 
   // Settings management methods
   async updateSystemSettings(userId: string, settings: any): Promise<void> {
@@ -3962,10 +3929,7 @@ export class DatabaseStorage implements IStorage {
     return payment;
   }
 
-  async getUserByEmail(email: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.email, email));
-    return user;
-  }
+  // getUserByEmail method already defined above - removing duplicate
 }
 
 export const storage = new DatabaseStorage();
