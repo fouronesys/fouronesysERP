@@ -335,8 +335,8 @@ export default function AuthPage() {
         title: "¡Cuenta creada exitosamente!",
         description: "Ahora debes completar tu pago para activar tu cuenta.",
       });
-      // Redirect to payment page after successful registration
-      setLocation("/payment");
+      // Redirect to setup page for trial users
+      setLocation("/setup");
     },
     onError: (error: any) => {
       console.error('Registration error:', error); // Debug log

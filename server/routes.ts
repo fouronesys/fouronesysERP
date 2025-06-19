@@ -1067,5 +1067,91 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get user payment status with proper subscription validation
+  app.get("/api/user/payment-status", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      
+      // Check if user is super admin - they bypass all payment requirements
+      const isSuperAdmin = await storage.isUserSuperAdmin(userId);
+      if (isSuperAdmin) {
+        return res.json({ 
+          hasValidPayment: true, 
+          status: 'super_admin', 
+          message: 'Super admin access',
+          isSuperAdmin: true
+        });
+      }
+
+      // Get user's company and check subscription status
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.json({ 
+          hasValidPayment: false, 
+          status: 'no_company', 
+          message: 'No company found' 
+        });
+      }
+
+      const now = new Date();
+      const subscriptionExpiry = company.subscriptionExpiry ? new Date(company.subscriptionExpiry) : null;
+      
+      // Check subscription plan and expiry
+      if (company.subscriptionPlan === 'trial') {
+        if (subscriptionExpiry && subscriptionExpiry > now) {
+          // Trial is still active - restrict access to setup and basic features only
+          return res.json({ 
+            hasValidPayment: false, 
+            status: 'trial_active', 
+            message: 'Trial period active - complete payment to access full system',
+            expiresAt: subscriptionExpiry,
+            daysRemaining: Math.ceil((subscriptionExpiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+          });
+        } else {
+          // Trial expired
+          return res.json({ 
+            hasValidPayment: false, 
+            status: 'trial_expired', 
+            message: 'Trial period expired - payment required' 
+          });
+        }
+      }
+
+      // For paid plans (monthly/annual), check if active and not expired
+      if (['monthly', 'annual'].includes(company.subscriptionPlan)) {
+        if (!subscriptionExpiry || subscriptionExpiry > now) {
+          return res.json({ 
+            hasValidPayment: true, 
+            status: 'active', 
+            message: 'Active subscription',
+            plan: company.subscriptionPlan,
+            expiresAt: subscriptionExpiry
+          });
+        } else {
+          return res.json({ 
+            hasValidPayment: false, 
+            status: 'expired', 
+            message: 'Subscription expired - renewal required' 
+          });
+        }
+      }
+
+      // Default case - no valid payment
+      return res.json({ 
+        hasValidPayment: false, 
+        status: 'pending', 
+        message: 'Payment required' 
+      });
+
+    } catch (error) {
+      console.error("Error fetching user payment status:", error);
+      res.status(500).json({ 
+        hasValidPayment: false, 
+        status: 'error', 
+        message: "Error checking payment status" 
+      });
+    }
+  });
+
   return httpServer;
 }

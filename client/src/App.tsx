@@ -94,18 +94,31 @@ function ProtectedRoute({ component: Component, ...props }: { component: React.C
   useEffect(() => {
     // Super admins bypass payment requirements
     const isSuperAdmin = (user as any)?.role === "super_admin";
+    const paymentStatusData = paymentStatus as any;
     
     if (isAuthenticated && !isPaymentLoading && !hasValidPayment && !isSuperAdmin) {
+      // Show different messages based on payment status
+      let title = "Pago requerido";
+      let description = "Debes completar el pago para acceder al sistema.";
+      
+      if (paymentStatusData?.status === 'trial_active') {
+        title = "Período de prueba";
+        description = `Te quedan ${paymentStatusData.daysRemaining} días de prueba. Completa el pago para acceso completo.`;
+      } else if (paymentStatusData?.status === 'trial_expired') {
+        title = "Período de prueba expirado";
+        description = "Tu período de prueba ha expirado. Completa el pago para continuar usando el sistema.";
+      }
+      
       toast({
-        title: "Pago requerido",
-        description: "Debes completar el pago para acceder al sistema.",
+        title,
+        description,
         variant: "destructive",
       });
       setTimeout(() => {
         window.location.href = "/payment";
       }, 1000);
     }
-  }, [isAuthenticated, isPaymentLoading, hasValidPayment, (user as any)?.role, toast]);
+  }, [isAuthenticated, isPaymentLoading, hasValidPayment, paymentStatus, (user as any)?.role, toast]);
 
   if (isLoading || (isAuthenticated && isPaymentLoading)) {
     return (
@@ -210,11 +223,17 @@ function Router() {
     );
   }
 
-  // Show payment page if user is authenticated but payment not confirmed
-  if (isAuthenticated && paymentStatus && (paymentStatus as any).status !== 'confirmed') {
+  // Show payment page if user is authenticated but needs to complete payment
+  const paymentStatusData = paymentStatus as any;
+  const needsPayment = isAuthenticated && paymentStatusData && 
+    !paymentStatusData.hasValidPayment && 
+    paymentStatusData.status !== 'super_admin';
+  
+  if (needsPayment) {
     return (
       <Switch>
         <Route path="/payment" component={Payment} />
+        <Route path="/setup" component={Setup} />
         <Route component={Payment} />
       </Switch>
     );
