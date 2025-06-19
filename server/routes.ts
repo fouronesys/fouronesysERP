@@ -608,6 +608,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update company details
+  app.put("/api/admin/companies/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const user = req.user;
+      if (!user || (user.email !== 'admin@fourone.com.do' && user.role !== 'super_admin')) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      const companyId = parseInt(req.params.id);
+      const existingCompany = await storage.getCompany(companyId);
+
+      if (!existingCompany) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      // Remove fields that shouldn't be updated directly
+      const { ownerId, ...updateData } = req.body;
+      
+      const updatedCompany = await storage.updateCompany(companyId, updateData);
+      
+      // Log company update
+      await auditLogger.logUserAction(
+        user.id,
+        companyId,
+        'COMPANY_UPDATED',
+        'company',
+        companyId.toString(),
+        existingCompany,
+        updateData,
+        req
+      );
+      
+      res.json(updatedCompany);
+    } catch (error) {
+      console.error("Error updating company:", error);
+      res.status(500).json({ message: "No se pudo actualizar empresa", error: error.message });
+    }
+  });
+
   // Notification API endpoints
   app.get("/api/notifications", isAuthenticated, async (req, res) => {
     try {
