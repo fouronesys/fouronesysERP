@@ -11,6 +11,7 @@ import { useEffect, useState } from "react"
 
 export function Toaster() {
   const [mounted, setMounted] = useState(false)
+  const { toasts } = useToast()
   
   useEffect(() => {
     setMounted(true)
@@ -21,7 +22,6 @@ export function Toaster() {
   }
   
   try {
-    const { toasts } = useToast()
 
     return (
       <ToastProvider>

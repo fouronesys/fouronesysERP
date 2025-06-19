@@ -1022,7 +1022,7 @@ export default function SuperAdmin() {
                     <TableCell>{company.rnc || "N/A"}</TableCell>
                     <TableCell>{company.ownerEmail || company.email || "N/A"}</TableCell>
                     <TableCell>{getStatusBadge(company)}</TableCell>
-                    <TableCell>{getPlanBadge(company.subscriptionPlan)}</TableCell>
+                    <TableCell>{getPlanBadge(company.subscriptionPlan || 'free' as any)}</TableCell>
                     <TableCell>
                       {company.createdAt 
                         ? new Date(company.createdAt).toLocaleDateString()
