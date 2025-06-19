@@ -15,6 +15,7 @@ import { auditLogger } from "./audit-logger";
 import { initializeAdminUser } from "./init-admin";
 import { moduleInitializer } from "./module-initializer";
 import { currencyService } from "./currency-service";
+import { sendEmail, sendApiKeyEmail } from "./email-service";
 import multer from "multer";
 import crypto from "crypto";
 
@@ -1233,14 +1234,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
         apiKey,
       });
 
+      // Send API key via email
+      const emailSent = await sendApiKeyEmail(email, apiKey, companyName);
+      
+      if (!emailSent) {
+        console.error("Failed to send API key email to:", email);
+      }
+
       res.json({ 
         success: true,
         apiKey: newDeveloper.apiKey,
-        message: "Desarrollador registrado exitosamente"
+        message: "Desarrollador registrado exitosamente. API key enviada por email."
       });
     } catch (error) {
       console.error("Error registering developer:", error);
       res.status(500).json({ message: "Error al registrar desarrollador" });
+    }
+  });
+
+  // Developer Login - Retrieve API Key
+  app.post("/api/developers/login", async (req, res) => {
+    try {
+      const { email } = req.body;
+
+      if (!email) {
+        return res.status(400).json({ message: "Email es requerido" });
+      }
+
+      const developer = await storage.getApiDeveloperByEmail(email);
+      if (!developer) {
+        return res.status(404).json({ message: "No se encontró una cuenta con este email" });
+      }
+
+      if (!developer.isActive) {
+        return res.status(403).json({ message: "Esta cuenta ha sido desactivada" });
+      }
+
+      // Send API key via email
+      const emailSent = await sendApiKeyEmail(email, developer.apiKey, developer.companyName);
+      
+      if (!emailSent) {
+        console.error("Failed to send API key email to:", email);
+        return res.status(500).json({ message: "Error al enviar el email. Intenta de nuevo." });
+      }
+
+      res.json({ 
+        success: true,
+        apiKey: developer.apiKey,
+        message: "API key enviada por email exitosamente"
+      });
+    } catch (error) {
+      console.error("Error during developer login:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
     }
   });
 

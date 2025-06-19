@@ -17,7 +17,7 @@ export async function sendEmail(params: EmailParams): Promise<boolean> {
   try {
     await sgMail.send({
       to: params.to,
-      from: 'noreply@fourone.com.do', // Replace with your verified sender email
+      from: process.env.SENDGRID_FROM_EMAIL || 'noreply@fourone.com.do',
       subject: params.subject,
       text: params.text,
       html: params.html,

@@ -397,7 +397,7 @@ export default function ApiRegistration() {
                 </Button>
               </form>
             </Form>
-            )}
+          )}
           </CardContent>
         </Card>
       </div>
