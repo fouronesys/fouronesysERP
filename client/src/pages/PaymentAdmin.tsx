@@ -131,10 +131,11 @@ export default function PaymentAdmin() {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="h-screen flex flex-col">
+      <div className="flex justify-between items-center p-6 border-b">
         <h1 className="text-3xl font-bold">Administración de Pagos</h1>
       </div>
+      <div className="flex-1 overflow-y-auto p-6 space-y-6">
 
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -308,6 +309,19 @@ export default function PaymentAdmin() {
                                     <SelectItem value="rejected">Rechazado</SelectItem>
                                   </SelectContent>
                                 </Select>
+                              </div>
+
+                              <div className="flex items-center justify-between rounded-lg border p-4">
+                                <div className="space-y-0.5">
+                                  <label className="text-base font-medium">Confirmar Pago</label>
+                                  <p className="text-sm text-muted-foreground">
+                                    Marca este pago como confirmado automáticamente
+                                  </p>
+                                </div>
+                                <Switch
+                                  checked={newStatus === 'confirmed'}
+                                  onCheckedChange={(checked) => setNewStatus(checked ? 'confirmed' : 'pending')}
+                                />
                               </div>
 
                               <div className="space-y-2">

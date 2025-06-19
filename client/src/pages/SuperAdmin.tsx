@@ -79,10 +79,20 @@ import {
 import { RNCCompanySuggestions } from "@/components/RNCCompanySuggestions";
 
 // Schema for admin form with ownerEmail and paymentConfirmed
-const companySchemaForAdmin = insertCompanySchema.extend({
-  ownerEmail: z.string().email("Email del propietario requerido"),
+const companySchemaForAdmin = z.object({
+  name: z.string().min(1, "Nombre requerido"),
+  businessName: z.string().optional(),
+  rnc: z.string().optional(),
+  address: z.string().optional(),
+  phone: z.string().optional(),
+  email: z.string().email("Email inválido").optional().or(z.literal("")),
+  website: z.string().optional(),
+  industry: z.string().optional(),
+  subscriptionPlan: z.enum(["trial", "monthly", "annual"]),
+  isActive: z.boolean(),
   paymentConfirmed: z.boolean().default(false),
-}).omit({ ownerId: true });
+  ownerEmail: z.string().email("Email del propietario requerido"),
+});
 
 type CompanyFormData = z.infer<typeof companySchemaForAdmin>;
 
@@ -169,6 +179,7 @@ export default function SuperAdmin() {
       industry: "",
       subscriptionPlan: "trial",
       isActive: true,
+      paymentConfirmed: false,
       ownerEmail: "",
     },
   });
@@ -443,7 +454,7 @@ export default function SuperAdmin() {
         comparison = new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime();
         break;
       case "subscriptionPlan":
-        comparison = a.subscriptionPlan.localeCompare(b.subscriptionPlan);
+        comparison = (a.subscriptionPlan || "trial").localeCompare(b.subscriptionPlan || "trial");
         break;
       default:
         comparison = a.name.localeCompare(b.name);
