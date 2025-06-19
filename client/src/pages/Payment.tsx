@@ -223,7 +223,7 @@ export default function Payment() {
 
     setIsSubmitting(true);
     try {
-      await apiRequest("POST", "/api/submit-payment", {
+      const response = await apiRequest("POST", "/api/submit-payment", {
         ...data,
         userId: user?.id
       });

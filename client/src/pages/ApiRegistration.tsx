@@ -45,7 +45,8 @@ export default function ApiRegistration() {
     setIsSubmitting(true);
     try {
       const response = await apiRequest("POST", "/api/developers/register", data);
-      setApiKey(response.apiKey);
+      const result = await response.json();
+      setApiKey(result.apiKey);
       setRegistrationComplete(true);
       toast({
         title: "Registro exitoso",

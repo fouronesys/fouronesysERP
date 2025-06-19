@@ -54,7 +54,8 @@ import Payment from "@/pages/Payment";
 import CompanyManagement from "@/pages/CompanyManagement";
 import SetupPassword from "@/pages/SetupPassword";
 import ResetPassword from "@/pages/ResetPassword";
-
+import ApiRegistration from "@/pages/ApiRegistration";
+import ApiDocs from "@/pages/ApiDocs";
 
 import InstallationGuide from "@/pages/InstallationGuide";
 import NotFound from "@/pages/not-found";
@@ -215,6 +216,9 @@ function Router() {
       <Switch>
         <Route path="/auth" component={AuthPage} />
         <Route path="/register" component={AuthPage} />
+        <Route path="/api-register" component={ApiRegistration} />
+        <Route path="/api-docs" component={ApiDocs} />
+        <Route path="/payment" component={Payment} />
         <Route path="/setup-password" component={SetupPassword} />
         <Route path="/reset-password" component={ResetPassword} />
         <Route path="/" component={Landing} />
