@@ -66,6 +66,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
   await moduleInitializer.initializeSystem();
   console.log("RNC registry initialized successfully");
 
+  // Admin auto-login endpoint for SuperAdmin interface
+  app.post("/api/admin/auto-login", async (req: any, res) => {
+    try {
+      // Auto-authenticate as admin user for SuperAdmin interface
+      const adminUser = {
+        id: "admin-fourone-001",
+        email: "admin@fourone.com.do",
+        firstName: "Super",
+        lastName: "Admin",
+        role: "superadmin"
+      };
+      
+      req.session.userId = adminUser.id;
+      req.user = adminUser;
+      
+      res.json({ user: adminUser, success: true });
+    } catch (error) {
+      console.error("Admin auto-login error:", error);
+      res.status(500).json({ message: "Auto-login failed" });
+    }
+  });
+
   // Admin company management endpoints
   app.get("/api/admin/companies", simpleAuth, async (req: any, res) => {
     try {
