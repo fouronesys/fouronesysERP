@@ -81,6 +81,11 @@ export function setupAuth(app: Express) {
     }
   });
 
+  // Test endpoint to verify registration route is working
+  app.get("/api/test-register", (req, res) => {
+    res.json({ message: "Register endpoint is accessible" });
+  });
+
   // Register endpoint
   app.post("/api/register", async (req, res, next) => {
     try {
