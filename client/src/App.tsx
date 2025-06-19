@@ -216,7 +216,7 @@ function Router() {
       <Switch>
         <Route path="/auth" component={AuthPage} />
         <Route path="/register" component={AuthPage} />
-        <Route path="/api-register" component={ApiRegistration} />
+        <Route path="/api-registration" component={ApiRegistration} />
         <Route path="/api-docs" component={ApiDocs} />
         <Route path="/payment" component={Payment} />
         <Route path="/setup-password" component={SetupPassword} />
