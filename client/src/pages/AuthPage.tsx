@@ -317,7 +317,10 @@ export default function AuthPage() {
         rncValidation: rncValidationResult // Include validation result
       };
       
-      const response = await apiRequest("POST", "/api/register", registrationData);
+      const response = await apiRequest("/api/register", {
+        method: "POST",
+        body: registrationData
+      });
       
       if (!response.ok) {
         const errorData = await response.json();
