@@ -122,7 +122,7 @@ export default function CompanySettings() {
     return new Promise((resolve, reject) => {
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
-      const img = new Image();
+      const img = document.createElement('img');
       
       if (!ctx) {
         reject(new Error('Canvas context not available'));
@@ -209,7 +209,7 @@ export default function CompanySettings() {
 
       try {
         // Create image to check dimensions with proper error handling
-        const img = new Image();
+        const img = document.createElement('img');
         const url = URL.createObjectURL(file);
         
         // Set CORS for image loading
