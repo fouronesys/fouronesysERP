@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import { CreditCard, CheckCircle, XCircle, Clock, Eye, DollarSign } from 'lucide-react';
@@ -45,7 +46,7 @@ export default function PaymentAdmin() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: payments = [], isLoading } = useQuery({
+  const { data: payments = [], isLoading } = useQuery<PaymentSubmission[]>({
     queryKey: ['/api/payments/submissions'],
   });
 
@@ -320,7 +321,7 @@ export default function PaymentAdmin() {
                                 </div>
                                 <Switch
                                   checked={newStatus === 'confirmed'}
-                                  onCheckedChange={(checked) => setNewStatus(checked ? 'confirmed' : 'pending')}
+                                  onCheckedChange={(checked: boolean) => setNewStatus(checked ? 'confirmed' : 'pending')}
                                 />
                               </div>
 
@@ -354,6 +355,7 @@ export default function PaymentAdmin() {
           </div>
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 }
