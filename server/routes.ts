@@ -1067,6 +1067,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // RNC Verification endpoint for customers module
+  app.get("/api/customers/verify-rnc/:rnc", isAuthenticated, async (req, res) => {
+    try {
+      const { rnc } = req.params;
+      
+      if (!rnc) {
+        return res.status(400).json({
+          isValid: false,
+          message: "RNC parameter is required"
+        });
+      }
+
+      // Clean and validate RNC format
+      const cleanRnc = rnc.toString().replace(/\D/g, "");
+      
+      if (cleanRnc.length < 9 || cleanRnc.length > 11) {
+        return res.json({
+          isValid: false,
+          message: `RNC debe tener entre 9 y 11 dígitos. RNC procesado: ${cleanRnc} (${cleanRnc.length} dígitos)`,
+          rnc: cleanRnc,
+          originalInput: rnc
+        });
+      }
+
+      // Search in local DGII registry
+      const rncData = await storage.getRNCFromRegistry(cleanRnc);
+      
+      if (rncData) {
+        return res.json({
+          isValid: true,
+          rnc: cleanRnc,
+          razonSocial: rncData.razonSocial,
+          companyName: rncData.razonSocial,
+          nombreComercial: rncData.nombreComercial,
+          estado: rncData.estado || "ACTIVO",
+          tipo: rncData.categoria || "CONTRIBUYENTE REGISTRADO",
+          source: "local"
+        });
+      } else {
+        return res.json({
+          isValid: false,
+          rnc: cleanRnc,
+          message: "RNC no encontrado en el registro local de DGII",
+          source: "local"
+        });
+      }
+    } catch (error) {
+      console.error("Error verifying RNC:", error);
+      res.json({
+        isValid: false,
+        message: "Error interno del servidor al verificar RNC"
+      });
+    }
+  });
+
   // Get user payment status with proper subscription validation
   app.get("/api/user/payment-status", isAuthenticated, async (req: any, res) => {
     try {
