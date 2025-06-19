@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -75,7 +75,14 @@ export default function AuthPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
+
+  // Automatically switch to register tab if accessing via /register route
+  useEffect(() => {
+    if (location === "/register") {
+      setActiveTab("register");
+    }
+  }, [location]);
 
   const loginForm = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
