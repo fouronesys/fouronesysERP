@@ -907,9 +907,9 @@ export default function SuperAdmin() {
             </div>
           )}
 
-          <div className="rounded-md border">
+          <div className="rounded-md border overflow-auto max-h-[600px]">
             <Table>
-              <TableHeader>
+              <TableHeader className="sticky top-0 bg-background z-10">
                 <TableRow>
                   <TableHead className="w-12">
                     <Checkbox
