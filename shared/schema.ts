@@ -983,6 +983,37 @@ export type InsertCompanyModule = z.infer<typeof insertCompanyModuleSchema>;
 export type SystemConfig = typeof systemConfig.$inferSelect;
 export type InsertSystemConfig = z.infer<typeof insertSystemConfigSchema>;
 
+// API Developer System Tables
+export const apiDevelopers = pgTable("api_developers", {
+  id: serial("id").primaryKey(),
+  email: varchar("email", { length: 255 }).unique().notNull(),
+  companyName: varchar("company_name", { length: 255 }).notNull(),
+  contactName: varchar("contact_name", { length: 255 }).notNull(),
+  phone: varchar("phone", { length: 20 }),
+  website: varchar("website", { length: 255 }),
+  description: text("description"),
+  apiKey: varchar("api_key", { length: 64 }).unique().notNull(),
+  isActive: boolean("is_active").default(true),
+  requestsCount: integer("requests_count").default(0),
+  lastRequestAt: timestamp("last_request_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const apiRequests = pgTable("api_requests", {
+  id: serial("id").primaryKey(),
+  developerId: integer("developer_id").notNull().references(() => apiDevelopers.id, { onDelete: "cascade" }),
+  endpoint: varchar("endpoint", { length: 255 }).notNull(),
+  method: varchar("method", { length: 10 }).notNull(),
+  statusCode: integer("status_code").notNull(),
+  responseTime: integer("response_time"), // in milliseconds
+  ipAddress: varchar("ip_address", { length: 45 }),
+  userAgent: text("user_agent"),
+  requestData: jsonb("request_data"),
+  responseData: jsonb("response_data"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Remove duplicate ncfSequences table as it's already defined above
 
 export const comprobantes605 = pgTable("comprobantes_605", {
@@ -1111,6 +1142,24 @@ export const rncRegistry = pgTable("rnc_registry", {
   estado: varchar("estado", { length: 20 }),
   lastUpdated: timestamp("last_updated").defaultNow(),
 });
+
+// API Developer Insert Schemas
+export const insertApiDeveloperSchema = createInsertSchema(apiDevelopers).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertApiRequestSchema = createInsertSchema(apiRequests).omit({
+  id: true,
+  createdAt: true,
+});
+
+// API Developer Types
+export type ApiDeveloper = typeof apiDevelopers.$inferSelect;
+export type InsertApiDeveloper = z.infer<typeof insertApiDeveloperSchema>;
+export type ApiRequest = typeof apiRequests.$inferSelect;
+export type InsertApiRequest = z.infer<typeof insertApiRequestSchema>;
 
 export const insertComprobante605Schema = createInsertSchema(comprobantes605).omit({
   id: true,
