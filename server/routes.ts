@@ -670,6 +670,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Payment management routes
+  app.post("/api/payments/submissions", async (req: any, res) => {
+    try {
+      const paymentData = {
+        ...req.body,
+        submittedAt: new Date()
+      };
+      
+      const payment = await storage.createPaymentSubmission(paymentData);
+      
+      res.json({ 
+        success: true, 
+        message: 'Payment submission received successfully',
+        paymentId: payment.id 
+      });
+    } catch (error) {
+      console.error("Error processing payment submission:", error);
+      res.status(500).json({ message: "Failed to process payment submission" });
+    }
+  });
+
   app.get("/api/payments/submissions", simpleAuth, async (req: any, res) => {
     try {
       const payments = await storage.getPaymentSubmissions();

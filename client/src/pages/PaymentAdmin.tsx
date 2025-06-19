@@ -54,7 +54,15 @@ export default function PaymentAdmin() {
     mutationFn: async ({ id, status, notes }: { id: number; status: string; notes: string }) => {
       console.log('[DEBUG] Sending payment update request:', { id, status, notes });
       
-      const response = await apiRequest('PATCH', `/api/payments/${id}/status`, { status, notes });
+      const response = await fetch(`/api/payments/${id}/status`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ status, notes })
+      });
+      
       console.log('[DEBUG] Response status:', response.status);
       
       if (!response.ok) {
