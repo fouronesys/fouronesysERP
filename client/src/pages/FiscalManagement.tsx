@@ -139,20 +139,21 @@ function DGIIRegistryManagement() {
                         {searchResult.status}
                       </Badge>
                     </div>
-                    <div className="md:col-span-2">
-                      <span className="font-medium text-gray-700">Razón Social:</span>
-                      <div className="mt-1 p-2 bg-gray-50 rounded text-sm">
-                        {searchResult.name}
-                      </div>
-                    </div>
-                    {searchResult.businessName && searchResult.businessName !== searchResult.name && (
                       <div className="md:col-span-2">
-                        <span className="font-medium text-gray-700">Nombre Comercial:</span>
-                        <div className="mt-1 p-2 bg-gray-50 rounded text-sm">
-                          {searchResult.businessName}
+                        <span className="font-medium text-gray-700">Razón Social:</span>
+                        <div className="mt-1 p-2 bg-gray-100 rounded text-gray-900 text-sm">
+                          {searchResult.name}
                         </div>
                       </div>
-                    )}
+                      {searchResult.businessName && searchResult.businessName !== searchResult.name && (
+                        <div className="md:col-span-2">
+                          <span className="font-medium text-gray-700">Nombre Comercial:</span>
+                          <div className="mt-1 p-2 bg-gray-100 rounded text-gray-900 text-sm">
+                            {searchResult.businessName}
+                          </div>
+                        </div>
+                      )
+                    }
                     <div className="md:col-span-2">
                       <span className="font-medium text-gray-700">Régimen:</span>
                       <span className="ml-2 text-sm">{searchResult.regime}</span>

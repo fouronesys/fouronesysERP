@@ -340,89 +340,100 @@ export default function UserManagement() {
                   Create Role
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-2xl">
-                <DialogHeader>
+              <DialogContent className="max-w-lg max-h-[85vh] overflow-hidden flex flex-col">
+                <DialogHeader className="flex-shrink-0 pb-4">
                   <DialogTitle>Create New Role</DialogTitle>
                 </DialogHeader>
-                <Form {...createRoleForm}>
-                  <form onSubmit={createRoleForm.handleSubmit(handleCreateRole)} className="space-y-4">
-                    <FormField
-                      control={createRoleForm.control}
-                      name="name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Role Name</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Enter role name" {...field} />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={createRoleForm.control}
-                      name="description"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Description</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Role description (optional)" {...field} />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={createRoleForm.control}
-                      name="permissions"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Permissions</FormLabel>
-                          <div className="space-y-4">
-                            {Object.entries(getPermissionsByModule()).map(([module, perms]) => (
-                              <div key={module} className="space-y-2">
-                                <h4 className="font-medium">{module}</h4>
-                                <div className="grid grid-cols-2 gap-2">
-                                  {perms.map((permission) => (
-                                    <div key={permission.id} className="flex items-center space-x-2">
-                                      <Checkbox
-                                        id={permission.id}
-                                        checked={field.value.includes(permission.id)}
-                                        onCheckedChange={(checked) => {
-                                          if (checked) {
-                                            field.onChange([...field.value, permission.id]);
-                                          } else {
-                                            field.onChange(field.value.filter(p => p !== permission.id));
-                                          }
-                                        }}
-                                      />
-                                      <label htmlFor={permission.id} className="text-sm">
-                                        {permission.name}
-                                      </label>
-                                    </div>
-                                  ))}
+                <div className="flex-1 overflow-y-auto pr-2 -mr-2">
+                  <Form {...createRoleForm}>
+                    <form onSubmit={createRoleForm.handleSubmit(handleCreateRole)} className="space-y-4">
+                      <div className="grid grid-cols-1 gap-4">
+                        <FormField
+                          control={createRoleForm.control}
+                          name="name"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Role Name</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Enter role name" {...field} />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={createRoleForm.control}
+                          name="description"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Description</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Role description (optional)" {...field} />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                      
+                      <FormField
+                        control={createRoleForm.control}
+                        name="permissions"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Permissions</FormLabel>
+                            <div className="max-h-60 overflow-y-auto border rounded-md p-3 bg-gray-50 dark:bg-gray-900 space-y-3">
+                              {Object.entries(getPermissionsByModule()).map(([module, perms]) => (
+                                <div key={module} className="space-y-2">
+                                  <h4 className="font-medium text-sm text-gray-900 dark:text-gray-100 sticky top-0 bg-gray-50 dark:bg-gray-900 py-1 border-b">
+                                    {module}
+                                  </h4>
+                                  <div className="grid grid-cols-1 gap-1.5 pl-2">
+                                    {perms.map((permission) => (
+                                      <div key={permission.id} className="flex items-center space-x-2">
+                                        <Checkbox
+                                          id={permission.id}
+                                          checked={field.value.includes(permission.id)}
+                                          onCheckedChange={(checked) => {
+                                            if (checked) {
+                                              field.onChange([...field.value, permission.id]);
+                                            } else {
+                                              field.onChange(field.value.filter(p => p !== permission.id));
+                                            }
+                                          }}
+                                        />
+                                        <label htmlFor={permission.id} className="text-xs cursor-pointer flex-1">
+                                          {permission.name}
+                                        </label>
+                                      </div>
+                                    ))}
+                                  </div>
                                 </div>
-                              </div>
-                            ))}
-                          </div>
-                        </FormItem>
-                      )}
-                    />
-                    <div className="flex justify-end gap-2">
-                      <Button 
-                        type="button" 
-                        variant="outline" 
-                        onClick={() => setIsCreateRoleOpen(false)}
-                      >
-                        Cancel
-                      </Button>
-                      <Button 
-                        type="submit" 
-                        disabled={createRoleMutation.isPending}
-                      >
-                        {createRoleMutation.isPending ? "Creating..." : "Create Role"}
-                      </Button>
-                    </div>
-                  </form>
-                </Form>
+                              ))}
+                            </div>
+                          </FormItem>
+                        )}
+                      />
+                    </form>
+                  </Form>
+                </div>
+                
+                <div className="flex justify-end gap-2 pt-4 border-t flex-shrink-0">
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={() => setIsCreateRoleOpen(false)}
+                    size="sm"
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    type="submit" 
+                    disabled={createRoleMutation.isPending}
+                    size="sm"
+                    onClick={createRoleForm.handleSubmit(handleCreateRole)}
+                  >
+                    {createRoleMutation.isPending ? "Creating..." : "Create Role"}
+                  </Button>
+                </div>
               </DialogContent>
             </Dialog>
           )}
