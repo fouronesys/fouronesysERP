@@ -229,7 +229,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Basic user endpoint for authenticated users
-  app.get("/api/user", isAuthenticated, async (req: any, res) => {
+  app.get("/api/user", simpleAuth, async (req: any, res) => {
     try {
       const user = await storage.getUser(req.user.id);
       res.json(user);
