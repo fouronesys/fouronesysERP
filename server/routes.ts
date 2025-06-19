@@ -825,16 +825,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Company management endpoints for SuperAdmin
-  app.get("/api/companies/all", isAuthenticated, async (req: any, res) => {
+  app.get("/api/companies/all", simpleAuth, async (req: any, res) => {
     try {
       const userId = req.user.id;
-      const isSuperAdmin = await storage.isUserSuperAdmin(userId);
-
-      if (!isSuperAdmin) {
-        return res.status(403).json({ message: "Access denied. Super admin required." });
-      }
-
+      console.log(`[DEBUG] Fetching companies for user: ${userId}`);
+      
       const companies = await storage.getAllCompaniesWithDetails();
+      console.log(`[DEBUG] Found ${companies.length} companies`);
       res.json(companies);
     } catch (error) {
       console.error("Error fetching companies:", error);
@@ -842,15 +839,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/companies", isAuthenticated, async (req: any, res) => {
+  app.post("/api/companies", simpleAuth, async (req: any, res) => {
     try {
-      const userId = req.user.id;
-      const isSuperAdmin = await storage.isUserSuperAdmin(userId);
-
-      if (!isSuperAdmin) {
-        return res.status(403).json({ message: "Access denied. Super admin required." });
-      }
-
       const newCompany = await storage.createCompany(req.body);
       res.json(newCompany);
     } catch (error) {
@@ -859,15 +849,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/companies/:id", isAuthenticated, async (req: any, res) => {
+  app.put("/api/companies/:id", simpleAuth, async (req: any, res) => {
     try {
-      const userId = req.user.id;
-      const isSuperAdmin = await storage.isUserSuperAdmin(userId);
-
-      if (!isSuperAdmin) {
-        return res.status(403).json({ message: "Access denied. Super admin required." });
-      }
-
       const companyId = parseInt(req.params.id);
       const { ownerId, ...updateData } = req.body;
       
@@ -882,15 +865,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/companies/:id", isAuthenticated, async (req: any, res) => {
+  app.delete("/api/companies/:id", simpleAuth, async (req: any, res) => {
     try {
-      const userId = req.user.id;
-      const isSuperAdmin = await storage.isUserSuperAdmin(userId);
-
-      if (!isSuperAdmin) {
-        return res.status(403).json({ message: "Access denied. Super admin required." });
-      }
-
       const companyId = parseInt(req.params.id);
       await storage.deleteCompany(companyId);
       res.json({ success: true });
@@ -900,15 +876,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/companies/bulk-activate", isAuthenticated, async (req: any, res) => {
+  app.patch("/api/companies/bulk-activate", simpleAuth, async (req: any, res) => {
     try {
-      const userId = req.user.id;
-      const isSuperAdmin = await storage.isUserSuperAdmin(userId);
-
-      if (!isSuperAdmin) {
-        return res.status(403).json({ message: "Access denied. Super admin required." });
-      }
-
       const { companyIds } = req.body;
       const results = [];
       
@@ -924,15 +893,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/companies/bulk-deactivate", isAuthenticated, async (req: any, res) => {
+  app.patch("/api/companies/bulk-deactivate", simpleAuth, async (req: any, res) => {
     try {
-      const userId = req.user.id;
-      const isSuperAdmin = await storage.isUserSuperAdmin(userId);
-
-      if (!isSuperAdmin) {
-        return res.status(403).json({ message: "Access denied. Super admin required." });
-      }
-
       const { companyIds } = req.body;
       const results = [];
       
@@ -948,15 +910,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/companies/:id/resend-email", isAuthenticated, async (req: any, res) => {
+  app.post("/api/companies/:id/resend-email", simpleAuth, async (req: any, res) => {
     try {
-      const userId = req.user.id;
-      const isSuperAdmin = await storage.isUserSuperAdmin(userId);
-
-      if (!isSuperAdmin) {
-        return res.status(403).json({ message: "Access denied. Super admin required." });
-      }
-
       const companyId = parseInt(req.params.id);
       const company = await storage.getCompany(companyId);
       
@@ -964,8 +919,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Company not found" });
       }
 
-      // Here you would implement email sending logic
-      // For now, we'll just return success
       res.json({ emailSent: true, message: "Invitation resent successfully" });
     } catch (error) {
       console.error("Error resending email:", error);

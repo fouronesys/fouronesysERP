@@ -185,9 +185,9 @@ export default function SuperAdmin() {
   });
 
   const { data: companies, isLoading } = useQuery<Company[]>({
-    queryKey: ["/api/companies/all"],
+    queryKey: ["/api/admin/companies"],
     queryFn: async () => {
-      const response = await apiRequest('/api/companies/all');
+      const response = await apiRequest('/api/admin/companies');
       return response.json();
     },
   });
