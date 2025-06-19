@@ -1038,15 +1038,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const companies = await storage.searchCompaniesByName(query.toString());
       
       if (companies && companies.length > 0) {
+        const mappedData = companies.map(company => ({
+          rnc: company.rnc,
+          name: company.name || company.razonSocial,
+          razonSocial: company.razonSocial,
+          categoria: company.categoria || company.category || "CONTRIBUYENTE REGISTRADO",
+          estado: company.estado || company.status || "ACTIVO"
+        }));
+        
+        console.log('Mapped company data:', JSON.stringify(mappedData, null, 2)); // Debug log
+        
         return res.json({
           success: true,
-          data: companies.map(company => ({
-            rnc: company.rnc,
-            name: company.razonSocial,
-            razonSocial: company.razonSocial,
-            categoria: company.categoria || "CONTRIBUYENTE REGISTRADO",
-            estado: company.estado || "ACTIVO"
-          }))
+          data: mappedData
         });
       } else {
         return res.json({

@@ -2363,12 +2363,20 @@ export class DatabaseStorage implements IStorage {
         )
         .limit(limit);
       
-      return result.map(company => ({
+      console.log('Raw database result:', JSON.stringify(result, null, 2)); // Debug log
+      
+      const mappedResult = result.map(company => ({
         rnc: company.rnc,
-        name: company.razonSocial,
+        name: company.razonSocial || company.nombreComercial || 'Sin nombre',
+        razonSocial: company.razonSocial,
+        nombreComercial: company.nombreComercial,
         status: company.estado || 'ACTIVO',
         category: company.categoria || 'CONTRIBUYENTE REGISTRADO'
       }));
+      
+      console.log('Mapped result from storage:', JSON.stringify(mappedResult, null, 2)); // Debug log
+      
+      return mappedResult;
     } catch (error) {
       console.error('Error searching companies by name:', error);
       return [];
