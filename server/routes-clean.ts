@@ -216,17 +216,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/login", async (req, res) => {
     try {
       const { email, password } = req.body;
-      const user = await storage.getUserByEmail(email);
+      const user = await storage.authenticateUser(email, password);
       
       if (!user) {
-        return res.status(401).json({ message: "Invalid email or password" });
-      }
-
-      // For admin user, check password hash
-      const bcrypt = require('bcrypt');
-      const isValidPassword = await bcrypt.compare(password, user.password);
-      
-      if (!isValidPassword) {
         return res.status(401).json({ message: "Invalid email or password" });
       }
 
