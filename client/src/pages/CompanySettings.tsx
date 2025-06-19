@@ -208,9 +208,12 @@ export default function CompanySettings() {
       }
 
       try {
-        // Create image to check dimensions
+        // Create image to check dimensions with proper error handling
         const img = new Image();
         const url = URL.createObjectURL(file);
+        
+        // Set CORS for image loading
+        img.crossOrigin = 'anonymous';
         
         img.onload = async () => {
           URL.revokeObjectURL(url);
