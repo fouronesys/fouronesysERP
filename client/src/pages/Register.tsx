@@ -14,7 +14,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Building2, ArrowLeft, CheckCircle } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Building2, ArrowLeft, CheckCircle, Search, Check, AlertCircle } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 import logoImage from "@assets/Four One Solutions Logo_20250130_143401_0000.png";
 
 const registrationSchema = z.object({
@@ -33,10 +36,35 @@ const registrationSchema = z.object({
 
 type RegistrationFormData = z.infer<typeof registrationSchema>;
 
+interface RNCValidationResult {
+  valid: boolean;
+  message: string;
+  data?: {
+    rnc: string;
+    name?: string;
+    razonSocial?: string;
+    categoria?: string;
+    estado?: string;
+  };
+}
+
+interface RNCSuggestion {
+  rnc: string;
+  name: string;
+  razonSocial?: string;
+  categoria?: string;
+  estado?: string;
+}
+
 export default function Register() {
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [isVerifyingRNC, setIsVerifyingRNC] = useState(false);
+  const [rncValidationResult, setRncValidationResult] = useState<RNCValidationResult | null>(null);
+  const [rncSuggestions, setRncSuggestions] = useState<RNCSuggestion[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const { toast } = useToast();
 
   const form = useForm<RegistrationFormData>({
     resolver: zodResolver(registrationSchema),
@@ -44,6 +72,105 @@ export default function Register() {
       subscriptionPlan: "monthly",
     },
   });
+
+  const handleRNCVerification = async (rncValue: string) => {
+    if (!rncValue || rncValue.length < 9) return;
+    
+    setIsVerifyingRNC(true);
+    setRncValidationResult(null);
+    
+    try {
+      const response = await apiRequest(`/api/dgii/rnc-lookup?rnc=${encodeURIComponent(rncValue)}`);
+      const result = await response.json();
+      
+      if (result.success && result.data) {
+        setRncValidationResult({
+          valid: true,
+          message: "RNC válido y encontrado en DGII",
+          data: result.data
+        });
+        
+        // Auto-llenar campos si están vacíos
+        if (result.data.name && !form.getValues("companyName")) {
+          form.setValue("companyName", result.data.name);
+        }
+        if (result.data.razonSocial && !form.getValues("businessName")) {
+          form.setValue("businessName", result.data.razonSocial);
+        }
+        
+        toast({
+          title: "RNC Verificado",
+          description: `Empresa: ${result.data.name || result.data.razonSocial}`,
+        });
+      } else {
+        setRncValidationResult({
+          valid: false,
+          message: result.message || "RNC no encontrado en DGII"
+        });
+      }
+    } catch (error) {
+      console.error('Error verifying RNC:', error);
+      setRncValidationResult({
+        valid: false,
+        message: "Error al verificar RNC. Intente nuevamente."
+      });
+    } finally {
+      setIsVerifyingRNC(false);
+    }
+  };
+
+  const searchRNCCompanies = async (searchTerm: string) => {
+    if (!searchTerm || searchTerm.length < 3) {
+      setRncSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+
+    try {
+      const response = await apiRequest(`/api/dgii/search-companies?query=${encodeURIComponent(searchTerm)}`);
+      const result = await response.json();
+      
+      if (result.success && result.data && Array.isArray(result.data)) {
+        setRncSuggestions(result.data.slice(0, 5)); // Mostrar máximo 5 sugerencias
+        setShowSuggestions(true);
+      } else {
+        setRncSuggestions([]);
+        setShowSuggestions(false);
+      }
+    } catch (error) {
+      console.error('Error searching companies:', error);
+      setRncSuggestions([]);
+      setShowSuggestions(false);
+    }
+  };
+
+  const selectRNCFromSuggestion = (suggestion: RNCSuggestion) => {
+    form.setValue("rnc", suggestion.rnc);
+    form.setValue("companyName", suggestion.name);
+    if (suggestion.razonSocial) {
+      form.setValue("businessName", suggestion.razonSocial);
+    }
+    
+    setRncValidationResult({
+      valid: true,
+      message: "RNC seleccionado de la lista DGII",
+      data: {
+        rnc: suggestion.rnc,
+        name: suggestion.name,
+        razonSocial: suggestion.razonSocial,
+        categoria: suggestion.categoria,
+        estado: suggestion.estado
+      }
+    });
+    
+    setShowSuggestions(false);
+    setRncSuggestions([]);
+    
+    toast({
+      title: "Empresa Seleccionada",
+      description: `${suggestion.name} - RNC: ${suggestion.rnc}`,
+    });
+  };
 
   const onSubmit = async (data: RegistrationFormData) => {
     setIsSubmitting(true);
@@ -155,13 +282,116 @@ export default function Register() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="rnc">RNC</Label>
-                    <Input
-                      id="rnc"
-                      placeholder="131-12345-6"
-                      {...form.register("rnc")}
-                    />
+                  <div className="space-y-2 relative">
+                    <Label htmlFor="rnc" className="flex items-center gap-2">
+                      RNC (Registro Nacional del Contribuyente)
+                      {isVerifyingRNC && <Search className="h-3 w-3 animate-spin" />}
+                    </Label>
+                    <div className="flex gap-2">
+                      <Input
+                        id="rnc"
+                        placeholder="131-12345-6 o buscar por nombre"
+                        {...form.register("rnc")}
+                        onChange={(e) => {
+                          form.setValue("rnc", e.target.value);
+                          // Buscar empresas si se está escribiendo texto
+                          if (isNaN(Number(e.target.value.replace(/\D/g, '')))) {
+                            searchRNCCompanies(e.target.value);
+                          } else {
+                            setShowSuggestions(false);
+                          }
+                          // Limpiar validación anterior
+                          if (rncValidationResult) {
+                            setRncValidationResult(null);
+                          }
+                        }}
+                        onBlur={(e) => {
+                          const rncValue = e.target.value?.replace(/\D/g, '') || '';
+                          if (rncValue && rncValue.length >= 9) {
+                            handleRNCVerification(rncValue);
+                          }
+                          // Ocultar sugerencias después de un delay
+                          setTimeout(() => setShowSuggestions(false), 200);
+                        }}
+                        className={`${
+                          rncValidationResult?.valid === true 
+                            ? "border-green-500 bg-green-50 dark:bg-green-950" 
+                            : rncValidationResult?.valid === false 
+                            ? "border-red-500 bg-red-50 dark:bg-red-950" 
+                            : ""
+                        } flex-1`}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={isVerifyingRNC || !form.watch("rnc")}
+                        onClick={() => {
+                          const rncValue = form.watch("rnc")?.replace(/\D/g, '') || '';
+                          if (rncValue) {
+                            handleRNCVerification(rncValue);
+                          }
+                        }}
+                      >
+                        {isVerifyingRNC ? (
+                          <Search className="h-4 w-4 animate-spin" />
+                        ) : (
+                          "Verificar"
+                        )}
+                      </Button>
+                    </div>
+                    
+                    {/* Mostrar estado de validación */}
+                    {rncValidationResult && (
+                      <div className={`flex items-center gap-2 text-sm ${
+                        rncValidationResult.valid ? "text-green-600" : "text-red-600"
+                      }`}>
+                        {rncValidationResult.valid ? (
+                          <Check className="h-4 w-4" />
+                        ) : (
+                          <AlertCircle className="h-4 w-4" />
+                        )}
+                        <span>{rncValidationResult.message}</span>
+                        {rncValidationResult.valid && rncValidationResult.data && (
+                          <Badge variant="secondary" className="ml-2">
+                            {rncValidationResult.data.estado || "Activo"}
+                          </Badge>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Mostrar sugerencias de empresas */}
+                    {showSuggestions && rncSuggestions.length > 0 && (
+                      <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg max-h-48 overflow-y-auto">
+                        <div className="p-2 text-xs text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700">
+                          Selecciona una empresa de la lista DGII:
+                        </div>
+                        {rncSuggestions.map((suggestion, index) => (
+                          <button
+                            key={index}
+                            type="button"
+                            className="w-full text-left p-3 hover:bg-gray-100 dark:hover:bg-gray-700 border-b border-gray-100 dark:border-gray-700 last:border-b-0"
+                            onClick={() => selectRNCFromSuggestion(suggestion)}
+                          >
+                            <div className="font-medium text-sm">{suggestion.name}</div>
+                            <div className="text-xs text-gray-500 dark:text-gray-400">
+                              RNC: {suggestion.rnc}
+                              {suggestion.categoria && ` • ${suggestion.categoria}`}
+                              {suggestion.estado && (
+                                <Badge variant="outline" className="ml-2 text-xs">
+                                  {suggestion.estado}
+                                </Badge>
+                              )}
+                            </div>
+                            {suggestion.razonSocial && suggestion.razonSocial !== suggestion.name && (
+                              <div className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                                {suggestion.razonSocial}
+                              </div>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
                   <div className="space-y-2">

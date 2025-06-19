@@ -972,12 +972,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // DGII RNC Lookup API endpoint
-  app.get("/api/dgii/rnc-lookup", isAuthenticated, async (req, res) => {
+  app.get("/api/dgii/rnc-lookup", async (req, res) => {
     try {
       const { rnc } = req.query;
       
       if (!rnc) {
         return res.status(400).json({
+          success: false,
           error: "RNC parameter is required"
         });
       }
@@ -987,7 +988,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (cleanRnc.length < 9 || cleanRnc.length > 11) {
         return res.json({
-          error: `RNC debe tener entre 9 y 11 dígitos. RNC procesado: ${cleanRnc} (${cleanRnc.length} dígitos)`
+          success: false,
+          message: `RNC debe tener entre 9 y 11 dígitos. RNC procesado: ${cleanRnc} (${cleanRnc.length} dígitos)`
         });
       }
 
@@ -996,24 +998,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (rncData) {
         return res.json({
-          rnc: cleanRnc,
-          name: rncData.razonSocial,
-          status: rncData.estado || "ACTIVO",
-          regime: rncData.categoria || "CONTRIBUYENTE REGISTRADO",
-          businessName: rncData.nombreComercial || rncData.razonSocial,
-          found: true
+          success: true,
+          data: {
+            rnc: cleanRnc,
+            name: rncData.razonSocial,
+            razonSocial: rncData.razonSocial,
+            categoria: rncData.categoria || "CONTRIBUYENTE REGISTRADO",
+            estado: rncData.estado || "ACTIVO"
+          }
         });
       } else {
         return res.json({
-          rnc: cleanRnc,
-          error: "RNC no encontrado en el registro oficial de DGII",
-          found: false
+          success: false,
+          message: "RNC no encontrado en el registro oficial de DGII"
         });
       }
     } catch (error) {
       console.error("Error in RNC lookup:", error);
       res.status(500).json({
-        error: "Error interno del servidor al buscar RNC"
+        success: false,
+        message: "Error interno del servidor al buscar RNC"
+      });
+    }
+  });
+
+  // DGII Company Search API endpoint
+  app.get("/api/dgii/search-companies", async (req, res) => {
+    try {
+      const { query } = req.query;
+      
+      if (!query || query.toString().length < 3) {
+        return res.json({
+          success: false,
+          message: "Query debe tener al menos 3 caracteres"
+        });
+      }
+
+      // Search companies by name in DGII registry
+      const companies = await storage.searchCompaniesByName(query.toString());
+      
+      if (companies && companies.length > 0) {
+        return res.json({
+          success: true,
+          data: companies.map(company => ({
+            rnc: company.rnc,
+            name: company.razonSocial,
+            razonSocial: company.razonSocial,
+            categoria: company.categoria || "CONTRIBUYENTE REGISTRADO",
+            estado: company.estado || "ACTIVO"
+          }))
+        });
+      } else {
+        return res.json({
+          success: false,
+          message: "No se encontraron empresas con ese nombre"
+        });
+      }
+    } catch (error) {
+      console.error("Error searching companies:", error);
+      res.status(500).json({
+        success: false,
+        message: "Error interno del servidor al buscar empresas"
       });
     }
   });
