@@ -109,19 +109,31 @@ export default function SuperAdmin() {
 
     setIsVerifyingRNC(true);
     try {
-      const response = await apiRequest("GET", `/api/customers/verify-rnc/${rncValue.replace(/\D/g, "")}`);
+      const cleanRnc = rncValue.replace(/\D/g, "");
+      const response = await fetch(`/api/verify-rnc/${cleanRnc}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include'
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
       const result = await response.json();
 
-      if (result.isValid) {
+      if (result.valid) {
         setRncValidationResult({
           valid: true,
           message: "RNC válido y registrado en DGII",
-          data: result,
+          data: result.data,
         });
 
         // Auto-fill company name if available
-        if (result.companyName && !form.getValues("name")) {
-          form.setValue("name", result.companyName);
+        if (result.data?.companyName && !form.getValues("name")) {
+          form.setValue("name", result.data.companyName);
         }
       } else {
         setRncValidationResult({
