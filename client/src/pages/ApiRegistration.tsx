@@ -27,6 +27,9 @@ export default function ApiRegistration() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [registrationComplete, setRegistrationComplete] = useState(false);
   const [apiKey, setApiKey] = useState("");
+  const [showLogin, setShowLogin] = useState(false);
+  const [loginEmail, setLoginEmail] = useState("");
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
   const { toast } = useToast();
 
   const form = useForm<RegistrationData>({
@@ -56,7 +59,7 @@ export default function ApiRegistration() {
       setRegistrationComplete(true);
       toast({
         title: "Registro exitoso",
-        description: "Tu clave API ha sido generada correctamente",
+        description: "Tu clave API ha sido generada y enviada por correo electrónico",
       });
     } catch (error: any) {
       toast({
@@ -66,6 +69,54 @@ export default function ApiRegistration() {
       });
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleLogin = async () => {
+    if (!loginEmail) {
+      toast({
+        title: "Email requerido",
+        description: "Por favor ingresa tu email para acceder a tu API key",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoggingIn(true);
+    try {
+      const response = await fetch("/api/developers/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ email: loginEmail })
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        setApiKey(result.apiKey);
+        setRegistrationComplete(true);
+        setShowLogin(false);
+        toast({
+          title: "Acceso exitoso",
+          description: "Tu API key ha sido enviada por correo electrónico",
+        });
+      } else {
+        const error = await response.json();
+        toast({
+          title: "Error de acceso",
+          description: error.message || "No se encontró una cuenta con este email",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error de conexión",
+        description: "No se pudo conectar con el servidor",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoggingIn(false);
     }
   };
 
@@ -193,12 +244,35 @@ export default function ApiRegistration() {
           </div>
         </div>
 
-        {/* Registration Form */}
+        {/* Toggle between Registration and Login */}
+        <div className="flex justify-center mb-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-1 shadow-sm border">
+            <Button
+              variant={!showLogin ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setShowLogin(false)}
+            >
+              Nuevo Registro
+            </Button>
+            <Button
+              variant={showLogin ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setShowLogin(true)}
+            >
+              Ya tengo cuenta
+            </Button>
+          </div>
+        </div>
+
+        {/* Registration/Login Form */}
         <Card className="max-w-2xl mx-auto">
           <CardHeader>
-            <CardTitle>Registro de Desarrollador</CardTitle>
+            <CardTitle>{showLogin ? "Acceder a mi API Key" : "Registro de Desarrollador"}</CardTitle>
             <CardDescription>
-              Completa este formulario para obtener tu clave API gratuita
+              {showLogin 
+                ? "Ingresa tu email para recibir tu clave API por correo"
+                : "Completa este formulario para obtener tu clave API gratuita"
+              }
             </CardDescription>
           </CardHeader>
           <CardContent>
