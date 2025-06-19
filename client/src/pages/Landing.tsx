@@ -35,7 +35,7 @@ export default function Landing() {
                 <span className="sm:hidden">Login</span>
               </Button>
               <Button 
-                onClick={() => window.location.href = "/auth"}
+                onClick={() => window.location.href = "/register"}
                 className="px-2 sm:px-4 py-2 text-xs sm:text-sm bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white border-none transition-all"
               >
                 <span className="hidden sm:inline">Registrarse</span>
@@ -461,14 +461,14 @@ export default function Landing() {
                 
                 <div className="space-y-3">
                   <Button 
-                    onClick={() => window.location.href = "/auth"}
+                    onClick={() => window.location.href = "/register"}
                     className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white border-none"
                   >
                     Comenzar Ahora
                   </Button>
                   <Button 
                     variant="outline"
-                    onClick={() => window.location.href = "/auth"}
+                    onClick={() => window.location.href = "/register"}
                     className="w-full border-green-400 text-green-300 bg-transparent hover:bg-green-400 hover:text-black"
                   >
                     Registrar Nueva Empresa
