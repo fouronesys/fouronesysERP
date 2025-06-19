@@ -94,6 +94,7 @@ export const companies = pgTable("companies", {
   timezone: varchar("timezone", { length: 50 }).default("America/Santo_Domingo"),
   subscriptionPlan: varchar("subscription_plan", { length: 20 }).default("trial"), // trial, monthly, annual
   subscriptionExpiry: timestamp("subscription_expiry"),
+  paymentConfirmed: boolean("payment_confirmed").default(false), // Admin-controlled payment confirmation
   registrationStatus: varchar("registration_status", { length: 20 }).default("pending"), // pending, completed, expired
   invitationToken: varchar("invitation_token", { length: 255 }), // token for registration link
   invitationSentAt: timestamp("invitation_sent_at"),

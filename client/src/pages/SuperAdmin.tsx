@@ -78,9 +78,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { RNCCompanySuggestions } from "@/components/RNCCompanySuggestions";
 
-// Schema for admin form with ownerEmail
+// Schema for admin form with ownerEmail and paymentConfirmed
 const companySchemaForAdmin = insertCompanySchema.extend({
   ownerEmail: z.string().email("Email del propietario requerido"),
+  paymentConfirmed: z.boolean().default(false),
 }).omit({ ownerId: true });
 
 type CompanyFormData = z.infer<typeof companySchemaForAdmin>;
@@ -343,6 +344,7 @@ export default function SuperAdmin() {
       industry: company.industry || "",
       subscriptionPlan: company.subscriptionPlan as "trial" | "monthly" | "annual",
       isActive: company.isActive,
+      paymentConfirmed: company.paymentConfirmed || false,
       ownerEmail: company.ownerEmail || "",
     });
     setIsDialogOpen(true);
@@ -512,8 +514,9 @@ export default function SuperAdmin() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="h-screen flex flex-col">
       <Header title="Panel de Super Administrador" />
+      <div className="flex-1 overflow-y-auto p-6 space-y-6">
       
       {/* Statistics Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -862,6 +865,27 @@ export default function SuperAdmin() {
                             </FormItem>
                           )}
                         />
+
+                        <FormField
+                          control={form.control}
+                          name="paymentConfirmed"
+                          render={({ field }) => (
+                            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                              <div className="space-y-0.5">
+                                <FormLabel className="text-base">Pago Confirmado</FormLabel>
+                                <p className="text-sm text-muted-foreground">
+                                  Marca el pago como confirmado por el administrador
+                                </p>
+                              </div>
+                              <FormControl>
+                                <Switch
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
+                                />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
                       </div>
 
                       <FormField
@@ -1060,6 +1084,7 @@ export default function SuperAdmin() {
           )}
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 }
