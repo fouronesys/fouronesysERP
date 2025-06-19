@@ -101,6 +101,10 @@ export const companies = pgTable("companies", {
   ownerEmail: varchar("owner_email", { length: 255 }), // email del propietario para invitación
   isActive: boolean("is_active").notNull().default(true),
   ownerId: varchar("owner_id").notNull().references(() => users.id),
+  // Settings storage fields
+  systemSettings: text("system_settings"), // JSON storage for system preferences
+  securitySettings: text("security_settings"), // JSON storage for security settings
+  posSettings: text("pos_settings"), // JSON storage for POS configuration
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

@@ -3845,6 +3845,63 @@ export class DatabaseStorage implements IStorage {
       .limit(1);
     return result;
   }
+
+  // Update user profile
+  async updateUser(userId: string, userData: Partial<User>): Promise<User> {
+    const [updatedUser] = await db
+      .update(users)
+      .set({
+        ...userData,
+        updatedAt: new Date()
+      })
+      .where(eq(users.id, userId))
+      .returning();
+    return updatedUser;
+  }
+
+  // Settings management methods
+  async updateSystemSettings(userId: string, settings: any): Promise<void> {
+    // Store settings in a simple key-value format using company settings
+    const company = await this.getCompanyByUserId(userId);
+    if (company) {
+      await db.update(companies)
+        .set({ 
+          systemSettings: JSON.stringify(settings),
+          updatedAt: new Date()
+        })
+        .where(eq(companies.id, company.id));
+    }
+  }
+
+  async updateSecuritySettings(userId: string, settings: any): Promise<void> {
+    const company = await this.getCompanyByUserId(userId);
+    if (company) {
+      await db.update(companies)
+        .set({ 
+          securitySettings: JSON.stringify(settings),
+          updatedAt: new Date()
+        })
+        .where(eq(companies.id, company.id));
+    }
+  }
+
+  async updatePOSSettings(userId: string, settings: any): Promise<void> {
+    const company = await this.getCompanyByUserId(userId);
+    if (company) {
+      await db.update(companies)
+        .set({ 
+          posSettings: JSON.stringify(settings),
+          updatedAt: new Date()
+        })
+        .where(eq(companies.id, company.id));
+    }
+  }
+
+  async changePassword(userId: string, currentPassword: string, newPassword: string): Promise<void> {
+    // For Replit Auth users, password changes would need to be handled through the auth provider
+    // This is a placeholder for the functionality
+    throw new Error("Password changes must be handled through your authentication provider");
+  }
 }
 
 export const storage = new DatabaseStorage();

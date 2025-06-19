@@ -1516,5 +1516,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update system settings
+  app.put("/api/settings/system", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req as any).user.claims.sub;
+      const settings = req.body;
+
+      // Store system settings for the user
+      await storage.updateSystemSettings(userId, settings);
+
+      res.json({ success: true, message: "Settings updated successfully" });
+    } catch (error) {
+      console.error("Error updating system settings:", error);
+      res.status(500).json({ message: "Error updating settings" });
+    }
+  });
+
+  // Update security settings
+  app.put("/api/settings/security", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req as any).user.claims.sub;
+      const settings = req.body;
+
+      await storage.updateSecuritySettings(userId, settings);
+
+      res.json({ success: true, message: "Security settings updated successfully" });
+    } catch (error) {
+      console.error("Error updating security settings:", error);
+      res.status(500).json({ message: "Error updating security settings" });
+    }
+  });
+
+  // Update POS settings
+  app.put("/api/pos/print-settings", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req as any).user.claims.sub;
+      const settings = req.body;
+
+      await storage.updatePOSSettings(userId, settings);
+
+      res.json({ success: true, message: "POS settings updated successfully" });
+    } catch (error) {
+      console.error("Error updating POS settings:", error);
+      res.status(500).json({ message: "Error updating POS settings" });
+    }
+  });
+
+  // Change password
+  app.put("/api/auth/change-password", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req as any).user.claims.sub;
+      const { currentPassword, newPassword } = req.body;
+
+      // Verify current password and update to new one
+      await storage.changePassword(userId, currentPassword, newPassword);
+
+      res.json({ success: true, message: "Password changed successfully" });
+    } catch (error) {
+      console.error("Error changing password:", error);
+      res.status(400).json({ message: "Invalid current password or error updating password" });
+    }
+  });
+
   return httpServer;
 }

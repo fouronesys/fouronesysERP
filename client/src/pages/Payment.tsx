@@ -227,9 +227,15 @@ export default function Payment() {
 
     setIsSubmitting(true);
     try {
-      const response = await apiRequest("POST", "/api/submit-payment", {
-        ...data,
-        userId: user?.id
+      const response = await fetch("/api/submit-payment", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          ...data,
+          userId: user?.id
+        })
       });
 
       setShowSuccess(true);
