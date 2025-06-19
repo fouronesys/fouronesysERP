@@ -3913,16 +3913,24 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updatePaymentStatus(paymentId: number, status: string, adminNotes?: string): Promise<any> {
-    const [payment] = await db
-      .update(paymentSubmissions)
-      .set({
-        status,
-        adminNotes,
-        processedAt: new Date()
-      })
-      .where(eq(paymentSubmissions.id, paymentId))
-      .returning();
-    return payment;
+    console.log(`[DEBUG STORAGE] Updating payment ID: ${paymentId} to status: ${status}`);
+    try {
+      const [payment] = await db
+        .update(paymentSubmissions)
+        .set({
+          status,
+          adminNotes,
+          processedAt: new Date()
+        })
+        .where(eq(paymentSubmissions.id, paymentId))
+        .returning();
+      
+      console.log(`[DEBUG STORAGE] Payment update result:`, payment);
+      return payment;
+    } catch (error) {
+      console.error(`[DEBUG STORAGE] Error updating payment:`, error);
+      throw error;
+    }
   }
 
   async getUserPaymentStatus(email: string): Promise<any> {

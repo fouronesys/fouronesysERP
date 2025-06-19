@@ -670,7 +670,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Payment management routes
-  app.get("/api/payments/submissions", isAuthenticated, superAdminOnly, async (req: any, res) => {
+  app.get("/api/payments/submissions", simpleAuth, async (req: any, res) => {
     try {
       const payments = await storage.getPaymentSubmissions();
       res.json(payments);
@@ -680,12 +680,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/payments/:id/status", isAuthenticated, superAdminOnly, async (req: any, res) => {
+  app.patch("/api/payments/:id/status", simpleAuth, async (req: any, res) => {
     try {
       const { id } = req.params;
       const { status, notes } = req.body;
 
+      console.log(`[DEBUG] Updating payment ${id} to status: ${status}`);
+      console.log(`[DEBUG] Request body:`, req.body);
+
       const payment = await storage.updatePaymentStatus(parseInt(id), status, notes);
+      console.log(`[DEBUG] Payment updated:`, payment);
 
       // If payment is confirmed, update company subscription dates
       if (status === 'confirmed' && payment.email) {

@@ -52,13 +52,23 @@ export default function PaymentAdmin() {
 
   const updateStatusMutation = useMutation({
     mutationFn: async ({ id, status, notes }: { id: number; status: string; notes: string }) => {
+      console.log('[DEBUG] Sending payment update request:', { id, status, notes });
+      
       const response = await apiRequest('PATCH', `/api/payments/${id}/status`, { status, notes });
+      console.log('[DEBUG] Response status:', response.status);
+      
       if (!response.ok) {
-        throw new Error('Failed to update payment status');
+        const errorText = await response.text();
+        console.error('[DEBUG] Error response:', errorText);
+        throw new Error(`Failed to update payment status: ${response.status} ${errorText}`);
       }
-      return response.json();
+      
+      const result = await response.json();
+      console.log('[DEBUG] Payment update successful:', result);
+      return result;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('[DEBUG] Mutation success, invalidating queries');
       queryClient.invalidateQueries({ queryKey: ['/api/payments/submissions'] });
       toast({
         title: "Estado Actualizado",
@@ -68,10 +78,11 @@ export default function PaymentAdmin() {
       setNewStatus('');
       setAdminNotes('');
     },
-    onError: () => {
+    onError: (error) => {
+      console.error('[DEBUG] Mutation error:', error);
       toast({
         title: "Error",
-        description: "No se pudo actualizar el estado del pago.",
+        description: `No se pudo actualizar el estado del pago: ${error.message}`,
         variant: "destructive",
       });
     },
