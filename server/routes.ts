@@ -669,6 +669,137 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Payment management routes
+  app.get("/api/payments/submissions", isAuthenticated, superAdminOnly, async (req: any, res) => {
+    try {
+      const payments = await storage.getPaymentSubmissions();
+      res.json(payments);
+    } catch (error) {
+      console.error("Error fetching payment submissions:", error);
+      res.status(500).json({ message: "Failed to fetch payment submissions" });
+    }
+  });
+
+  app.patch("/api/payments/:id/status", isAuthenticated, superAdminOnly, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const { status, notes } = req.body;
+
+      const payment = await storage.updatePaymentStatus(parseInt(id), status, notes);
+
+      // If payment is confirmed, update company subscription dates
+      if (status === 'confirmed' && payment.email) {
+        try {
+          // Find user by email to get their company
+          const user = await storage.getUserByEmail(payment.email);
+          if (user) {
+            const company = await storage.getCompanyByUserId(user.id);
+            if (company) {
+              // Set subscription dates based on payment confirmation date
+              const confirmationDate = new Date();
+              const expiryDate = new Date();
+              
+              // Determine subscription period based on amount or plan
+              const amount = parseFloat(payment.amount || '0');
+              if (amount >= 20000) { // Annual plan (assuming $200+ for annual)
+                expiryDate.setFullYear(confirmationDate.getFullYear() + 1);
+              } else {
+                expiryDate.setMonth(confirmationDate.getMonth() + 1);
+              }
+
+              await storage.updateCompany(company.id, {
+                subscriptionStartDate: confirmationDate,
+                subscriptionExpiry: expiryDate,
+                subscriptionPlan: amount >= 20000 ? 'annual' : 'monthly'
+              });
+            }
+          }
+        } catch (error) {
+          console.error('Failed to update subscription dates:', error);
+        }
+      }
+
+      await auditLogger.log({
+        userId: req.user.id,
+        module: 'Payment',
+        action: 'PAYMENT_STATUS_UPDATED',
+        entityType: 'payment',
+        entityId: id,
+        newValues: { status, notes },
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent'),
+        timestamp: new Date(),
+        success: true,
+        severity: 'info'
+      });
+
+      res.json(payment);
+    } catch (error) {
+      console.error("Error updating payment status:", error);
+      res.status(500).json({ message: "Failed to update payment status" });
+    }
+  });
+
+  app.get("/api/user/payment-status", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const userEmail = req.user.email;
+      
+      // Check if user is super admin
+      const isSuperAdmin = await storage.isUserSuperAdmin(userId);
+      
+      // Super admins always have valid payment access
+      if (isSuperAdmin) {
+        return res.json({ 
+          hasValidPayment: true, 
+          status: 'confirmed', 
+          message: 'Super admin access - bypass payment requirements',
+          isSuperAdmin: true
+        });
+      }
+      
+      // Find user's payment submission
+      const submission = await storage.getUserPaymentStatus(userEmail);
+      
+      if (!submission) {
+        return res.json({ 
+          hasValidPayment: false, 
+          status: 'pending', 
+          message: 'No payment submission found' 
+        });
+      }
+      
+      // Check if payment is confirmed
+      const hasValidPayment = submission.status === 'confirmed';
+      
+      res.json({ 
+        hasValidPayment,
+        status: submission.status || 'pending',
+        submittedAt: submission.submittedAt,
+        processedAt: submission.processedAt
+      });
+    } catch (error) {
+      console.error("Error fetching user payment status:", error);
+      res.status(500).json({ message: "Failed to fetch payment status" });
+    }
+  });
+
+  app.get("/api/companies/current", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+      
+      res.json(company);
+    } catch (error) {
+      console.error("Error fetching current company:", error);
+      res.status(500).json({ message: "Failed to fetch company" });
+    }
+  });
+
   // Downloads endpoint
   app.get("/api/downloads/available", async (req, res) => {
     try {

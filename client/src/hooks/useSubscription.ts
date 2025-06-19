@@ -65,7 +65,7 @@ export function useSubscription() {
 
   const daysUntilExpiry = (): number => {
     if (!company?.subscriptionExpiry) {
-      return 30; // Default 30 days for active subscriptions
+      return 30; // Default 30 days for trial subscriptions
     }
     
     const expiryDate = new Date(company.subscriptionExpiry);
