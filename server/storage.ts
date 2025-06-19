@@ -3141,35 +3141,7 @@ export class DatabaseStorage implements IStorage {
     return payment;
   }
 
-  async getPaymentSubmissions(): Promise<any[]> {
-    return await db
-      .select()
-      .from(paymentSubmissions)
-      .orderBy(desc(paymentSubmissions.submittedAt));
-  }
-
-  async updatePaymentStatus(paymentId: number, status: string, adminNotes?: string): Promise<any> {
-    const [payment] = await db
-      .update(paymentSubmissions)
-      .set({
-        status,
-        adminNotes,
-        processedAt: new Date()
-      })
-      .where(eq(paymentSubmissions.id, paymentId))
-      .returning();
-    return payment;
-  }
-
-  async getUserPaymentStatus(email: string): Promise<any> {
-    const [payment] = await db
-      .select()
-      .from(paymentSubmissions)
-      .where(eq(paymentSubmissions.email, email))
-      .orderBy(desc(paymentSubmissions.submittedAt))
-      .limit(1);
-    return payment;
-  }
+  // Payment methods moved to end of class to avoid duplicates
 
   async getAllCompaniesWithDetails() {
     const companiesWithDetails = await db
