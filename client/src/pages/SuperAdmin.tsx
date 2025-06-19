@@ -178,7 +178,10 @@ export default function SuperAdmin() {
 
   const createMutation = useMutation({
     mutationFn: async (data: CompanyFormData) => {
-      const response = await apiRequest("POST", "/api/admin/companies", data);
+      const response = await apiRequest("/api/admin/companies", {
+        method: "POST",
+        body: data
+      });
       return response.json();
     },
     onSuccess: () => {
@@ -203,12 +206,10 @@ export default function SuperAdmin() {
   const updateMutation = useMutation({
     mutationFn: async (data: CompanyFormData) => {
       if (!editingCompany) throw new Error("No company selected for editing");
-      const response = await apiRequest("PUT", `/api/admin/companies/${editingCompany.id}`, data);
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
-      }
+      const response = await apiRequest(`/api/admin/companies/${editingCompany.id}`, {
+        method: "PUT",
+        body: data
+      });
       
       return response.json();
     },
@@ -238,7 +239,10 @@ export default function SuperAdmin() {
 
   const toggleStatusMutation = useMutation({
     mutationFn: async ({ id, isActive }: { id: number; isActive: boolean }) => {
-      const response = await apiRequest("PATCH", `/api/admin/companies/${id}/status`, { isActive });
+      const response = await apiRequest(`/api/admin/companies/${id}/status`, {
+        method: "PATCH",
+        body: { isActive }
+      });
       return response.json();
     },
     onSuccess: () => {
@@ -259,7 +263,9 @@ export default function SuperAdmin() {
 
   const deleteCompanyMutation = useMutation({
     mutationFn: async (companyId: number) => {
-      const response = await apiRequest("DELETE", `/api/admin/companies/${companyId}`);
+      const response = await apiRequest(`/api/admin/companies/${companyId}`, {
+        method: "DELETE"
+      });
       return response.json();
     },
     onSuccess: () => {
@@ -280,7 +286,10 @@ export default function SuperAdmin() {
 
   const resendEmailMutation = useMutation({
     mutationFn: async (companyId: number) => {
-      const response = await apiRequest("POST", `/api/admin/companies/${companyId}/resend-email`, {});
+      const response = await apiRequest(`/api/admin/companies/${companyId}/resend-email`, {
+        method: "POST",
+        body: {}
+      });
       return response.json();
     },
     onSuccess: (data: any) => {
@@ -356,7 +365,10 @@ export default function SuperAdmin() {
 
   const bulkActivateMutation = useMutation({
     mutationFn: async (companyIds: number[]) => {
-      const response = await apiRequest("PATCH", "/api/admin/companies/bulk-activate", { companyIds });
+      const response = await apiRequest("/api/admin/companies/bulk-activate", {
+        method: "PATCH",
+        body: { companyIds }
+      });
       return response.json();
     },
     onSuccess: () => {
@@ -378,7 +390,10 @@ export default function SuperAdmin() {
 
   const bulkDeactivateMutation = useMutation({
     mutationFn: async (companyIds: number[]) => {
-      const response = await apiRequest("PATCH", "/api/admin/companies/bulk-deactivate", { companyIds });
+      const response = await apiRequest("/api/admin/companies/bulk-deactivate", {
+        method: "PATCH",
+        body: { companyIds }
+      });
       return response.json();
     },
     onSuccess: () => {
