@@ -585,9 +585,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const { id } = req.params;
-      const { isActive, notes } = req.body;
+      const { isActive } = req.body;
 
-      const company = await storage.updateCompanyStatus(parseInt(id), isActive, notes);
+      const company = await storage.updateCompanyStatus(parseInt(id), isActive);
       
       // Log company status update
       await auditLogger.logUserAction(
@@ -597,7 +597,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         'company',
         id,
         null,
-        { isActive, notes },
+        { isActive },
         req
       );
       
@@ -605,6 +605,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error updating company status:", error);
       res.status(500).json({ message: "Failed to update company status" });
+    }
+  });
+
+  // Delete company
+  app.delete("/api/admin/companies/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const user = req.user;
+      if (!user || (user.email !== 'admin@fourone.com.do' && user.role !== 'super_admin')) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      const companyId = parseInt(req.params.id);
+      
+      await storage.deleteCompany(companyId);
+      
+      // Log company deletion
+      await auditLogger.logUserAction(
+        user.id,
+        companyId,
+        'COMPANY_DELETED',
+        'company',
+        req.params.id,
+        null,
+        { companyId },
+        req
+      );
+      
+      res.json({ success: true, message: "Company deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting company:", error);
+      res.status(500).json({ message: "Failed to delete company" });
     }
   });
 
