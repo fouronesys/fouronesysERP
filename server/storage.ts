@@ -192,6 +192,7 @@ export interface IStorage {
   // Customer operations
   getCustomers(companyId: number): Promise<Customer[]>;
   getCustomer(id: number, companyId: number): Promise<Customer | undefined>;
+  getCustomerByRNC(companyId: number, rnc: string): Promise<Customer | undefined>;
   createCustomer(customer: InsertCustomer): Promise<Customer>;
   updateCustomer(id: number, customer: Partial<InsertCustomer>, companyId: number): Promise<Customer | undefined>;
   deleteCustomer(id: number, companyId: number): Promise<void>;
@@ -832,6 +833,14 @@ export class DatabaseStorage implements IStorage {
     await db
       .delete(customers)
       .where(and(eq(customers.id, id), eq(customers.companyId, companyId)));
+  }
+
+  async getCustomerByRNC(companyId: number, rnc: string): Promise<Customer | undefined> {
+    const [customer] = await db
+      .select()
+      .from(customers)
+      .where(and(eq(customers.companyId, companyId), eq(customers.rnc, rnc)));
+    return customer;
   }
 
   // Supplier operations moved to purchases module
