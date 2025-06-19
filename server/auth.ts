@@ -31,8 +31,10 @@ export function setupAuth(app: Express) {
       httpOnly: true,
       secure: false, // Disable secure for development
       sameSite: 'lax',
-      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days - Extended for deployment stability
     },
+    rolling: true, // Extend session on each request
+    name: 'fourone.sid', // Custom session name
   };
 
   app.set("trust proxy", 1);

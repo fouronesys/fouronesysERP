@@ -421,7 +421,7 @@ export class DGIIRegistryUpdater {
   /**
    * Get update status and statistics
    */
-  public getUpdateStatus(): {
+  public getStatus(): {
     isUpdating: boolean;
     lastUpdate: Date | null;
     nextUpdate: Date | null;
