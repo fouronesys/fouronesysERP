@@ -22,7 +22,7 @@ function simpleAuth(req: any, res: any, next: any) {
   // For now, allow admin operations without session for testing
   // In production, this should check proper authentication
   req.user = { 
-    id: "admin", 
+    id: "admin-fourone-001", 
     email: "admin@fourone.com.do", 
     role: "super_admin" 
   };
