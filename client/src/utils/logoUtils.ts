@@ -3,50 +3,51 @@
  */
 
 export interface LogoSizeConfig {
-  width: number;
-  height: number;
+  maxSize: number;
   quality: number;
   format: 'png' | 'jpeg';
 }
 
 export const LOGO_CONFIGS = {
-  // For 58mm thermal printers (small receipts)
+  // For 58mm thermal printers (small receipts) - adaptive from source
   thermal58mm: {
-    width: 128,
-    height: 128,
+    maxSize: 128,
     quality: 0.9,
     format: 'png' as const
   },
   
-  // For 80mm thermal printers (standard receipts)
+  // For 80mm thermal printers (standard receipts) - adaptive from source
   thermal80mm: {
-    width: 200,
-    height: 200,
+    maxSize: 200,
     quality: 0.9,
     format: 'png' as const
   },
   
-  // For A4 PDF invoices (high quality)
+  // For A4 PDF invoices (high quality) - adaptive from source
   pdf: {
-    width: 400,
-    height: 400,
+    maxSize: 600,
     quality: 0.95,
     format: 'png' as const
   },
   
-  // For web display (responsive)
+  // For web display (responsive) - adaptive from source
   web: {
-    width: 300,
-    height: 300,
+    maxSize: 400,
     quality: 0.85,
     format: 'png' as const
   },
   
-  // For email signatures
+  // For email signatures - adaptive from source
   email: {
-    width: 150,
-    height: 150,
+    maxSize: 150,
     quality: 0.8,
+    format: 'png' as const
+  },
+  
+  // For high-resolution displays and large screens
+  highRes: {
+    maxSize: 1024,
+    quality: 0.95,
     format: 'png' as const
   }
 };
@@ -72,18 +73,17 @@ export function resizeLogoForContext(
     img.onload = () => {
       // Calculate dimensions maintaining aspect ratio
       let { width, height } = img;
-      const maxWidth = config.width;
-      const maxHeight = config.height;
+      const maxSize = config.maxSize;
       
       if (width > height) {
-        if (width > maxWidth) {
-          height = (height * maxWidth) / width;
-          width = maxWidth;
+        if (width > maxSize) {
+          height = (height * maxSize) / width;
+          width = maxSize;
         }
       } else {
-        if (height > maxHeight) {
-          width = (width * maxHeight) / height;
-          height = maxHeight;
+        if (height > maxSize) {
+          width = (width * maxSize) / height;
+          height = maxSize;
         }
       }
       

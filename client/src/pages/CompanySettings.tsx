@@ -130,11 +130,21 @@ export default function CompanySettings() {
       }
       
       img.onload = () => {
-        // Accept up to 1080x1080 and optimize for multiple uses:
-        // - High resolution for PDF/A4 invoices (up to 512px)
-        // - Medium resolution for thermal printers (optimized)
-        // - Web display (responsive)
-        const maxSize = Math.min(1080, Math.max(img.width, img.height)) <= 1080 ? 512 : 400;
+        // Dynamic sizing based on original resolution:
+        // - Small logos (<=300px): keep original size
+        // - Medium logos (301-800px): optimize to 512px max
+        // - Large logos (>800px): optimize to 800px max for highest quality
+        const originalSize = Math.max(img.width, img.height);
+        let maxSize: number;
+        
+        if (originalSize <= 300) {
+          maxSize = originalSize; // Keep small logos at original size
+        } else if (originalSize <= 800) {
+          maxSize = 512; // Medium optimization
+        } else {
+          maxSize = 800; // High quality for large logos
+        }
+        
         let { width, height } = img;
         
         // Maintain aspect ratio
@@ -204,15 +214,6 @@ export default function CompanySettings() {
         
         img.onload = async () => {
           URL.revokeObjectURL(url);
-          
-          if (img.width > 1080 || img.height > 1080) {
-            toast({
-              title: "Error",
-              description: "Dimensiones demasiado grandes. Máximo 1080x1080 píxeles.",
-              variant: "destructive",
-            });
-            return;
-          }
 
           try {
             const optimizedImage = await optimizeLogoForMultipleUses(file);
@@ -220,9 +221,20 @@ export default function CompanySettings() {
             form.setValue("logo", optimizedImage);
             
             const formatName = file.type === 'image/png' ? 'PNG' : 'JPEG';
+            const originalSize = Math.max(img.width, img.height);
+            let adaptationMsg = "";
+            
+            if (originalSize <= 300) {
+              adaptationMsg = "mantenido en tamaño original";
+            } else if (originalSize <= 800) {
+              adaptationMsg = "optimizado para calidad media";
+            } else {
+              adaptationMsg = "optimizado para alta calidad";
+            }
+            
             toast({
               title: "Logo procesado",
-              description: `Logo ${img.width}x${img.height} optimizado para facturas (${formatName}).`,
+              description: `Logo ${img.width}x${img.height} ${adaptationMsg} (${formatName}).`,
             });
           } catch (error) {
             toast({
@@ -327,7 +339,7 @@ export default function CompanySettings() {
                       />
                     </Label>
                     <p className="mt-1 text-xs text-gray-500">
-                      PNG (recomendado), JPG, GIF hasta 25MB. Máximo 1080x1080px. Adaptación automática para facturas.
+                      PNG (recomendado), JPG, GIF hasta 25MB. Cualquier resolución. Adaptación automática para cada uso.
                     </p>
                   </div>
                 </div>
