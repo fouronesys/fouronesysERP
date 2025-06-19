@@ -449,23 +449,54 @@ export default function CompanySettings() {
                     desktop: 'grid-cols-2'
                   })
                 }`}>
-                  <div className={layout.spacing.xs}>
+                  <div className={`${layout.spacing.xs} relative`}>
                     <Label htmlFor="name">Nombre Comercial*</Label>
-                    <RNCCompanySuggestions
-                      label=""
+                    <Input
+                      id="name"
                       placeholder="Buscar empresa por nombre..."
                       value={form.watch("name") || ""}
-                      onChange={(value) => form.setValue("name", value)}
-                      onCompanySelect={(company) => {
-                        form.setValue("name", company.name);
-                        form.setValue("rnc", company.rnc);
-                        toast({
-                          title: "Empresa seleccionada",
-                          description: `${company.name} - RNC: ${company.rnc}`,
-                        });
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        form.setValue("name", value);
+                        searchRNCCompanies(value);
+                      }}
+                      onFocus={() => {
+                        const currentValue = form.watch("name");
+                        if (currentValue && currentValue.length >= 3) {
+                          searchRNCCompanies(currentValue);
+                        }
+                      }}
+                      onBlur={() => {
+                        setTimeout(() => setShowSuggestions(false), 200);
                       }}
                       className="text-sm"
                     />
+                    
+                    {/* Sugerencias de empresas */}
+                    {showSuggestions && rncSuggestions.length > 0 && (
+                      <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md shadow-lg max-h-48 overflow-y-auto">
+                        {rncSuggestions.map((suggestion, index) => (
+                          <div
+                            key={index}
+                            className="p-3 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer border-b border-gray-200 dark:border-gray-600 last:border-b-0"
+                            onClick={() => selectRNCFromSuggestion(suggestion)}
+                          >
+                            <div className="font-medium text-gray-900 dark:text-white truncate">
+                              {suggestion.razonSocial}
+                            </div>
+                            <div className="text-sm text-gray-600 dark:text-gray-400">
+                              RNC: {suggestion.rnc}
+                            </div>
+                            {suggestion.nombreComercial && (
+                              <div className="text-xs text-gray-500 dark:text-gray-500 truncate">
+                                {suggestion.nombreComercial}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    
                     {form.formState.errors.name && (
                       <p className="text-sm text-red-500">{form.formState.errors.name.message}</p>
                     )}
