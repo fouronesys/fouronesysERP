@@ -118,7 +118,7 @@ export default function CompanySettings() {
     },
   });
 
-  const optimizeImage = (file: File): Promise<string> => {
+  const optimizeLogoForMultipleUses = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
@@ -130,11 +130,14 @@ export default function CompanySettings() {
       }
       
       img.onload = () => {
-        // Calculate new dimensions optimized for invoice printing
-        // Max 300x300 for good quality on 58mm/80mm printers while keeping file size reasonable
-        const maxSize = 300;
+        // Accept up to 1080x1080 and optimize for multiple uses:
+        // - High resolution for PDF/A4 invoices (up to 512px)
+        // - Medium resolution for thermal printers (optimized)
+        // - Web display (responsive)
+        const maxSize = Math.min(1080, Math.max(img.width, img.height)) <= 1080 ? 512 : 400;
         let { width, height } = img;
         
+        // Maintain aspect ratio
         if (width > height) {
           if (width > maxSize) {
             height = (height * maxSize) / width;
@@ -150,23 +153,28 @@ export default function CompanySettings() {
         canvas.width = width;
         canvas.height = height;
         
-        // Fill with white background for non-transparent images
-        ctx.fillStyle = 'white';
-        ctx.fillRect(0, 0, width, height);
+        // For PNG logos, preserve transparency; for others, use white background
+        const isPNG = file.type === 'image/png';
+        if (!isPNG) {
+          ctx.fillStyle = 'white';
+          ctx.fillRect(0, 0, width, height);
+        }
         
-        // Draw image
+        // Enable image smoothing for better quality
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        
+        // Draw image with high quality
         ctx.drawImage(img, 0, 0, width, height);
         
-        // Preserve format: PNG for transparency, JPEG for photos
-        const mimeType = file.type;
+        // Output format based on input and use case
         let outputDataUrl: string;
-        
-        if (mimeType === 'image/png' || mimeType === 'image/gif') {
-          // Preserve PNG for transparency (important for logos)
+        if (isPNG || file.type === 'image/gif') {
+          // Keep PNG for logos with transparency
           outputDataUrl = canvas.toDataURL('image/png');
         } else {
-          // Use JPEG with high quality for photos
-          outputDataUrl = canvas.toDataURL('image/jpeg', 0.9);
+          // High quality JPEG for photos
+          outputDataUrl = canvas.toDataURL('image/jpeg', 0.95);
         }
         
         resolve(outputDataUrl);
@@ -180,29 +188,65 @@ export default function CompanySettings() {
   const handleLogoChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      if (file.size > 10 * 1024 * 1024) {
+      if (file.size > 25 * 1024 * 1024) {
         toast({
           title: "Error",
-          description: "El archivo es demasiado grande. Máximo 10MB.",
+          description: "El archivo es demasiado grande. Máximo 25MB.",
           variant: "destructive",
         });
         return;
       }
 
       try {
-        const optimizedImage = await optimizeImage(file);
-        setLogoPreview(optimizedImage);
-        form.setValue("logo", optimizedImage);
+        // Create image to check dimensions
+        const img = new Image();
+        const url = URL.createObjectURL(file);
         
-        const formatName = file.type === 'image/png' ? 'PNG' : 'JPEG';
-        toast({
-          title: "Logo optimizado",
-          description: `Imagen optimizada para facturas (formato ${formatName} preservado).`,
-        });
+        img.onload = async () => {
+          URL.revokeObjectURL(url);
+          
+          if (img.width > 1080 || img.height > 1080) {
+            toast({
+              title: "Error",
+              description: "Dimensiones demasiado grandes. Máximo 1080x1080 píxeles.",
+              variant: "destructive",
+            });
+            return;
+          }
+
+          try {
+            const optimizedImage = await optimizeLogoForMultipleUses(file);
+            setLogoPreview(optimizedImage);
+            form.setValue("logo", optimizedImage);
+            
+            const formatName = file.type === 'image/png' ? 'PNG' : 'JPEG';
+            toast({
+              title: "Logo procesado",
+              description: `Logo ${img.width}x${img.height} optimizado para facturas (${formatName}).`,
+            });
+          } catch (error) {
+            toast({
+              title: "Error",
+              description: "No se pudo procesar la imagen. Inténtalo con otra imagen.",
+              variant: "destructive",
+            });
+          }
+        };
+        
+        img.onerror = () => {
+          URL.revokeObjectURL(url);
+          toast({
+            title: "Error",
+            description: "No se pudo cargar la imagen. Formato no válido.",
+            variant: "destructive",
+          });
+        };
+        
+        img.src = url;
       } catch (error) {
         toast({
           title: "Error",
-          description: "No se pudo procesar la imagen. Inténtalo con otra imagen.",
+          description: "No se pudo procesar el archivo.",
           variant: "destructive",
         });
       }
@@ -283,7 +327,7 @@ export default function CompanySettings() {
                       />
                     </Label>
                     <p className="mt-1 text-xs text-gray-500">
-                      PNG (recomendado), JPG, GIF hasta 10MB. Optimizado para facturas 58mm/80mm/A4.
+                      PNG (recomendado), JPG, GIF hasta 25MB. Máximo 1080x1080px. Adaptación automática para facturas.
                     </p>
                   </div>
                 </div>
