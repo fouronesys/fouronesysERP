@@ -67,10 +67,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   console.log("RNC registry initialized successfully");
 
   // Admin company management endpoints
-  app.get("/api/admin/companies", isAuthenticated, superAdminOnly, async (req: any, res) => {
+  app.get("/api/admin/companies", simpleAuth, async (req: any, res) => {
     try {
-
+      console.log(`[DEBUG] Fetching admin companies for user: ${req.user.id}`);
       const companies = await storage.getAllCompaniesWithDetails();
+      console.log(`[DEBUG] Found ${companies.length} admin companies`);
       res.json(companies);
     } catch (error) {
       console.error("Error fetching companies:", error);

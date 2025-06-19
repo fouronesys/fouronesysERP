@@ -194,7 +194,7 @@ export default function SuperAdmin() {
 
   const createMutation = useMutation({
     mutationFn: async (data: CompanyFormData) => {
-      const response = await apiRequest("/api/companies", {
+      const response = await apiRequest("/api/admin/companies", {
         method: "POST",
         body: data
       });
@@ -208,7 +208,7 @@ export default function SuperAdmin() {
       setIsDialogOpen(false);
       setEditingCompany(null);
       form.reset();
-      queryClient.invalidateQueries({ queryKey: ["/api/companies/all"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/companies"] });
     },
     onError: () => {
       toast({
