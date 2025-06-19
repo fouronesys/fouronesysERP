@@ -11,6 +11,7 @@ import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import { useSessionPersistence } from "@/hooks/useSessionPersistence";
+import { ConnectionStatus } from "@/components/ConnectionStatus";
 import { registerSW } from "@/lib/serviceWorkerRegistration";
 import InstallPrompt from "@/components/InstallPrompt";
 import { errorLogger } from "@/lib/errorLogger";
@@ -176,6 +177,13 @@ function Router() {
   const [setupComplete, setSetupComplete] = useState(false);
   const isAuthenticated = !!user;
   
+  // Initialize session persistence to maintain login during deployments
+  const { isReconnecting, reconnectAttempts } = useSessionPersistence({
+    heartbeatInterval: 30000, // 30 seconds
+    reconnectAttempts: 5,
+    reconnectDelay: 2000 // 2 seconds
+  });
+  
   // Check if user has company configured
   const { data: company, isLoading: companyLoading } = useQuery({
     queryKey: ["/api/companies/current"],
@@ -302,6 +310,13 @@ function Router() {
       
       {/* Install Prompt */}
       <InstallPrompt />
+      
+      {/* Connection Status Indicator */}
+      <ConnectionStatus 
+        isReconnecting={isReconnecting}
+        reconnectAttempts={reconnectAttempts}
+        maxAttempts={5}
+      />
     </div>
   );
 }
