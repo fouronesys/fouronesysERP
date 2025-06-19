@@ -29,6 +29,17 @@ function simpleAuth(req: any, res: any, next: any) {
   next();
 }
 
+// Super admin only middleware - ONLY admin@fourone.com.do has access
+function superAdminOnly(req: any, res: any, next: any) {
+  const user = req.user;
+  if (!user || user.email !== 'admin@fourone.com.do') {
+    return res.status(403).json({ 
+      message: "Acceso denegado. Solo el súper administrador puede acceder a esta función." 
+    });
+  }
+  next();
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication middleware
   setupAuth(app);
@@ -41,12 +52,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   console.log("RNC registry initialized successfully");
 
   // Admin company management endpoints
-  app.get("/api/admin/companies", simpleAuth, async (req: any, res) => {
+  app.get("/api/admin/companies", isAuthenticated, superAdminOnly, async (req: any, res) => {
     try {
-      const user = req.user;
-      if (!user || (user.email !== 'admin@fourone.com.do' && user.role !== 'super_admin')) {
-        return res.status(403).json({ message: "Access denied" });
-      }
 
       const companies = await storage.getAllCompaniesWithDetails();
       res.json(companies);
@@ -57,12 +64,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update company status (activate/deactivate)
-  app.patch("/api/admin/companies/:id/status", simpleAuth, async (req: any, res) => {
+  app.patch("/api/admin/companies/:id/status", isAuthenticated, superAdminOnly, async (req: any, res) => {
     try {
-      const user = req.user;
-      if (!user || (user.email !== 'admin@fourone.com.do' && user.role !== 'super_admin')) {
-        return res.status(403).json({ message: "Access denied" });
-      }
 
       const { id } = req.params;
       const { isActive } = req.body;
@@ -71,12 +74,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Log company status update
       await auditLogger.logUserAction(
-        user.id,
+        req.user.id,
         parseInt(id),
         isActive ? 'COMPANY_ACTIVATED' : 'COMPANY_DEACTIVATED',
         'company',
         id,
-        null,
+        undefined,
         { isActive },
         req
       );
@@ -89,12 +92,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Delete company
-  app.delete("/api/admin/companies/:id", simpleAuth, async (req: any, res) => {
+  app.delete("/api/admin/companies/:id", isAuthenticated, superAdminOnly, async (req: any, res) => {
     try {
-      const user = req.user;
-      if (!user || (user.email !== 'admin@fourone.com.do' && user.role !== 'super_admin')) {
-        return res.status(403).json({ message: "Access denied" });
-      }
 
       const companyId = parseInt(req.params.id);
       
@@ -102,12 +101,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Log company deletion
       await auditLogger.logUserAction(
-        user.id,
+        req.user.id,
         companyId,
         'COMPANY_DELETED',
         'company',
         req.params.id,
-        null,
+        undefined,
         { companyId },
         req
       );
@@ -120,12 +119,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update company details
-  app.put("/api/admin/companies/:id", simpleAuth, async (req: any, res) => {
+  app.put("/api/admin/companies/:id", isAuthenticated, superAdminOnly, async (req: any, res) => {
     try {
-      const user = req.user;
-      if (!user || (user.email !== 'admin@fourone.com.do' && user.role !== 'super_admin')) {
-        return res.status(403).json({ message: "Access denied" });
-      }
 
       const companyId = parseInt(req.params.id);
       const existingCompany = await storage.getCompany(companyId);
@@ -150,7 +145,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create new company
-  app.post("/api/admin/companies", simpleAuth, async (req: any, res) => {
+  app.post("/api/admin/companies", isAuthenticated, superAdminOnly, async (req: any, res) => {
     try {
       const user = req.user;
       if (!user || (user.email !== 'admin@fourone.com.do' && user.role !== 'super_admin')) {
