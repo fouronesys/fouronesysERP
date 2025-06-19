@@ -185,12 +185,12 @@ export default function SuperAdmin() {
   });
 
   const { data: companies, isLoading } = useQuery<Company[]>({
-    queryKey: ["/api/admin/companies"],
+    queryKey: ["/api/companies/all"],
   });
 
   const createMutation = useMutation({
     mutationFn: async (data: CompanyFormData) => {
-      const response = await apiRequest("/api/admin/companies", {
+      const response = await apiRequest("/api/companies", {
         method: "POST",
         body: data
       });
