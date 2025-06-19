@@ -28,6 +28,14 @@ export default function Landing() {
               </div>
               <Button 
                 variant="outline"
+                onClick={() => window.location.href = "/api-docs"}
+                className="px-2 sm:px-4 py-2 text-xs sm:text-sm border-blue-500 text-blue-300 bg-transparent hover:bg-blue-700 hover:text-white transition-all"
+              >
+                <span className="hidden sm:inline">API Docs</span>
+                <span className="sm:hidden">API</span>
+              </Button>
+              <Button 
+                variant="outline"
                 onClick={() => window.location.href = "/auth"}
                 className="px-2 sm:px-4 py-2 text-xs sm:text-sm border-gray-500 text-gray-300 bg-transparent hover:bg-gray-700 hover:text-white transition-all"
               >

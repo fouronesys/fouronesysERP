@@ -10,20 +10,31 @@ export default function ApiDocs() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white dark:from-gray-900 dark:to-gray-800 p-4">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
-        <div className="flex items-center gap-4 mb-8 pt-8">
-          <Button asChild variant="outline">
-            <Link href="/">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Volver
-            </Link>
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-              Documentación API
-            </h1>
-            <p className="text-gray-600 dark:text-gray-300">
-              APIs gratuitas para desarrolladores - Validación RNC y más
-            </p>
+        <div className="flex items-center justify-between mb-8 pt-8">
+          <div className="flex items-center gap-4">
+            <Button asChild variant="outline">
+              <Link href="/">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Volver
+              </Link>
+            </Button>
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+                Documentación API
+              </h1>
+              <p className="text-gray-600 dark:text-gray-300">
+                APIs gratuitas para desarrolladores - Validación RNC y más
+              </p>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-3">
+            <Button asChild variant="default" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
+              <Link href="/api-registration">
+                <Code2 className="h-4 w-4 mr-2" />
+                Obtener API Key
+              </Link>
+            </Button>
           </div>
         </div>
 
@@ -75,7 +86,7 @@ export default function ApiDocs() {
                   <div className="space-y-4">
                     <h3 className="text-lg font-semibold">Base URL</h3>
                     <div className="bg-gray-100 dark:bg-gray-800 p-3 rounded-lg font-mono text-sm">
-                      https://your-domain.replit.app/api/v1
+                      https://your-domain.fourone.com.do/api/v1
                     </div>
                     
                     <h3 className="text-lg font-semibold">Servicios Disponibles</h3>
@@ -93,6 +104,43 @@ export default function ApiDocs() {
                         <span>Tipos de NCF disponibles</span>
                       </li>
                     </ul>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Getting Started Card */}
+              <Card className="border-blue-200 bg-blue-50 dark:bg-blue-950 dark:border-blue-800">
+                <CardHeader>
+                  <CardTitle className="text-blue-900 dark:text-blue-100">
+                    ¿Listo para comenzar?
+                  </CardTitle>
+                  <CardDescription className="text-blue-700 dark:text-blue-300">
+                    Obtén tu API key gratuita y comienza a integrar nuestros servicios en minutos
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-col sm:flex-row gap-4 items-start">
+                    <div className="flex-1">
+                      <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">
+                        Pasos para empezar:
+                      </h4>
+                      <ol className="text-sm text-blue-700 dark:text-blue-300 space-y-1">
+                        <li>1. Regístrate y obtén tu API key</li>
+                        <li>2. Revisa los endpoints disponibles</li>
+                        <li>3. Prueba con los ejemplos de código</li>
+                        <li>4. Integra en tu aplicación</li>
+                      </ol>
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <Button asChild className="bg-blue-600 hover:bg-blue-700">
+                        <Link href="/api-registration">
+                          Obtener API Key Gratis
+                        </Link>
+                      </Button>
+                      <p className="text-xs text-blue-600 dark:text-blue-400 text-center">
+                        Sin límites • Sin costos
+                      </p>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
