@@ -159,8 +159,19 @@ export default function AuthPage() {
       const response = await apiRequest(`/api/dgii/search-companies?query=${encodeURIComponent(searchTerm)}`);
       const result = await response.json();
       
+      console.log('Search companies result:', result); // Debug log
+      
       if (result.success && result.data && Array.isArray(result.data)) {
-        setRncSuggestions(result.data.slice(0, 5));
+        const suggestions = result.data.slice(0, 5).map((company: any) => ({
+          rnc: company.rnc,
+          name: company.name || company.razonSocial || 'Empresa sin nombre',
+          razonSocial: company.razonSocial,
+          categoria: company.categoria || company.category,
+          estado: company.estado || company.status
+        }));
+        
+        console.log('Mapped suggestions:', suggestions); // Debug log
+        setRncSuggestions(suggestions);
         setShowSuggestions(true);
       } else {
         setRncSuggestions([]);
