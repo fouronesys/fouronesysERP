@@ -332,7 +332,7 @@ function App() {
       <QueryClientProvider client={queryClient}>
         <ThemeProvider>
           <TooltipProvider>
-            {/* <Toaster /> */}
+            {/* Toaster disabled due to React hooks order issue */}
             <Router />
           </TooltipProvider>
         </ThemeProvider>
