@@ -465,7 +465,7 @@ export function Sidebar() {
         })}
 
         {/* Super Admin Access */}
-        {user && (user.role === 'super_admin' || user.email === 'admin@fourone.com.do') && (
+        {user && user.email === 'admin@fourone.com.do' && (
           <motion.div 
             className="pt-4 border-t border-slate-200/50 dark:border-gray-700/50"
             initial={{ opacity: 0 }}
