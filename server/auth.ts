@@ -84,16 +84,22 @@ export function setupAuth(app: Express) {
   // Register endpoint
   app.post("/api/register", async (req, res, next) => {
     try {
-      const { email, password, firstName, lastName, companyName } = req.body;
+      const { email, password, firstName, lastName, companyName, rnc, rncValidation } = req.body;
+
+      console.log('Registration request received:', { email, firstName, lastName, companyName, rnc }); // Debug log
 
       if (!email || !password || !firstName || !lastName) {
-        return res.status(400).json({ message: "All fields are required" });
+        return res.status(400).json({ message: "Todos los campos requeridos deben ser completados" });
+      }
+
+      if (!companyName) {
+        return res.status(400).json({ message: "El nombre de la empresa es requerido" });
       }
 
       // Check if user already exists
       const existingUser = await storage.getUserByEmail(email);
       if (existingUser) {
-        return res.status(400).json({ message: "User already exists with this email" });
+        return res.status(400).json({ message: "Ya existe un usuario con este correo electrónico" });
       }
 
       // Hash password
@@ -108,25 +114,42 @@ export function setupAuth(app: Express) {
         isActive: true,
       });
 
-      // Create company if provided
-      if (companyName) {
-        const company = await storage.createCompany({
-          name: companyName,
-          ownerId: user.id,
-          businessType: "general",
-          subscriptionPlan: "trial",
-          subscriptionExpiry: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
-        });
+      console.log('User created successfully:', user.id); // Debug log
 
-        // Associate user with company as admin
-        await storage.createCompanyUser({
-          userId: user.id,
-          companyId: company.id,
-          role: "company_admin",
-          permissions: ["all"],
-          isActive: true,
-        });
+      // Create company with RNC information
+      const companyData: any = {
+        name: companyName,
+        ownerId: user.id,
+        businessType: "general",
+        subscriptionPlan: "trial",
+        subscriptionExpiry: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
+      };
+
+      // Add RNC if provided and validated
+      if (rnc && rnc.trim()) {
+        companyData.rnc = rnc.trim();
+        
+        // If we have validation data, include it
+        if (rncValidation && rncValidation.valid && rncValidation.data) {
+          companyData.rncVerified = true;
+          companyData.legalName = rncValidation.data.name || rncValidation.data.razonSocial;
+          companyData.businessCategory = rncValidation.data.categoria;
+        }
       }
+
+      const company = await storage.createCompany(companyData);
+      console.log('Company created successfully:', company.id); // Debug log
+
+      // Associate user with company as admin
+      await storage.createCompanyUser({
+        userId: user.id,
+        companyId: company.id,
+        role: "company_admin",
+        permissions: ["all"],
+        isActive: true,
+      });
+
+      console.log('Company user association created successfully'); // Debug log
 
       req.login(user, (err) => {
         if (err) return next(err);

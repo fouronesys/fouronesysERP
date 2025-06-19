@@ -308,7 +308,22 @@ export default function AuthPage() {
 
   const registerMutation = useMutation({
     mutationFn: async (data: RegisterForm) => {
-      const response = await apiRequest("POST", "/api/register", data);
+      console.log('Sending registration data:', data); // Debug log
+      
+      // Prepare data with RNC information
+      const registrationData = {
+        ...data,
+        rnc: data.rnc || null, // Include RNC if provided
+        rncValidation: rncValidationResult // Include validation result
+      };
+      
+      const response = await apiRequest("POST", "/api/register", registrationData);
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Error al crear la cuenta");
+      }
+      
       return response.json();
     },
     onSuccess: (user) => {
@@ -321,9 +336,10 @@ export default function AuthPage() {
       setLocation("/payment");
     },
     onError: (error: any) => {
+      console.error('Registration error:', error); // Debug log
       toast({
-        title: "Registration failed",
-        description: error.message || "Failed to create account",
+        title: "Error en el registro",
+        description: error.message || "Error al crear la cuenta",
         variant: "destructive",
       });
     },
