@@ -122,15 +122,6 @@ const navigation = [
       { name: "Monitoreo del Sistema", href: "/system-monitoring", icon: Activity },
     ],
   },
-  {
-    category: "Administración",
-    items: [
-      { name: "Super Admin", href: "/super-admin", icon: Shield },
-      { name: "Gestión de Módulos", href: "/module-manager", icon: Cog },
-      { name: "Gestión de Empresas", href: "/company-management", icon: Building2 },
-      { name: "Analytics de Empresas", href: "/company-analytics", icon: BarChart3 },
-    ],
-  },
 
 ];
 

@@ -10,6 +10,7 @@ import { moduleInitializer } from "./module-initializer";
 import { sendApiKeyEmail } from "./email-service";
 import { createPaypalOrder, capturePaypalOrder, loadPaypalDefault } from "./paypal";
 import { insertCustomerSchema } from "../shared/schema";
+import { dgiiRegistryUpdater } from "./dgii-registry-updater";
 
 // File upload configuration
 const upload = multer({
@@ -406,6 +407,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching admin modules:", error);
       res.status(500).json({ message: "Failed to fetch modules" });
+    }
+  });
+
+  // DGII RNC Registry Management
+  app.post("/api/admin/dgii/update-registry", isAuthenticated, superAdminOnly, async (req: any, res) => {
+    try {
+      console.log("Manual DGII RNC registry update initiated by admin");
+      const updateResult = await dgiiRegistryUpdater.performUpdate();
+      
+      if (updateResult) {
+        res.json({
+          success: true,
+          message: "DGII RNC registry updated successfully",
+          timestamp: new Date().toISOString()
+        });
+      } else {
+        res.status(500).json({
+          success: false,
+          message: "Failed to update DGII RNC registry"
+        });
+      }
+    } catch (error) {
+      console.error("Error updating DGII registry:", error);
+      res.status(500).json({
+        success: false,
+        message: "Error updating DGII registry",
+        error: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
+  app.get("/api/admin/dgii/registry-status", isAuthenticated, superAdminOnly, async (req: any, res) => {
+    try {
+      const status = dgiiRegistryUpdater.getStatus();
+      const registryCount = await storage.getRNCRegistryCount();
+      
+      res.json({
+        ...status,
+        registryCount,
+        lastChecked: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error("Error fetching DGII registry status:", error);
+      res.status(500).json({ message: "Failed to fetch registry status" });
     }
   });
 
