@@ -3167,26 +3167,15 @@ export class DatabaseStorage implements IStorage {
         rnc: companies.rnc,
         isActive: companies.isActive,
         subscriptionPlan: companies.subscriptionPlan,
+        paymentStatus: companies.paymentStatus,
         createdAt: companies.createdAt,
         ownerId: companies.ownerId,
-        ownerEmail: users.email,
+        ownerEmail: companies.ownerEmail,
       })
       .from(companies)
-      .leftJoin(users, eq(companies.ownerId, users.id))
       .orderBy(desc(companies.createdAt));
 
-    // Get payment status for each company
-    const companiesWithPayment = await Promise.all(
-      companiesWithDetails.map(async (company) => {
-        const paymentStatus = await this.getUserPaymentStatus(company.ownerEmail || '');
-        return {
-          ...company,
-          paymentStatus: paymentStatus?.status || 'pending',
-        };
-      })
-    );
-
-    return companiesWithPayment;
+    return companiesWithDetails;
   }
 
   async updateCompanyStatus(companyId: number, isActive: boolean, notes?: string) {
