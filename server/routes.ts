@@ -16,6 +16,7 @@ import { initializeAdminUser } from "./init-admin";
 import { moduleInitializer } from "./module-initializer";
 import { currencyService } from "./currency-service";
 import multer from "multer";
+import crypto from "crypto";
 
 // Notification management system
 const notifications = new Map<string, any[]>();
@@ -1427,6 +1428,73 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/paypal/order/:orderID/capture", async (req, res) => {
     await capturePaypalOrder(req, res);
+  });
+
+  // API Developer Registration
+  app.post("/api/developers/register", async (req, res) => {
+    try {
+      const { name, email, company, website, description } = req.body;
+
+      if (!name || !email || !company) {
+        return res.status(400).json({
+          success: false,
+          message: "Nombre, email y empresa son requeridos"
+        });
+      }
+
+      // Generate API key
+      const apiKey = crypto.randomBytes(32).toString('hex');
+
+      const developer = await storage.createApiDeveloper({
+        contactName: name,
+        email,
+        companyName: company,
+        website: website || null,
+        description: description || null,
+        apiKey,
+        isActive: true
+      });
+
+      res.json({
+        success: true,
+        data: {
+          id: developer.id,
+          contactName: developer.contactName,
+          email: developer.email,
+          companyName: developer.companyName,
+          apiKey: developer.apiKey,
+          createdAt: developer.createdAt
+        }
+      });
+    } catch (error) {
+      console.error("Error registering API developer:", error);
+      res.status(500).json({
+        success: false,
+        message: "Error interno del servidor"
+      });
+    }
+  });
+
+  // Get API Developer Info
+  app.get("/api/developers/me", validateApiKey, async (req, res) => {
+    try {
+      const developer = (req as any).developer;
+      const stats = await storage.getApiDeveloperStats(developer.id);
+
+      res.json({
+        success: true,
+        data: {
+          ...developer,
+          stats
+        }
+      });
+    } catch (error) {
+      console.error("Error getting developer info:", error);
+      res.status(500).json({
+        success: false,
+        message: "Error interno del servidor"
+      });
+    }
   });
 
   return httpServer;

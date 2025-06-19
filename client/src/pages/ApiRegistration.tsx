@@ -44,7 +44,13 @@ export default function ApiRegistration() {
   const onSubmit = async (data: RegistrationData) => {
     setIsSubmitting(true);
     try {
-      const response = await apiRequest("POST", "/api/developers/register", data);
+      const response = await fetch("/api/developers/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(data)
+      });
       const result = await response.json();
       setApiKey(result.apiKey);
       setRegistrationComplete(true);
