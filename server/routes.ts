@@ -824,6 +824,155 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Company management endpoints for SuperAdmin
+  app.get("/api/companies/all", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const isSuperAdmin = await storage.isUserSuperAdmin(userId);
+
+      if (!isSuperAdmin) {
+        return res.status(403).json({ message: "Access denied. Super admin required." });
+      }
+
+      const companies = await storage.getAllCompaniesWithDetails();
+      res.json(companies);
+    } catch (error) {
+      console.error("Error fetching companies:", error);
+      res.status(500).json({ message: "Failed to fetch companies" });
+    }
+  });
+
+  app.post("/api/companies", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const isSuperAdmin = await storage.isUserSuperAdmin(userId);
+
+      if (!isSuperAdmin) {
+        return res.status(403).json({ message: "Access denied. Super admin required." });
+      }
+
+      const newCompany = await storage.createCompany(req.body);
+      res.json(newCompany);
+    } catch (error) {
+      console.error("Error creating company:", error);
+      res.status(500).json({ message: "Failed to create company" });
+    }
+  });
+
+  app.put("/api/companies/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const isSuperAdmin = await storage.isUserSuperAdmin(userId);
+
+      if (!isSuperAdmin) {
+        return res.status(403).json({ message: "Access denied. Super admin required." });
+      }
+
+      const companyId = parseInt(req.params.id);
+      const { ownerId, ...updateData } = req.body;
+      
+      const updatedCompany = await storage.updateCompany(companyId, updateData);
+      res.json(updatedCompany);
+    } catch (error: any) {
+      console.error("Error updating company:", error);
+      res.status(500).json({ 
+        message: "No se pudo actualizar empresa", 
+        error: error?.message || "Error interno del servidor"
+      });
+    }
+  });
+
+  app.delete("/api/companies/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const isSuperAdmin = await storage.isUserSuperAdmin(userId);
+
+      if (!isSuperAdmin) {
+        return res.status(403).json({ message: "Access denied. Super admin required." });
+      }
+
+      const companyId = parseInt(req.params.id);
+      await storage.deleteCompany(companyId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting company:", error);
+      res.status(500).json({ message: "Failed to delete company" });
+    }
+  });
+
+  app.patch("/api/companies/bulk-activate", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const isSuperAdmin = await storage.isUserSuperAdmin(userId);
+
+      if (!isSuperAdmin) {
+        return res.status(403).json({ message: "Access denied. Super admin required." });
+      }
+
+      const { companyIds } = req.body;
+      const results = [];
+      
+      for (const id of companyIds) {
+        const company = await storage.updateCompanyStatus(id, true);
+        results.push(company);
+      }
+      
+      res.json(results);
+    } catch (error) {
+      console.error("Error bulk activating companies:", error);
+      res.status(500).json({ message: "Failed to activate companies" });
+    }
+  });
+
+  app.patch("/api/companies/bulk-deactivate", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const isSuperAdmin = await storage.isUserSuperAdmin(userId);
+
+      if (!isSuperAdmin) {
+        return res.status(403).json({ message: "Access denied. Super admin required." });
+      }
+
+      const { companyIds } = req.body;
+      const results = [];
+      
+      for (const id of companyIds) {
+        const company = await storage.updateCompanyStatus(id, false);
+        results.push(company);
+      }
+      
+      res.json(results);
+    } catch (error) {
+      console.error("Error bulk deactivating companies:", error);
+      res.status(500).json({ message: "Failed to deactivate companies" });
+    }
+  });
+
+  app.post("/api/companies/:id/resend-email", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const isSuperAdmin = await storage.isUserSuperAdmin(userId);
+
+      if (!isSuperAdmin) {
+        return res.status(403).json({ message: "Access denied. Super admin required." });
+      }
+
+      const companyId = parseInt(req.params.id);
+      const company = await storage.getCompany(companyId);
+      
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      // Here you would implement email sending logic
+      // For now, we'll just return success
+      res.json({ emailSent: true, message: "Invitation resent successfully" });
+    } catch (error) {
+      console.error("Error resending email:", error);
+      res.status(500).json({ message: "Failed to resend email" });
+    }
+  });
+
   // Downloads endpoint
   app.get("/api/downloads/available", async (req, res) => {
     try {

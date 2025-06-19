@@ -186,6 +186,10 @@ export default function SuperAdmin() {
 
   const { data: companies, isLoading } = useQuery<Company[]>({
     queryKey: ["/api/companies/all"],
+    queryFn: async () => {
+      const response = await apiRequest('/api/companies/all');
+      return response.json();
+    },
   });
 
   const createMutation = useMutation({
