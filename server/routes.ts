@@ -875,7 +875,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/companies/:id", simpleAuth, async (req: any, res) => {
     try {
       const companyId = parseInt(req.params.id);
-      const { ownerId, ...updateData } = req.body;
+      const { ownerId, paymentConfirmed, ...updateData } = req.body;
+      
+      // Map paymentConfirmed to paymentStatus
+      if (typeof paymentConfirmed === 'boolean') {
+        updateData.paymentStatus = paymentConfirmed ? 'confirmed' : 'pending';
+      }
+      
+      console.log(`[DEBUG] Updating company ${companyId} with data:`, updateData);
       
       const updatedCompany = await storage.updateCompany(companyId, updateData);
       res.json(updatedCompany);

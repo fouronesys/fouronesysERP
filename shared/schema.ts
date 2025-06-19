@@ -96,6 +96,7 @@ export const companies = pgTable("companies", {
   subscriptionExpiry: timestamp("subscription_expiry"),
   subscriptionStartDate: timestamp("subscription_start_date"),
   paymentConfirmed: boolean("payment_confirmed").default(false), // Admin-controlled payment confirmation
+  paymentStatus: varchar("payment_status", { length: 20 }).default("pending"), // pending, confirmed, rejected
   registrationStatus: varchar("registration_status", { length: 20 }).default("pending"), // pending, completed, expired
   invitationToken: varchar("invitation_token", { length: 255 }), // token for registration link
   invitationSentAt: timestamp("invitation_sent_at"),

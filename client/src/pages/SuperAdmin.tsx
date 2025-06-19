@@ -500,15 +500,17 @@ export default function SuperAdmin() {
     if (!company.isActive) {
       return <Badge variant="destructive">Inactiva</Badge>;
     }
-    switch (company.registrationStatus) {
-      case "completed":
-        return <Badge variant="default">Completada</Badge>;
+    
+    // Check payment status for active companies
+    switch (company.paymentStatus) {
+      case "confirmed":
+        return <Badge variant="default" className="bg-green-600">Pagado</Badge>;
       case "pending":
-        return <Badge variant="secondary">Pendiente</Badge>;
-      case "expired":
-        return <Badge variant="outline">Expirada</Badge>;
+        return <Badge variant="secondary" className="bg-yellow-600">Pendiente</Badge>;
+      case "rejected":
+        return <Badge variant="destructive">Rechazado</Badge>;
       default:
-        return <Badge variant="secondary">Pendiente</Badge>;
+        return <Badge variant="secondary" className="bg-yellow-600">Pendiente</Badge>;
     }
   };
 
