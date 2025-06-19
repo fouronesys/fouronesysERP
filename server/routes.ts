@@ -88,7 +88,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Delete company
-  app.delete("/api/admin/companies/:id", isAuthenticated, async (req: any, res) => {
+  app.delete("/api/admin/companies/:id", simpleAuth, async (req: any, res) => {
     try {
       const user = req.user;
       if (!user || (user.email !== 'admin@fourone.com.do' && user.role !== 'super_admin')) {
@@ -119,7 +119,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update company details
-  app.put("/api/admin/companies/:id", isAuthenticated, async (req: any, res) => {
+  app.put("/api/admin/companies/:id", simpleAuth, async (req: any, res) => {
     try {
       const user = req.user;
       if (!user || (user.email !== 'admin@fourone.com.do' && user.role !== 'super_admin')) {
@@ -149,7 +149,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create new company
-  app.post("/api/admin/companies", isAuthenticated, async (req: any, res) => {
+  app.post("/api/admin/companies", simpleAuth, async (req: any, res) => {
     try {
       const user = req.user;
       if (!user || (user.email !== 'admin@fourone.com.do' && user.role !== 'super_admin')) {
@@ -165,7 +165,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Bulk company operations
-  app.patch("/api/admin/companies/bulk-activate", isAuthenticated, async (req: any, res) => {
+  app.patch("/api/admin/companies/bulk-activate", simpleAuth, async (req: any, res) => {
     try {
       const user = req.user;
       if (!user || (user.email !== 'admin@fourone.com.do' && user.role !== 'super_admin')) {
@@ -185,7 +185,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/admin/companies/bulk-deactivate", isAuthenticated, async (req: any, res) => {
+  app.patch("/api/admin/companies/bulk-deactivate", simpleAuth, async (req: any, res) => {
     try {
       const user = req.user;
       if (!user || (user.email !== 'admin@fourone.com.do' && user.role !== 'super_admin')) {
@@ -206,7 +206,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Resend email invitation
-  app.post("/api/admin/companies/:id/resend-email", isAuthenticated, async (req: any, res) => {
+  app.post("/api/admin/companies/:id/resend-email", simpleAuth, async (req: any, res) => {
     try {
       const user = req.user;
       if (!user || (user.email !== 'admin@fourone.com.do' && user.role !== 'super_admin')) {
