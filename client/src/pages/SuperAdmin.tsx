@@ -204,7 +204,7 @@ export default function SuperAdmin() {
       setIsDialogOpen(false);
       setEditingCompany(null);
       form.reset();
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/companies"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/companies/all"] });
     },
     onError: () => {
       toast({
@@ -218,7 +218,7 @@ export default function SuperAdmin() {
   const updateMutation = useMutation({
     mutationFn: async (data: CompanyFormData) => {
       if (!editingCompany) throw new Error("No company selected for editing");
-      const response = await apiRequest(`/api/admin/companies/${editingCompany.id}`, {
+      const response = await apiRequest(`/api/companies/${editingCompany.id}`, {
         method: "PUT",
         body: data
       });
@@ -237,7 +237,7 @@ export default function SuperAdmin() {
       setEditingCompany(null);
       form.reset();
       setRncValidationResult(null);
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/companies"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/companies/all"] });
     },
     onError: (error: Error) => {
       console.error("Company update error:", error);
@@ -251,7 +251,7 @@ export default function SuperAdmin() {
 
   const toggleStatusMutation = useMutation({
     mutationFn: async ({ id, isActive }: { id: number; isActive: boolean }) => {
-      const response = await apiRequest(`/api/admin/companies/${id}/status`, {
+      const response = await apiRequest(`/api/companies/${id}/status`, {
         method: "PATCH",
         body: { isActive }
       });
@@ -262,7 +262,7 @@ export default function SuperAdmin() {
         title: "Estado actualizado",
         description: "El estado de la empresa ha sido actualizado.",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/companies"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/companies/all"] });
     },
     onError: () => {
       toast({
@@ -275,7 +275,7 @@ export default function SuperAdmin() {
 
   const deleteCompanyMutation = useMutation({
     mutationFn: async (companyId: number) => {
-      const response = await apiRequest(`/api/admin/companies/${companyId}`, {
+      const response = await apiRequest(`/api/companies/${companyId}`, {
         method: "DELETE"
       });
       return response.json();
@@ -285,7 +285,7 @@ export default function SuperAdmin() {
         title: "Empresa eliminada",
         description: "La empresa ha sido eliminada exitosamente.",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/companies"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/companies/all"] });
     },
     onError: () => {
       toast({
@@ -298,7 +298,7 @@ export default function SuperAdmin() {
 
   const resendEmailMutation = useMutation({
     mutationFn: async (companyId: number) => {
-      const response = await apiRequest(`/api/admin/companies/${companyId}/resend-email`, {
+      const response = await apiRequest(`/api/companies/${companyId}/resend-email`, {
         method: "POST",
         body: {}
       });
@@ -310,7 +310,7 @@ export default function SuperAdmin() {
         description: data.emailSent ? "Invitación reenviada exitosamente" : "Error en el envío del correo",
         variant: data.emailSent ? "default" : "destructive",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/companies"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/companies/all"] });
     },
     onError: (error: Error) => {
       console.error("Error resending email:", error);
@@ -378,7 +378,7 @@ export default function SuperAdmin() {
 
   const bulkActivateMutation = useMutation({
     mutationFn: async (companyIds: number[]) => {
-      const response = await apiRequest("/api/admin/companies/bulk-activate", {
+      const response = await apiRequest("/api/companies/bulk-activate", {
         method: "PATCH",
         body: { companyIds }
       });
@@ -390,7 +390,7 @@ export default function SuperAdmin() {
         description: "Las empresas seleccionadas han sido activadas.",
       });
       setSelectedCompanies([]);
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/companies"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/companies/all"] });
     },
     onError: () => {
       toast({
@@ -403,7 +403,7 @@ export default function SuperAdmin() {
 
   const bulkDeactivateMutation = useMutation({
     mutationFn: async (companyIds: number[]) => {
-      const response = await apiRequest("/api/admin/companies/bulk-deactivate", {
+      const response = await apiRequest("/api/companies/bulk-deactivate", {
         method: "PATCH",
         body: { companyIds }
       });
@@ -415,7 +415,7 @@ export default function SuperAdmin() {
         description: "Las empresas seleccionadas han sido desactivadas.",
       });
       setSelectedCompanies([]);
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/companies"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/companies/all"] });
     },
     onError: () => {
       toast({
