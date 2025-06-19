@@ -129,11 +129,13 @@ export function setupAuth(app: Express) {
       if (rnc && rnc.trim()) {
         companyData.rnc = rnc.trim();
         
-        // If we have validation data, include it
+        // If we have validation data, use it for business name
         if (rncValidation && rncValidation.valid && rncValidation.data) {
-          companyData.rncVerified = true;
-          companyData.legalName = rncValidation.data.name || rncValidation.data.razonSocial;
-          companyData.businessCategory = rncValidation.data.categoria;
+          companyData.businessName = rncValidation.data.name || rncValidation.data.razonSocial;
+          // Store industry information if available
+          if (rncValidation.data.categoria) {
+            companyData.industry = rncValidation.data.categoria;
+          }
         }
       }
 
@@ -163,7 +165,10 @@ export function setupAuth(app: Express) {
       });
     } catch (error) {
       console.error("Registration error:", error);
-      res.status(500).json({ message: "Internal server error" });
+      res.status(500).json({ 
+        message: "Error interno del servidor durante el registro",
+        error: error instanceof Error ? error.message : "Error desconocido"
+      });
     }
   });
 
