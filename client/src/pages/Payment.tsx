@@ -597,5 +597,3 @@ export default function Payment() {
     </div>
   );
 }
-
-// PayPal functionality temporarily disabled
