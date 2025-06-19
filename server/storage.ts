@@ -429,55 +429,71 @@ export class DatabaseStorage implements IStorage {
 
   // Company operations
   async createCompany(companyData: InsertCompany & { ownerId: string }): Promise<Company> {
-    // Validate company name uniqueness
-    const existingCompanyByName = await db
-      .select()
-      .from(companies)
-      .where(eq(companies.name, companyData.name))
-      .limit(1);
-    
-    if (existingCompanyByName.length > 0) {
-      throw new Error(`Ya existe una empresa registrada con el nombre "${companyData.name}"`);
-    }
-
-    // Validate RNC uniqueness if provided
-    if (companyData.rnc && companyData.rnc.trim() !== '') {
-      const existingCompanyByRNC = await db
+    try {
+      console.log('=== CREATE COMPANY STORAGE ===');
+      console.log('Input data:', JSON.stringify(companyData, null, 2));
+      
+      // Validate company name uniqueness
+      console.log('Checking company name uniqueness...');
+      const existingCompanyByName = await db
         .select()
         .from(companies)
-        .where(eq(companies.rnc, companyData.rnc))
+        .where(eq(companies.name, companyData.name))
         .limit(1);
       
-      if (existingCompanyByRNC.length > 0) {
-        throw new Error(`Ya existe una empresa registrada con el RNC "${companyData.rnc}"`);
+      if (existingCompanyByName.length > 0) {
+        throw new Error(`Ya existe una empresa registrada con el nombre "${companyData.name}"`);
       }
 
-      // Validate RNC format (Dominican Republic format: 9 or 11 digits)
-      const rncPattern = /^[0-9]{9}$|^[0-9]{11}$/;
-      if (!rncPattern.test(companyData.rnc)) {
-        throw new Error('El RNC debe tener 9 o 11 dígitos');
-      }
-    }
+      // Validate RNC uniqueness if provided
+      if (companyData.rnc && companyData.rnc.trim() !== '') {
+        console.log('Checking RNC uniqueness...');
+        const existingCompanyByRNC = await db
+          .select()
+          .from(companies)
+          .where(eq(companies.rnc, companyData.rnc))
+          .limit(1);
+        
+        if (existingCompanyByRNC.length > 0) {
+          throw new Error(`Ya existe una empresa registrada con el RNC "${companyData.rnc}"`);
+        }
 
-    // Set trial expiry date for trial companies
-    const dataToInsert = { 
-      ...companyData,
-      rnc: companyData.rnc?.trim() || null // Store null if empty
-    };
-    if (companyData.subscriptionPlan === 'trial' && !companyData.subscriptionExpiry) {
-      const now = new Date();
-      const trialExpiry = new Date(now.getTime() + (15 * 24 * 60 * 60 * 1000)); // 15 days from now
-      dataToInsert.subscriptionExpiry = trialExpiry;
+        // Validate RNC format (Dominican Republic format: 9 or 11 digits)
+        const rncPattern = /^[0-9]{9}$|^[0-9]{11}$/;
+        if (!rncPattern.test(companyData.rnc)) {
+          throw new Error('El RNC debe tener 9 o 11 dígitos');
+        }
+      }
+
+      // Set trial expiry date for trial companies
+      console.log('Preparing data for insertion...');
+      const dataToInsert = { 
+        ...companyData,
+        rnc: companyData.rnc?.trim() || null // Store null if empty
+      };
+      if (companyData.subscriptionPlan === 'trial' && !companyData.subscriptionExpiry) {
+        const now = new Date();
+        const trialExpiry = new Date(now.getTime() + (15 * 24 * 60 * 60 * 1000)); // 15 days from now
+        dataToInsert.subscriptionExpiry = trialExpiry;
+      }
+      
+      console.log('Final data to insert:', JSON.stringify(dataToInsert, null, 2));
+      
+      const [company] = await db
+        .insert(companies)
+        .values({
+          ...dataToInsert,
+          ownerId: companyData.ownerId
+        })
+        .returning();
+        
+      console.log('Company insertion successful:', company.id);
+      return company;
+    } catch (error) {
+      console.error('=== CREATE COMPANY ERROR ===');
+      console.error('Error details:', error);
+      throw error;
     }
-    
-    const [company] = await db
-      .insert(companies)
-      .values({
-        ...dataToInsert,
-        ownerId: companyData.ownerId
-      })
-      .returning();
-    return company;
   }
 
   async createCompanyWithInvitation(companyData: Omit<InsertCompany, 'ownerId'> & { 

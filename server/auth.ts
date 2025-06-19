@@ -84,9 +84,12 @@ export function setupAuth(app: Express) {
   // Register endpoint
   app.post("/api/register", async (req, res, next) => {
     try {
+      console.log('=== REGISTRATION START ===');
+      console.log('Request body:', JSON.stringify(req.body, null, 2));
+      
       const { email, password, firstName, lastName, companyName, rnc, rncValidation } = req.body;
 
-      console.log('Registration request received:', { email, firstName, lastName, companyName, rnc }); // Debug log
+      console.log('Extracted data:', { email, firstName, lastName, companyName, rnc }); // Debug log
 
       if (!email || !password || !firstName || !lastName) {
         return res.status(400).json({ message: "Todos los campos requeridos deben ser completados" });
@@ -117,6 +120,7 @@ export function setupAuth(app: Express) {
       console.log('User created successfully:', user.id); // Debug log
 
       // Create company with RNC information
+      console.log('=== CREATING COMPANY ===');
       const companyData: any = {
         name: companyName,
         ownerId: user.id,
@@ -139,7 +143,9 @@ export function setupAuth(app: Express) {
         }
       }
 
+      console.log('Company data to create:', JSON.stringify(companyData, null, 2));
       const company = await storage.createCompany(companyData);
+      console.log('Company created successfully:', company.id);
       console.log('Company created successfully:', company.id); // Debug log
 
       // Associate user with company as admin
