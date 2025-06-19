@@ -276,8 +276,30 @@ export default function ApiRegistration() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            {showLogin ? (
+              // Login Form
+              <div className="space-y-6">
+                <div>
+                  <label className="block text-sm font-medium mb-2">Email *</label>
+                  <Input
+                    type="email"
+                    placeholder="tu-email@empresa.com"
+                    value={loginEmail}
+                    onChange={(e) => setLoginEmail(e.target.value)}
+                  />
+                </div>
+                <Button 
+                  onClick={handleLogin} 
+                  disabled={isLoggingIn || !loginEmail}
+                  className="w-full"
+                >
+                  {isLoggingIn ? "Enviando..." : "Enviar API Key por Correo"}
+                </Button>
+              </div>
+            ) : (
+              // Registration Form
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                 <div className="grid md:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
@@ -375,6 +397,7 @@ export default function ApiRegistration() {
                 </Button>
               </form>
             </Form>
+            )}
           </CardContent>
         </Card>
       </div>
