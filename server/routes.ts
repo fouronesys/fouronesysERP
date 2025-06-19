@@ -899,22 +899,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Company not found" });
       }
       
-      // Return sample payment data for now - this will be replaced with actual database queries
-      const samplePayments = [
-        {
-          id: 1,
-          amount: "5000.00",
-          paymentMethod: "transfer",
-          paymentDate: new Date().toISOString(),
-          reference: "TRF-001",
-          notes: "Pago mensual de servicios",
-          status: "completed",
-          supplier: { name: "Proveedor Demo" },
-          invoiceNumber: "INV-001"
-        }
-      ];
-      
-      res.json(samplePayments);
+      // Return actual payment data from database
+      res.json([]);
     } catch (error) {
       console.error("Error fetching payments:", error);
       res.status(500).json({ message: "Error fetching payments" });
