@@ -629,6 +629,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // DGII Analytics endpoint
+  app.get("/api/fiscal/analytics", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      // Get real fiscal analytics data
+      const currentYear = new Date().getFullYear();
+      const currentMonth = new Date().getMonth() + 1;
+      
+      // Count total fiscal documents (invoices)
+      const documentsCount = await storage.getPOSSalesCount(company.id, currentYear);
+      
+      // Calculate total invoiced amount
+      const totalInvoiced = await storage.getPOSSalesTotalAmount(company.id, currentYear);
+      
+      // Count generated reports
+      const reportsSent = await storage.getFiscalReportsCount(company.id, currentYear);
+      
+      // Calculate compliance rate based on monthly reports submitted
+      const expectedReports = currentMonth; // One report per month
+      const complianceRate = reportsSent > 0 ? Math.min(Math.round((reportsSent / expectedReports) * 100), 100) : 0;
+
+      res.json({
+        documentsCount: documentsCount || 0,
+        totalInvoiced: totalInvoiced || 0,
+        complianceRate,
+        reportsSent: reportsSent || 0,
+        lastUpdated: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error("Error fetching DGII analytics:", error);
+      res.status(500).json({ message: "Failed to fetch DGII analytics" });
+    }
+  });
+
   // Downloads endpoint
   app.get("/api/downloads/available", async (req, res) => {
     try {

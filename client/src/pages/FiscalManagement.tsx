@@ -201,6 +201,12 @@ export default function FiscalManagement() {
     queryKey: ['/api/company/info'],
   });
 
+  // Query for DGII analytics data
+  const { data: dgiiAnalytics } = useQuery({
+    queryKey: ['/api/fiscal/analytics'],
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
   const ncfSequenceForm = useForm<NCFSequenceFormData>({
     resolver: zodResolver(ncfSequenceSchema),
     defaultValues: {
@@ -851,7 +857,9 @@ export default function FiscalManagement() {
                   <div className="flex items-center gap-2">
                     <FileText className="h-8 w-8 text-blue-600" />
                     <div>
-                      <div className="text-2xl font-bold">156</div>
+                      <div className="text-2xl font-bold">
+                        {dgiiAnalytics?.documentsCount || 0}
+                      </div>
                       <div className="text-sm text-muted-foreground">Documentos Fiscales</div>
                     </div>
                   </div>
@@ -863,7 +871,9 @@ export default function FiscalManagement() {
                   <div className="flex items-center gap-2">
                     <Calculator className="h-8 w-8 text-green-600" />
                     <div>
-                      <div className="text-2xl font-bold">RD$ 4.2M</div>
+                      <div className="text-2xl font-bold">
+                        RD$ {dgiiAnalytics?.totalInvoiced?.toLocaleString() || '0'}
+                      </div>
                       <div className="text-sm text-muted-foreground">Total Facturado</div>
                     </div>
                   </div>
@@ -875,7 +885,9 @@ export default function FiscalManagement() {
                   <div className="flex items-center gap-2">
                     <Shield className="h-8 w-8 text-purple-600" />
                     <div>
-                      <div className="text-2xl font-bold">98%</div>
+                      <div className="text-2xl font-bold">
+                        {dgiiAnalytics?.complianceRate ? `${dgiiAnalytics.complianceRate}%` : '0%'}
+                      </div>
                       <div className="text-sm text-muted-foreground">Cumplimiento</div>
                     </div>
                   </div>
@@ -887,7 +899,9 @@ export default function FiscalManagement() {
                   <div className="flex items-center gap-2">
                     <TrendingUp className="h-8 w-8 text-orange-600" />
                     <div>
-                      <div className="text-2xl font-bold">12</div>
+                      <div className="text-2xl font-bold">
+                        {dgiiAnalytics?.reportsSent || 0}
+                      </div>
                       <div className="text-sm text-muted-foreground">Reportes Enviados</div>
                     </div>
                   </div>
