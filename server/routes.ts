@@ -561,6 +561,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin company management endpoints
+  app.get("/api/admin/companies", isAuthenticated, async (req: any, res) => {
+    try {
+      const user = req.user;
+      if (!user || (user.email !== 'admin@fourone.com.do' && user.role !== 'super_admin')) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      const companies = await storage.getAllCompaniesWithDetails();
+      res.json(companies);
+    } catch (error) {
+      console.error("Error fetching companies:", error);
+      res.status(500).json({ message: "Failed to fetch companies" });
+    }
+  });
+
+  app.patch("/api/admin/companies/:id/status", isAuthenticated, async (req: any, res) => {
+    try {
+      const user = req.user;
+      if (!user || (user.email !== 'admin@fourone.com.do' && user.role !== 'super_admin')) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      const { id } = req.params;
+      const { isActive, notes } = req.body;
+
+      const company = await storage.updateCompanyStatus(parseInt(id), isActive, notes);
+      
+      // Log company status update
+      await auditLogger.logUserAction(
+        user.id,
+        parseInt(id),
+        isActive ? 'COMPANY_ACTIVATED' : 'COMPANY_DEACTIVATED',
+        'company',
+        id,
+        null,
+        { isActive, notes },
+        req
+      );
+      
+      res.json(company);
+    } catch (error) {
+      console.error("Error updating company status:", error);
+      res.status(500).json({ message: "Failed to update company status" });
+    }
+  });
+
   // Notification API endpoints
   app.get("/api/notifications", isAuthenticated, async (req, res) => {
     try {
