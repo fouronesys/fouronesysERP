@@ -3503,14 +3503,7 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
-  async updateUser(userId: string, updates: Partial<UpsertUser>): Promise<User | undefined> {
-    const [user] = await db
-      .update(users)
-      .set(updates)
-      .where(eq(users.id, userId))
-      .returning();
-    return user;
-  }
+  // updateUser method already defined above - removing duplicate
 
   async getCompanySettings(companyId: number): Promise<any> {
     // Return default settings - can be extended to use a settings table
@@ -3873,7 +3866,7 @@ export class DatabaseStorage implements IStorage {
     const endDate = new Date(`${year}-12-31`);
     
     const result = await db
-      .select({ total: sql<number>`sum(${posSales.totalAmount})` })
+      .select({ total: sql<number>`sum(cast(total as decimal))` })
       .from(posSales)
       .where(and(
         eq(posSales.companyId, companyId),
