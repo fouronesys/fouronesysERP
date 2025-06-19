@@ -48,6 +48,8 @@ export default function CompanySettings() {
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [rncValidationResult, setRncValidationResult] = useState<RNCValidationResult | null>(null);
   const [isVerifyingRNC, setIsVerifyingRNC] = useState(false);
+  const [rncSuggestions, setRncSuggestions] = useState<any[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const queryClient = useQueryClient();
   const layout = useResponsiveLayout();
 
@@ -272,9 +274,37 @@ export default function CompanySettings() {
     if (!rnc || rnc.length < 9) return;
     
     setIsVerifyingRNC(true);
+    setRncValidationResult(null);
+    
     try {
-      const result = await apiRequest(`/api/rnc/validate?rnc=${encodeURIComponent(rnc)}`);
-      setRncValidationResult(result as unknown as RNCValidationResult);
+      const response = await apiRequest(`/api/dgii/rnc-lookup?rnc=${encodeURIComponent(rnc)}`);
+      const result = await response.json();
+      
+      if (result.success && result.data) {
+        setRncValidationResult({
+          valid: true,
+          message: "RNC válido y encontrado en DGII",
+          data: result.data
+        });
+        
+        // Auto-llenar campos si están vacíos
+        if (result.data.razonSocial && !form.getValues("name")) {
+          form.setValue("name", result.data.razonSocial);
+        }
+        if (result.data.nombreComercial && !form.getValues("businessName")) {
+          form.setValue("businessName", result.data.nombreComercial);
+        }
+        
+        toast({
+          title: "RNC Verificado",
+          description: `Empresa: ${result.data.razonSocial}`,
+        });
+      } else {
+        setRncValidationResult({
+          valid: false,
+          message: result.message || "RNC no encontrado en DGII"
+        });
+      }
     } catch (error) {
       console.error("RNC validation error:", error);
       setRncValidationResult({
@@ -284,6 +314,60 @@ export default function CompanySettings() {
     } finally {
       setIsVerifyingRNC(false);
     }
+  }
+
+  const searchRNCCompanies = async (searchTerm: string) => {
+    if (!searchTerm || searchTerm.length < 3) {
+      setRncSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+
+    try {
+      const response = await apiRequest(`/api/dgii/search-companies?query=${encodeURIComponent(searchTerm)}`);
+      const result = await response.json();
+      
+      if (result.success && result.data && Array.isArray(result.data)) {
+        const suggestions = result.data.slice(0, 5).map((company: any) => ({
+          rnc: company.rnc,
+          name: company.razonSocial || company.name || 'Empresa sin nombre',
+          razonSocial: company.razonSocial,
+          nombreComercial: company.nombreComercial,
+          categoria: company.categoria || company.category,
+          estado: company.estado || company.status
+        }));
+        
+        setRncSuggestions(suggestions);
+        setShowSuggestions(true);
+      } else {
+        setRncSuggestions([]);
+        setShowSuggestions(false);
+      }
+    } catch (error) {
+      console.error('Error searching companies:', error);
+      setRncSuggestions([]);
+      setShowSuggestions(false);
+    }
+  }
+
+  const selectRNCFromSuggestion = (suggestion: any) => {
+    form.setValue("name", suggestion.razonSocial);
+    form.setValue("businessName", suggestion.nombreComercial || suggestion.razonSocial);
+    form.setValue("rnc", suggestion.rnc);
+    
+    setRncValidationResult({
+      valid: true,
+      message: "RNC válido seleccionado desde DGII",
+      data: suggestion
+    });
+    
+    setShowSuggestions(false);
+    setRncSuggestions([]);
+    
+    toast({
+      title: "Empresa seleccionada",
+      description: `${suggestion.razonSocial} - RNC: ${suggestion.rnc}`,
+    });
   };
 
   const handleReset = () => {
