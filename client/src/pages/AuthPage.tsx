@@ -164,7 +164,7 @@ export default function AuthPage() {
       if (result.success && result.data && Array.isArray(result.data)) {
         const suggestions = result.data.slice(0, 5).map((company: any) => ({
           rnc: company.rnc,
-          name: company.name || company.razonSocial || 'Empresa sin nombre',
+          name: company.razonSocial || company.name || 'Empresa sin nombre',
           razonSocial: company.razonSocial,
           categoria: company.categoria || company.category,
           estado: company.estado || company.status
