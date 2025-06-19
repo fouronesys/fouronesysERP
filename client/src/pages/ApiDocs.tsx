@@ -129,10 +129,10 @@ export default function ApiDocs() {
 
 // Ejemplo con curl
 curl -H "Authorization: Bearer tu-api-key-aqui" \\
-     https://your-domain.replit.app/api/v1/rnc/validate/123456789
+     https://api.example.com/v1/rnc/validate/123456789
 
 // Ejemplo con JavaScript
-fetch('https://your-domain.replit.app/api/v1/rnc/validate/123456789', {
+fetch('https://api.example.com/v1/rnc/validate/123456789', {
   headers: {
     'Authorization': 'Bearer tu-api-key-aqui'
   }
@@ -297,7 +297,7 @@ fetch('https://your-domain.replit.app/api/v1/rnc/validate/123456789', {
                         <pre className="text-sm">
 {`// Validar RNC con JavaScript
 async function validateRNC(rnc) {
-  const response = await fetch(\`https://your-domain.replit.app/api/v1/rnc/validate/\${rnc}\`, {
+  const response = await fetch(\`https://api.example.com/v1/rnc/validate/\${rnc}\`, {
     headers: {
       'Authorization': 'Bearer tu-api-key-aqui',
       'Content-Type': 'application/json'
@@ -325,7 +325,7 @@ validateRNC('123456789');`}
 {`import requests
 
 def validate_rnc(rnc):
-    url = f"https://your-domain.replit.app/api/v1/rnc/validate/{rnc}"
+    url = f"https://api.example.com/v1/rnc/validate/{rnc}"
     headers = {
         'Authorization': 'Bearer tu-api-key-aqui',
         'Content-Type': 'application/json'
@@ -350,7 +350,7 @@ validate_rnc('123456789')`}
                         <pre className="text-sm">
 {`<?php
 function validateRNC($rnc) {
-    $url = "https://your-domain.replit.app/api/v1/rnc/validate/" . $rnc;
+    $url = "https://api.example.com/v1/rnc/validate/" . $rnc;
     
     $headers = [
         'Authorization: Bearer tu-api-key-aqui',
@@ -386,13 +386,13 @@ validateRNC('123456789');
                         <pre className="text-sm">
 {`# Validar RNC
 curl -X GET \\
-  "https://your-domain.replit.app/api/v1/rnc/validate/123456789" \\
+  "https://api.example.com/v1/rnc/validate/123456789" \\
   -H "Authorization: Bearer tu-api-key-aqui" \\
   -H "Content-Type: application/json"
 
 # Obtener tipos de NCF  
 curl -X GET \\
-  "https://your-domain.replit.app/api/v1/ncf/types" \\
+  "https://api.example.com/v1/ncf/types" \\
   -H "Authorization: Bearer tu-api-key-aqui" \\
   -H "Content-Type: application/json"`}
                         </pre>
