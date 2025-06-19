@@ -10,7 +10,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import { Eye, EyeOff, Building, Lock, Mail, User } from "lucide-react";
+import { Eye, EyeOff, Building, Lock, Mail, User, Search, Check, AlertCircle } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 import fourOneLogo from "@assets/Four One Solutions Logo.png";
 import { useLocation } from "wouter";
@@ -28,6 +29,7 @@ const registerSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
   companyName: z.string().min(1, "Company name is required"),
+  rnc: z.string().optional(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"],
@@ -41,11 +43,35 @@ type LoginForm = z.infer<typeof loginSchema>;
 type RegisterForm = z.infer<typeof registerSchema>;
 type ForgotPasswordForm = z.infer<typeof forgotPasswordSchema>;
 
+interface RNCValidationResult {
+  valid: boolean;
+  message: string;
+  data?: {
+    rnc: string;
+    name?: string;
+    razonSocial?: string;
+    categoria?: string;
+    estado?: string;
+  };
+}
+
+interface RNCSuggestion {
+  rnc: string;
+  name: string;
+  razonSocial?: string;
+  categoria?: string;
+  estado?: string;
+}
+
 export default function AuthPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [activeTab, setActiveTab] = useState("login");
   const [showLoginAnimation, setShowLoginAnimation] = useState(false);
+  const [isVerifyingRNC, setIsVerifyingRNC] = useState(false);
+  const [rncValidationResult, setRncValidationResult] = useState<RNCValidationResult | null>(null);
+  const [rncSuggestions, setRncSuggestions] = useState<RNCSuggestion[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -68,8 +94,102 @@ export default function AuthPage() {
       firstName: "",
       lastName: "",
       companyName: "",
+      rnc: "",
     },
   });
+
+  const handleRNCVerification = async (rncValue: string) => {
+    if (!rncValue || rncValue.length < 9) return;
+    
+    setIsVerifyingRNC(true);
+    setRncValidationResult(null);
+    
+    try {
+      const response = await apiRequest(`/api/dgii/rnc-lookup?rnc=${encodeURIComponent(rncValue)}`);
+      const result = await response.json();
+      
+      if (result.success && result.data) {
+        setRncValidationResult({
+          valid: true,
+          message: "RNC válido y encontrado en DGII",
+          data: result.data
+        });
+        
+        // Auto-llenar campos si están vacíos
+        if (result.data.name && !registerForm.getValues("companyName")) {
+          registerForm.setValue("companyName", result.data.name);
+        }
+        
+        toast({
+          title: "RNC Verificado",
+          description: `Empresa: ${result.data.name || result.data.razonSocial}`,
+        });
+      } else {
+        setRncValidationResult({
+          valid: false,
+          message: result.message || "RNC no encontrado en DGII"
+        });
+      }
+    } catch (error) {
+      console.error('Error verifying RNC:', error);
+      setRncValidationResult({
+        valid: false,
+        message: "Error al verificar RNC. Intente nuevamente."
+      });
+    } finally {
+      setIsVerifyingRNC(false);
+    }
+  };
+
+  const searchRNCCompanies = async (searchTerm: string) => {
+    if (!searchTerm || searchTerm.length < 3) {
+      setRncSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+
+    try {
+      const response = await apiRequest(`/api/dgii/search-companies?query=${encodeURIComponent(searchTerm)}`);
+      const result = await response.json();
+      
+      if (result.success && result.data && Array.isArray(result.data)) {
+        setRncSuggestions(result.data.slice(0, 5));
+        setShowSuggestions(true);
+      } else {
+        setRncSuggestions([]);
+        setShowSuggestions(false);
+      }
+    } catch (error) {
+      console.error('Error searching companies:', error);
+      setRncSuggestions([]);
+      setShowSuggestions(false);
+    }
+  };
+
+  const selectRNCFromSuggestion = (suggestion: RNCSuggestion) => {
+    registerForm.setValue("rnc", suggestion.rnc);
+    registerForm.setValue("companyName", suggestion.name);
+    
+    setRncValidationResult({
+      valid: true,
+      message: "RNC seleccionado de la lista DGII",
+      data: {
+        rnc: suggestion.rnc,
+        name: suggestion.name,
+        razonSocial: suggestion.razonSocial,
+        categoria: suggestion.categoria,
+        estado: suggestion.estado
+      }
+    });
+    
+    setShowSuggestions(false);
+    setRncSuggestions([]);
+    
+    toast({
+      title: "Empresa Seleccionada",
+      description: `${suggestion.name} - RNC: ${suggestion.rnc}`,
+    });
+  };
 
   const forgotPasswordForm = useForm<ForgotPasswordForm>({
     resolver: zodResolver(forgotPasswordSchema),
@@ -497,12 +617,141 @@ export default function AuthPage() {
                                 <div className="relative">
                                   <Building className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500 dark:text-gray-400" />
                                   <Input
-                                    placeholder="Nombre de tu empresa"
+                                    placeholder="Nombre de tu empresa o buscar por RNC"
                                     className="pl-10 bg-gray-50 dark:bg-gray-700/50 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:border-blue-500 focus:ring-blue-500"
                                     {...field}
+                                    onChange={(e) => {
+                                      field.onChange(e);
+                                      // Buscar empresas si se está escribiendo texto
+                                      if (e.target.value.length >= 3) {
+                                        searchRNCCompanies(e.target.value);
+                                      } else {
+                                        setShowSuggestions(false);
+                                      }
+                                    }}
                                   />
                                 </div>
                               </FormControl>
+                              <FormMessage className="text-red-500 dark:text-red-400" />
+                              
+                              {/* Sugerencias de empresas */}
+                              {showSuggestions && rncSuggestions.length > 0 && (
+                                <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md shadow-lg max-h-48 overflow-y-auto">
+                                  {rncSuggestions.map((suggestion, index) => (
+                                    <div
+                                      key={index}
+                                      className="p-3 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer border-b border-gray-200 dark:border-gray-600 last:border-b-0"
+                                      onClick={() => selectRNCFromSuggestion(suggestion)}
+                                    >
+                                      <div className="font-medium text-gray-900 dark:text-white truncate">
+                                        {suggestion.name}
+                                      </div>
+                                      <div className="text-sm text-gray-600 dark:text-gray-400">
+                                        RNC: {suggestion.rnc}
+                                      </div>
+                                      {suggestion.categoria && (
+                                        <div className="text-xs text-blue-600 dark:text-blue-400">
+                                          {suggestion.categoria}
+                                        </div>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={registerForm.control}
+                          name="rnc"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="flex items-center gap-2 text-gray-700 dark:text-gray-200">
+                                RNC (Registro Nacional del Contribuyente)
+                                {isVerifyingRNC && <Search className="h-3 w-3 animate-spin" />}
+                              </FormLabel>
+                              <FormControl>
+                                <div className="flex gap-2">
+                                  <div className="relative flex-1">
+                                    <Building className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500 dark:text-gray-400" />
+                                    <Input
+                                      placeholder="131-12345-6 (opcional)"
+                                      className={`pl-10 bg-gray-50 dark:bg-gray-700/50 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:border-blue-500 focus:ring-blue-500 ${
+                                        rncValidationResult?.valid === true 
+                                          ? "border-green-500 bg-green-50 dark:bg-green-950" 
+                                          : rncValidationResult?.valid === false 
+                                          ? "border-red-500 bg-red-50 dark:bg-red-950" 
+                                          : ""
+                                      }`}
+                                      {...field}
+                                      onChange={(e) => {
+                                        field.onChange(e);
+                                        // Limpiar validación anterior
+                                        if (rncValidationResult) {
+                                          setRncValidationResult(null);
+                                        }
+                                      }}
+                                      onBlur={(e) => {
+                                        const rncValue = e.target.value?.replace(/\D/g, '') || '';
+                                        if (rncValue && rncValue.length >= 9) {
+                                          handleRNCVerification(rncValue);
+                                        }
+                                      }}
+                                    />
+                                  </div>
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    disabled={isVerifyingRNC || !field.value}
+                                    onClick={() => {
+                                      const rncValue = field.value?.replace(/\D/g, '') || '';
+                                      if (rncValue) {
+                                        handleRNCVerification(rncValue);
+                                      }
+                                    }}
+                                    className="px-3"
+                                  >
+                                    {isVerifyingRNC ? (
+                                      <Search className="h-4 w-4 animate-spin" />
+                                    ) : (
+                                      "Verificar"
+                                    )}
+                                  </Button>
+                                </div>
+                              </FormControl>
+                              
+                              {/* Resultado de verificación de RNC */}
+                              {rncValidationResult && (
+                                <div className={`mt-2 p-2 rounded-md text-sm ${
+                                  rncValidationResult.valid
+                                    ? "bg-green-50 dark:bg-green-950 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800"
+                                    : "bg-red-50 dark:bg-red-950 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800"
+                                }`}>
+                                  <div className="flex items-center gap-2">
+                                    {rncValidationResult.valid ? (
+                                      <Check className="h-4 w-4" />
+                                    ) : (
+                                      <AlertCircle className="h-4 w-4" />
+                                    )}
+                                    <span>{rncValidationResult.message}</span>
+                                  </div>
+                                  {rncValidationResult.data && (
+                                    <div className="mt-1 space-y-1">
+                                      {rncValidationResult.data.name && (
+                                        <div>Empresa: {rncValidationResult.data.name}</div>
+                                      )}
+                                      {rncValidationResult.data.categoria && (
+                                        <Badge variant="secondary" className="text-xs">
+                                          {rncValidationResult.data.categoria}
+                                        </Badge>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                              
                               <FormMessage className="text-red-500 dark:text-red-400" />
                             </FormItem>
                           )}
