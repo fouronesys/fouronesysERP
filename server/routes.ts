@@ -1450,6 +1450,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Manufacturing and BOM operations
+  app.get("/api/products/:id/manufacturing-cost", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      const productId = parseInt(req.params.id);
+      const cost = await storage.calculateManufacturedProductCost(productId, company.id);
+      res.json({ productId, cost });
+    } catch (error) {
+      console.error("Error calculating manufacturing cost:", error);
+      res.status(500).json({ message: "Failed to calculate manufacturing cost" });
+    }
+  });
+
+  app.get("/api/products/:id/material-availability", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      const productId = parseInt(req.params.id);
+      const quantity = parseInt(req.query.quantity as string) || 1;
+      
+      const availability = await storage.checkMaterialAvailability(productId, quantity, company.id);
+      res.json({ productId, quantity, ...availability });
+    } catch (error) {
+      console.error("Error checking material availability:", error);
+      res.status(500).json({ message: "Failed to check material availability" });
+    }
+  });
+
+  app.get("/api/products/:id/bom", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      const productId = parseInt(req.params.id);
+      const bom = await storage.getBOMForProduct(productId, company.id);
+      res.json({ productId, bom });
+    } catch (error) {
+      console.error("Error fetching BOM:", error);
+      res.status(500).json({ message: "Failed to fetch BOM" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

@@ -250,6 +250,14 @@ export interface IStorage {
   getPOSPrintSettings(companyId: number): Promise<POSPrintSettings | undefined>;
   upsertPOSPrintSettings(settings: InsertPOSPrintSettings): Promise<POSPrintSettings>;
   
+  // POS Cart operations
+  getPOSCartItems(companyId: number, userId: string): Promise<any[]>;
+  getPOSCartItem(cartId: number): Promise<POSCartItem | undefined>;
+  addToPOSCart(cartItem: InsertPOSCartItem): Promise<POSCartItem>;
+  updatePOSCartItem(cartId: number, quantity: number): Promise<POSCartItem | null>;
+  removePOSCartItem(cartId: number): Promise<boolean>;
+  clearPOSCart(companyId: number, userId: string): Promise<boolean>;
+  
   // Dashboard metrics
   getDashboardMetrics(companyId: number): Promise<{
     monthSales: string;
@@ -1051,7 +1059,8 @@ export class DatabaseStorage implements IStorage {
     // Include product name in the item data
     const itemWithName = {
       ...itemData,
-      productName: currentProduct?.name || `Producto #${itemData.productId}`
+      productName: currentProduct?.name || `Producto #${itemData.productId}`,
+      productCode: currentProduct?.code || `CODE-${itemData.productId}`
     };
     
     const [item] = await db
@@ -1059,35 +1068,45 @@ export class DatabaseStorage implements IStorage {
       .values(itemWithName)
       .returning();
     
-    // Stock deduction with improved validation
     const quantity = parseInt(itemData.quantity);
     
     if (currentProduct && quantity > 0) {
-      // Check if there's enough stock
-      if (currentProduct.stock >= quantity) {
-        const newStock = currentProduct.stock - quantity;
-        await db
-          .update(products)
-          .set({ 
-            stock: newStock,
-            updatedAt: new Date() 
-          })
-          .where(eq(products.id, itemData.productId));
-        
-        // Register inventory movement
-        await db
-          .insert(inventoryMovements)
-          .values({
-            productId: itemData.productId,
-            type: "OUT",
-            quantity: -quantity,
-            reason: "POS Sale",
-            notes: `Venta POS #${itemData.saleId} - Stock reducido automáticamente`,
-            companyId: currentProduct.companyId,
-            createdBy: itemData.saleId?.toString() || "system",
-          });
+      // Handle manufactured/consumable products
+      if (currentProduct.isManufactured && currentProduct.isConsumable) {
+        // Process material deduction for manufactured products
+        await this.processManufacturedProductSale(
+          itemData.productId, 
+          quantity, 
+          currentProduct.companyId, 
+          itemData.saleId?.toString() || "system"
+        );
       } else {
-        console.warn(`Insufficient stock for product ${itemData.productId}. Available: ${currentProduct.stock}, Requested: ${quantity}`);
+        // Handle regular products with stock tracking
+        if (currentProduct.stock >= quantity) {
+          const newStock = currentProduct.stock - quantity;
+          await db
+            .update(products)
+            .set({ 
+              stock: newStock,
+              updatedAt: new Date() 
+            })
+            .where(eq(products.id, itemData.productId));
+          
+          // Register inventory movement
+          await db
+            .insert(inventoryMovements)
+            .values({
+              productId: itemData.productId,
+              type: "OUT",
+              quantity: -quantity,
+              reason: "POS Sale",
+              notes: `Venta POS #${itemData.saleId} - Stock reducido automáticamente`,
+              companyId: currentProduct.companyId,
+              createdBy: itemData.saleId?.toString() || "system",
+            });
+        } else {
+          console.warn(`Insufficient stock for product ${itemData.productId}. Available: ${currentProduct.stock}, Requested: ${quantity}`);
+        }
       }
     }
     
