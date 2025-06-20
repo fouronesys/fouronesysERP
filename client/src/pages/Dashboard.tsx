@@ -5,7 +5,7 @@ import { QuickActions } from "@/components/QuickActions";
 import { InstallButton } from "@/components/InstallButton";
 import { SalesChart } from "@/components/SalesChart";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { TrendingUp, Users } from "lucide-react";
+import { TrendingUp, Users, ShoppingCart, DollarSign } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 export default function Dashboard() {
@@ -32,37 +32,7 @@ export default function Dashboard() {
           {/* Left Column - Charts */}
           <div className="lg:col-span-2 space-y-4 sm:space-y-6">
             {/* Sales Chart */}
-            <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-              <CardHeader className="border-b border-gray-200 dark:border-gray-700 pb-3 sm:pb-4">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
-                  <CardTitle className="text-lg sm:text-xl text-gray-900 dark:text-white">
-                    Ventas Mensuales
-                  </CardTitle>
-                  <Select defaultValue="6months">
-                    <SelectTrigger className="w-full sm:w-40">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="6months">Últimos 6 meses</SelectItem>
-                      <SelectItem value="year">Este año</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </CardHeader>
-              <CardContent className="p-3 sm:p-6">
-                <div className="h-48 sm:h-64 lg:h-72 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
-                  <div className="text-center">
-                    <BarChart3 className="h-8 w-8 sm:h-12 sm:w-12 text-gray-400 dark:text-gray-500 mx-auto mb-2" />
-                    <p className="text-sm sm:text-base text-gray-500 dark:text-gray-400">
-                      Gráfico de ventas mensuales
-                    </p>
-                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                      Integrar con Chart.js o similar
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <SalesChart />
 
             {/* Performance Overview */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

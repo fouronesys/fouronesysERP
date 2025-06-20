@@ -1198,11 +1198,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const { items, ...invoiceData } = req.body;
       
-      // Create invoice header
-      const invoice = await storage.createInvoice({
+      // Create invoice header with proper field mapping
+      const processedInvoiceData = {
         ...invoiceData,
         companyId: company.id,
-      });
+        customerId: parseInt(invoiceData.customerId) || 0,
+        selectiveConsumptionTax: invoiceData.selectiveConsumptionTax || "0",
+        otherTaxes: invoiceData.otherTaxes || "0"
+      };
+      
+      const invoice = await storage.createInvoice(processedInvoiceData);
 
       // Create invoice items if provided
       if (items && items.length > 0) {
@@ -1210,10 +1215,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const itemData = {
             invoiceId: invoice.id,
             productId: parseInt(item.productId),
-            description: item.description,
+            description: item.description || item.productName || 'Producto',
             quantity: parseInt(item.quantity),
-            price: item.unitPrice,
-            subtotal: item.subtotal,
+            price: parseFloat(item.unitPrice || item.price).toFixed(2),
+            subtotal: parseFloat(item.subtotal).toFixed(2),
             taxType: invoiceData.taxType || "itbis_18",
             taxRate: "18.00",
             taxAmount: (parseFloat(item.subtotal) * 0.18).toFixed(2),
