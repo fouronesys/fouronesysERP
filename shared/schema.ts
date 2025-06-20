@@ -178,7 +178,8 @@ export const products = pgTable("products", {
   imageUrl: varchar("image_url", { length: 1000 }),
   isActive: boolean("is_active").notNull().default(true),
   isManufactured: boolean("is_manufactured").notNull().default(false),
-  productType: varchar("product_type", { length: 20 }).notNull().default("product"), // product, raw_material
+  isConsumable: boolean("is_consumable").notNull().default(false), // Products that don't track stock, created from BOM
+  productType: varchar("product_type", { length: 20 }).notNull().default("product"), // product, raw_material, consumable
   taxType: varchar("tax_type", { length: 20 }).notNull().default("itbis_18"), // itbis_18, itbis_16, itbis_8, itbis_0, exempt, selective_consumption
   warehouseId: integer("warehouse_id"),
   companyId: integer("company_id").notNull().references(() => companies.id),
