@@ -90,14 +90,22 @@ export default function InvoicePrintModal({ isOpen, onClose, saleId, saleNumber 
         const blob = new Blob([htmlContent], { type: 'text/html' });
         const url = URL.createObjectURL(blob);
         
-        // Try to open window immediately to avoid popup blockers
-        const printWindow = window.open('', '_blank', 'width=400,height=800,scrollbars=yes,resizable=yes');
+        // Try to open a properly sized receipt window
+        const printWindow = window.open('', '_blank', 'width=380,height=600,scrollbars=no,resizable=no,toolbar=no,menubar=no,location=no,status=no');
         
         if (printWindow) {
           // Write content to the opened window
           printWindow.document.write(htmlContent);
           printWindow.document.close();
           printWindow.focus();
+          
+          // Auto-trigger print dialog after content loads
+          printWindow.onload = () => {
+            setTimeout(() => {
+              printWindow.print();
+            }, 500);
+          };
+          
           console.log('POS receipt window opened and content written successfully');
           
           // Wait for progress animation to complete

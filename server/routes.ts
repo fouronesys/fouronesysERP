@@ -11,6 +11,7 @@ import { sendApiKeyEmail } from "./email-service";
 import { createPaypalOrder, capturePaypalOrder, loadPaypalDefault } from "./paypal";
 import { insertCustomerSchema } from "../shared/schema";
 import { dgiiRegistryUpdater } from "./dgii-registry-updater";
+import { InvoicePOS80mmService } from "./invoice-pos-80mm-service";
 
 // File upload configuration
 const upload = multer({
@@ -1560,6 +1561,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching POS print settings:", error);
       res.status(500).json({ message: "Failed to fetch POS print settings" });
+    }
+  });
+
+  // 80mm POS Receipt Generation Route
+  app.post("/api/pos/print-pos-80mm/:saleId", isAuthenticated, async (req: any, res) => {
+    try {
+      const { saleId } = req.params;
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      // Get sale data
+      const sale = await storage.getPOSSale(parseInt(saleId), company.id);
+      if (!sale) {
+        return res.status(404).json({ message: "Sale not found" });
+      }
+
+      const items = await storage.getPOSSaleItems(sale.id);
+
+      // Prepare customer info
+      const customerInfo = {
+        name: sale.customerName || undefined,
+        phone: sale.customerPhone || undefined,
+        rnc: sale.customerRnc || undefined,
+      };
+
+      // Generate 80mm POS receipt
+      console.log('Generating 80mm POS receipt for sale:', sale.saleNumber);
+      const htmlContent = await InvoicePOS80mmService.generatePOS80mmReceipt({
+        sale,
+        items,
+        company,
+        customerInfo,
+      });
+
+      console.log('80mm POS receipt HTML length:', htmlContent.length);
+
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      res.send(htmlContent);
+
+    } catch (error) {
+      console.error("Error generating 80mm POS receipt:", error);
+      res.status(500).json({ message: "Failed to generate 80mm POS receipt" });
     }
   });
 
