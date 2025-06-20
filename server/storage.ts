@@ -429,6 +429,18 @@ export interface IStorage {
   checkMaterialAvailability(productId: number, quantity: number, companyId: number): Promise<{ available: boolean; missing: Array<{ materialId: number; required: number; available: number }> }>;
   processManufacturedProductSale(productId: number, quantity: number, companyId: number, userId: string): Promise<void>;
   getBOMForProduct(productId: number, companyId: number): Promise<Array<{ materialId: number; quantity: number; material: Product }>>;
+
+  // NCF Sequence Management
+  getNextNCF(companyId: number, ncfType: string): Promise<string | null>;
+  incrementNCFSequence(companyId: number, ncfType: string): Promise<void>;
+  createNCFSequence(sequenceData: any): Promise<any>;
+  getNCFSequences(companyId: number): Promise<any[]>;
+  updateNCFSequence(id: number, updateData: any, companyId: number): Promise<any>;
+
+  // POS Cart operations
+  clearPOSCart(companyId: number, userId: string): Promise<void>;
+  addToPOSCart(cartData: any): Promise<any>;
+  getPOSCartItems(companyId: number, userId: string): Promise<any[]>;
 }
 
 export class DatabaseStorage implements IStorage {
