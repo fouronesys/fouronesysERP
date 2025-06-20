@@ -975,6 +975,19 @@ export class DatabaseStorage implements IStorage {
     return invoice;
   }
 
+  async getInvoiceItems(invoiceId: number): Promise<any[]> {
+    try {
+      const items = await db
+        .select()
+        .from(invoiceItems)
+        .where(eq(invoiceItems.invoiceId, invoiceId));
+      return items;
+    } catch (error) {
+      console.error("Error fetching invoice items:", error);
+      return [];
+    }
+  }
+
   async createInvoice(invoiceData: InsertInvoice): Promise<Invoice> {
     // Generate automatic invoice number if not provided
     if (!invoiceData.number || invoiceData.number.trim() === '') {

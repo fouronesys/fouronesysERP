@@ -733,9 +733,18 @@ export default function Billing() {
                           size="sm"
                           onClick={() => handlePrintInvoice(invoice)}
                           className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700"
-                          title="Imprimir factura"
+                          title="Imprimir factura básica"
                         >
                           <Printer className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handlePrintProfessionalInvoice(invoice)}
+                          className="h-8 w-8 p-0 text-green-600 hover:text-green-700"
+                          title="Factura profesional"
+                        >
+                          <FileText className="h-3 w-3" />
                         </Button>
                         <Button
                           variant="ghost"
