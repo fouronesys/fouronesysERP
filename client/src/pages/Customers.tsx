@@ -180,7 +180,15 @@ export default function Customers() {
 
   const handleNewCustomer = () => {
     setEditingCustomer(null);
-    form.reset();
+    form.reset({
+      name: "",
+      email: "",
+      phone: "",
+      address: "",
+      type: "individual",
+      rnc: "",
+      cedula: "",
+    });
     setRncVerification(null);
     setIsDialogOpen(true);
   };
