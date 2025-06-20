@@ -186,6 +186,8 @@ export default function Customers() {
   };
 
   const handleRNCVerification = async (rnc: string) => {
+    console.log('RNC Verification called with:', rnc);
+    
     if (!rnc || rnc.length < 9) {
       setRncVerification(null);
       return;
@@ -193,11 +195,13 @@ export default function Customers() {
 
     setIsVerifyingRNC(true);
     try {
+      console.log('Making API request to verify RNC:', rnc);
       const response = await apiRequest(`/api/dgii/rnc-lookup?rnc=${encodeURIComponent(rnc)}`);
       const result = await response.json();
+      console.log('RNC verification result:', result);
       
       if (result.success && result.data) {
-        setRncVerification({
+        const verificationResult = {
           isValid: true,
           rnc: rnc,
           companyName: result.data.razonSocial || result.data.name,
@@ -207,11 +211,15 @@ export default function Customers() {
           regime: result.data.regimen,
           message: "RNC válido y encontrado en DGII",
           source: "dgii"
-        });
+        };
+        
+        setRncVerification(verificationResult);
+        console.log('Set verification result:', verificationResult);
         
         // Auto-fill company name if RNC is valid and name field is empty
         if (result.data.razonSocial && !form.getValues("name")) {
           form.setValue('name', result.data.razonSocial);
+          console.log('Auto-filled company name:', result.data.razonSocial);
         }
         
         toast({
@@ -219,12 +227,15 @@ export default function Customers() {
           description: `Empresa: ${result.data.razonSocial || result.data.name}`,
         });
       } else {
-        setRncVerification({
+        const verificationResult = {
           isValid: false,
           rnc: rnc,
           message: result.message || "RNC no encontrado en DGII",
           source: "dgii"
-        });
+        };
+        
+        setRncVerification(verificationResult);
+        console.log('Set verification result (invalid):', verificationResult);
         
         toast({
           title: "RNC No Encontrado",
@@ -234,12 +245,14 @@ export default function Customers() {
       }
     } catch (error) {
       console.error('Error verifying RNC:', error);
-      setRncVerification({
+      const verificationResult = {
         isValid: false,
         rnc: rnc,
         message: "Error al verificar RNC. Intente nuevamente.",
         source: "error"
-      });
+      };
+      
+      setRncVerification(verificationResult);
       
       toast({
         title: "Error",
