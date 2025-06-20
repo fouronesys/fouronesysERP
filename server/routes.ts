@@ -1813,6 +1813,114 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Fiscal Documents / NCF Management Routes
+  app.get("/api/fiscal/ncf-sequences", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      const sequences = await storage.getNCFSequences(company.id);
+      res.json(sequences);
+    } catch (error) {
+      console.error("Error fetching NCF sequences:", error);
+      res.status(500).json({ message: "Failed to fetch NCF sequences" });
+    }
+  });
+
+  app.post("/api/fiscal/ncf-sequences", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      // Map frontend field names to database field names
+      const { type, series, rangeStart, rangeEnd, currentNumber, expirationDate, isActive, description } = req.body;
+      
+      const sequenceData = {
+        companyId: company.id,
+        ncfType: type,
+        series: series || '001',
+        currentSequence: rangeStart || currentNumber || 1,
+        maxSequence: rangeEnd || 50000000,
+        isActive: isActive !== false,
+        description: description || '',
+        expirationDate: expirationDate ? new Date(expirationDate) : null,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+
+      const sequence = await storage.createNCFSequence(sequenceData);
+      res.json(sequence);
+    } catch (error) {
+      console.error("Error creating NCF sequence:", error);
+      res.status(500).json({ message: "Failed to create NCF sequence" });
+    }
+  });
+
+  app.put("/api/fiscal/ncf-sequences/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      const sequenceId = parseInt(req.params.id);
+      const { currentSequence, maxSequence, isActive } = req.body;
+
+      const updateData = {
+        currentSequence: parseInt(currentSequence),
+        maxSequence: parseInt(maxSequence),
+        isActive,
+        updatedAt: new Date()
+      };
+
+      const sequence = await storage.updateNCFSequence(sequenceId, updateData, company.id);
+      res.json(sequence);
+    } catch (error) {
+      console.error("Error updating NCF sequence:", error);
+      res.status(500).json({ message: "Failed to update NCF sequence" });
+    }
+  });
+
+  app.get("/api/fiscal/reports", isAuthenticated, async (req: any, res) => {
+    try {
+      // Return empty reports for now
+      res.json([]);
+    } catch (error) {
+      console.error("Error fetching fiscal reports:", error);
+      res.status(500).json({ message: "Failed to fetch fiscal reports" });
+    }
+  });
+
+  app.get("/api/fiscal/analytics", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      // Get basic analytics
+      const invoices = await storage.getInvoices(company.id);
+      const totalInvoiced = invoices.reduce((sum, inv) => sum + parseFloat(inv.total || '0'), 0);
+      
+      res.json({
+        documentsCount: invoices.length.toString(),
+        totalInvoiced: totalInvoiced.toFixed(2),
+        averageTicket: invoices.length > 0 ? (totalInvoiced / invoices.length).toFixed(2) : "0.00"
+      });
+    } catch (error) {
+      console.error("Error fetching fiscal analytics:", error);
+      res.status(500).json({ message: "Failed to fetch fiscal analytics" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

@@ -4216,20 +4216,66 @@ export class DatabaseStorage implements IStorage {
 
   // Additional missing methods for completeness
   async clearPOSCart(companyId: number, userId: string): Promise<void> {
-    // Implementation would clear POS cart items for the user
-    console.log(`Clearing POS cart for user ${userId} in company ${companyId}`);
+    try {
+      await db
+        .delete(posCartItems)
+        .where(
+          and(
+            eq(posCartItems.companyId, companyId),
+            eq(posCartItems.userId, userId)
+          )
+        );
+    } catch (error) {
+      console.error("Error clearing POS cart:", error);
+      throw error;
+    }
   }
 
   async addToPOSCart(cartData: any): Promise<any> {
-    // Implementation would add item to POS cart
-    console.log('Adding item to POS cart:', cartData);
-    return cartData;
+    try {
+      const [cartItem] = await db
+        .insert(posCartItems)
+        .values({
+          companyId: cartData.companyId,
+          userId: cartData.userId,
+          productId: cartData.productId,
+          quantity: cartData.quantity.toString(),
+          unitPrice: cartData.unitPrice.toString(),
+          subtotal: cartData.subtotal.toString()
+        })
+        .returning();
+      return cartItem;
+    } catch (error) {
+      console.error("Error adding item to POS cart:", error);
+      throw error;
+    }
   }
 
   async getPOSCartItems(companyId: number, userId: string): Promise<any[]> {
-    // Implementation would get POS cart items
-    console.log(`Getting POS cart items for user ${userId} in company ${companyId}`);
-    return [];
+    try {
+      const cartItems = await db
+        .select({
+          id: posCartItems.id,
+          productId: posCartItems.productId,
+          quantity: posCartItems.quantity,
+          unitPrice: posCartItems.unitPrice,
+          subtotal: posCartItems.subtotal,
+          productName: products.name,
+          productCode: products.code,
+        })
+        .from(posCartItems)
+        .leftJoin(products, eq(posCartItems.productId, products.id))
+        .where(
+          and(
+            eq(posCartItems.companyId, companyId),
+            eq(posCartItems.userId, userId)
+          )
+        );
+      return cartItems;
+    } catch (error) {
+      console.error("Error getting POS cart items:", error);
+      return [];
+    }
   }
 }
 
