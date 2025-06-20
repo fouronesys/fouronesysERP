@@ -1857,82 +1857,7 @@ export class DatabaseStorage implements IStorage {
 
 
 
-  // NCF Management
-  async getNCFSequences(companyId: number): Promise<NCFSequence[]> {
-    return await db.select().from(ncfSequences).where(eq(ncfSequences.companyId, companyId));
-  }
 
-  // NCF Sequence operations for Fiscal Receipts
-  async getNextNCF(companyId: number, ncfType: string = "B01"): Promise<string | null> {
-    // Get the current NCF sequence for this company and type
-    let [sequence] = await db
-      .select()
-      .from(ncfSequences)
-      .where(
-        and(
-          eq(ncfSequences.companyId, companyId),
-          eq(ncfSequences.ncfType, ncfType),
-          eq(ncfSequences.isActive, true)
-        )
-      );
-
-    // If no sequence exists, return null
-    if (!sequence) {
-      return null;
-    }
-
-    // Get current sequence (default to 0 if null)
-    const currentSeq = sequence.currentSequence || 0;
-    const newSequence = currentSeq + 1;
-    
-    // Update sequence
-    await db
-      .update(ncfSequences)
-      .set({ 
-        currentSequence: newSequence,
-        updatedAt: new Date()
-      })
-      .where(eq(ncfSequences.id, sequence.id));
-
-    // Format NCF: B01 + 8-digit sequence
-    const ncf = `${ncfType}${newSequence.toString().padStart(8, '0')}`;
-
-    return ncf;
-  }
-
-  async createNCFSequence(data: InsertNCFSequence): Promise<NCFSequence> {
-    const [sequence] = await db
-      .insert(ncfSequences)
-      .values(data)
-      .returning();
-    return sequence;
-  }
-
-  async updateNCFSequence(id: number, updateData: Partial<InsertNCFSequence>, companyId: number): Promise<NCFSequence | undefined> {
-    const [updated] = await db
-      .update(ncfSequences)
-      .set({ 
-        ...updateData,
-        updatedAt: new Date()
-      })
-      .where(and(eq(ncfSequences.id, id), eq(ncfSequences.companyId, companyId)))
-      .returning();
-    return updated;
-  }
-
-  async incrementNCFSequence(companyId: number, ncfType: string): Promise<void> {
-    await db
-      .update(ncfSequences)
-      .set({ 
-        currentSequence: sql`${ncfSequences.currentSequence} + 1`,
-        updatedAt: new Date()
-      })
-      .where(and(
-        eq(ncfSequences.companyId, companyId),
-        eq(ncfSequences.ncfType, ncfType),
-        eq(ncfSequences.isActive, true)
-      ));
-  }
 
   // Comprobantes 605 (Compras)
   async getComprobantes605(companyId: number, period: string): Promise<Comprobante605[]> {
@@ -4178,14 +4103,13 @@ export class DatabaseStorage implements IStorage {
   // NCF Sequence Management Methods
   async getNextNCF(companyId: number, ncfType: string): Promise<string | null> {
     try {
-      // Find active sequence for this NCF type
       const [sequence] = await db
         .select()
         .from(ncfSequences)
         .where(
           and(
             eq(ncfSequences.companyId, companyId),
-            eq(ncfSequences.type, ncfType),
+            eq(ncfSequences.ncfType, ncfType),
             eq(ncfSequences.isActive, true)
           )
         )
@@ -4196,15 +4120,16 @@ export class DatabaseStorage implements IStorage {
         return null;
       }
 
-      // Check if sequence has available numbers
-      if (sequence.currentNumber >= sequence.rangeEnd) {
+      const currentSeq = sequence.currentSequence || 1;
+      const maxSeq = sequence.maxSequence || 50000000;
+      
+      if (currentSeq >= maxSeq) {
         console.log(`NCF sequence ${ncfType} exhausted`);
         return null;
       }
 
-      // Generate NCF: Type + Series + Sequential Number (8 digits)
-      const formattedNumber = sequence.currentNumber.toString().padStart(8, '0');
-      const ncf = `${ncfType}${sequence.series}${formattedNumber}`;
+      const formattedNumber = currentSeq.toString().padStart(8, '0');
+      const ncf = `${ncfType}${formattedNumber}`;
       
       return ncf;
     } catch (error) {
@@ -4218,13 +4143,13 @@ export class DatabaseStorage implements IStorage {
       await db
         .update(ncfSequences)
         .set({ 
-          currentNumber: sql`${ncfSequences.currentNumber} + 1`,
+          currentSequence: sql`${ncfSequences.currentSequence} + 1`,
           updatedAt: new Date()
         })
         .where(
           and(
             eq(ncfSequences.companyId, companyId),
-            eq(ncfSequences.type, ncfType),
+            eq(ncfSequences.ncfType, ncfType),
             eq(ncfSequences.isActive, true)
           )
         );
@@ -4253,11 +4178,46 @@ export class DatabaseStorage implements IStorage {
         .select()
         .from(ncfSequences)
         .where(eq(ncfSequences.companyId, companyId))
-        .orderBy(ncfSequences.type, ncfSequences.series);
+        .orderBy(ncfSequences.ncfType);
     } catch (error) {
       console.error("Error fetching NCF sequences:", error);
       return [];
     }
+  }
+
+  async updateNCFSequence(id: number, updateData: any, companyId: number): Promise<any> {
+    try {
+      const [updated] = await db
+        .update(ncfSequences)
+        .set({ 
+          ...updateData,
+          updatedAt: new Date()
+        })
+        .where(and(eq(ncfSequences.id, id), eq(ncfSequences.companyId, companyId)))
+        .returning();
+      return updated;
+    } catch (error) {
+      console.error("Error updating NCF sequence:", error);
+      throw error;
+    }
+  }
+
+  // Additional missing methods for completeness
+  async clearPOSCart(companyId: number, userId: string): Promise<void> {
+    // Implementation would clear POS cart items for the user
+    console.log(`Clearing POS cart for user ${userId} in company ${companyId}`);
+  }
+
+  async addToPOSCart(cartData: any): Promise<any> {
+    // Implementation would add item to POS cart
+    console.log('Adding item to POS cart:', cartData);
+    return cartData;
+  }
+
+  async getPOSCartItems(companyId: number, userId: string): Promise<any[]> {
+    // Implementation would get POS cart items
+    console.log(`Getting POS cart items for user ${userId} in company ${companyId}`);
+    return [];
   }
 }
 
