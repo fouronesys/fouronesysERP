@@ -186,8 +186,6 @@ export default function Customers() {
   };
 
   const handleRNCVerification = async (rnc: string) => {
-    console.log('RNC Verification called with:', rnc);
-    
     if (!rnc || rnc.length < 9) {
       setRncVerification(null);
       return;
@@ -195,10 +193,8 @@ export default function Customers() {
 
     setIsVerifyingRNC(true);
     try {
-      console.log('Making API request to verify RNC:', rnc);
       const response = await apiRequest(`/api/dgii/rnc-lookup?rnc=${encodeURIComponent(rnc)}`);
       const result = await response.json();
-      console.log('RNC verification result:', result);
       
       if (result.success && result.data) {
         const verificationResult = {
@@ -214,12 +210,10 @@ export default function Customers() {
         };
         
         setRncVerification(verificationResult);
-        console.log('Set verification result:', verificationResult);
         
         // Auto-fill company name if RNC is valid and name field is empty
         if (result.data.razonSocial && !form.getValues("name")) {
           form.setValue('name', result.data.razonSocial);
-          console.log('Auto-filled company name:', result.data.razonSocial);
         }
         
         toast({
@@ -235,7 +229,6 @@ export default function Customers() {
         };
         
         setRncVerification(verificationResult);
-        console.log('Set verification result (invalid):', verificationResult);
         
         toast({
           title: "RNC No Encontrado",
