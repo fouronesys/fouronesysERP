@@ -35,10 +35,6 @@ export class InvoicePOS80mmService {
     // Load company logo if available
     let logoBase64 = '';
     
-    console.log('Company logoUrl field:', company.logoUrl ? 'present' : 'not present');
-    console.log('Company logoUrl type:', typeof company.logoUrl);
-    console.log('Company logoUrl starts with data:', company.logoUrl?.startsWith('data:'));
-    
     try {
       if (company.logoUrl) {
         // If company has uploaded a logo, use it
