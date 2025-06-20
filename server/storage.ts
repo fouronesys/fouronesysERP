@@ -410,6 +410,12 @@ export interface IStorage {
   updateApiDeveloper(id: number, updates: Partial<InsertApiDeveloper>): Promise<ApiDeveloper | undefined>;
   logApiRequest(request: InsertApiRequest): Promise<ApiRequest>;
   getApiDeveloperStats(developerId: number): Promise<{ requestsCount: number; lastRequestAt: Date | null }>;
+
+  // Manufacturing and BOM operations
+  calculateManufacturedProductCost(productId: number, companyId: number): Promise<number>;
+  checkMaterialAvailability(productId: number, quantity: number, companyId: number): Promise<{ available: boolean; missing: Array<{ materialId: number; required: number; available: number }> }>;
+  processManufacturedProductSale(productId: number, quantity: number, companyId: number, userId: string): Promise<void>;
+  getBOMForProduct(productId: number, companyId: number): Promise<Array<{ materialId: number; quantity: number; material: Product }>>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -886,22 +892,36 @@ export class DatabaseStorage implements IStorage {
     const imageUrl = productData.imageUrl || this.generateProductImageUrl(productData.name);
     const resolvedImageUrl = typeof imageUrl === 'string' ? imageUrl : await imageUrl;
     
-    const productWithImage = {
+    // Force manufactured products to be consumables
+    let finalProductData = {
       ...productData,
       imageUrl: resolvedImageUrl
     };
     
+    if (finalProductData.isManufactured) {
+      finalProductData.isConsumable = true;
+      finalProductData.productType = 'consumable';
+    }
+    
     const [product] = await db
       .insert(products)
-      .values(productWithImage)
+      .values(finalProductData)
       .returning();
     return product;
   }
 
   async updateProduct(id: number, productData: Partial<InsertProduct>, companyId: number): Promise<Product | undefined> {
+    // Force manufactured products to be consumables
+    let finalProductData = { ...productData, updatedAt: new Date() };
+    
+    if (finalProductData.isManufactured) {
+      finalProductData.isConsumable = true;
+      finalProductData.productType = 'consumable';
+    }
+    
     const [product] = await db
       .update(products)
-      .set({ ...productData, updatedAt: new Date() })
+      .set(finalProductData)
       .where(and(eq(products.id, id), eq(products.companyId, companyId)))
       .returning();
     return product;
@@ -3939,6 +3959,138 @@ export class DatabaseStorage implements IStorage {
   }
 
   // getUserByEmail method already defined above - removing duplicate
+
+  // Manufacturing and BOM operations
+  async calculateManufacturedProductCost(productId: number, companyId: number): Promise<number> {
+    const bomItems = await db
+      .select({
+        materialId: bom.materialId,
+        quantity: bom.quantity,
+        material: products
+      })
+      .from(bom)
+      .innerJoin(products, eq(bom.materialId, products.id))
+      .where(and(
+        eq(bom.productId, productId),
+        eq(bom.companyId, companyId),
+        eq(products.companyId, companyId)
+      ));
+
+    let totalCost = 0;
+    for (const item of bomItems) {
+      const materialCost = parseFloat(item.material.cost || '0');
+      const requiredQuantity = parseFloat(item.quantity.toString());
+      totalCost += materialCost * requiredQuantity;
+    }
+
+    return totalCost;
+  }
+
+  async checkMaterialAvailability(productId: number, quantity: number, companyId: number): Promise<{ available: boolean; missing: Array<{ materialId: number; required: number; available: number }> }> {
+    const bomItems = await db
+      .select({
+        materialId: bom.materialId,
+        quantity: bom.quantity,
+        material: products
+      })
+      .from(bom)
+      .innerJoin(products, eq(bom.materialId, products.id))
+      .where(and(
+        eq(bom.productId, productId),
+        eq(bom.companyId, companyId),
+        eq(products.companyId, companyId)
+      ));
+
+    const missing: Array<{ materialId: number; required: number; available: number }> = [];
+
+    for (const item of bomItems) {
+      const requiredQuantity = parseFloat(item.quantity.toString()) * quantity;
+      const availableStock = item.material.stock;
+
+      // Only check stock for non-consumable materials (raw materials and regular products)
+      if (!item.material.isConsumable && availableStock < requiredQuantity) {
+        missing.push({
+          materialId: item.materialId,
+          required: requiredQuantity,
+          available: availableStock
+        });
+      }
+    }
+
+    return {
+      available: missing.length === 0,
+      missing
+    };
+  }
+
+  async processManufacturedProductSale(productId: number, quantity: number, companyId: number, userId: string): Promise<void> {
+    const bomItems = await db
+      .select({
+        materialId: bom.materialId,
+        quantity: bom.quantity,
+        material: products
+      })
+      .from(bom)
+      .innerJoin(products, eq(bom.materialId, products.id))
+      .where(and(
+        eq(bom.productId, productId),
+        eq(bom.companyId, companyId),
+        eq(products.companyId, companyId)
+      ));
+
+    // Process each material in the BOM
+    for (const item of bomItems) {
+      const requiredQuantity = parseFloat(item.quantity.toString()) * quantity;
+      
+      // Only deduct stock from non-consumable materials
+      if (!item.material.isConsumable) {
+        // Update material stock
+        await db
+          .update(products)
+          .set({ 
+            stock: sql`${products.stock} - ${requiredQuantity}`,
+            updatedAt: new Date()
+          })
+          .where(and(
+            eq(products.id, item.materialId),
+            eq(products.companyId, companyId)
+          ));
+
+        // Create inventory movement record
+        await db.insert(inventoryMovements).values({
+          productId: item.materialId,
+          type: 'OUT',
+          quantity: Math.floor(requiredQuantity),
+          reason: 'manufactured_product_sale',
+          notes: `Material usado para manufactura de producto ID: ${productId}, cantidad: ${quantity}`,
+          companyId,
+          createdBy: userId,
+        });
+      }
+    }
+  }
+
+  async getBOMForProduct(productId: number, companyId: number): Promise<Array<{ materialId: number; quantity: number; material: Product }>> {
+    const bomItems = await db
+      .select({
+        materialId: bom.materialId,
+        quantity: bom.quantity,
+        material: products
+      })
+      .from(bom)
+      .innerJoin(products, eq(bom.materialId, products.id))
+      .where(and(
+        eq(bom.productId, productId),
+        eq(bom.companyId, companyId),
+        eq(products.companyId, companyId)
+      ));
+
+    return bomItems.map(item => ({
+      materialId: item.materialId,
+      quantity: parseFloat(item.quantity.toString()),
+      material: item.material
+    }));
+  }
 }
 
 export const storage = new DatabaseStorage();
