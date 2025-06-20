@@ -1294,17 +1294,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Company not found" });
       }
 
-      const { id: productId, price } = req.body;
+      // Support both legacy format and new format
+      const { id, price, productId, quantity = 1, unitPrice, subtotal } = req.body;
+      const finalProductId = productId || id;
+      const finalUnitPrice = unitPrice || price;
+      const finalQuantity = quantity;
+      const finalSubtotal = subtotal || (finalUnitPrice * finalQuantity);
+      
+      if (!finalProductId) {
+        return res.status(400).json({ message: "Product ID is required" });
+      }
       
       // Get product details to check if it's manufactured/consumable
-      const product = await storage.getProduct(productId, company.id);
+      const product = await storage.getProduct(finalProductId, company.id);
       if (!product) {
         return res.status(404).json({ message: "Product not found" });
       }
 
       // For consumable products, check material availability
       if (product.isConsumable && product.isManufactured) {
-        const availability = await storage.checkMaterialAvailability(productId, 1, company.id);
+        const availability = await storage.checkMaterialAvailability(finalProductId, finalQuantity, company.id);
         if (!availability.available) {
           return res.status(400).json({ 
             message: "Insufficient materials to manufacture this product",
@@ -1316,10 +1325,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const cartItem = {
         companyId: company.id,
         userId: userId,
-        productId: productId,
-        quantity: 1,
-        unitPrice: price,
-        subtotal: price
+        productId: finalProductId,
+        quantity: finalQuantity,
+        unitPrice: finalUnitPrice,
+        subtotal: finalSubtotal
       };
 
       const newItem = await storage.addToPOSCart(cartItem);

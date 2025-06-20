@@ -54,6 +54,7 @@ const navigation = [
     category: "Ventas",
     items: [
       { name: "Punto de Venta (POS)", href: "/pos", icon: CreditCard },
+      { name: "Ventas POS", href: "/pos-sales", icon: Star },
       { name: "Facturación", href: "/billing", icon: FileText },
       { name: "Clientes", href: "/customers", icon: Users },
       { name: "Reportes de Ventas", href: "/sales-reports", icon: ChartBar },
@@ -78,7 +79,6 @@ const navigation = [
     category: "Compras",
     items: [
       { name: "Módulo de Compras", href: "/purchases", icon: ShoppingCart },
-      { name: "Ventas POS", href: "/pos-sales", icon: Star },
     ],
   },
   {
