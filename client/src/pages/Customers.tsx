@@ -193,32 +193,57 @@ export default function Customers() {
 
     setIsVerifyingRNC(true);
     try {
-      const response = await fetch(`/api/customers/verify-rnc/${rnc.replace(/\D/g, '')}`, {
-        credentials: 'include'
-      });
-      const data = await response.json();
+      const response = await apiRequest(`/api/dgii/rnc-lookup?rnc=${encodeURIComponent(rnc)}`);
+      const result = await response.json();
       
-      setRncVerification(data);
-      
-      if (data.isValid && data.companyName) {
-        // Auto-fill company name if RNC is valid
-        form.setValue('name', data.companyName);
+      if (result.success && result.data) {
+        setRncVerification({
+          isValid: true,
+          rnc: rnc,
+          companyName: result.data.razonSocial || result.data.name,
+          businessName: result.data.nombreComercial,
+          status: result.data.estado,
+          category: result.data.categoria,
+          regime: result.data.regimen,
+          message: "RNC válido y encontrado en DGII",
+          source: "dgii"
+        });
+        
+        // Auto-fill company name if RNC is valid and name field is empty
+        if (result.data.razonSocial && !form.getValues("name")) {
+          form.setValue('name', result.data.razonSocial);
+        }
+        
         toast({
           title: "RNC Verificado",
-          description: `Empresa: ${data.companyName}`,
+          description: `Empresa: ${result.data.razonSocial || result.data.name}`,
         });
       } else {
+        setRncVerification({
+          isValid: false,
+          rnc: rnc,
+          message: result.message || "RNC no encontrado en DGII",
+          source: "dgii"
+        });
+        
         toast({
           title: "RNC No Encontrado",
-          description: data.message,
+          description: result.message || "RNC no encontrado en DGII",
           variant: "destructive",
         });
       }
     } catch (error) {
       console.error('Error verifying RNC:', error);
+      setRncVerification({
+        isValid: false,
+        rnc: rnc,
+        message: "Error al verificar RNC. Intente nuevamente.",
+        source: "error"
+      });
+      
       toast({
         title: "Error",
-        description: "No se pudo verificar el RNC",
+        description: "Error al verificar RNC. Intente nuevamente.",
         variant: "destructive",
       });
     } finally {

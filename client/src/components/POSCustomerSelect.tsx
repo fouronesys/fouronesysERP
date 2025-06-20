@@ -93,28 +93,43 @@ export default function POSCustomerSelect({ selectedCustomer, onCustomerSelect, 
     
     setIsValidatingRnc(true);
     try {
-      const response = await apiRequest(`/api/customers/verify-rnc/${rnc}`, {
-        method: 'GET'
-      });
-      
-      const data = await response.json();
+      // First check if customer with this RNC already exists
+      const existingResponse = await apiRequest(`/api/customers/verify-rnc/${rnc}`);
+      const existingData = await existingResponse.json();
 
-      if (data.exists) {
+      if (existingData.exists) {
         // Customer already exists, select it
-        onCustomerSelect(data.customer);
+        onCustomerSelect(existingData.customer);
         setIsDialogOpen(false);
         toast({
           title: "Cliente encontrado",
-          description: `Cliente ${data.customer.name} seleccionado`
+          description: `Cliente ${existingData.customer.name} seleccionado`
         });
-      } else if (data.validation?.valid) {
+        return;
+      }
+
+      // If customer doesn't exist, validate RNC with DGII
+      const dgiiResponse = await apiRequest(`/api/dgii/rnc-lookup?rnc=${encodeURIComponent(rnc)}`);
+      const dgiiResult = await dgiiResponse.json();
+      
+      if (dgiiResult.success && dgiiResult.data) {
         // RNC is valid, auto-fill form data
-        const { data: rncData } = data.validation;
-        form.setValue('name', rncData.name || '');
-        if (rncData.businessName) {
-          form.setValue('name', rncData.businessName);
+        const companyName = dgiiResult.data.razonSocial || dgiiResult.data.name;
+        if (companyName) {
+          form.setValue('name', companyName);
         }
-        setRncValidation({ valid: true, rnc, data: rncData });
+        
+        setRncValidation({ 
+          valid: true, 
+          rnc, 
+          data: {
+            name: companyName,
+            businessName: dgiiResult.data.nombreComercial,
+            status: dgiiResult.data.estado,
+            category: dgiiResult.data.categoria
+          }
+        });
+        
         toast({
           title: "RNC válido",
           description: "Datos del cliente rellenados automáticamente"

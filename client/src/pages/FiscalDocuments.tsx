@@ -71,17 +71,34 @@ export default function FiscalDocuments() {
 
     setIsVerifyingRNC(true);
     try {
-      const response = await fetch(`/api/verify-rnc/${rncToVerify}`);
+      const response = await fetch(`/api/dgii/rnc-lookup?rnc=${encodeURIComponent(rncToVerify.trim())}`, {
+        credentials: 'include'
+      });
       const result = await response.json();
       
-      setRncVerificationResult(result);
-      
-      if (result.valid && result.data) {
+      if (result.success && result.data) {
+        setRncVerificationResult({
+          valid: true,
+          data: {
+            rnc: result.data.rnc,
+            razonSocial: result.data.razonSocial || result.data.name,
+            nombreComercial: result.data.nombreComercial,
+            estado: result.data.estado,
+            categoria: result.data.categoria,
+            regimen: result.data.regimen
+          }
+        });
+        
         toast({
           title: "RNC Verificado",
-          description: `Empresa encontrada: ${result.data.razonSocial}`,
+          description: `Empresa encontrada: ${result.data.razonSocial || result.data.name}`,
         });
       } else {
+        setRncVerificationResult({
+          valid: false,
+          message: result.message || "RNC no encontrado en DGII"
+        });
+        
         toast({
           title: "RNC No Encontrado",
           description: result.message || "No se pudo verificar el RNC en la DGII",
@@ -90,6 +107,11 @@ export default function FiscalDocuments() {
       }
     } catch (error) {
       console.error("Error verifying RNC:", error);
+      setRncVerificationResult({
+        valid: false,
+        message: "Error al conectar con el servicio de verificación"
+      });
+      
       toast({
         title: "Error de Verificación",
         description: "No se pudo conectar con el servicio de verificación",
