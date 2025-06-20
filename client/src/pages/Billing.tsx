@@ -10,7 +10,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDes
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Search, FileText, Eye, Edit, Trash2, Calendar, DollarSign, User, Building2, X, ShoppingCart } from "lucide-react";
+import { Plus, Search, FileText, Eye, Edit, Trash2, Calendar, DollarSign, User, Building2, X, ShoppingCart, Printer } from "lucide-react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -220,7 +220,8 @@ export default function Billing() {
       };
       return await apiRequest("/api/invoices", { method: "POST", body: payload });
     },
-    onSuccess: (newInvoice) => {
+    onSuccess: (response) => {
+      const newInvoice = response;
       toast({
         title: "Factura creada",
         description: "La factura ha sido creada exitosamente.",
@@ -544,6 +545,15 @@ export default function Billing() {
                       </div>
                       
                       <div className="flex gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handlePrintInvoice(invoice)}
+                          className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700"
+                          title="Imprimir factura"
+                        >
+                          <Printer className="h-3 w-3" />
+                        </Button>
                         <Button
                           variant="ghost"
                           size="sm"

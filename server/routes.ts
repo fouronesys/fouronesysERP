@@ -1172,6 +1172,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Print invoice endpoint
+  app.post("/api/invoices/print/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      const invoiceId = parseInt(req.params.id);
+      const invoice = await storage.getInvoice(invoiceId, company.id);
+      
+      if (!invoice) {
+        return res.status(404).json({ message: "Invoice not found" });
+      }
+
+      const customer = await storage.getCustomer(invoice.customerId, company.id);
+      // For now, create empty invoice items array - this should be implemented in storage
+      const invoiceItems: any[] = [];
+
+      if (!customer) {
+        return res.status(404).json({ message: "Customer not found" });
+      }
+
+      const htmlContent = await InvoiceHTMLService.generateInvoiceHTML(
+        invoice,
+        customer,
+        company,
+        invoiceItems
+      );
+
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      res.send(htmlContent);
+    } catch (error) {
+      console.error("Error printing invoice:", error);
+      res.status(500).json({ message: "Failed to print invoice" });
+    }
+  });
+
   // Customer routes
   app.get("/api/customers", isAuthenticated, async (req: any, res) => {
     try {
