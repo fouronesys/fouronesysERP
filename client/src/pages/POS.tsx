@@ -278,14 +278,14 @@ export default function POS() {
       return;
     }
 
-    const cartItem = cartData.find((item: any) => item.product.id === productId);
+    const cartItem = cartData.find((item: any) => item.productId === productId);
     if (cartItem) {
       updateCartMutation.mutate({ cartId: cartItem.id, quantity: newQuantity });
     }
   };
 
   const removeFromCart = (productId: number) => {
-    const cartItem = cartData.find((item: any) => item.product.id === productId);
+    const cartItem = cartData.find((item: any) => item.productId === productId);
     if (cartItem) {
       removeFromCartMutation.mutate(cartItem.id);
     }

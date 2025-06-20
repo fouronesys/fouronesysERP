@@ -2762,7 +2762,8 @@ export class DatabaseStorage implements IStorage {
         quantity: posCartItems.quantity,
         unitPrice: posCartItems.unitPrice,
         subtotal: posCartItems.subtotal,
-        product: products
+        productName: products.name,
+        productCode: products.code,
       })
       .from(posCartItems)
       .leftJoin(products, eq(posCartItems.productId, products.id))
@@ -4251,32 +4252,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getPOSCartItems(companyId: number, userId: string): Promise<any[]> {
-    try {
-      const cartItems = await db
-        .select({
-          id: posCartItems.id,
-          productId: posCartItems.productId,
-          quantity: posCartItems.quantity,
-          unitPrice: posCartItems.unitPrice,
-          subtotal: posCartItems.subtotal,
-          productName: products.name,
-          productCode: products.code,
-        })
-        .from(posCartItems)
-        .leftJoin(products, eq(posCartItems.productId, products.id))
-        .where(
-          and(
-            eq(posCartItems.companyId, companyId),
-            eq(posCartItems.userId, userId)
-          )
-        );
-      return cartItems;
-    } catch (error) {
-      console.error("Error getting POS cart items:", error);
-      return [];
-    }
-  }
+
 }
 
 export const storage = new DatabaseStorage();
