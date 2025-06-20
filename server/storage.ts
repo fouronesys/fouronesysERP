@@ -2782,41 +2782,7 @@ export class DatabaseStorage implements IStorage {
 
 
 
-  async updatePOSCartItem(id: number, quantity: number): Promise<POSCartItem | undefined> {
-    const [item] = await db.select().from(posCartItems).where(eq(posCartItems.id, id)).limit(1);
-    if (!item) return undefined;
 
-    // If quantity is 0, remove the item
-    if (quantity <= 0) {
-      await this.removePOSCartItem(id);
-      return undefined;
-    }
-
-    // Validate stock availability
-    const product = await this.getProduct(item.productId, item.companyId);
-    if (!product) {
-      throw new Error('Producto no encontrado');
-    }
-
-    const currentStock = parseFloat(String(product.stock || 0));
-    if (currentStock < quantity) {
-      throw new Error(`Stock insuficiente. Disponible: ${currentStock}, solicitado: ${quantity}`);
-    }
-
-    const newSubtotal = quantity * parseFloat(item.unitPrice.toString());
-    
-    const [updated] = await db
-      .update(posCartItems)
-      .set({
-        quantity,
-        subtotal: newSubtotal.toString(),
-        updatedAt: new Date()
-      })
-      .where(eq(posCartItems.id, id))
-      .returning();
-    
-    return updated;
-  }
 
 
 
