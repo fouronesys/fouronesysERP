@@ -22,7 +22,7 @@ export class InvoicePOS80mmService {
     const { sale, items, company, customerInfo } = invoiceData;
     
     // Generate QR code for verification
-    const verificationUrl = `https://invoice-verify.com/v/${sale.saleNumber}`;
+    const verificationUrl = `https://fourone.com.do/v/${sale.saleNumber}`;
     const qrCodeDataURL = await QRCode.toDataURL(verificationUrl, {
       width: 80,
       margin: 1,
@@ -34,18 +34,44 @@ export class InvoicePOS80mmService {
 
     // Load company logo if available
     let logoBase64 = '';
-    const defaultLogoPath = path.join(process.cwd(), 'attached_assets', 'Four One Solutions Logo_20250130_143011_0000_1749182433509.png');
+    
+    console.log('Company logoUrl field:', company.logoUrl ? 'present' : 'not present');
+    console.log('Company logoUrl type:', typeof company.logoUrl);
+    console.log('Company logoUrl starts with data:', company.logoUrl?.startsWith('data:'));
     
     try {
-      if (fs.existsSync(defaultLogoPath)) {
-        const logoBuffer = fs.readFileSync(defaultLogoPath);
-        logoBase64 = `data:image/png;base64,${logoBuffer.toString('base64')}`;
-        console.log('Default logo loaded successfully for POS receipt');
-      } else {
-        console.log('Default logo not found, using text header only');
+      if (company.logoUrl) {
+        // If company has uploaded a logo, use it
+        if (company.logoUrl.startsWith('data:')) {
+          // Logo is already in base64 format
+          logoBase64 = company.logoUrl;
+          console.log('Company logo loaded from database for POS receipt');
+        } else if (company.logoUrl.startsWith('/uploads/') || company.logoUrl.startsWith('uploads/')) {
+          // Logo is a file path, read it
+          const logoPath = path.join(process.cwd(), company.logoUrl);
+          if (fs.existsSync(logoPath)) {
+            const logoBuffer = fs.readFileSync(logoPath);
+            const ext = path.extname(logoPath).toLowerCase();
+            const mimeType = ext === '.png' ? 'image/png' : ext === '.jpg' || ext === '.jpeg' ? 'image/jpeg' : 'image/png';
+            logoBase64 = `data:${mimeType};base64,${logoBuffer.toString('base64')}`;
+            console.log('Company logo loaded from file for POS receipt');
+          }
+        }
+      }
+      
+      // Fallback to default logo only if no company logo is available
+      if (!logoBase64) {
+        const defaultLogoPath = path.join(process.cwd(), 'attached_assets', 'Four One Solutions Logo_20250130_143011_0000_1749182433509.png');
+        if (fs.existsSync(defaultLogoPath)) {
+          const logoBuffer = fs.readFileSync(defaultLogoPath);
+          logoBase64 = `data:image/png;base64,${logoBuffer.toString('base64')}`;
+          console.log('Using default logo for POS receipt (no company logo configured)');
+        } else {
+          console.log('No logo available, using text header only');
+        }
       }
     } catch (error) {
-      console.log('Error loading logo:', error);
+      console.log('Error loading company logo:', error);
     }
 
     const html = `
