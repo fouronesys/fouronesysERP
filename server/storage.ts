@@ -2784,7 +2784,20 @@ export class DatabaseStorage implements IStorage {
 
 
 
-
+  async addToPOSCart(cartData: any): Promise<any> {
+    const [cartItem] = await db
+      .insert(posCartItems)
+      .values({
+        companyId: cartData.companyId,
+        userId: cartData.userId,
+        productId: cartData.productId,
+        quantity: cartData.quantity,
+        unitPrice: cartData.unitPrice,
+        subtotal: cartData.subtotal
+      })
+      .returning();
+    return cartItem;
+  }
 
   // POS Multi-Station Implementation
   // Employee management methods
