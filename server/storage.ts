@@ -254,9 +254,9 @@ export interface IStorage {
   getPOSCartItems(companyId: number, userId: string): Promise<any[]>;
   getPOSCartItem(cartId: number): Promise<POSCartItem | undefined>;
   addToPOSCart(cartItem: InsertPOSCartItem): Promise<POSCartItem>;
-  updatePOSCartItem(cartId: number, quantity: number): Promise<POSCartItem | null>;
-  removePOSCartItem(cartId: number): Promise<boolean>;
-  clearPOSCart(companyId: number, userId: string): Promise<boolean>;
+  updatePOSCartItem(cartId: number, quantity: number): Promise<POSCartItem | undefined>;
+  removePOSCartItem(cartId: number): Promise<void>;
+  clearPOSCart(companyId: number, userId: string): Promise<void>;
   
   // Dashboard metrics
   getDashboardMetrics(companyId: number): Promise<{
@@ -2880,14 +2880,14 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async updatePOSCartItem(id: number, quantity: number): Promise<POSCartItem | null> {
+  async updatePOSCartItem(id: number, quantity: number): Promise<POSCartItem | undefined> {
     const [item] = await db.select().from(posCartItems).where(eq(posCartItems.id, id)).limit(1);
-    if (!item) return null;
+    if (!item) return undefined;
 
     // If quantity is 0, remove the item
     if (quantity <= 0) {
       await this.removePOSCartItem(id);
-      return null;
+      return undefined;
     }
 
     // Validate stock availability
@@ -2916,16 +2916,14 @@ export class DatabaseStorage implements IStorage {
     return updated;
   }
 
-  async removePOSCartItem(id: number): Promise<boolean> {
-    const result = await db.delete(posCartItems).where(eq(posCartItems.id, id));
-    return (result.rowCount || 0) > 0;
+  async removePOSCartItem(id: number): Promise<void> {
+    await db.delete(posCartItems).where(eq(posCartItems.id, id));
   }
 
-  async clearPOSCart(companyId: number, userId: string): Promise<boolean> {
-    const result = await db
+  async clearPOSCart(companyId: number, userId: string): Promise<void> {
+    await db
       .delete(posCartItems)
       .where(and(eq(posCartItems.companyId, companyId), eq(posCartItems.userId, userId)));
-    return (result.rowCount || 0) > 0;
   }
 
   // POS Multi-Station Implementation
