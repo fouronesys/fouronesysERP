@@ -1228,6 +1228,137 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // POS Cart Management Routes
+  app.get("/api/pos/cart", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      const cartItems = await storage.getPOSCartItems(company.id, userId);
+      res.json(cartItems);
+    } catch (error) {
+      console.error("Error fetching cart items:", error);
+      res.status(500).json({ message: "Failed to fetch cart items" });
+    }
+  });
+
+  app.post("/api/pos/cart", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      const { id: productId, price } = req.body;
+      
+      const cartItem = {
+        companyId: company.id,
+        userId: userId,
+        productId: productId,
+        quantity: 1,
+        unitPrice: price,
+        subtotal: price
+      };
+
+      const newItem = await storage.addToPOSCart(cartItem);
+      res.json(newItem);
+    } catch (error: any) {
+      console.error("Error adding to cart:", error);
+      res.status(500).json({ message: error.message || "Failed to add to cart" });
+    }
+  });
+
+  app.patch("/api/pos/cart/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const cartId = parseInt(req.params.id);
+      const { quantity } = req.body;
+      
+      const updatedItem = await storage.updatePOSCartItem(cartId, quantity);
+      if (!updatedItem) {
+        return res.status(404).json({ message: "Cart item not found" });
+      }
+      
+      res.json(updatedItem);
+    } catch (error) {
+      console.error("Error updating cart item:", error);
+      res.status(500).json({ message: "Failed to update cart item" });
+    }
+  });
+
+  app.delete("/api/pos/cart/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const cartId = parseInt(req.params.id);
+      await storage.removePOSCartItem(cartId);
+      res.json({ message: "Item removed from cart" });
+    } catch (error) {
+      console.error("Error removing cart item:", error);
+      res.status(500).json({ message: "Failed to remove cart item" });
+    }
+  });
+
+  app.delete("/api/pos/cart", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      await storage.clearPOSCart(company.id, userId);
+      res.json({ message: "Cart cleared" });
+    } catch (error) {
+      console.error("Error clearing cart:", error);
+      res.status(500).json({ message: "Failed to clear cart" });
+    }
+  });
+
+  // POS customers endpoint
+  app.get("/api/pos/customers", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      const customers = await storage.getCustomers(company.id);
+      res.json(customers);
+    } catch (error) {
+      console.error("Error fetching POS customers:", error);
+      res.status(500).json({ message: "Failed to fetch customers" });
+    }
+  });
+
+  app.post("/api/pos/customers", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      const customerData = insertCustomerSchema.parse({
+        ...req.body,
+        companyId: company.id,
+      });
+      
+      const customer = await storage.createCustomer(customerData);
+      res.json(customer);
+    } catch (error) {
+      console.error("Error creating POS customer:", error);
+      res.status(500).json({ message: "Failed to create customer" });
+    }
+  });
+
   // PayPal payment routes
   app.get("/paypal/setup", async (req, res) => {
     await loadPaypalDefault(req, res);
