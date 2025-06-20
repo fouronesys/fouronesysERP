@@ -42,27 +42,28 @@ export class InvoiceHTMLService {
         }
         
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            font-size: 12px;
-            line-height: 1.4;
-            color: #333;
+            font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 13px;
+            line-height: 1.5;
+            color: #1f2937;
             background: white;
         }
         
         .invoice-container {
             max-width: 210mm;
             margin: 0 auto;
-            padding: 10mm;
+            padding: 20mm;
             background: white;
+            position: relative;
         }
         
         .header {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 2px solid #000;
+            margin-bottom: 40px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #e5e7eb;
         }
         
         .company-info {
@@ -383,7 +384,7 @@ export class InvoiceHTMLService {
             <tbody>
                 ${invoiceItems.map(item => `
                 <tr>
-                    <td class="item-description">${item.price || 'Producto'}</td>
+                    <td class="item-description">${item.description || 'Producto'}</td>
                     <td class="text-center">${item.quantity}</td>
                     <td class="text-right">${formatDOP(parseFloat(item.price))}</td>
                     <td class="text-right">${formatDOP(parseFloat(item.subtotal))}</td>

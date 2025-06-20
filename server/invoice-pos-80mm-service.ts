@@ -392,12 +392,11 @@ export class InvoicePOS80mmService {
         <!-- Customer info -->
         ${customerInfo?.name || customerInfo?.phone || customerInfo?.rnc || customerInfo?.address ? `
         <div class="customer-section">
-            <div class="section-title">${sale.ncf ? 'DATOS DEL CLIENTE (FISCAL):' : 'CLIENTE:'}</div>
+            <div class="section-title">${sale.ncf ? 'DATOS DEL CLIENTE/Empresa:' : 'CLIENTE:'}</div>
             ${customerInfo?.name ? `<div class="info-line">Nombre: ${customerInfo.name}</div>` : ''}
             ${customerInfo?.phone ? `<div class="info-line">Tel: ${customerInfo.phone}</div>` : ''}
             ${customerInfo?.rnc ? `<div class="info-line">RNC/Cédula: ${customerInfo.rnc}</div>` : ''}
             ${customerInfo?.address ? `<div class="info-line">Dirección: ${customerInfo.address}</div>` : ''}
-            ${sale.ncf ? '<div style="font-size: 8px; margin-top: 2px; font-style: italic;">* Datos requeridos por la DGII para comprobantes fiscales</div>' : ''}
         </div>
         ` : ''}
         
