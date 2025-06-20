@@ -1165,10 +1165,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
         companyId: company.id,
       };
       const invoice = await storage.createInvoice(invoiceData);
+      
+      // Process stock deduction for invoice items
+      try {
+        await storage.processInvoiceStockDeduction(invoice.id, company.id, userId);
+      } catch (stockError) {
+        console.error("Error processing stock deduction for invoice:", stockError);
+        // Note: We don't fail the invoice creation if stock update fails
+        // This ensures invoice creation is not blocked by stock issues
+      }
+      
       res.json(invoice);
     } catch (error) {
       console.error("Error creating invoice:", error);
       res.status(500).json({ message: "Failed to create invoice" });
+    }
+  });
+
+  app.delete("/api/invoices/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+      
+      const invoiceId = parseInt(req.params.id);
+      
+      // Restore stock before deleting invoice
+      try {
+        await storage.restoreInvoiceStock(invoiceId, company.id, userId);
+      } catch (stockError) {
+        console.error("Error restoring stock for deleted invoice:", stockError);
+        // Continue with deletion even if stock restoration fails
+      }
+      
+      await storage.deleteInvoice(invoiceId, company.id);
+      
+      res.status(200).json({ success: true, message: "Invoice deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting invoice:", error);
+      res.status(500).json({ message: "Failed to delete invoice", error: String(error) });
     }
   });
 
@@ -2147,6 +2184,125 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching fiscal analytics:", error);
       res.status(500).json({ message: "Failed to fetch fiscal analytics" });
+    }
+  });
+
+  // Professional Invoice Generation Route for POS Sales
+  app.get("/api/pos/print-professional/:saleId", isAuthenticated, async (req: any, res) => {
+    try {
+      const { saleId } = req.params;
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      // Get sale data
+      const sale = await storage.getPOSSale(parseInt(saleId), company.id);
+      if (!sale) {
+        return res.status(404).json({ message: "Sale not found" });
+      }
+
+      const items = await storage.getPOSSaleItems(sale.id);
+
+      // Create invoice structure for the HTML service
+      const invoice = {
+        id: sale.id,
+        number: sale.saleNumber || `POS-${sale.id}`,
+        date: sale.createdAt?.toISOString().split('T')[0] || new Date().toISOString().split('T')[0],
+        dueDate: sale.createdAt?.toISOString().split('T')[0] || new Date().toISOString().split('T')[0],
+        subtotal: sale.subtotal,
+        itbis: sale.itbis || '0',
+        total: sale.total,
+        notes: sale.notes || '',
+        status: 'paid',
+        createdAt: sale.createdAt,
+        updatedAt: sale.updatedAt,
+        companyId: sale.companyId,
+        ncf: sale.ncf,
+        customerId: sale.customerId || 0,
+        taxType: 'itbis_18',
+        taxRate: '18.00'
+      };
+
+      // Create customer structure
+      const customer = {
+        id: 0,
+        name: sale.customerName || 'Cliente General',
+        email: sale.customerPhone || null, // Use phone as email fallback
+        phone: sale.customerPhone,
+        address: sale.customerAddress || null,
+        rnc: sale.customerRnc,
+        cedula: sale.customerRnc || null // Use RNC as cedula fallback
+      };
+
+      // Convert POS items to invoice items
+      const invoiceItems = items.map(item => ({
+        id: item.id,
+        invoiceId: sale.id,
+        productId: item.productId,
+        description: item.productName || 'Producto',
+        quantity: parseInt(item.quantity),
+        price: item.unitPrice,
+        subtotal: item.subtotal,
+        taxType: 'itbis_18',
+        taxRate: '18.00',
+        taxAmount: '0',
+        total: item.subtotal
+      }));
+
+      // Generate professional HTML invoice
+      const htmlContent = await InvoiceHTMLService.generateInvoiceHTML(
+        invoice,
+        customer,
+        company,
+        invoiceItems
+      );
+
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      res.send(htmlContent);
+
+    } catch (error) {
+      console.error("Error generating professional invoice:", error);
+      res.status(500).json({ message: "Failed to generate professional invoice" });
+    }
+  });
+
+  // Invoice verification route for QR codes
+  app.get("/verify-invoice/:invoiceNumber", async (req, res) => {
+    try {
+      const { invoiceNumber } = req.params;
+      
+      // Simple verification page
+      const verificationHTML = `
+        <!DOCTYPE html>
+        <html lang="es">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Verificación de Factura</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 40px; text-align: center; }
+            .container { max-width: 500px; margin: 0 auto; }
+            .success { color: #16a34a; }
+            .info { color: #6b7280; margin-top: 20px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <h1 class="success">✓ Factura Verificada</h1>
+            <p>Factura No: <strong>${invoiceNumber}</strong></p>
+            <p class="info">Esta factura es válida y fue generada por Four One System.</p>
+          </div>
+        </body>
+        </html>
+      `;
+      
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      res.send(verificationHTML);
+    } catch (error) {
+      console.error("Error verifying invoice:", error);
+      res.status(500).send("Error verificando factura");
     }
   });
 

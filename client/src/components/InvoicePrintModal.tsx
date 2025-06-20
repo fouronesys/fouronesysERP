@@ -27,8 +27,8 @@ export default function InvoicePrintModal({ isOpen, onClose, saleId, saleNumber 
       // Start the progress animation
       await new Promise(resolve => setTimeout(resolve, 100));
       
-      const response = await fetch(`/api/pos/print-html/${saleId}`, {
-        method: "POST",
+      const response = await fetch(`/api/pos/print-professional/${saleId}`, {
+        method: "GET",
         credentials: 'include'
       });
 

@@ -2575,6 +2575,85 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  // Stock Management for Invoicing
+  async updateProductStock(productId: number, quantityChange: number, companyId: number, reason: string, createdBy: string): Promise<void> {
+    try {
+      await db.transaction(async (tx) => {
+        // Update product stock
+        await tx
+          .update(products)
+          .set({ 
+            stock: sql`stock + ${quantityChange}`,
+            updatedAt: new Date()
+          })
+          .where(and(eq(products.id, productId), eq(products.companyId, companyId)));
+
+        // Record inventory movement
+        await tx.insert(inventoryMovements).values({
+          productId,
+          type: quantityChange > 0 ? 'in' : 'out',
+          quantity: Math.abs(quantityChange),
+          reason,
+          notes: `Stock adjustment for invoice processing`,
+          companyId,
+          createdBy,
+          createdAt: new Date()
+        });
+      });
+    } catch (error) {
+      console.error("Error updating product stock:", error);
+      throw error;
+    }
+  }
+
+  async processInvoiceStockDeduction(invoiceId: number, companyId: number, createdBy: string): Promise<void> {
+    try {
+      // Get invoice items
+      const items = await db
+        .select()
+        .from(invoiceItems)
+        .where(eq(invoiceItems.invoiceId, invoiceId));
+
+      // Deduct stock for each item
+      for (const item of items) {
+        await this.updateProductStock(
+          item.productId,
+          -item.quantity, // Negative to deduct stock
+          companyId,
+          `Invoice #${invoiceId} created`,
+          createdBy
+        );
+      }
+    } catch (error) {
+      console.error("Error processing invoice stock deduction:", error);
+      throw error;
+    }
+  }
+
+  async restoreInvoiceStock(invoiceId: number, companyId: number, createdBy: string): Promise<void> {
+    try {
+      // Get invoice items
+      const items = await db
+        .select()
+        .from(invoiceItems)
+        .where(eq(invoiceItems.invoiceId, invoiceId));
+
+      // Restore stock for each item
+      for (const item of items) {
+        await this.updateProductStock(
+          item.productId,
+          item.quantity, // Positive to restore stock
+          companyId,
+          `Invoice #${invoiceId} deleted/modified`,
+          createdBy
+        );
+      }
+    } catch (error) {
+      console.error("Error restoring invoice stock:", error);
+      throw error;
+    }
+  }
+
   // Inventory Movement Methods
   async getInventoryMovements(companyId: number): Promise<any[]> {
     try {
