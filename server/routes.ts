@@ -1399,6 +1399,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Product not found" });
       }
 
+      // Check and update stock for regular products
+      if (product.stock !== null && product.stock !== undefined) {
+        const currentStock = parseInt(String(product.stock) || "0");
+        const newStock = currentStock - finalQuantity;
+        
+        if (newStock < 0) {
+          return res.status(400).json({ 
+            message: `Stock insuficiente. Disponible: ${currentStock}` 
+          });
+        }
+        
+        await storage.updateProduct(finalProductId, { stock: newStock.toString() }, company.id);
+      }
+
       // For consumable products, check material availability
       if (product.isConsumable && product.isManufactured) {
         const availability = await storage.checkMaterialAvailability(finalProductId, finalQuantity, company.id);
@@ -1511,7 +1525,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Get product details
       const product = await storage.getProduct(cartItem.productId, company.id);
-      if (product && product.trackStock) {
+      if (product && product.stock !== null && product.stock !== undefined) {
         // Restore stock when removing from cart
         const currentStock = parseInt(product.stock?.toString() || "0");
         const quantityToRestore = parseInt(cartItem.quantity);
