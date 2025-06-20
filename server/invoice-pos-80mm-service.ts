@@ -22,7 +22,7 @@ export class InvoicePOS80mmService {
     const { sale, items, company, customerInfo } = invoiceData;
     
     // Generate QR code for verification
-    const verificationUrl = `https://fourone.com.do/v/${sale.saleNumber}`;
+    const verificationUrl = `${process.env.BASE_URL || 'https://fourone.com.do'}/verify/sale/${sale.id}`;
     const qrCodeDataURL = await QRCode.toDataURL(verificationUrl, {
       width: 80,
       margin: 1,

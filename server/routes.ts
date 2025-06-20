@@ -1172,42 +1172,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Print invoice endpoint
-  app.post("/api/invoices/print/:id", isAuthenticated, async (req: any, res) => {
+  // Sale verification endpoint (public, no authentication required)
+  app.get("/api/verify/sale/:saleId", async (req: any, res) => {
     try {
-      const userId = req.user.id;
-      const company = await storage.getCompanyByUserId(userId);
-      if (!company) {
-        return res.status(404).json({ message: "Company not found" });
-      }
-
-      const invoiceId = parseInt(req.params.id);
-      const invoice = await storage.getInvoice(invoiceId, company.id);
+      const saleId = parseInt(req.params.saleId);
       
-      if (!invoice) {
-        return res.status(404).json({ message: "Invoice not found" });
+      // Get sale data
+      const sale = await storage.getPOSSaleById(saleId);
+      if (!sale) {
+        return res.json({ 
+          valid: false, 
+          message: "Venta no encontrada" 
+        });
       }
 
-      const customer = await storage.getCustomer(invoice.customerId, company.id);
-      // For now, create empty invoice items array - this should be implemented in storage
-      const invoiceItems: any[] = [];
-
-      if (!customer) {
-        return res.status(404).json({ message: "Customer not found" });
+      // Get company data
+      const company = await storage.getCompany(sale.companyId);
+      if (!company) {
+        return res.json({ 
+          valid: false, 
+          message: "Empresa no encontrada" 
+        });
       }
 
-      const htmlContent = await InvoiceHTMLService.generateInvoiceHTML(
-        invoice,
-        customer,
+      // Get sale items
+      const items = await storage.getPOSSaleItems(sale.id);
+
+      res.json({
+        valid: true,
+        sale,
         company,
-        invoiceItems
-      );
-
-      res.setHeader('Content-Type', 'text/html; charset=utf-8');
-      res.send(htmlContent);
+        items
+      });
     } catch (error) {
-      console.error("Error printing invoice:", error);
-      res.status(500).json({ message: "Failed to print invoice" });
+      console.error("Error verifying sale:", error);
+      res.json({ 
+        valid: false, 
+        message: "Error al verificar la venta" 
+      });
     }
   });
 

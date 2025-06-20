@@ -55,51 +55,188 @@ export default function Billing() {
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
 
-  // Function to handle invoice printing
+  // Function to handle invoice printing using existing invoice HTML service
   const handlePrintInvoice = async (invoice: Invoice) => {
     try {
-      const response = await fetch(`/api/invoices/print/${invoice.id}`, {
-        method: 'POST',
-        credentials: 'include',
-      });
-
-      if (response.ok) {
-        const htmlContent = await response.text();
-        
-        // Open the invoice window with appropriate sizing for A4 invoices
-        const printWindow = window.open('', '_blank', 'width=800,height=1000,scrollbars=yes,resizable=yes,toolbar=no,menubar=no,location=no,status=no');
-        
-        if (printWindow) {
-          printWindow.document.write(htmlContent);
-          printWindow.document.close();
-          printWindow.focus();
-          
-          // Auto-trigger print dialog
-          printWindow.onload = () => {
-            setTimeout(() => {
-              printWindow.print();
-            }, 500);
-          };
-          
-          toast({
-            title: "Factura impresa",
-            description: "Factura profesional abierta en nueva ventana",
-          });
-        } else {
-          toast({
-            title: "Error",
-            description: "No se pudo abrir la ventana de impresión. Verifica el bloqueador de ventanas emergentes.",
-            variant: "destructive",
-          });
-        }
-      } else {
-        throw new Error('Error al generar factura');
+      // Use the invoice HTML service to generate professional invoice
+      const customer = customers?.find(c => c.id === invoice.customerId);
+      if (!customer) {
+        toast({
+          title: "Error",
+          description: "Cliente no encontrado para la factura",
+          variant: "destructive",
+        });
+        return;
       }
+
+      // Generate simple invoice HTML for printing
+      const invoiceHTML = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Factura ${invoice.number}</title>
+          <meta charset="utf-8">
+          <style>
+            body { 
+              font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+              margin: 0; 
+              padding: 40px; 
+              background: white;
+              color: #333;
+              line-height: 1.6;
+            }
+            .header { 
+              text-align: center; 
+              margin-bottom: 40px; 
+              border-bottom: 3px solid #2563eb;
+              padding-bottom: 20px;
+            }
+            .company-name { 
+              font-size: 32px; 
+              font-weight: bold; 
+              color: #2563eb; 
+              margin: 0;
+            }
+            .invoice-title { 
+              font-size: 24px; 
+              color: #1e40af; 
+              margin: 10px 0;
+            }
+            .invoice-info { 
+              display: flex; 
+              justify-content: space-between; 
+              margin-bottom: 30px;
+            }
+            .invoice-details, .customer-details { 
+              flex: 1; 
+              padding: 20px;
+              background: #f8fafc;
+              border-radius: 8px;
+              margin: 0 10px;
+            }
+            .detail-title { 
+              font-weight: bold; 
+              color: #2563eb; 
+              margin-bottom: 10px;
+              font-size: 16px;
+            }
+            .detail-line { 
+              margin-bottom: 8px;
+              font-size: 14px;
+            }
+            .total-section { 
+              margin-top: 40px; 
+              text-align: right;
+              background: #f1f5f9;
+              padding: 30px;
+              border-radius: 8px;
+            }
+            .total-amount { 
+              font-size: 32px; 
+              font-weight: bold; 
+              color: #059669;
+              margin-top: 10px;
+            }
+            .footer {
+              margin-top: 40px;
+              text-align: center;
+              color: #64748b;
+              font-size: 12px;
+              border-top: 1px solid #e2e8f0;
+              padding-top: 20px;
+            }
+            .qr-section {
+              text-align: center;
+              margin: 30px 0;
+              padding: 20px;
+              background: #f8fafc;
+              border-radius: 8px;
+            }
+            @media print {
+              body { padding: 20px; }
+              .invoice-info { flex-direction: column; }
+              .invoice-details, .customer-details { margin: 10px 0; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1 class="company-name">${company?.name || 'Four One Solutions'}</h1>
+            <h2 class="invoice-title">FACTURA</h2>
+          </div>
+          
+          <div class="invoice-info">
+            <div class="invoice-details">
+              <div class="detail-title">Información de Factura</div>
+              <div class="detail-line"><strong>Número:</strong> ${invoice.number}</div>
+              <div class="detail-line"><strong>Fecha:</strong> ${new Date(invoice.date).toLocaleDateString('es-DO')}</div>
+              <div class="detail-line"><strong>Vencimiento:</strong> ${invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString('es-DO') : 'N/A'}</div>
+              <div class="detail-line"><strong>NCF:</strong> ${invoice.ncf || 'N/A'}</div>
+              <div class="detail-line"><strong>Estado:</strong> ${invoice.status}</div>
+            </div>
+            
+            <div class="customer-details">
+              <div class="detail-title">Cliente</div>
+              <div class="detail-line"><strong>Nombre:</strong> ${customer.name}</div>
+              <div class="detail-line"><strong>Email:</strong> ${customer.email || 'N/A'}</div>
+              <div class="detail-line"><strong>Teléfono:</strong> ${customer.phone || 'N/A'}</div>
+              <div class="detail-line"><strong>${customer.type === 'company' ? 'RNC' : 'Cédula'}:</strong> ${customer.rnc || customer.cedula || 'N/A'}</div>
+            </div>
+          </div>
+
+          <div class="qr-section">
+            <p><strong>Código QR de Verificación</strong></p>
+            <p>Escanea para verificar esta factura</p>
+            <div style="margin: 10px 0; font-family: monospace; background: white; padding: 10px; border-radius: 4px;">
+              ${window.location.origin}/verify/invoice/${invoice.id}
+            </div>
+          </div>
+          
+          <div class="total-section">
+            <div style="font-size: 18px; margin-bottom: 10px;">
+              <div><strong>Subtotal:</strong> RD$ ${parseFloat(invoice.subtotal).toLocaleString('es-DO', { minimumFractionDigits: 2 })}</div>
+              <div><strong>ITBIS:</strong> RD$ ${parseFloat(invoice.tax).toLocaleString('es-DO', { minimumFractionDigits: 2 })}</div>
+            </div>
+            <div class="total-amount">
+              <strong>Total: RD$ ${parseFloat(invoice.total).toLocaleString('es-DO', { minimumFractionDigits: 2 })}</strong>
+            </div>
+          </div>
+
+          <div class="footer">
+            <p>Esta es una factura generada electrónicamente por Four One Solutions</p>
+            <p>Verifique la autenticidad en: ${window.location.origin}/verify/invoice/${invoice.id}</p>
+          </div>
+        </body>
+        </html>
+      `;
+
+      const printWindow = window.open('', '_blank', 'width=800,height=1000,scrollbars=yes,resizable=yes');
+      if (!printWindow) {
+        toast({
+          title: "Error",
+          description: "No se pudo abrir la ventana de impresión. Verifica que no esté bloqueada por tu navegador.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      printWindow.document.write(invoiceHTML);
+      printWindow.document.close();
+      printWindow.focus();
+      
+      setTimeout(() => {
+        printWindow.print();
+      }, 500);
+
+      toast({
+        title: "Impresión iniciada",
+        description: "La factura se está enviando a la impresora.",
+      });
     } catch (error) {
       console.error("Error printing invoice:", error);
       toast({
-        title: "Error",
-        description: "No se pudo imprimir la factura",
+        title: "Error de impresión",
+        description: "No se pudo imprimir la factura.",
         variant: "destructive",
       });
     }
