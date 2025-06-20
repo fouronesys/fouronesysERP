@@ -62,17 +62,30 @@ export class InvoiceHTMLService {
             align-items: flex-start;
             margin-bottom: 20px;
             padding-bottom: 15px;
-            border-bottom: 2px solid #2563eb;
+            border-bottom: 2px solid #000;
         }
         
         .company-info {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .company-logo {
+            max-width: 80px;
+            max-height: 80px;
+            object-fit: contain;
+        }
+        
+        .company-details-wrapper {
             flex: 1;
         }
         
         .company-name {
             font-size: 24px;
             font-weight: bold;
-            color: #2563eb;
+            color: #000;
             margin-bottom: 5px;
         }
         
@@ -90,7 +103,7 @@ export class InvoiceHTMLService {
         .invoice-title {
             font-size: 28px;
             font-weight: bold;
-            color: #2563eb;
+            color: #000;
             margin-bottom: 10px;
         }
         
@@ -106,8 +119,8 @@ export class InvoiceHTMLService {
         }
         
         .ncf-section {
-            background: #f8fafc;
-            border: 2px solid #2563eb;
+            background: #f8f8f8;
+            border: 2px solid #000;
             padding: 8px;
             text-align: center;
             margin: 15px 0;
@@ -117,14 +130,14 @@ export class InvoiceHTMLService {
         .ncf-title {
             font-weight: bold;
             font-size: 14px;
-            color: #2563eb;
+            color: #000;
             margin-bottom: 3px;
         }
         
         .ncf-number {
             font-size: 16px;
             font-weight: bold;
-            color: #1e40af;
+            color: #000;
         }
         
         .billing-section {
@@ -141,13 +154,13 @@ export class InvoiceHTMLService {
         .section-title {
             font-weight: bold;
             font-size: 14px;
-            color: #2563eb;
+            color: #000;
             margin-bottom: 8px;
             text-transform: uppercase;
         }
         
         .customer-info {
-            background: #f8fafc;
+            background: #f8f8f8;
             padding: 12px;
             border-radius: 4px;
             border-left: 4px solid #2563eb;

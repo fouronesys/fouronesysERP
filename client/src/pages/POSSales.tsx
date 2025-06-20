@@ -189,7 +189,7 @@ export default function POSSales() {
               <td style="font-size: ${is58mm ? '9px' : '10px'};" class="item-name">${getProductName(item.productId)}</td>
             </tr>
             <tr class="item-row">
-              <td style="font-size: ${is58mm ? '9px' : '10px'};">${item.quantity}x ${formatCurrency(parseFloat(item.price))}</td>
+              <td style="font-size: ${is58mm ? '9px' : '10px'};">${item.quantity}x ${formatCurrency(parseFloat(item.unitPrice))}</td>
               <td class="right bold" style="font-size: ${is58mm ? '9px' : '10px'};">${formatCurrency(parseFloat(item.subtotal))}</td>
             </tr>
           `).join('') || ''}
@@ -807,12 +807,12 @@ export default function POSSales() {
                                 {getProductName(item.productId)}
                               </p>
                               <p className="text-xs text-gray-500 dark:text-gray-400">
-                                {item.quantity} x {formatCurrency(item.price)}
+                                {item.quantity} x {formatCurrency(parseFloat(item.unitPrice))}
                               </p>
                             </div>
                             <div className="text-right">
                               <p className="font-bold text-sm">
-                                {formatCurrency(item.quantity * item.price)}
+                                {formatCurrency(parseFloat(item.quantity) * parseFloat(item.unitPrice))}
                               </p>
                             </div>
                           </div>
