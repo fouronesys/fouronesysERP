@@ -367,7 +367,6 @@ export interface IStorage {
   // RNC Registry operations
   getRNCFromRegistry(rnc: string): Promise<RNCRegistry | undefined>;
   searchRNCByName(query: string, limit?: number): Promise<RNCRegistry[]>;
-  getRNCRegistryCount(): Promise<number>;
 
   // Stock Reservation operations for cart synchronization
   createStockReservation(reservationData: InsertStockReservation): Promise<StockReservation>;
@@ -2569,12 +2568,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getRNCRegistryCount(): Promise<number> {
-    const result = await db
-      .select({ count: sql`count(*)` })
-      .from(rncRegistry);
-    return Number(result[0].count);
-  }
+
 
   async clearRNCRegistry(): Promise<void> {
     await db.delete(rncRegistry);
