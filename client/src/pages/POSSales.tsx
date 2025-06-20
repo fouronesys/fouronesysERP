@@ -70,31 +70,60 @@ export default function POSSales() {
     setIsDetailOpen(true);
   };
 
-  const handleReprintInvoice = (sale: POSSale) => {
-    setPrintingSale(sale);
-    setShowPrintPreview(true);
+  const handleReprintInvoice = async (sale: POSSale) => {
+    try {
+      // Use the same endpoint as POS to ensure identical receipts
+      const response = await fetch(`/api/pos/print-pos-80mm/${sale.id}`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+
+      if (response.ok) {
+        const htmlContent = await response.text();
+        
+        // Open the receipt window with the same logic as POS
+        const printWindow = window.open('', '_blank', 'width=380,height=600,scrollbars=no,resizable=no,toolbar=no,menubar=no,location=no,status=no');
+        
+        if (printWindow) {
+          printWindow.document.write(htmlContent);
+          printWindow.document.close();
+          printWindow.focus();
+          
+          // Auto-trigger print dialog
+          printWindow.onload = () => {
+            setTimeout(() => {
+              printWindow.print();
+            }, 500);
+          };
+          
+          toast({
+            title: "Recibo reimpreso",
+            description: "Recibo de 80mm abierto en nueva ventana",
+          });
+        } else {
+          toast({
+            title: "Error",
+            description: "No se pudo abrir la ventana de impresión. Verifica el bloqueador de ventanas emergentes.",
+            variant: "destructive",
+          });
+        }
+      } else {
+        throw new Error('Error al generar recibo');
+      }
+    } catch (error) {
+      console.error("Error reprinting receipt:", error);
+      toast({
+        title: "Error",
+        description: "No se pudo reimprimir el recibo",
+        variant: "destructive",
+      });
+    }
   };
 
   const handlePrint = () => {
-    if (!printingSale) return;
-    
-    // Enhanced print function with mobile Bluetooth support
-    const printContent = generatePrintContent(printingSale);
-    
-    if (isMobile) {
-      // Mobile Bluetooth printing
-      handleMobilePrint(printContent);
-    } else {
-      // Desktop printing
-      handleDesktopPrint(printContent);
-    }
-    
+    // This function is no longer needed as we use the server endpoint directly
     setShowPrintPreview(false);
     setPrintingSale(null);
-    toast({
-      title: "Éxito",
-      description: "Recibo enviado a la impresora",
-    });
   };
 
   const generatePrintContent = (sale: POSSale) => {

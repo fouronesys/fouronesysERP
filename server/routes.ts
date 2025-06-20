@@ -887,6 +887,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.put("/api/companies/current", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      // Clean the update data and handle logo field mapping
+      const updateData = { ...req.body };
+      
+      // Map frontend 'logo' field to database 'logoUrl' field
+      if (updateData.logo !== undefined) {
+        updateData.logoUrl = updateData.logo;
+        delete updateData.logo;
+      }
+
+      // Remove any undefined or null values that might cause database issues
+      Object.keys(updateData).forEach(key => {
+        if (updateData[key] === undefined || updateData[key] === null || updateData[key] === '') {
+          delete updateData[key];
+        }
+      });
+
+      const updatedCompany = await storage.updateCompany(company.id, updateData);
+      
+      await auditLogger.logFiscalAction(
+        userId,
+        company.id,
+        'update_company_settings',
+        'company',
+        company.id.toString(),
+        updateData,
+        req
+      );
+
+      res.json(updatedCompany);
+    } catch (error) {
+      console.error("Error updating company settings:", error);
+      res.status(500).json({ message: "Error al guardar configuración de la empresa" });
+    }
+  });
+
   // Company management endpoints for SuperAdmin
   app.get("/api/companies/all", simpleAuth, async (req: any, res) => {
     try {
