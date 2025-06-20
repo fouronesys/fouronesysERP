@@ -390,43 +390,56 @@ export class InvoiceHTMLService {
         </div>
 
         <!-- Items Table -->
-        <table class="items-table">
-            <thead>
-                <tr>
-                    <th style="width: 50%">Descripción</th>
-                    <th style="width: 10%" class="text-center">Cant.</th>
-                    <th style="width: 15%" class="text-right">Precio Unit.</th>
-                    <th style="width: 15%" class="text-right">Subtotal</th>
-                </tr>
-            </thead>
-            <tbody>
-                ${invoiceItems.map(item => `
-                <tr>
-                    <td class="item-description">${item.description || 'Producto'}</td>
-                    <td class="text-center">${item.quantity}</td>
-                    <td class="text-right">${formatDOP(parseFloat(item.price))}</td>
-                    <td class="text-right">${formatDOP(parseFloat(item.subtotal))}</td>
-                </tr>
-                `).join('')}
-            </tbody>
-        </table>
+        <div class="items-section">
+            <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 15px; color: #374151;">Detalles de Productos</h3>
+            <table class="items-table">
+                <thead>
+                    <tr>
+                        <th style="width: 50%">Descripción</th>
+                        <th style="width: 12%" class="text-center">Cant.</th>
+                        <th style="width: 19%" class="text-right">Precio Unit.</th>
+                        <th style="width: 19%" class="text-right">Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${invoiceItems.map(item => `
+                    <tr>
+                        <td class="item-description" style="padding: 12px 8px; border-bottom: 1px solid #e5e7eb;">
+                            <div style="font-weight: 500; color: #111827;">${item.description || 'Producto'}</div>
+                            ${item.productId ? `<div style="font-size: 11px; color: #6b7280; margin-top: 2px;">Código: ${item.productId}</div>` : ''}
+                        </td>
+                        <td class="text-center" style="padding: 12px 8px; border-bottom: 1px solid #e5e7eb;">${item.quantity}</td>
+                        <td class="text-right" style="padding: 12px 8px; border-bottom: 1px solid #e5e7eb;">${formatDOP(parseFloat(item.price))}</td>
+                        <td class="text-right" style="padding: 12px 8px; border-bottom: 1px solid #e5e7eb; font-weight: 500;">${formatDOP(parseFloat(item.subtotal))}</td>
+                    </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        </div>
 
         <!-- Totals -->
-        <div class="totals-section">
-            <table class="totals-table">
-                <tr>
-                    <td class="label">Subtotal:</td>
-                    <td class="amount">${formatDOP(subtotalNum)}</td>
-                </tr>
-                <tr>
-                    <td class="label">ITBIS (18%):</td>
-                    <td class="amount">${formatDOP(taxNum)}</td>
-                </tr>
-                <tr class="total-row">
-                    <td class="label">TOTAL:</td>
-                    <td class="amount">${formatDOP(totalNum)}</td>
-                </tr>
-            </table>
+        <div class="totals-section" style="margin-top: 30px; display: flex; justify-content: flex-end;">
+            <div style="min-width: 300px;">
+                <div style="border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
+                    <div style="background: #f9fafb; padding: 15px; border-bottom: 1px solid #e5e7eb;">
+                        <h4 style="margin: 0; font-size: 14px; font-weight: 600; color: #374151;">Resumen de Factura</h4>
+                    </div>
+                    <div style="padding: 15px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 10px; padding: 8px 0; border-bottom: 1px solid #f3f4f6;">
+                            <span style="color: #6b7280;">Subtotal:</span>
+                            <span style="font-weight: 500;">${formatDOP(subtotalNum)}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 10px; padding: 8px 0; border-bottom: 1px solid #f3f4f6;">
+                            <span style="color: #6b7280;">ITBIS (18%):</span>
+                            <span style="font-weight: 500;">${formatDOP(taxNum)}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; padding: 12px 0; border-top: 2px solid #e5e7eb; margin-top: 10px;">
+                            <span style="font-size: 16px; font-weight: 600; color: #111827;">TOTAL:</span>
+                            <span style="font-size: 18px; font-weight: 700; color: #059669;">${formatDOP(totalNum)}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Payment Information -->

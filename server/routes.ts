@@ -2268,6 +2268,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Professional invoice generation for Billing module
+  app.get("/api/invoices/:id/professional", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      const invoiceId = parseInt(req.params.id);
+      const invoice = await storage.getInvoice(invoiceId, company.id);
+      if (!invoice) {
+        return res.status(404).json({ message: "Invoice not found" });
+      }
+
+      // Get invoice items and customer
+      const items = await storage.getInvoiceItems(invoiceId);
+      const customer = await storage.getCustomer(invoice.customerId, company.id);
+
+      if (!customer) {
+        return res.status(404).json({ message: "Customer not found" });
+      }
+
+      // Generate professional HTML invoice
+      const htmlContent = await InvoiceHTMLService.generateInvoiceHTML(
+        invoice,
+        customer,
+        company,
+        items
+      );
+
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      res.send(htmlContent);
+
+    } catch (error) {
+      console.error("Error generating professional invoice:", error);
+      res.status(500).json({ message: "Failed to generate professional invoice" });
+    }
+  });
+
   // Invoice verification route for QR codes
   app.get("/verify-invoice/:invoiceNumber", async (req, res) => {
     try {

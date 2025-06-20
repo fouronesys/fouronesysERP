@@ -55,10 +55,56 @@ export default function Billing() {
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
 
-  // Function to handle invoice printing using existing invoice HTML service
+  // Function to handle professional invoice printing
+  const handlePrintProfessionalInvoice = async (invoice: Invoice) => {
+    try {
+      const response = await fetch(`/api/invoices/${invoice.id}/professional`, {
+        method: "GET",
+        credentials: 'include'
+      });
+
+      if (response.ok) {
+        const htmlContent = await response.text();
+        
+        // Open in new window for printing
+        const printWindow = window.open('', '_blank', 'width=800,height=1000,scrollbars=yes,resizable=yes');
+        if (!printWindow) {
+          toast({
+            title: "Error",
+            description: "No se pudo abrir la ventana de impresión. Verifica que no esté bloqueada por tu navegador.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        printWindow.document.write(htmlContent);
+        printWindow.document.close();
+        printWindow.focus();
+        
+        setTimeout(() => {
+          printWindow.print();
+        }, 500);
+
+        toast({
+          title: "Factura profesional generada",
+          description: "La factura profesional se ha abierto en una nueva ventana.",
+        });
+      } else {
+        throw new Error("Failed to generate professional invoice");
+      }
+    } catch (error) {
+      console.error("Error printing professional invoice:", error);
+      toast({
+        title: "Error",
+        description: "No se pudo generar la factura profesional",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Function to handle basic invoice printing
   const handlePrintInvoice = async (invoice: Invoice) => {
     try {
-      // Use the invoice HTML service to generate professional invoice
       const customer = customers?.find(c => c.id === invoice.customerId);
       if (!customer) {
         toast({
