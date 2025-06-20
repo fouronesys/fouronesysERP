@@ -246,6 +246,7 @@ export interface IStorage {
   getPOSSale(id: number, companyId: number): Promise<POSSale | undefined>;
   createPOSSale(sale: InsertPOSSale): Promise<POSSale>;
   getPOSSaleItems(saleId: number): Promise<POSSaleItem[]>;
+  verifySaleById(saleId: number): Promise<{sale: POSSale, company: Company, items: POSSaleItem[]} | null>;
   createPOSSaleItem(item: InsertPOSSaleItem): Promise<POSSaleItem>;
   getPOSPrintSettings(companyId: number): Promise<POSPrintSettings | undefined>;
   upsertPOSPrintSettings(settings: InsertPOSPrintSettings): Promise<POSPrintSettings>;
@@ -4130,6 +4131,48 @@ export class DatabaseStorage implements IStorage {
       quantity: parseFloat(item.quantity.toString()),
       material: item.material
     }));
+  }
+
+  async verifySaleById(saleId: number): Promise<{sale: POSSale, company: Company, items: POSSaleItem[]} | null> {
+    try {
+      // First get the sale to find the company ID
+      const [sale] = await db
+        .select()
+        .from(posSales)
+        .where(eq(posSales.id, saleId))
+        .limit(1);
+
+      if (!sale) {
+        return null;
+      }
+
+      // Get company data
+      const [company] = await db
+        .select()
+        .from(companies)
+        .where(eq(companies.id, sale.companyId))
+        .limit(1);
+
+      if (!company) {
+        return null;
+      }
+
+      // Get sale items
+      const items = await db
+        .select()
+        .from(posSaleItems)
+        .where(eq(posSaleItems.saleId, saleId))
+        .orderBy(posSaleItems.id);
+
+      return {
+        sale,
+        company,
+        items
+      };
+    } catch (error) {
+      console.error("Error verifying sale:", error);
+      return null;
+    }
   }
 }
 

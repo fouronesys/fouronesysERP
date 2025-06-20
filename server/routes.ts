@@ -1177,42 +1177,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const saleId = parseInt(req.params.saleId);
       
-      // First find the sale to get company ID - use raw SQL query since this is public verification
-      const [saleResult] = await db.select().from(posSales).where(eq(posSales.id, saleId)).limit(1);
+      // Use public verification method in storage
+      const verification = await storage.verifySaleById(saleId);
       
-      if (!saleResult) {
+      if (!verification) {
         return res.json({ 
           valid: false, 
           message: "Venta no encontrada" 
         });
       }
-
-      // Get complete sale data with company ID
-      const sale = await storage.getPOSSale(saleId, saleResult.companyId);
-      if (!sale) {
-        return res.json({ 
-          valid: false, 
-          message: "Venta no encontrada" 
-        });
-      }
-
-      // Get company data
-      const company = await storage.getCompany(sale.companyId);
-      if (!company) {
-        return res.json({ 
-          valid: false, 
-          message: "Empresa no encontrada" 
-        });
-      }
-
-      // Get sale items
-      const items = await storage.getPOSSaleItems(sale.id);
 
       res.json({
         valid: true,
-        sale,
-        company,
-        items
+        sale: verification.sale,
+        company: verification.company,
+        items: verification.items
       });
     } catch (error) {
       console.error("Error verifying sale:", error);
