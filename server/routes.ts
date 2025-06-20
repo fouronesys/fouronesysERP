@@ -873,6 +873,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Dashboard metrics endpoint
+  app.get("/api/dashboard/metrics", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      const metrics = await storage.getDashboardMetrics(company.id);
+      res.json(metrics);
+    } catch (error) {
+      console.error("Error fetching dashboard metrics:", error);
+      res.status(500).json({ message: "Failed to fetch dashboard metrics" });
+    }
+  });
+
+  // Sales chart data endpoint
+  app.get("/api/dashboard/sales-chart", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      const salesData = await storage.getSalesChartData(company.id);
+      res.json(salesData);
+    } catch (error) {
+      console.error("Error fetching sales chart data:", error);
+      res.status(500).json({ message: "Failed to fetch sales chart data" });
+    }
+  });
+
   app.get("/api/companies/current", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.id;

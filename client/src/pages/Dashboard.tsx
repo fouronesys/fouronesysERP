@@ -3,9 +3,9 @@ import { DashboardMetrics } from "@/components/DashboardMetrics";
 import { RecentInvoices } from "@/components/RecentInvoices";
 import { QuickActions } from "@/components/QuickActions";
 import { InstallButton } from "@/components/InstallButton";
+import { SalesChart } from "@/components/SalesChart";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { BarChart3, TrendingUp, Users, ShoppingCart, DollarSign } from "lucide-react";
+import { TrendingUp, Users } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 export default function Dashboard() {

@@ -1001,6 +1001,69 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  async getSalesChartData(companyId: number): Promise<any[]> {
+    try {
+      const sixMonthsAgo = new Date();
+      sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
+      // Get invoice sales data
+      const invoiceSales = await db
+        .select({
+          date: sql<string>`DATE(${invoices.createdAt})`,
+          amount: sql<number>`SUM(CAST(${invoices.total} AS DECIMAL))`,
+          type: sql<string>`'invoice'`
+        })
+        .from(invoices)
+        .where(
+          and(
+            eq(invoices.companyId, companyId),
+            sql`${invoices.createdAt} >= ${sixMonthsAgo.toISOString()}`
+          )
+        )
+        .groupBy(sql`DATE(${invoices.createdAt})`)
+        .orderBy(sql`DATE(${invoices.createdAt})`);
+
+      // Get POS sales data
+      const posData = await db
+        .select({
+          date: sql<string>`DATE(${posSales.createdAt})`,
+          amount: sql<number>`SUM(CAST(${posSales.total} AS DECIMAL))`,
+          type: sql<string>`'pos'`
+        })
+        .from(posSales)
+        .where(
+          and(
+            eq(posSales.companyId, companyId),
+            sql`${posSales.createdAt} >= ${sixMonthsAgo.toISOString()}`
+          )
+        )
+        .groupBy(sql`DATE(${posSales.createdAt})`)
+        .orderBy(sql`DATE(${posSales.createdAt})`);
+
+      // Combine and format data for chart
+      const salesByDate = new Map();
+      
+      [...invoiceSales, ...posData].forEach(sale => {
+        const dateKey = sale.date;
+        if (!salesByDate.has(dateKey)) {
+          salesByDate.set(dateKey, { date: dateKey, invoices: 0, pos: 0, total: 0 });
+        }
+        const entry = salesByDate.get(dateKey);
+        if (sale.type === 'invoice') {
+          entry.invoices += sale.amount || 0;
+        } else {
+          entry.pos += sale.amount || 0;
+        }
+        entry.total = entry.invoices + entry.pos;
+      });
+
+      return Array.from(salesByDate.values()).sort((a, b) => a.date.localeCompare(b.date));
+    } catch (error) {
+      console.error("Error getting sales chart data:", error);
+      return [];
+    }
+  }
+
   async createInvoice(invoiceData: InsertInvoice): Promise<Invoice> {
     // Generate automatic invoice number if not provided
     if (!invoiceData.number || invoiceData.number.trim() === '') {
