@@ -28,7 +28,6 @@ export function RNCVerificationField({ field, onVerificationResult }: RNCVerific
   const { toast } = useToast();
 
   const handleVerification = async (rnc: string) => {
-    const originalInput = rnc;
     const cleanRnc = rnc?.replace(/\D/g, '') || '';
     
     if (!cleanRnc || cleanRnc.length < 9) {
@@ -38,32 +37,63 @@ export function RNCVerificationField({ field, onVerificationResult }: RNCVerific
 
     setIsVerifying(true);
     try {
-      // Send original input to server for better error reporting
-      const response = await fetch(`/api/customers/verify-rnc/${encodeURIComponent(originalInput)}`, {
+      const response = await fetch(`/api/dgii/rnc-lookup?rnc=${encodeURIComponent(cleanRnc)}`, {
         credentials: 'include'
       });
-      const data = await response.json();
+      const result = await response.json();
       
-      setVerificationResult(data);
-      onVerificationResult?.(data);
-      
-      if (data.isValid && data.companyName) {
+      if (result.success && result.data) {
+        const verificationData = {
+          isValid: true,
+          rnc: cleanRnc,
+          companyName: result.data.razonSocial || result.data.name,
+          businessName: result.data.nombreComercial,
+          status: result.data.estado,
+          category: result.data.categoria,
+          regime: result.data.regimen,
+          message: "RNC válido y encontrado en DGII",
+          source: "dgii"
+        };
+        
+        setVerificationResult(verificationData);
+        onVerificationResult?.(verificationData);
+        
         toast({
           title: "RNC Verificado",
-          description: `Empresa: ${data.companyName}`,
+          description: `Empresa: ${result.data.razonSocial || result.data.name}`,
         });
       } else {
+        const verificationData = {
+          isValid: false,
+          rnc: cleanRnc,
+          message: result.message || "RNC no encontrado en DGII",
+          source: "dgii"
+        };
+        
+        setVerificationResult(verificationData);
+        onVerificationResult?.(verificationData);
+        
         toast({
           title: "RNC No Encontrado", 
-          description: data.message,
+          description: result.message || "RNC no encontrado en DGII",
           variant: "destructive",
         });
       }
     } catch (error) {
       console.error('Error verifying RNC:', error);
+      const verificationData = {
+        isValid: false,
+        rnc: cleanRnc,
+        message: "Error al verificar RNC. Intente nuevamente.",
+        source: "error"
+      };
+      
+      setVerificationResult(verificationData);
+      onVerificationResult?.(verificationData);
+      
       toast({
         title: "Error",
-        description: "No se pudo verificar el RNC",
+        description: "Error al verificar RNC. Intente nuevamente.",
         variant: "destructive",
       });
     } finally {
