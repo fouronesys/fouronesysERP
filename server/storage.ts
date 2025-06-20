@@ -2780,59 +2780,7 @@ export class DatabaseStorage implements IStorage {
     return cartItem;
   }
 
-  async addToPOSCart(cartItem: InsertPOSCartItem): Promise<POSCartItem> {
-    // Check product availability and stock
-    const product = await this.getProduct(cartItem.productId, cartItem.companyId);
-    if (!product) {
-      throw new Error('Producto no encontrado');
-    }
 
-    const currentStock = parseFloat(String(product.stock || 0));
-    
-    // Check if item already exists in cart
-    const existingItem = await db
-      .select()
-      .from(posCartItems)
-      .where(and(
-        eq(posCartItems.companyId, cartItem.companyId),
-        eq(posCartItems.userId, cartItem.userId),
-        eq(posCartItems.productId, cartItem.productId)
-      ))
-      .limit(1);
-
-    if (existingItem.length > 0) {
-      // Update existing item quantity
-      const newQuantity = existingItem[0].quantity + cartItem.quantity;
-      
-      // Validate stock availability
-      if (currentStock < newQuantity) {
-        throw new Error(`Stock insuficiente. Disponible: ${currentStock}, solicitado: ${newQuantity}`);
-      }
-      
-      const newSubtotal = newQuantity * parseFloat(cartItem.unitPrice.toString());
-      
-      const [updated] = await db
-        .update(posCartItems)
-        .set({
-          quantity: newQuantity,
-          subtotal: newSubtotal.toString(),
-          updatedAt: new Date()
-        })
-        .where(eq(posCartItems.id, existingItem[0].id))
-        .returning();
-      
-      return updated;
-    } else {
-      // Validate stock for new item
-      if (currentStock < cartItem.quantity) {
-        throw new Error(`Stock insuficiente. Disponible: ${currentStock}, solicitado: ${cartItem.quantity}`);
-      }
-      
-      // Insert new item
-      const [newItem] = await db.insert(posCartItems).values(cartItem).returning();
-      return newItem;
-    }
-  }
 
   async updatePOSCartItem(id: number, quantity: number): Promise<POSCartItem | undefined> {
     const [item] = await db.select().from(posCartItems).where(eq(posCartItems.id, id)).limit(1);
@@ -4224,55 +4172,16 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async updatePOSCartItem(cartId: number, quantity: number): Promise<any> {
+  async removePOSCartItem(cartId: number): Promise<void> {
     try {
-      const [updated] = await db
-        .update(posCartItems)
-        .set({ 
-          quantity: quantity.toString(),
-          subtotal: sql`(${quantity} * CAST(unit_price AS DECIMAL))`
-        })
-        .where(eq(posCartItems.id, cartId))
-        .returning();
-      return updated;
-    } catch (error) {
-      console.error("Error updating POS cart item:", error);
-      throw error;
-    }
-  }
-
-  async removePOSCartItem(cartId: number): Promise<boolean> {
-    try {
-      const result = await db
+      await db
         .delete(posCartItems)
         .where(eq(posCartItems.id, cartId));
-      return true;
     } catch (error) {
       console.error("Error removing POS cart item:", error);
-      return false;
-    }
-  }
-
-  async addToPOSCart(cartData: any): Promise<any> {
-    try {
-      const [cartItem] = await db
-        .insert(posCartItems)
-        .values({
-          companyId: cartData.companyId,
-          userId: cartData.userId,
-          productId: cartData.productId,
-          quantity: cartData.quantity.toString(),
-          unitPrice: cartData.unitPrice.toString(),
-          subtotal: cartData.subtotal.toString()
-        })
-        .returning();
-      return cartItem;
-    } catch (error) {
-      console.error("Error adding item to POS cart:", error);
       throw error;
     }
   }
-
 
 }
 
