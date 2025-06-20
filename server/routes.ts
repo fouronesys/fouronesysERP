@@ -1177,8 +1177,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const saleId = parseInt(req.params.saleId);
       
-      // Get sale data
-      const sale = await storage.getPOSSaleById(saleId);
+      // First find the sale to get company ID - use raw SQL query since this is public verification
+      const [saleResult] = await db.select().from(posSales).where(eq(posSales.id, saleId)).limit(1);
+      
+      if (!saleResult) {
+        return res.json({ 
+          valid: false, 
+          message: "Venta no encontrada" 
+        });
+      }
+
+      // Get complete sale data with company ID
+      const sale = await storage.getPOSSale(saleId, saleResult.companyId);
       if (!sale) {
         return res.json({ 
           valid: false, 

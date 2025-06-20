@@ -60,6 +60,7 @@ import ApiRegistration from "@/pages/ApiRegistration";
 import ApiDocs from "@/pages/ApiDocs";
 
 import InstallationGuide from "@/pages/InstallationGuide";
+import VerifySale from "@/pages/VerifySale";
 import NotFound from "@/pages/not-found";
 import LoginAnimation from "@/components/LoginAnimation";
 
@@ -225,6 +226,7 @@ function Router() {
       <Switch>
         <Route path="/auth" component={AuthPage} />
         <Route path="/register" component={AuthPage} />
+        <Route path="/verify/sale/:saleId" component={VerifySale} />
         <Route path="/api-registration" component={ApiRegistration} />
         <Route path="/api-docs" component={ApiDocs} />
         <Route path="/payment" component={Payment} />
