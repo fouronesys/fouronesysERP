@@ -1562,12 +1562,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const existingSales = await storage.getPOSSales(company.id);
       const saleNumber = `POS-${String(existingSales.length + 1).padStart(6, '0')}`;
       
+      let ncf = null;
+
+      // Generate NCF if fiscal receipt is requested
+      if (useFiscalReceipt && ncfType) {
+        try {
+          const ncfSequence = await storage.getNextNCF(company.id, ncfType);
+          if (ncfSequence) {
+            ncf = ncfSequence;
+            // Update the sequence counter
+            await storage.incrementNCFSequence(company.id, ncfType);
+          }
+        } catch (ncfError) {
+          console.error("Error generating NCF:", ncfError);
+          // Continue without NCF if generation fails
+        }
+      }
+
+      // Ensure fiscal period is set for all sales
+      const currentDate = new Date();
+      const fiscalPeriod = currentDate.getFullYear().toString() + 
+                          (currentDate.getMonth() + 1).toString().padStart(2, '0') + 
+                          currentDate.getDate().toString().padStart(2, '0');
+      
       // Prepare sale data
       const saleToCreate = {
         ...saleData,
         companyId: company.id,
         saleNumber,
+        ncf,
+        ncfType: useFiscalReceipt ? ncfType : null,
+        fiscalPeriod,
         status: "completed",
+        createdBy: userId,
         createdAt: new Date(),
         updatedAt: new Date()
       };
@@ -1595,8 +1622,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.clearPOSCart(company.id, userId);
       console.log("[DEBUG] Cart cleared for user:", userId);
       
+      // Log POS sale creation with audit
+      await auditLogger.logPOSAction(userId, company.id, 'create_sale', sale, req);
+
       console.log("[DEBUG] Sale processing completed successfully");
-      res.json(sale);
+      res.json({ ...sale, ncf });
     } catch (error) {
       console.error("Error creating POS sale:", error);
       res.status(500).json({ message: "Failed to create POS sale", error: error.message });

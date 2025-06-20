@@ -250,7 +250,7 @@ export class InvoiceHTMLService {
         
         .total-row .label,
         .total-row .amount {
-            background: #2563eb;
+            background: #000;
             color: white;
             font-size: 14px;
             border: none;
@@ -259,36 +259,36 @@ export class InvoiceHTMLService {
         .notes-section {
             margin-top: 30px;
             padding: 15px;
-            background: #f8fafc;
+            background: #f8f8f8;
             border-radius: 4px;
-            border-left: 4px solid #10b981;
+            border-left: 4px solid #000;
         }
         
         .notes-title {
             font-weight: bold;
             font-size: 12px;
-            color: #059669;
+            color: #000;
             margin-bottom: 5px;
         }
         
         .notes-content {
             font-size: 11px;
-            color: #374151;
+            color: #333;
             line-height: 1.4;
         }
         
         .footer {
             margin-top: 40px;
             padding-top: 20px;
-            border-top: 1px solid #e2e8f0;
+            border-top: 1px solid #ccc;
             text-align: center;
             font-size: 10px;
-            color: #6b7280;
+            color: #666;
         }
         
         .payment-info {
-            background: #fef3c7;
-            border: 1px solid #f59e0b;
+            background: #f8f8f8;
+            border: 1px solid #000;
             padding: 12px;
             border-radius: 4px;
             margin: 20px 0;
@@ -296,13 +296,13 @@ export class InvoiceHTMLService {
         
         .payment-title {
             font-weight: bold;
-            color: #92400e;
+            color: #000;
             margin-bottom: 5px;
         }
         
         .payment-details {
             font-size: 11px;
-            color: #92400e;
+            color: #333;
         }
         
         @media print {
@@ -324,12 +324,15 @@ export class InvoiceHTMLService {
         <!-- Header -->
         <div class="header">
             <div class="company-info">
-                <div class="company-name">${company.name || 'Mi Empresa'}</div>
-                <div class="company-details">
-                    ${company.address ? `${company.address}<br>` : ''}
-                    ${company.phone ? `Tel: ${company.phone}<br>` : ''}
-                    ${company.email ? `Email: ${company.email}<br>` : ''}
-                    ${company.rnc ? `RNC: ${company.rnc}` : ''}
+                ${company.logoPath ? `<img src="data:image/png;base64,${company.logoBase64 || ''}" alt="Logo" class="company-logo" onerror="this.style.display='none'">` : ''}
+                <div class="company-details-wrapper">
+                    <div class="company-name">${company.name || 'Mi Empresa'}</div>
+                    <div class="company-details">
+                        ${company.address ? `${company.address}<br>` : ''}
+                        ${company.phone ? `Tel: ${company.phone}<br>` : ''}
+                        ${company.email ? `Email: ${company.email}<br>` : ''}
+                        ${company.rnc ? `RNC: ${company.rnc}` : ''}
+                    </div>
                 </div>
             </div>
             <div class="invoice-info">

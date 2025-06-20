@@ -4174,6 +4174,91 @@ export class DatabaseStorage implements IStorage {
       return null;
     }
   }
+
+  // NCF Sequence Management Methods
+  async getNextNCF(companyId: number, ncfType: string): Promise<string | null> {
+    try {
+      // Find active sequence for this NCF type
+      const [sequence] = await db
+        .select()
+        .from(ncfSequences)
+        .where(
+          and(
+            eq(ncfSequences.companyId, companyId),
+            eq(ncfSequences.type, ncfType),
+            eq(ncfSequences.isActive, true)
+          )
+        )
+        .limit(1);
+
+      if (!sequence) {
+        console.log(`No active NCF sequence found for type ${ncfType}`);
+        return null;
+      }
+
+      // Check if sequence has available numbers
+      if (sequence.currentNumber >= sequence.rangeEnd) {
+        console.log(`NCF sequence ${ncfType} exhausted`);
+        return null;
+      }
+
+      // Generate NCF: Type + Series + Sequential Number (8 digits)
+      const formattedNumber = sequence.currentNumber.toString().padStart(8, '0');
+      const ncf = `${ncfType}${sequence.series}${formattedNumber}`;
+      
+      return ncf;
+    } catch (error) {
+      console.error("Error getting next NCF:", error);
+      return null;
+    }
+  }
+
+  async incrementNCFSequence(companyId: number, ncfType: string): Promise<void> {
+    try {
+      await db
+        .update(ncfSequences)
+        .set({ 
+          currentNumber: sql`${ncfSequences.currentNumber} + 1`,
+          updatedAt: new Date()
+        })
+        .where(
+          and(
+            eq(ncfSequences.companyId, companyId),
+            eq(ncfSequences.type, ncfType),
+            eq(ncfSequences.isActive, true)
+          )
+        );
+    } catch (error) {
+      console.error("Error incrementing NCF sequence:", error);
+      throw error;
+    }
+  }
+
+  async createNCFSequence(sequenceData: any): Promise<any> {
+    try {
+      const [sequence] = await db
+        .insert(ncfSequences)
+        .values(sequenceData)
+        .returning();
+      return sequence;
+    } catch (error) {
+      console.error("Error creating NCF sequence:", error);
+      throw error;
+    }
+  }
+
+  async getNCFSequences(companyId: number): Promise<any[]> {
+    try {
+      return await db
+        .select()
+        .from(ncfSequences)
+        .where(eq(ncfSequences.companyId, companyId))
+        .orderBy(ncfSequences.type, ncfSequences.series);
+    } catch (error) {
+      console.error("Error fetching NCF sequences:", error);
+      return [];
+    }
+  }
 }
 
 export const storage = new DatabaseStorage();
