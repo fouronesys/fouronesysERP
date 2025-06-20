@@ -1444,6 +1444,116 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // POS Sales routes
+  app.get("/api/pos/sales", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+      const sales = await storage.getPOSSales(company.id);
+      res.json(sales);
+    } catch (error) {
+      console.error("Error fetching POS sales:", error);
+      res.status(500).json({ message: "Failed to fetch POS sales" });
+    }
+  });
+
+  app.post("/api/pos/sales", isAuthenticated, async (req: any, res) => {
+    try {
+      console.log("[DEBUG] POST /api/pos/sales - Processing POS sale");
+      console.log("[DEBUG] Request body:", JSON.stringify(req.body, null, 2));
+      
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      const { items, useFiscalReceipt, ncfType, ...saleData } = req.body;
+      
+      // Generate sale number
+      const existingSales = await storage.getPOSSales(company.id);
+      const saleNumber = `POS-${String(existingSales.length + 1).padStart(6, '0')}`;
+      
+      // Prepare sale data
+      const saleToCreate = {
+        ...saleData,
+        companyId: company.id,
+        saleNumber,
+        status: "completed",
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+
+      console.log("[DEBUG] Creating sale:", saleToCreate);
+      const sale = await storage.createPOSSale(saleToCreate);
+      console.log("[DEBUG] Sale created with ID:", sale.id);
+      
+      // Create sale items
+      if (items && Array.isArray(items)) {
+        console.log("[DEBUG] Creating", items.length, "sale items");
+        for (const item of items) {
+          const itemData = {
+            ...item,
+            saleId: sale.id,
+            createdAt: new Date(),
+            updatedAt: new Date()
+          };
+          console.log("[DEBUG] Creating item:", itemData);
+          await storage.createPOSSaleItem(itemData);
+        }
+      }
+
+      // Clear the cart after successful sale
+      await storage.clearPOSCart(company.id, userId);
+      console.log("[DEBUG] Cart cleared for user:", userId);
+      
+      console.log("[DEBUG] Sale processing completed successfully");
+      res.json(sale);
+    } catch (error) {
+      console.error("Error creating POS sale:", error);
+      res.status(500).json({ message: "Failed to create POS sale", error: error.message });
+    }
+  });
+
+  app.get("/api/pos/sales/:id/items", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+      const saleId = parseInt(req.params.id);
+      const items = await storage.getPOSSaleItems(saleId);
+      res.json(items);
+    } catch (error) {
+      console.error("Error fetching sale items:", error);
+      res.status(500).json({ message: "Failed to fetch sale items" });
+    }
+  });
+
+  app.get("/api/pos/print-settings", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+      const settings = await storage.getPOSPrintSettings(company.id);
+      res.json(settings || { 
+        printerWidth: "80mm", 
+        showNCF: true, 
+        showCustomerInfo: true,
+        companyId: company.id
+      });
+    } catch (error) {
+      console.error("Error fetching POS print settings:", error);
+      res.status(500).json({ message: "Failed to fetch POS print settings" });
+    }
+  });
+
   // PayPal payment routes
   app.get("/paypal/setup", async (req, res) => {
     await loadPaypalDefault(req, res);
