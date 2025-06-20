@@ -1472,6 +1472,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.patch("/api/pos/cart/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const { quantity } = req.body;
+
+      const updatedItem = await storage.updatePOSCartItem(parseInt(id), quantity);
+      if (!updatedItem) {
+        return res.status(404).json({ message: "Cart item not found" });
+      }
+
+      res.json(updatedItem);
+    } catch (error) {
+      console.error("Error updating cart item:", error);
+      res.status(500).json({ message: "Failed to update cart item" });
+    }
+  });
+
+  app.delete("/api/pos/cart/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+
+      const success = await storage.removePOSCartItem(parseInt(id));
+      if (!success) {
+        return res.status(404).json({ message: "Cart item not found" });
+      }
+
+      res.json({ message: "Item removed from cart" });
+    } catch (error) {
+      console.error("Error removing cart item:", error);
+      res.status(500).json({ message: "Failed to remove cart item" });
+    }
+  });
+
   app.delete("/api/pos/cart", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.id;

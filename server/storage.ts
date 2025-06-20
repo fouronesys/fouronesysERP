@@ -2870,15 +2870,7 @@ export class DatabaseStorage implements IStorage {
     return updated;
   }
 
-  async removePOSCartItem(id: number): Promise<void> {
-    await db.delete(posCartItems).where(eq(posCartItems.id, id));
-  }
 
-  async clearPOSCart(companyId: number, userId: string): Promise<void> {
-    await db
-      .delete(posCartItems)
-      .where(and(eq(posCartItems.companyId, companyId), eq(posCartItems.userId, userId)));
-  }
 
   // POS Multi-Station Implementation
   // Employee management methods
@@ -4229,6 +4221,35 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error("Error clearing POS cart:", error);
       throw error;
+    }
+  }
+
+  async updatePOSCartItem(cartId: number, quantity: number): Promise<any> {
+    try {
+      const [updated] = await db
+        .update(posCartItems)
+        .set({ 
+          quantity: quantity.toString(),
+          subtotal: sql`(${quantity} * CAST(unit_price AS DECIMAL))`
+        })
+        .where(eq(posCartItems.id, cartId))
+        .returning();
+      return updated;
+    } catch (error) {
+      console.error("Error updating POS cart item:", error);
+      throw error;
+    }
+  }
+
+  async removePOSCartItem(cartId: number): Promise<boolean> {
+    try {
+      const result = await db
+        .delete(posCartItems)
+        .where(eq(posCartItems.id, cartId));
+      return true;
+    } catch (error) {
+      console.error("Error removing POS cart item:", error);
+      return false;
     }
   }
 
