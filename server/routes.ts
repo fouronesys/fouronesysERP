@@ -889,10 +889,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Handle subscription plan changes
-      if (subscriptionPlan && subscriptionPlan !== updateData.subscriptionPlan) {
-        const { updateCompanySubscription } = await import('./subscription-service');
-        await updateCompanySubscription(companyId, subscriptionPlan);
-        updateData.subscriptionPlan = subscriptionPlan;
+      if (subscriptionPlan) {
+        const currentCompany = await storage.getCompanyById(companyId);
+        if (currentCompany && subscriptionPlan !== currentCompany.subscriptionPlan) {
+          const { updateCompanySubscription } = await import('./subscription-service');
+          await updateCompanySubscription(companyId, subscriptionPlan);
+          console.log(`[DEBUG] Updated subscription plan from ${currentCompany.subscriptionPlan} to ${subscriptionPlan}`);
+        }
       }
       
       console.log(`[DEBUG] Updating company ${companyId} with data:`, updateData);

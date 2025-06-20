@@ -493,16 +493,22 @@ export class DatabaseStorage implements IStorage {
         }
       }
 
-      // Set trial expiry date for trial companies
+      // Set subscription dates based on plan
       console.log('Preparing data for insertion...');
       const dataToInsert = { 
         ...companyData,
         rnc: companyData.rnc?.trim() || null // Store null if empty
       };
-      if (companyData.subscriptionPlan === 'trial' && !companyData.subscriptionExpiry) {
+      
+      if (!companyData.subscriptionExpiry) {
+        const { calculateSubscriptionExpiry } = await import('./subscription-service');
         const now = new Date();
-        const trialExpiry = new Date(now.getTime() + (15 * 24 * 60 * 60 * 1000)); // 15 days from now
-        dataToInsert.subscriptionExpiry = trialExpiry;
+        dataToInsert.subscriptionStartDate = now;
+        dataToInsert.subscriptionExpiry = calculateSubscriptionExpiry(
+          companyData.subscriptionPlan || 'trial', 
+          now
+        );
+        console.log(`[Registration] Setting ${companyData.subscriptionPlan || 'trial'} plan expiry to:`, dataToInsert.subscriptionExpiry);
       }
       
       console.log('Final data to insert:', JSON.stringify(dataToInsert, null, 2));
