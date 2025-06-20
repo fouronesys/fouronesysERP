@@ -9,10 +9,11 @@ import { initializeAdminUser } from "./init-admin";
 import { moduleInitializer } from "./module-initializer";
 import { sendApiKeyEmail } from "./email-service";
 import { createPaypalOrder, capturePaypalOrder, loadPaypalDefault } from "./paypal";
-import { insertCustomerSchema } from "../shared/schema";
+import { insertCustomerSchema, invoiceItems } from "../shared/schema";
 import { dgiiRegistryUpdater } from "./dgii-registry-updater";
 import { InvoicePOS80mmService } from "./invoice-pos-80mm-service";
 import { InvoiceHTMLService } from "./invoice-html-service";
+import { db } from "./db";
 
 // File upload configuration
 const upload = multer({
@@ -1160,19 +1161,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!company) {
         return res.status(404).json({ message: "Company not found" });
       }
-      const invoiceData = {
-        ...req.body,
-        companyId: company.id,
-      };
-      const invoice = await storage.createInvoice(invoiceData);
+
+      const { items, ...invoiceData } = req.body;
       
-      // Process stock deduction for invoice items
-      try {
-        await storage.processInvoiceStockDeduction(invoice.id, company.id, userId);
-      } catch (stockError) {
-        console.error("Error processing stock deduction for invoice:", stockError);
-        // Note: We don't fail the invoice creation if stock update fails
-        // This ensures invoice creation is not blocked by stock issues
+      // Create invoice header
+      const invoice = await storage.createInvoice({
+        ...invoiceData,
+        companyId: company.id,
+      });
+
+      // Create invoice items if provided
+      if (items && items.length > 0) {
+        for (const item of items) {
+          const itemData = {
+            invoiceId: invoice.id,
+            productId: parseInt(item.productId),
+            description: item.description,
+            quantity: parseInt(item.quantity),
+            price: item.unitPrice,
+            subtotal: item.subtotal,
+            taxType: invoiceData.taxType || "itbis_18",
+            taxRate: "18.00",
+            taxAmount: (parseFloat(item.subtotal) * 0.18).toFixed(2),
+            total: (parseFloat(item.subtotal) * 1.18).toFixed(2)
+          };
+          
+          await storage.createInvoiceItem(itemData);
+          
+          // Deduct stock for the product
+          try {
+            const product = await storage.getProduct(parseInt(item.productId), company.id);
+            if (product && product.stock !== null) {
+              const currentStock = parseInt(product.stock?.toString() || "0");
+              const newStock = Math.max(0, currentStock - parseInt(item.quantity));
+              await storage.updateProduct(parseInt(item.productId), { stock: newStock.toString() }, company.id);
+            }
+          } catch (stockError) {
+            console.error("Error updating stock for product:", item.productId, stockError);
+          }
+        }
       }
       
       res.json(invoice);

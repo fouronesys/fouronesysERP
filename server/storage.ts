@@ -988,6 +988,19 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  async createInvoiceItem(itemData: any): Promise<any> {
+    try {
+      const [item] = await db
+        .insert(invoiceItems)
+        .values(itemData)
+        .returning();
+      return item;
+    } catch (error) {
+      console.error("Error creating invoice item:", error);
+      throw error;
+    }
+  }
+
   async createInvoice(invoiceData: InsertInvoice): Promise<Invoice> {
     // Generate automatic invoice number if not provided
     if (!invoiceData.number || invoiceData.number.trim() === '') {
