@@ -1257,6 +1257,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const { id: productId, price } = req.body;
       
+      // Get product details to check if it's manufactured/consumable
+      const product = await storage.getProduct(productId, company.id);
+      if (!product) {
+        return res.status(404).json({ message: "Product not found" });
+      }
+
+      // For consumable products, check material availability
+      if (product.isConsumable && product.isManufactured) {
+        const availability = await storage.checkMaterialAvailability(productId, 1, company.id);
+        if (!availability.available) {
+          return res.status(400).json({ 
+            message: "Insufficient materials to manufacture this product",
+            missingMaterials: availability.missing
+          });
+        }
+      }
+      
       const cartItem = {
         companyId: company.id,
         userId: userId,
@@ -1278,6 +1295,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const cartId = parseInt(req.params.id);
       const { quantity } = req.body;
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      // Get cart item to check the product
+      const cartItem = await storage.getPOSCartItem(cartId);
+      if (!cartItem) {
+        return res.status(404).json({ message: "Cart item not found" });
+      }
+
+      // Get product details
+      const product = await storage.getProduct(cartItem.productId, company.id);
+      if (!product) {
+        return res.status(404).json({ message: "Product not found" });
+      }
+
+      // For consumable products, check material availability for the new quantity
+      if (product.isConsumable && product.isManufactured) {
+        const availability = await storage.checkMaterialAvailability(cartItem.productId, quantity, company.id);
+        if (!availability.available) {
+          return res.status(400).json({ 
+            message: "Insufficient materials to manufacture the requested quantity",
+            missingMaterials: availability.missing
+          });
+        }
+      }
       
       const updatedItem = await storage.updatePOSCartItem(cartId, quantity);
       if (!updatedItem) {

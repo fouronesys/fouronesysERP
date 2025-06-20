@@ -2799,6 +2799,14 @@ export class DatabaseStorage implements IStorage {
     return cartItems;
   }
 
+  async getPOSCartItem(cartId: number): Promise<POSCartItem | undefined> {
+    const [cartItem] = await db
+      .select()
+      .from(posCartItems)
+      .where(eq(posCartItems.id, cartId));
+    return cartItem;
+  }
+
   async addToPOSCart(cartItem: InsertPOSCartItem): Promise<POSCartItem> {
     // Check product availability and stock
     const product = await this.getProduct(cartItem.productId, cartItem.companyId);
