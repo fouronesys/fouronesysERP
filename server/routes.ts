@@ -805,25 +805,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // Find user's payment submission
-      const submission = await storage.getUserPaymentStatus(userEmail);
+      // Get user's company to check payment status
+      const company = await storage.getCompanyByUserId(userId);
       
-      if (!submission) {
+      if (!company) {
         return res.json({ 
           hasValidPayment: false, 
           status: 'pending', 
-          message: 'No payment submission found' 
+          message: 'No company found for user' 
         });
       }
       
-      // Check if payment is confirmed
-      const hasValidPayment = submission.status === 'confirmed';
+      // Check company payment status
+      const hasValidPayment = company.paymentStatus === 'confirmed';
       
       res.json({ 
         hasValidPayment,
-        status: submission.status || 'pending',
-        submittedAt: submission.submittedAt,
-        processedAt: submission.processedAt
+        status: company.paymentStatus || 'pending',
+        subscriptionPlan: company.subscriptionPlan,
+        subscriptionExpiry: company.subscriptionExpiry
       });
     } catch (error) {
       console.error("Error fetching user payment status:", error);
