@@ -55,6 +55,56 @@ export default function Billing() {
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
 
+  // Function to handle invoice printing
+  const handlePrintInvoice = async (invoice: Invoice) => {
+    try {
+      const response = await fetch(`/api/invoices/print/${invoice.id}`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+
+      if (response.ok) {
+        const htmlContent = await response.text();
+        
+        // Open the invoice window with appropriate sizing for A4 invoices
+        const printWindow = window.open('', '_blank', 'width=800,height=1000,scrollbars=yes,resizable=yes,toolbar=no,menubar=no,location=no,status=no');
+        
+        if (printWindow) {
+          printWindow.document.write(htmlContent);
+          printWindow.document.close();
+          printWindow.focus();
+          
+          // Auto-trigger print dialog
+          printWindow.onload = () => {
+            setTimeout(() => {
+              printWindow.print();
+            }, 500);
+          };
+          
+          toast({
+            title: "Factura impresa",
+            description: "Factura profesional abierta en nueva ventana",
+          });
+        } else {
+          toast({
+            title: "Error",
+            description: "No se pudo abrir la ventana de impresión. Verifica el bloqueador de ventanas emergentes.",
+            variant: "destructive",
+          });
+        }
+      } else {
+        throw new Error('Error al generar factura');
+      }
+    } catch (error) {
+      console.error("Error printing invoice:", error);
+      toast({
+        title: "Error",
+        description: "No se pudo imprimir la factura",
+        variant: "destructive",
+      });
+    }
+  };
+
   const { data: invoices, isLoading } = useQuery<Invoice[]>({
     queryKey: ["/api/invoices"],
   });
@@ -170,7 +220,7 @@ export default function Billing() {
       };
       return await apiRequest("/api/invoices", { method: "POST", body: payload });
     },
-    onSuccess: () => {
+    onSuccess: (newInvoice) => {
       toast({
         title: "Factura creada",
         description: "La factura ha sido creada exitosamente.",
@@ -178,6 +228,13 @@ export default function Billing() {
       queryClient.invalidateQueries({ queryKey: ["/api/invoices"] });
       setIsDialogOpen(false);
       form.reset();
+      
+      // Auto-print the invoice after creation
+      if (newInvoice?.id) {
+        setTimeout(() => {
+          handlePrintInvoice(newInvoice);
+        }, 500);
+      }
     },
     onError: () => {
       toast({

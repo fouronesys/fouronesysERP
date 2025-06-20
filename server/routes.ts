@@ -12,6 +12,7 @@ import { createPaypalOrder, capturePaypalOrder, loadPaypalDefault } from "./payp
 import { insertCustomerSchema } from "../shared/schema";
 import { dgiiRegistryUpdater } from "./dgii-registry-updater";
 import { InvoicePOS80mmService } from "./invoice-pos-80mm-service";
+import { InvoiceHTMLService } from "./invoice-html-service";
 
 // File upload configuration
 const upload = multer({

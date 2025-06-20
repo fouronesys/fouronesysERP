@@ -1,59 +1,40 @@
-import fs from 'fs';
-import path from 'path';
-import QRCode from 'qrcode';
+import type { Invoice, InvoiceItem, Customer, Company } from "@shared/schema";
 
-export interface InvoiceData {
-  sale: any;
-  items: any[];
-  company: any;
-  customerInfo?: {
-    name?: string;
-    phone?: string;
-    rnc?: string;
-    address?: string;
-  };
+// Format currency in Dominican Pesos
+function formatDOP(amount: number): string {
+  return new Intl.NumberFormat('es-DO', {
+    style: 'currency',
+    currency: 'DOP',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }).format(amount);
 }
 
 export class InvoiceHTMLService {
-  /**
-   * Generate professional HTML invoice with CSS styling
-   */
-  static async generateHTMLInvoice(invoiceData: InvoiceData): Promise<string> {
-    const { sale, items, company, customerInfo } = invoiceData;
-    
-    // Generate QR code for verification
-    const verificationUrl = `https://invoice-verify.com/v/${sale.saleNumber}`;
-    const qrCodeDataURL = await QRCode.toDataURL(verificationUrl, {
-      width: 120,
-      margin: 1,
-      color: {
-        dark: '#000000',
-        light: '#ffffff'
-      }
-    });
+  static async generateInvoiceHTML(
+    invoice: Invoice,
+    customer: Customer,
+    company: Company,
+    invoiceItems: InvoiceItem[]
+  ): Promise<string> {
+    // Calculate totals
+    const subtotalNum = parseFloat(invoice.subtotal);
+    const taxNum = parseFloat(invoice.itbis || "0");
+    const totalNum = parseFloat(invoice.total);
 
-    // Load company logo if available
-    let logoBase64 = '';
-    if (company.logo) {
-      try {
-        const logoPath = path.join(process.cwd(), 'uploads', 'logos', `${company.id}.png`);
-        if (fs.existsSync(logoPath)) {
-          const logoBuffer = fs.readFileSync(logoPath);
-          logoBase64 = `data:image/png;base64,${logoBuffer.toString('base64')}`;
-        }
-      } catch (error) {
-        console.log('Logo not found, using text header');
-      }
-    }
-
-    const html = `
+    return `
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Factura ${sale.saleNumber}</title>
+    <title>Factura ${invoice.number}</title>
     <style>
+        @page {
+            margin: 20mm;
+            size: A4;
+        }
+        
         * {
             margin: 0;
             padding: 0;
@@ -61,7 +42,7 @@ export class InvoiceHTMLService {
         }
         
         body {
-            font-family: 'Arial', sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             font-size: 12px;
             line-height: 1.4;
             color: #333;
@@ -69,89 +50,151 @@ export class InvoiceHTMLService {
         }
         
         .invoice-container {
-            max-width: 800px;
+            max-width: 210mm;
             margin: 0 auto;
-            padding: 20px;
+            padding: 10mm;
             background: white;
         }
         
-        .invoice-header {
+        .header {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            margin-bottom: 30px;
-            border-bottom: 2px solid #000000;
-            padding-bottom: 20px;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #2563eb;
         }
         
         .company-info {
             flex: 1;
         }
         
-        .company-logo {
-            max-width: 150px;
-            max-height: 80px;
-            margin-bottom: 10px;
-        }
-        
         .company-name {
             font-size: 24px;
             font-weight: bold;
-            color: #000000;
+            color: #2563eb;
             margin-bottom: 5px;
         }
         
-        .invoice-details {
+        .company-details {
+            font-size: 11px;
+            color: #666;
+            line-height: 1.3;
+        }
+        
+        .invoice-info {
             text-align: right;
             min-width: 200px;
         }
         
-        .invoice-number {
-            font-size: 18px;
+        .invoice-title {
+            font-size: 28px;
             font-weight: bold;
-            color: #000000;
+            color: #2563eb;
             margin-bottom: 10px;
         }
         
-        .invoice-meta {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 30px;
-            margin-bottom: 30px;
+        .invoice-number {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .invoice-dates {
+            font-size: 11px;
+            color: #666;
+        }
+        
+        .ncf-section {
+            background: #f8fafc;
+            border: 2px solid #2563eb;
+            padding: 8px;
+            text-align: center;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        
+        .ncf-title {
+            font-weight: bold;
+            font-size: 14px;
+            color: #2563eb;
+            margin-bottom: 3px;
+        }
+        
+        .ncf-number {
+            font-size: 16px;
+            font-weight: bold;
+            color: #1e40af;
+        }
+        
+        .billing-section {
+            display: flex;
+            justify-content: space-between;
+            margin: 20px 0;
+        }
+        
+        .billing-to, .shipping-to {
+            flex: 1;
+            margin-right: 20px;
         }
         
         .section-title {
             font-weight: bold;
-            color: #000000;
-            margin-bottom: 10px;
             font-size: 14px;
+            color: #2563eb;
+            margin-bottom: 8px;
+            text-transform: uppercase;
         }
         
-        .info-row {
-            margin-bottom: 5px;
+        .customer-info {
+            background: #f8fafc;
+            padding: 12px;
+            border-radius: 4px;
+            border-left: 4px solid #2563eb;
+        }
+        
+        .customer-name {
+            font-weight: bold;
+            font-size: 14px;
+            margin-bottom: 3px;
+        }
+        
+        .customer-details {
+            font-size: 11px;
+            color: #666;
+            line-height: 1.3;
         }
         
         .items-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 30px;
+            margin: 20px 0;
+            border: 1px solid #e2e8f0;
         }
         
         .items-table th {
-            background: #000000;
+            background: #2563eb;
             color: white;
             padding: 12px 8px;
             text-align: left;
             font-weight: bold;
+            font-size: 11px;
+            text-transform: uppercase;
         }
         
         .items-table td {
             padding: 10px 8px;
-            border-bottom: 1px solid #eee;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 11px;
         }
         
         .items-table tr:nth-child(even) {
-            background: #f9f9f9;
+            background: #f8fafc;
+        }
+        
+        .item-description {
+            font-weight: 500;
+            color: #374151;
         }
         
         .text-right {
@@ -163,251 +206,217 @@ export class InvoiceHTMLService {
         }
         
         .totals-section {
+            margin-top: 20px;
             display: flex;
             justify-content: flex-end;
-            margin-bottom: 30px;
         }
         
         .totals-table {
-            min-width: 300px;
+            width: 300px;
+            border-collapse: collapse;
         }
         
         .totals-table td {
-            padding: 8px 15px;
-            border-bottom: 1px solid #eee;
+            padding: 8px 12px;
+            font-size: 12px;
         }
         
-        .totals-table .total-row {
+        .totals-table .label {
+            text-align: right;
+            font-weight: 500;
+            color: #374151;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .totals-table .amount {
+            text-align: right;
             font-weight: bold;
-            font-size: 16px;
-            background: #f0f0f0;
-            border-top: 2px solid #000000;
+            border-bottom: 1px solid #e2e8f0;
+            width: 120px;
         }
         
-        .footer-section {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
+        .total-row .label,
+        .total-row .amount {
+            background: #2563eb;
+            color: white;
+            font-size: 14px;
+            border: none;
+        }
+        
+        .notes-section {
+            margin-top: 30px;
+            padding: 15px;
+            background: #f8fafc;
+            border-radius: 4px;
+            border-left: 4px solid #10b981;
+        }
+        
+        .notes-title {
+            font-weight: bold;
+            font-size: 12px;
+            color: #059669;
+            margin-bottom: 5px;
+        }
+        
+        .notes-content {
+            font-size: 11px;
+            color: #374151;
+            line-height: 1.4;
+        }
+        
+        .footer {
             margin-top: 40px;
             padding-top: 20px;
-            border-top: 1px solid #eee;
-        }
-        
-        .qr-section {
+            border-top: 1px solid #e2e8f0;
             text-align: center;
-        }
-        
-        .qr-code {
-            width: 100px;
-            height: 100px;
-            margin-bottom: 10px;
-        }
-        
-        .verification-text {
             font-size: 10px;
-            color: #666;
-            max-width: 120px;
+            color: #6b7280;
         }
         
         .payment-info {
-            flex: 1;
-            margin-right: 30px;
+            background: #fef3c7;
+            border: 1px solid #f59e0b;
+            padding: 12px;
+            border-radius: 4px;
+            margin: 20px 0;
         }
         
-        .amount-words {
-            font-style: italic;
-            color: #666;
-            margin-bottom: 15px;
+        .payment-title {
+            font-weight: bold;
+            color: #92400e;
+            margin-bottom: 5px;
+        }
+        
+        .payment-details {
+            font-size: 11px;
+            color: #92400e;
         }
         
         @media print {
+            .invoice-container {
+                padding: 0;
+                margin: 0;
+                max-width: none;
+            }
+            
             body {
                 print-color-adjust: exact;
                 -webkit-print-color-adjust: exact;
             }
-            
-            .invoice-container {
-                max-width: none;
-                margin: 0;
-                padding: 0;
-            }
-            
-            .no-print {
-                display: none !important;
-            }
-        }
-        
-        .print-button {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: #000000;
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: bold;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-        }
-        
-        .print-button:hover {
-            background: #333333;
         }
     </style>
 </head>
 <body>
-    <button class="print-button no-print" onclick="window.print()">🖨️ Imprimir</button>
-    
     <div class="invoice-container">
-        <div class="invoice-header">
+        <!-- Header -->
+        <div class="header">
             <div class="company-info">
-                ${logoBase64 ? `<img src="${logoBase64}" alt="Logo" class="company-logo">` : ''}
-                <div class="company-name">${company.name}</div>
-                <div><strong>RNC:</strong> ${company.rnc || 'N/A'}</div>
-                <div><strong>Teléfono:</strong> ${company.phone || 'N/A'}</div>
-                <div><strong>Email:</strong> ${company.email || 'N/A'}</div>
-                <div><strong>Dirección:</strong> ${company.address || 'N/A'}</div>
+                <div class="company-name">${company.name || 'Mi Empresa'}</div>
+                <div class="company-details">
+                    ${company.address ? `${company.address}<br>` : ''}
+                    ${company.phone ? `Tel: ${company.phone}<br>` : ''}
+                    ${company.email ? `Email: ${company.email}<br>` : ''}
+                    ${company.rnc ? `RNC: ${company.rnc}` : ''}
+                </div>
             </div>
-            <div class="invoice-details">
-                <div class="invoice-number">FACTURA</div>
-                <div class="invoice-number">${sale.saleNumber}</div>
-                <div><strong>Fecha:</strong> ${new Date(sale.createdAt).toLocaleDateString('es-DO')}</div>
-                <div><strong>Hora:</strong> ${new Date(sale.createdAt).toLocaleTimeString('es-DO')}</div>
-                ${sale.ncf ? `<div><strong>NCF:</strong> ${sale.ncf}</div>` : ''}
-            </div>
-        </div>
-        
-        <div class="invoice-meta">
-            <div class="customer-section">
-                <div class="section-title">INFORMACIÓN DEL CLIENTE</div>
-                <div class="info-row"><strong>Nombre:</strong> ${customerInfo?.name || 'Cliente General'}</div>
-                <div class="info-row"><strong>Teléfono:</strong> ${customerInfo?.phone || 'N/A'}</div>
-                <div class="info-row"><strong>RNC/Cédula:</strong> ${customerInfo?.rnc || 'N/A'}</div>
-                <div class="info-row"><strong>Dirección:</strong> ${customerInfo?.address || 'N/A'}</div>
-            </div>
-            <div class="payment-section">
-                <div class="section-title">INFORMACIÓN DE PAGO</div>
-                <div class="info-row"><strong>Método:</strong> ${sale.paymentMethod === 'cash' ? 'Efectivo' : sale.paymentMethod === 'card' ? 'Tarjeta' : 'Transferencia'}</div>
-                ${sale.paymentMethod === 'cash' ? `
-                <div class="info-row"><strong>Recibido:</strong> $${parseFloat(sale.cashReceived || '0').toFixed(2)}</div>
-                <div class="info-row"><strong>Cambio:</strong> $${parseFloat(sale.cashChange || '0').toFixed(2)}</div>
-                ` : ''}
-                <div class="info-row"><strong>Estado:</strong> ${sale.status === 'completed' ? 'Completada' : 'Pendiente'}</div>
+            <div class="invoice-info">
+                <div class="invoice-title">FACTURA</div>
+                <div class="invoice-number"># ${invoice.number}</div>
+                <div class="invoice-dates">
+                    <div><strong>Fecha:</strong> ${new Date(invoice.date).toLocaleDateString('es-DO')}</div>
+                    <div><strong>Vencimiento:</strong> ${invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString('es-DO') : 'N/A'}</div>
+                </div>
             </div>
         </div>
-        
+
+        <!-- NCF Section -->
+        ${invoice.ncf ? `
+        <div class="ncf-section">
+            <div class="ncf-title">*** COMPROBANTE FISCAL ***</div>
+            <div class="ncf-number">NCF: ${invoice.ncf}</div>
+        </div>
+        ` : ''}
+
+        <!-- Billing Information -->
+        <div class="billing-section">
+            <div class="billing-to">
+                <div class="section-title">Facturar a:</div>
+                <div class="customer-info">
+                    <div class="customer-name">${customer.name || 'Cliente General'}</div>
+                    <div class="customer-details">
+                        ${customer.email ? `Email: ${customer.email}<br>` : ''}
+                        ${customer.phone ? `Teléfono: ${customer.phone}<br>` : ''}
+                        ${customer.address ? `Dirección: ${customer.address}<br>` : ''}
+                        ${customer.rnc ? `RNC: ${customer.rnc}<br>` : ''}
+                        ${customer.cedula ? `Cédula: ${customer.cedula}` : ''}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Items Table -->
         <table class="items-table">
             <thead>
                 <tr>
-                    <th>Cant.</th>
-                    <th>Descripción</th>
-                    <th class="text-right">Precio Unit.</th>
-                    <th class="text-right">Subtotal</th>
+                    <th style="width: 50%">Descripción</th>
+                    <th style="width: 10%" class="text-center">Cant.</th>
+                    <th style="width: 15%" class="text-right">Precio Unit.</th>
+                    <th style="width: 15%" class="text-right">Subtotal</th>
                 </tr>
             </thead>
             <tbody>
-                ${items.map(item => `
+                ${invoiceItems.map(item => `
                 <tr>
+                    <td class="item-description">${item.price || 'Producto'}</td>
                     <td class="text-center">${item.quantity}</td>
-                    <td>${item.productName || item.name}</td>
-                    <td class="text-right">$${parseFloat(item.unitPrice || '0').toFixed(2)}</td>
-                    <td class="text-right">$${parseFloat(item.subtotal || '0').toFixed(2)}</td>
+                    <td class="text-right">${formatDOP(parseFloat(item.price))}</td>
+                    <td class="text-right">${formatDOP(parseFloat(item.subtotal))}</td>
                 </tr>
                 `).join('')}
             </tbody>
         </table>
-        
+
+        <!-- Totals -->
         <div class="totals-section">
             <table class="totals-table">
                 <tr>
-                    <td><strong>Subtotal:</strong></td>
-                    <td class="text-right">$${parseFloat(sale.subtotal || '0').toFixed(2)}</td>
+                    <td class="label">Subtotal:</td>
+                    <td class="amount">${formatDOP(subtotalNum)}</td>
                 </tr>
                 <tr>
-                    <td><strong>ITBIS (18%):</strong></td>
-                    <td class="text-right">$${parseFloat(sale.itbis || '0').toFixed(2)}</td>
+                    <td class="label">ITBIS (18%):</td>
+                    <td class="amount">${formatDOP(taxNum)}</td>
                 </tr>
                 <tr class="total-row">
-                    <td><strong>TOTAL:</strong></td>
-                    <td class="text-right"><strong>$${parseFloat(sale.total || '0').toFixed(2)}</strong></td>
+                    <td class="label">TOTAL:</td>
+                    <td class="amount">${formatDOP(totalNum)}</td>
                 </tr>
             </table>
         </div>
-        
-        <div class="footer-section">
-            <div class="payment-info">
-                <div class="amount-words">
-                    <strong>Total en letras:</strong> ${InvoiceHTMLService.numberToWords(parseFloat(sale.total || '0'))} pesos dominicanos
-                </div>
-                ${sale.notes ? `<div><strong>Notas:</strong> ${sale.notes}</div>` : ''}
-                <div style="margin-top: 20px; font-size: 11px; color: #666;">
-                    Gracias por su compra. Esta factura fue generada electrónicamente.
-                </div>
+
+        <!-- Payment Information -->
+        <div class="payment-info">
+            <div class="payment-title">Estado de Pago</div>
+            <div class="payment-details">
+                Estado: <strong>${invoice.status === 'paid' ? 'PAGADA' : invoice.status === 'pending' ? 'PENDIENTE' : 'VENCIDA'}</strong>
             </div>
-            <div class="qr-section">
-                <img src="${qrCodeDataURL}" alt="Código QR" class="qr-code">
-                <div class="verification-text">
-                    <strong>CÓDIGO QR DE VERIFICACIÓN</strong><br>
-                    Escanea para verificar esta venta
-                </div>
-            </div>
+        </div>
+
+        <!-- Notes -->
+        ${invoice.notes ? `
+        <div class="notes-section">
+            <div class="notes-title">Notas:</div>
+            <div class="notes-content">${invoice.notes}</div>
+        </div>
+        ` : ''}
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>Gracias por su preferencia</p>
+            <p>Esta factura fue generada electrónicamente y es válida sin firma</p>
         </div>
     </div>
 </body>
 </html>`;
-
-    return html;
-  }
-
-  /**
-   * Convert number to words in Spanish
-   */
-  private static numberToWords(num: number): string {
-    if (num === 0) return 'cero';
-    
-    const ones = ['', 'uno', 'dos', 'tres', 'cuatro', 'cinco', 'seis', 'siete', 'ocho', 'nueve'];
-    const tens = ['', '', 'veinte', 'treinta', 'cuarenta', 'cincuenta', 'sesenta', 'setenta', 'ochenta', 'noventa'];
-    const teens = ['diez', 'once', 'doce', 'trece', 'catorce', 'quince', 'dieciséis', 'diecisiete', 'dieciocho', 'diecinueve'];
-    
-    function convertHundreds(n: number): string {
-      let result = '';
-      
-      if (n >= 100) {
-        if (n >= 900) result += 'novecientos ';
-        else if (n >= 800) result += 'ochocientos ';
-        else if (n >= 700) result += 'setecientos ';
-        else if (n >= 600) result += 'seiscientos ';
-        else if (n >= 500) result += 'quinientos ';
-        else if (n >= 400) result += 'cuatrocientos ';
-        else if (n >= 300) result += 'trescientos ';
-        else if (n >= 200) result += 'doscientos ';
-        else if (n >= 100) result += 'cien ';
-        n %= 100;
-      }
-      
-      if (n >= 20) {
-        result += tens[Math.floor(n / 10)];
-        if (n % 10 > 0) result += ' y ' + ones[n % 10];
-      } else if (n >= 10) {
-        result += teens[n - 10];
-      } else if (n > 0) {
-        result += ones[n];
-      }
-      
-      return result.trim();
-    }
-    
-    const integerPart = Math.floor(num);
-    const decimalPart = Math.round((num - integerPart) * 100);
-    
-    let words = convertHundreds(integerPart);
-    
-    if (decimalPart > 0) {
-      words += ` con ${decimalPart}/100`;
-    }
-    
-    return words;
   }
 }
