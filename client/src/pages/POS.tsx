@@ -188,15 +188,7 @@ export default function POS() {
   // Cart mutations for database persistence
   const addToCartMutation = useMutation({
     mutationFn: async (product: Product) => {
-      // Update product stock first
-      await apiRequest(`/api/products/${product.id}`, {
-        method: "PATCH",
-        body: {
-          stock: (parseInt(product.stock?.toString() || "0") - 1).toString()
-        }
-      });
-
-      // Add to persistent cart
+      // Add to persistent cart - backend handles stock management
       return apiRequest("/api/pos/cart", {
         method: "POST",
         body: {
@@ -229,6 +221,7 @@ export default function POS() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/pos/cart"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/products"] });
     }
   });
 

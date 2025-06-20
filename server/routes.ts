@@ -1374,11 +1374,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { id, price, productId, quantity = 1, unitPrice, subtotal } = req.body;
       const finalProductId = productId || id;
       const finalUnitPrice = unitPrice || price;
-      const finalQuantity = quantity;
+      const finalQuantity = parseInt(quantity);
       const finalSubtotal = subtotal || (finalUnitPrice * finalQuantity);
       
       if (!finalProductId) {
         return res.status(400).json({ message: "Product ID is required" });
+      }
+      
+      // Check if item already exists in cart
+      const existingItems = await storage.getPOSCartItems(company.id, userId);
+      const existingItem = existingItems.find(item => item.productId === finalProductId);
+
+      if (existingItem) {
+        // Update existing item quantity instead of creating duplicate
+        const newQuantity = parseInt(existingItem.quantity) + finalQuantity;
+        const updatedItem = await storage.updatePOSCartItem(existingItem.id, newQuantity);
+        res.json(updatedItem);
+        return;
       }
       
       // Get product details to check if it's manufactured/consumable
@@ -1438,9 +1450,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Product not found" });
       }
 
+      // Calculate stock adjustment based on quantity change
+      const oldQuantity = parseInt(cartItem.quantity);
+      const newQuantity = parseInt(quantity);
+      const quantityDifference = newQuantity - oldQuantity;
+
+      // Adjust stock if product tracks inventory (for regular products)
+      if (product.stock !== null && product.stock !== undefined) {
+        const currentStock = parseInt(product.stock?.toString() || "0");
+        const newStock = currentStock - quantityDifference; // Subtract difference from stock
+        
+        // Check if we have enough stock for the increase
+        if (quantityDifference > 0 && newStock < 0) {
+          return res.status(400).json({ 
+            message: `Stock insuficiente. Disponible: ${currentStock}` 
+          });
+        }
+        
+        await storage.updateProduct(cartItem.productId, { stock: newStock.toString() }, company.id);
+      }
+
       // For consumable products, check material availability for the new quantity
       if (product.isConsumable && product.isManufactured) {
-        const availability = await storage.checkMaterialAvailability(cartItem.productId, quantity, company.id);
+        const availability = await storage.checkMaterialAvailability(cartItem.productId, newQuantity, company.id);
         if (!availability.available) {
           return res.status(400).json({ 
             message: "Insufficient materials to manufacture the requested quantity",
@@ -1449,7 +1481,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      const updatedItem = await storage.updatePOSCartItem(cartId, quantity);
+      const updatedItem = await storage.updatePOSCartItem(cartId, newQuantity);
       if (!updatedItem) {
         return res.status(404).json({ message: "Cart item not found" });
       }
@@ -1464,6 +1496,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/pos/cart/:id", isAuthenticated, async (req: any, res) => {
     try {
       const cartId = parseInt(req.params.id);
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      // Get cart item details before removing to restore stock
+      const cartItem = await storage.getPOSCartItem(cartId);
+      if (!cartItem) {
+        return res.status(404).json({ message: "Cart item not found" });
+      }
+
+      // Get product details
+      const product = await storage.getProduct(cartItem.productId, company.id);
+      if (product && product.trackStock) {
+        // Restore stock when removing from cart
+        const currentStock = parseInt(product.stock?.toString() || "0");
+        const quantityToRestore = parseInt(cartItem.quantity);
+        const newStock = currentStock + quantityToRestore;
+        
+        await storage.updateProduct(cartItem.productId, { stock: newStock.toString() }, company.id);
+      }
+
       await storage.removePOSCartItem(cartId);
       res.json({ message: "Item removed from cart" });
     } catch (error) {
