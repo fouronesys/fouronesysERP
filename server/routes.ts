@@ -1629,7 +1629,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ ...sale, ncf });
     } catch (error) {
       console.error("Error creating POS sale:", error);
-      res.status(500).json({ message: "Failed to create POS sale", error: error.message });
+      res.status(500).json({ message: "Failed to create POS sale", error: error instanceof Error ? error.message : "Unknown error" });
     }
   });
 
