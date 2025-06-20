@@ -1813,6 +1813,113 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Warehouse routes
+  app.get("/api/warehouses", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+      const warehouses = await storage.getWarehouses(company.id);
+      res.json(warehouses);
+    } catch (error) {
+      console.error("Error fetching warehouses:", error);
+      res.status(500).json({ message: "Failed to fetch warehouses" });
+    }
+  });
+
+  app.post("/api/warehouses", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+      const warehouseData = {
+        ...req.body,
+        companyId: company.id,
+      };
+      const warehouse = await storage.createWarehouse(warehouseData);
+      res.json(warehouse);
+    } catch (error) {
+      console.error("Error creating warehouse:", error);
+      res.status(500).json({ message: "Failed to create warehouse" });
+    }
+  });
+
+  app.put("/api/warehouses/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+      const id = parseInt(req.params.id);
+      const warehouseData = {
+        ...req.body,
+        companyId: company.id,
+      };
+      const warehouse = await storage.updateWarehouse(id, warehouseData, company.id);
+      res.json(warehouse);
+    } catch (error) {
+      console.error("Error updating warehouse:", error);
+      res.status(500).json({ message: "Failed to update warehouse" });
+    }
+  });
+
+  app.delete("/api/warehouses/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+      const id = parseInt(req.params.id);
+      await storage.deleteWarehouse(id, company.id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting warehouse:", error);
+      res.status(500).json({ message: "Failed to delete warehouse" });
+    }
+  });
+
+  // Inventory movements routes
+  app.get("/api/inventory/movements", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+      const movements = await storage.getInventoryMovements(company.id);
+      res.json(movements);
+    } catch (error) {
+      console.error("Error fetching inventory movements:", error);
+      res.status(500).json({ message: "Failed to fetch inventory movements" });
+    }
+  });
+
+  app.post("/api/inventory/movements", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+      const movementData = {
+        ...req.body,
+        companyId: company.id,
+        createdBy: userId,
+      };
+      const movement = await storage.createInventoryMovement(movementData);
+      res.json(movement);
+    } catch (error) {
+      console.error("Error creating inventory movement:", error);
+      res.status(500).json({ message: "Failed to create inventory movement" });
+    }
+  });
+
   // Fiscal Documents / NCF Management Routes
   app.get("/api/fiscal/ncf-sequences", isAuthenticated, async (req: any, res) => {
     try {

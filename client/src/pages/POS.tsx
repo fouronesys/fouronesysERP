@@ -75,7 +75,12 @@ const generateNCF = (type: string, sequence: number) => {
 };
 
 interface CartItem {
-  product: Product;
+  product: {
+    id: number;
+    name: string;
+    price: string;
+    code: string;
+  };
   quantity: number;
   subtotal: number;
 }
@@ -138,9 +143,14 @@ export default function POS() {
 
   // Transform cart data to match CartItem interface
   const cart: CartItem[] = Array.isArray(cartData) ? cartData.map((item: any) => ({
-    product: item.product,
-    quantity: item.quantity,
-    subtotal: parseFloat(item.subtotal)
+    product: {
+      id: Number(item.productId) || 0,
+      name: String(item.productName) || 'Producto',
+      price: String(item.unitPrice) || '0',
+      code: String(item.productCode) || '',
+    },
+    quantity: parseInt(item.quantity) || 1,
+    subtotal: parseFloat(item.subtotal) || 0
   })) : [];
 
   // Función para verificar secuencias agotándose

@@ -638,7 +638,9 @@ export default function FiscalManagement() {
                                 {sequence.rangeEnd - sequence.currentNumber + 1}
                               </span>
                             </TableCell>
-                            <TableCell>{format(new Date(sequence.expirationDate), "dd/MM/yyyy")}</TableCell>
+                            <TableCell>
+                              {sequence.expirationDate ? format(new Date(sequence.expirationDate), "dd/MM/yyyy") : "Sin fecha"}
+                            </TableCell>
                             <TableCell>
                               <Badge className={sequence.isActive 
                                 ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
