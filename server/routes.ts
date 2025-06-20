@@ -444,6 +444,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // RNC search endpoint for name suggestions
+  app.get("/api/rnc/search", async (req, res) => {
+    try {
+      const { query, limit = 10 } = req.query;
+      
+      if (!query || typeof query !== 'string') {
+        return res.json({
+          companies: []
+        });
+      }
+      
+      if (query.length < 3) {
+        return res.json({
+          companies: []
+        });
+      }
+      
+      // Search companies by name in local DGII registry
+      const companies = await storage.searchRNCByName(query.toString(), parseInt(limit.toString()));
+      
+      // Format the response to match the expected structure
+      const formattedCompanies = companies.map(company => ({
+        rnc: company.rnc,
+        name: company.razonSocial,
+        status: company.estado || "ACTIVO",
+        category: company.categoria || "CONTRIBUYENTE REGISTRADO"
+      }));
+      
+      res.json({
+        companies: formattedCompanies
+      });
+    } catch (error) {
+      console.error("Error searching RNC companies:", error);
+      res.json({
+        companies: []
+      });
+    }
+  });
+
   // DGII company search endpoint
   app.get("/api/dgii/search-companies", async (req, res) => {
     try {

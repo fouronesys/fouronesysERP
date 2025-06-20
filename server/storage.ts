@@ -363,6 +363,11 @@ export interface IStorage {
   updatePOSCustomer(id: number, customer: Partial<InsertPOSCustomer>, companyId: number): Promise<POSCustomer | undefined>;
   deletePOSCustomer(id: number, companyId: number): Promise<void>;
   validateCustomerRNC(rnc: string, companyId: number): Promise<{ valid: boolean; data?: any }>;
+  
+  // RNC Registry operations
+  getRNCFromRegistry(rnc: string): Promise<RNCRegistry | undefined>;
+  searchRNCByName(query: string, limit?: number): Promise<RNCRegistry[]>;
+  getRNCRegistryCount(): Promise<number>;
 
   // Stock Reservation operations for cart synchronization
   createStockReservation(reservationData: InsertStockReservation): Promise<StockReservation>;
@@ -2003,6 +2008,22 @@ export class DatabaseStorage implements IStorage {
       .where(eq(rncRegistry.rnc, rnc))
       .limit(1);
     return rncData;
+  }
+
+  async searchRNCByName(query: string, limit: number = 10): Promise<RNCRegistry[]> {
+    return await db
+      .select()
+      .from(rncRegistry)
+      .where(ilike(rncRegistry.razonSocial, `%${query}%`))
+      .limit(limit)
+      .orderBy(rncRegistry.razonSocial);
+  }
+
+  async getRNCRegistryCount(): Promise<number> {
+    const [result] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(rncRegistry);
+    return result.count;
   }
 
 
