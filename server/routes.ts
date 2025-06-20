@@ -1386,8 +1386,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const existingItem = existingItems.find(item => item.productId === finalProductId);
 
       if (existingItem) {
-        // Update existing item quantity instead of creating duplicate
-        const newQuantity = parseInt(existingItem.quantity) + finalQuantity;
+        // Calculate quantity difference for stock adjustment
+        const oldQuantity = parseInt(existingItem.quantity);
+        const newQuantity = oldQuantity + finalQuantity;
+        const quantityDifference = finalQuantity; // Only the added quantity affects stock
+        
+        // Get product details for stock management
+        const product = await storage.getProduct(finalProductId, company.id);
+        if (product && product.stock !== null && product.stock !== undefined) {
+          const currentStock = parseInt(String(product.stock) || "0");
+          const newStock = currentStock - quantityDifference;
+          
+          if (newStock < 0) {
+            return res.status(400).json({ 
+              message: `Stock insuficiente. Disponible: ${currentStock}` 
+            });
+          }
+          
+          await storage.updateProduct(finalProductId, { stock: newStock.toString() }, company.id);
+        }
+        
+        // Update existing item quantity
         const updatedItem = await storage.updatePOSCartItem(existingItem.id, newQuantity);
         res.json(updatedItem);
         return;

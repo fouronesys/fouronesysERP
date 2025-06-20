@@ -2799,6 +2799,18 @@ export class DatabaseStorage implements IStorage {
     return cartItem;
   }
 
+  async updatePOSCartItem(cartId: number, quantity: number): Promise<any> {
+    const [updated] = await db
+      .update(posCartItems)
+      .set({ 
+        quantity: quantity,
+        subtotal: sql`(${quantity} * CAST(unit_price AS DECIMAL))`
+      })
+      .where(eq(posCartItems.id, cartId))
+      .returning();
+    return updated;
+  }
+
   // POS Multi-Station Implementation
   // Employee management methods
   async getPOSEmployees(companyId: number): Promise<POSEmployee[]> {
