@@ -1,4 +1,5 @@
 import type { Invoice, InvoiceItem, Customer, Company } from "@shared/schema";
+import QRCode from 'qrcode';
 
 // Format currency in Dominican Pesos
 function formatDOP(amount: number): string {
@@ -17,6 +18,22 @@ export class InvoiceHTMLService {
     company: Company,
     invoiceItems: InvoiceItem[]
   ): Promise<string> {
+    // Generate QR code for invoice verification
+    const verificationUrl = `${process.env.REPLIT_DOMAINS?.split(',')[0] || 'localhost:5000'}/verify-invoice/${invoice.number}`;
+    let qrCodeDataUrl = '';
+    try {
+      qrCodeDataUrl = await QRCode.toDataURL(verificationUrl, {
+        width: 80,
+        margin: 1,
+        color: {
+          dark: '#000000',
+          light: '#FFFFFF'
+        }
+      });
+    } catch (error) {
+      console.error('Error generating QR code:', error);
+      qrCodeDataUrl = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iODAiIHZpZXdCb3g9IjAgMCA4MCA4MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjgwIiBoZWlnaHQ9IjgwIiBmaWxsPSIjRjNGNEY2Ii8+CjwvP3ZnPgo=';
+    }
     // Calculate totals
     const subtotalNum = parseFloat(invoice.subtotal);
     const taxNum = parseFloat(invoice.itbis || "0");
@@ -84,10 +101,11 @@ export class InvoiceHTMLService {
         }
         
         .company-name {
-            font-size: 24px;
-            font-weight: bold;
-            color: #000;
-            margin-bottom: 5px;
+            font-size: 26px;
+            font-weight: 700;
+            color: #111827;
+            margin-bottom: 8px;
+            letter-spacing: -0.02em;
         }
         
         .company-details {
@@ -325,7 +343,7 @@ export class InvoiceHTMLService {
         <!-- Header -->
         <div class="header">
             <div class="company-info">
-                ${company.logoPath ? `<img src="data:image/png;base64,${company.logoBase64 || ''}" alt="Logo" class="company-logo" onerror="this.style.display='none'">` : ''}
+                ${company.logoUrl ? `<img src="${company.logoUrl}" alt="Logo" class="company-logo" onerror="this.style.display='none'">` : ''}
                 <div class="company-details-wrapper">
                     <div class="company-name">${company.name || 'Mi Empresa'}</div>
                     <div class="company-details">
@@ -427,8 +445,19 @@ export class InvoiceHTMLService {
         </div>
         ` : ''}
 
+        <!-- QR Code Section -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 40px; padding: 20px; background: #f8fafc; border-radius: 8px; border: 1px solid #e5e7eb;">
+            <div>
+                <div style="font-size: 12px; font-weight: 600; color: #374151; margin-bottom: 4px;">CÓDIGO QR DE VERIFICACIÓN</div>
+                <div style="font-size: 11px; color: #6b7280;">Escanea para verificar esta factura</div>
+            </div>
+            <div id="qr-code" style="width: 80px; height: 80px; background: white; border: 1px solid #d1d5db; border-radius: 4px; display: flex; align-items: center; justify-content: center;">
+                <img src="${qrCodeDataUrl}" alt="QR Code" style="width: 75px; height: 75px;" />
+            </div>
+        </div>
+
         <!-- Footer -->
-        <div class="footer">
+        <div class="footer" style="margin-top: 30px;">
             <p>Gracias por su preferencia</p>
             <p>Esta factura fue generada electrónicamente y es válida sin firma</p>
         </div>
