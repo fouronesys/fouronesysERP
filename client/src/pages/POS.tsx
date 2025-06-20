@@ -233,6 +233,7 @@ export default function POS() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/pos/cart"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/products"] });
     }
   });
 
