@@ -52,7 +52,7 @@ export default function AIAssistant() {
     onSuccess: (response) => {
       setChatHistory(prev => [...prev, 
         { role: "user", content: message },
-        { role: "assistant", content: response.message }
+        { role: "assistant", content: (response as any).message }
       ]);
       setMessage("");
     },
@@ -85,7 +85,7 @@ export default function AIAssistant() {
     }
   };
 
-  const aiEnabled = aiStatus?.enabled !== false;
+  const aiEnabled = (aiStatus as any)?.enabled !== false;
 
   if (!aiEnabled) {
     return (

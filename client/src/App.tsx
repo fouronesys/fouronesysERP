@@ -265,7 +265,7 @@ function Router() {
     return (
       <Switch>
         <Route path="/payment" component={Payment} />
-        <Route path="/setup" component={Setup} />
+        <Route path="/setup">{() => <Setup onComplete={() => window.location.reload()} />}</Route>
         <Route component={Payment} />
       </Switch>
     );

@@ -101,11 +101,16 @@ export default function DGIIReports() {
 
   const downloadReportMutation = useMutation({
     mutationFn: async (reportId: number) => {
-      const response = await apiRequest(`/api/dgii/reports/${reportId}/download`, {
+      const response = await fetch(`/api/dgii/reports/${reportId}/download`, {
         method: "GET",
-        responseType: 'blob',
+        credentials: 'include',
       });
-      return response;
+      
+      if (!response.ok) {
+        throw new Error('Failed to download report');
+      }
+      
+      return response.blob();
     },
     onSuccess: (blob: Blob, reportId: number) => {
       const report = reports.find(r => r.id === reportId);
@@ -252,7 +257,7 @@ export default function DGIIReports() {
                     {getReportIcon(tipo)}
                     Reporte {tipo}
                   </CardTitle>
-                  {summary?.registrosPendientes > 0 && (
+                  {summary && summary.registrosPendientes > 0 && (
                     <Badge variant="destructive" className="text-xs">
                       Pendiente
                     </Badge>

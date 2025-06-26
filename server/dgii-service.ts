@@ -214,7 +214,7 @@ export class DGIIService {
           resolve();
         });
       }).on('error', err => {
-        fs.unlink(dest, () => {}); // Delete incomplete file
+        fs.unlink(dest); // Delete incomplete file
         reject(err);
       });
     });
@@ -408,7 +408,7 @@ export class DGIIService {
     const results: RNCInfo[] = [];
     const cleanedQuery = query.replace(/\D/g, '').toLowerCase();
     
-    for (const [rnc, info] of this.rncMap.entries()) {
+    for (const [rnc, info] of Array.from(this.rncMap.entries())) {
       if (rnc.includes(cleanedQuery) || 
           info.nombre.toLowerCase().includes(query.toLowerCase())) {
         results.push(info);

@@ -264,7 +264,7 @@ export default function System() {
                 <div className="space-y-2">
                   <Label htmlFor="currency">Moneda</Label>
                   <Select 
-                    value={systemConfig?.currency || "DOP"}
+                    value={(systemConfig as any)?.currency || "DOP"}
                     onValueChange={(value) => updateConfigMutation.mutate({ currency: value })}
                   >
                     <SelectTrigger>
@@ -281,7 +281,7 @@ export default function System() {
                 <div className="space-y-2">
                   <Label htmlFor="language">Idioma</Label>
                   <Select 
-                    value={systemConfig?.language || "es"}
+                    value={(systemConfig as any)?.language || "es"}
                     onValueChange={(value) => updateConfigMutation.mutate({ language: value })}
                   >
                     <SelectTrigger>
@@ -305,7 +305,7 @@ export default function System() {
                   </div>
                   <Switch
                     id="maintenance-mode"
-                    checked={systemConfig?.maintenanceMode || false}
+                    checked={(systemConfig as any)?.maintenanceMode || false}
                     onCheckedChange={(checked) => updateConfigMutation.mutate({ maintenanceMode: checked })}
                   />
                 </div>
@@ -319,7 +319,7 @@ export default function System() {
                   </div>
                   <Switch
                     id="auto-backup"
-                    checked={systemConfig?.autoBackup || false}
+                    checked={(systemConfig as any)?.autoBackup || false}
                     onCheckedChange={(checked) => updateConfigMutation.mutate({ autoBackup: checked })}
                   />
                 </div>
@@ -411,11 +411,11 @@ export default function System() {
                 <div>
                   <p className="font-medium">Estado del Registro RNC</p>
                   <p className="text-sm text-muted-foreground">
-                    Última actualización: {systemInfo?.dgii?.lastUpdate || "Nunca"}
+                    Última actualización: {(systemInfo as any)?.dgii?.lastUpdate || "Nunca"}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
-                  {systemInfo?.dgii?.status === "online" ? (
+                  {(systemInfo as any)?.dgii?.status === "online" ? (
                     <CheckCircle className="h-4 w-4 text-green-600" />
                   ) : (
                     <AlertCircle className="h-4 w-4 text-yellow-600" />
@@ -441,7 +441,7 @@ export default function System() {
                   </div>
                   <Switch
                     id="dgii-auto-update"
-                    checked={systemConfig?.dgii?.autoUpdate || false}
+                    checked={(systemConfig as any)?.dgii?.autoUpdate || false}
                     onCheckedChange={(checked) => 
                       updateConfigMutation.mutate({ dgii: { autoUpdate: checked } })
                     }
@@ -451,12 +451,12 @@ export default function System() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Registros RNC</Label>
-                    <div className="text-2xl font-bold">{systemInfo?.dgii?.totalRecords || 0}</div>
+                    <div className="text-2xl font-bold">{(systemInfo as any)?.dgii?.totalRecords || 0}</div>
                     <p className="text-xs text-muted-foreground">Total en base de datos</p>
                   </div>
                   <div className="space-y-2">
                     <Label>Tamaño del Registro</Label>
-                    <div className="text-2xl font-bold">{formatBytes(systemInfo?.dgii?.size || 0)}</div>
+                    <div className="text-2xl font-bold">{formatBytes((systemInfo as any)?.dgii?.size || 0)}</div>
                     <p className="text-xs text-muted-foreground">Espacio utilizado</p>
                   </div>
                 </div>
@@ -480,7 +480,7 @@ export default function System() {
                   <Input
                     id="session-timeout"
                     type="number"
-                    value={systemConfig?.sessionTimeout || 30}
+                    value={(systemConfig as any)?.sessionTimeout || 30}
                     onChange={(e) => updateConfigMutation.mutate({ sessionTimeout: parseInt(e.target.value) })}
                   />
                 </div>
@@ -490,7 +490,7 @@ export default function System() {
                   <Input
                     id="max-file-size"
                     type="number"
-                    value={systemConfig?.maxFileSize || 10}
+                    value={(systemConfig as any)?.maxFileSize || 10}
                     onChange={(e) => updateConfigMutation.mutate({ maxFileSize: parseInt(e.target.value) })}
                   />
                 </div>
@@ -500,7 +500,7 @@ export default function System() {
                   <Input
                     id="log-retention"
                     type="number"
-                    value={systemConfig?.logRetention || 90}
+                    value={(systemConfig as any)?.logRetention || 90}
                     onChange={(e) => updateConfigMutation.mutate({ logRetention: parseInt(e.target.value) })}
                   />
                 </div>
@@ -511,19 +511,19 @@ export default function System() {
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
                     <span className="text-muted-foreground">Versión:</span>
-                    <span className="ml-2 font-mono">{systemInfo?.version || "1.0.0"}</span>
+                    <span className="ml-2 font-mono">{(systemInfo as any)?.version || "1.0.0"}</span>
                   </div>
                   <div>
                     <span className="text-muted-foreground">Entorno:</span>
-                    <span className="ml-2 font-mono">{systemInfo?.environment || "production"}</span>
+                    <span className="ml-2 font-mono">{(systemInfo as any)?.environment || "production"}</span>
                   </div>
                   <div>
                     <span className="text-muted-foreground">Node.js:</span>
-                    <span className="ml-2 font-mono">{systemInfo?.nodeVersion || "20.x"}</span>
+                    <span className="ml-2 font-mono">{(systemInfo as any)?.nodeVersion || "20.x"}</span>
                   </div>
                   <div>
                     <span className="text-muted-foreground">Base de Datos:</span>
-                    <span className="ml-2 font-mono">PostgreSQL {systemInfo?.database?.version || "15.x"}</span>
+                    <span className="ml-2 font-mono">PostgreSQL {(systemInfo as any)?.database?.version || "15.x"}</span>
                   </div>
                 </div>
               </div>

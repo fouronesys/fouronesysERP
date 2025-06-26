@@ -59,88 +59,11 @@ export async function initializeAdminUser() {
       isActive: true
     });
 
-    // Create sample products with correct types
-    const sampleProducts = [
-      {
-        code: "PROD001",
-        name: "Laptop Dell Inspiron 15",
-        description: "Laptop Dell Inspiron 15 3000, Intel Core i5, 8GB RAM, 256GB SSD",
-        price: "45000.00",
-        cost: "35000.00",
-        stock: 25,
-        minStock: 5,
-        maxStock: 100,
-        unit: "unidad",
-        isActive: true,
-        companyId: company.id
-      },
-      {
-        code: "PROD002", 
-        name: "Mouse Inalámbrico Logitech",
-        description: "Mouse inalámbrico Logitech M705, ergonómico, batería de larga duración",
-        price: "2500.00",
-        cost: "1800.00",
-        stock: 50,
-        minStock: 10,
-        maxStock: 200,
-        unit: "unidad",
-        isActive: true,
-        companyId: company.id
-      },
-      {
-        code: "SERV001",
-        name: "Consultoría TI - Hora",
-        description: "Servicio de consultoría en tecnologías de información por hora",
-        price: "3000.00",
-        cost: "0.00",
-        stock: 0,
-        minStock: 0,
-        maxStock: 0,
-        unit: "hora",
-        isActive: true,
-        companyId: company.id
-      }
-    ];
+    // No sample products - system starts clean for production
+    console.log("System initialized without sample data - ready for production use");
 
-    for (const product of sampleProducts) {
-      try {
-        await storage.createProduct(product);
-      } catch (error) {
-        console.log("Error creating product:", product.name, error);
-      }
-    }
-    console.log("Created sample products");
-
-    // Create sample customers with correct types
-    const sampleCustomers = [
-      {
-        name: "Juan Pérez",
-        email: "juan.perez@email.com",
-        phone: "8093456789",
-        address: "Calle Primera #123, Santo Domingo",
-        rnc: "12345678901",
-        type: "individual" as const,
-        companyId: company.id
-      },
-      {
-        name: "Empresa ABC S.R.L.",
-        email: "info@empresaabc.com.do",
-        phone: "8095551234",
-        address: "Av. 27 de Febrero #456, Santo Domingo",
-        rnc: "10123456789",
-        type: "company" as const,
-        companyId: company.id
-      }
-    ];
-
-    for (const customer of sampleCustomers) {
-      try {
-        await storage.createCustomer(customer);
-      } catch (error) {
-        console.log("Error creating customer:", customer.name, error);
-      }
-    }
-    console.log("Created sample customers");
+    // No sample customers - system starts clean for production
+    console.log("System ready for production - no sample data created");
 
     console.log("Super admin initialization completed successfully");
     return true;
