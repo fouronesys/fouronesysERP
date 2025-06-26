@@ -52,10 +52,20 @@ const ncfBatchSchema = z.object({
   tipo: z.enum(['B01', 'B02', 'B14', 'B15', 'E31', 'E32', 'E33', 'E34', 'E41', 'E43', 'E44', 'E45']),
   inicio: z.number().min(1),
   fin: z.number().min(1),
-  vencimiento: z.string().min(1, "La fecha de vencimiento es requerida"),
+  vencimiento: z.string().optional(), // Some NCF types don't require expiration date
 }).refine(data => data.fin >= data.inicio, {
   message: "El número final debe ser mayor o igual al inicial",
   path: ["fin"],
+}).refine(data => {
+  // Only certain NCF types require expiration dates
+  const typesRequiringExpiration = ['B01', 'B02', 'B14', 'B15'];
+  if (typesRequiringExpiration.includes(data.tipo) && !data.vencimiento) {
+    return false;
+  }
+  return true;
+}, {
+  message: "Este tipo de NCF requiere fecha de vencimiento",
+  path: ["vencimiento"],
 });
 
 type NCFBatchFormData = z.infer<typeof ncfBatchSchema>;
