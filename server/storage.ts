@@ -375,6 +375,7 @@ export interface IStorage {
   // RNC Registry operations
   getRNCFromRegistry(rnc: string): Promise<RNCRegistry | undefined>;
   searchRNCByName(query: string, limit?: number): Promise<RNCRegistry[]>;
+  searchRNCRegistry(searchTerm: string, limit?: number): Promise<RNCRegistry[]>;
 
   // Stock Reservation operations for cart synchronization
   createStockReservation(reservationData: InsertStockReservation): Promise<StockReservation>;
@@ -2055,6 +2056,21 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(rncRegistry)
       .where(ilike(rncRegistry.razonSocial, `%${query}%`))
+      .limit(limit)
+      .orderBy(rncRegistry.razonSocial);
+  }
+
+  async searchRNCRegistry(searchTerm: string, limit: number = 10): Promise<RNCRegistry[]> {
+    return await db
+      .select()
+      .from(rncRegistry)
+      .where(
+        or(
+          ilike(rncRegistry.razonSocial, `%${searchTerm}%`),
+          ilike(rncRegistry.nombreComercial, `%${searchTerm}%`),
+          like(rncRegistry.rnc, `%${searchTerm}%`)
+        )
+      )
       .limit(limit)
       .orderBy(rncRegistry.razonSocial);
   }

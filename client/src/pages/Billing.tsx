@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
+import { RNCLookup } from "@/components/RNCLookup";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { useForm } from "react-hook-form";
@@ -20,6 +21,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+
 import { 
   FileText, Plus, Search, Edit, Eye, Download, Send, Printer, 
   Calculator, Users, Package, Calendar, AlertTriangle, CheckCircle,
@@ -74,6 +76,9 @@ const Billing = () => {
   const [invoiceItems, setInvoiceItems] = useState<any[]>([]);
   const [invoiceFilter, setInvoiceFilter] = useState("all");
   const [paymentStatus, setPaymentStatus] = useState("all");
+  const [newCustomerRNC, setNewCustomerRNC] = useState("");
+  const [newCustomerData, setNewCustomerData] = useState<any>({});
+  const [showQuickCustomerCreate, setShowQuickCustomerCreate] = useState(false);
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -178,6 +183,23 @@ const Billing = () => {
     },
     onError: (error: any) => {
       toast({ title: "Error al registrar pago", description: error.message, variant: "destructive" });
+    }
+  });
+
+  const createCustomerMutation = useMutation({
+    mutationFn: (data: any) => apiRequest('/api/customers', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    }),
+    onSuccess: (newCustomer: any) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/customers'] });
+      // Auto-select the newly created customer
+      invoiceForm.setValue("customerId", newCustomer.id.toString());
+      handleCustomerChange(newCustomer.id.toString());
+      toast({ title: "Cliente creado y seleccionado exitosamente" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error al crear cliente", description: error.message, variant: "destructive" });
     }
   });
 
@@ -714,28 +736,96 @@ const Billing = () => {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Cliente</FormLabel>
-                        <Select onValueChange={(value) => {
-                          field.onChange(value);
-                          handleCustomerChange(value);
-                        }} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Seleccionar cliente" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {customers?.map((customer: any) => (
-                              <SelectItem key={customer.id} value={customer.id.toString()}>
-                                <div className="flex flex-col">
-                                  <span>{customer.name}</span>
-                                  {customer.rnc && (
-                                    <span className="text-sm text-gray-500">RNC: {customer.rnc}</span>
-                                  )}
+                        <div className="space-y-2">
+                          <Select onValueChange={(value) => {
+                            field.onChange(value);
+                            handleCustomerChange(value);
+                          }} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Seleccionar cliente existente" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {customers?.map((customer: any) => (
+                                <SelectItem key={customer.id} value={customer.id.toString()}>
+                                  <div className="flex flex-col">
+                                    <span>{customer.name}</span>
+                                    {customer.rnc && (
+                                      <span className="text-sm text-gray-500">RNC: {customer.rnc}</span>
+                                    )}
+                                  </div>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          
+                          <div className="flex items-center gap-2 text-sm text-gray-500">
+                            <span>O busque por RNC para autocompletar:</span>
+                          </div>
+                          
+                          <RNCLookup
+                            placeholder="Buscar empresa por RNC o nombre..."
+                            onRNCChange={(rnc) => {
+                              setNewCustomerRNC(rnc);
+                            }}
+                            onCompanyDataChange={(data) => {
+                              setNewCustomerData({
+                                name: data.razonSocial || data.businessName || "",
+                                businessName: data.razonSocial || data.businessName || "",
+                                rnc: data.rnc || newCustomerRNC,
+                                nombreComercial: data.nombreComercial,
+                                estado: data.estado,
+                                categoria: data.categoria
+                              });
+                              
+                              // Show quick customer creation option
+                              if ((data.razonSocial || data.businessName) && !customers?.find((c: any) => c.rnc === data.rnc)) {
+                                setShowQuickCustomerCreate(true);
+                              }
+                            }}
+                            showSuggestions={true}
+                            className="w-full"
+                          />
+                          
+                          {showQuickCustomerCreate && newCustomerData.name && (
+                            <div className="p-3 border rounded-lg bg-blue-50 dark:bg-blue-950">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <p className="font-medium text-sm text-blue-800 dark:text-blue-200">
+                                    Empresa encontrada: {newCustomerData.name}
+                                  </p>
+                                  <p className="text-xs text-blue-600 dark:text-blue-400">
+                                    RNC: {newCustomerData.rnc} • {newCustomerData.estado}
+                                  </p>
                                 </div>
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                                <Button 
+                                  type="button"
+                                  size="sm"
+                                  onClick={() => {
+                                    // Create customer quickly with DGII data
+                                    const customerData = {
+                                      ...newCustomerData,
+                                      customerType: "business",
+                                      phone: "",
+                                      email: "",
+                                      address: "",
+                                      city: "",
+                                      province: "",
+                                      country: "República Dominicana",
+                                      status: "active"
+                                    };
+                                    createCustomerMutation.mutate(customerData);
+                                    setShowQuickCustomerCreate(false);
+                                  }}
+                                  disabled={createCustomerMutation.isPending}
+                                >
+                                  {createCustomerMutation.isPending ? "Creando..." : "Crear Cliente"}
+                                </Button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
                         <FormMessage />
                       </FormItem>
                     )}

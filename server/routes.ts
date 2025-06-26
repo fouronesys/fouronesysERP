@@ -2570,6 +2570,87 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // DGII RNC verification endpoint
+  app.post("/api/dgii/validate-rnc", async (req, res) => {
+    try {
+      const { rnc } = req.body;
+      
+      if (!rnc) {
+        return res.status(400).json({
+          isValid: false,
+          message: "RNC parameter is required"
+        });
+      }
+      
+      // Clean and validate RNC format
+      const cleanRnc = rnc.replace(/\D/g, "");
+      
+      if (cleanRnc.length < 9 || cleanRnc.length > 11) {
+        return res.json({
+          isValid: false,
+          message: "RNC debe tener entre 9 y 11 dígitos"
+        });
+      }
+
+      // Search in local DGII registry
+      const rncData = await storage.getRNCFromRegistry(cleanRnc);
+      
+      if (rncData) {
+        return res.json({
+          isValid: true,
+          rnc: cleanRnc,
+          razonSocial: rncData.razonSocial,
+          companyName: rncData.razonSocial,
+          nombreComercial: rncData.nombreComercial,
+          estado: rncData.estado || "ACTIVO",
+          tipo: rncData.categoria || "CONTRIBUYENTE REGISTRADO",
+          categoria: rncData.categoria,
+          regimen: rncData.regimen,
+          source: "local"
+        });
+      } else {
+        return res.json({
+          isValid: false,
+          rnc: cleanRnc,
+          message: "RNC no encontrado en el registro local de DGII",
+          source: "local"
+        });
+      }
+    } catch (error) {
+      console.error("Error verifying RNC:", error);
+      res.json({
+        isValid: false,
+        message: "Error interno del servidor al verificar RNC"
+      });
+    }
+  });
+
+  // DGII company search endpoint for autocomplete
+  app.get("/api/dgii/search-companies", async (req, res) => {
+    try {
+      const { q: searchTerm } = req.query;
+      
+      if (!searchTerm || typeof searchTerm !== 'string' || searchTerm.length < 3) {
+        return res.json([]);
+      }
+
+      // Search by business name, commercial name, or RNC
+      const companies = await storage.searchRNCRegistry(searchTerm.trim(), 10);
+      
+      res.json(companies.map((company: any) => ({
+        rnc: company.rnc,
+        razonSocial: company.razonSocial,
+        nombreComercial: company.nombreComercial,
+        estado: company.estado || "ACTIVO",
+        categoria: company.categoria || "JURIDICA",
+        regimen: company.regimen || "ORDINARIO"
+      })));
+    } catch (error) {
+      console.error("Error searching companies:", error);
+      res.status(500).json({ message: "Error searching companies" });
+    }
+  });
+
   // Recipes endpoints
   app.get("/api/recipes", isAuthenticated, async (req: any, res) => {
     try {
