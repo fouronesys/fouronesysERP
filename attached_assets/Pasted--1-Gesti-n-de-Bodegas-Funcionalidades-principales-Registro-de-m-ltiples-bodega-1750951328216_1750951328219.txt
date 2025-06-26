@@ -1,0 +1,123 @@
+## **1. Gestión de Bodegas**  
+**Funcionalidades principales:**  
+- **Registro de múltiples bodegas** (ubicación, responsable, tipo).  
+- **Jerarquía de almacenes** (Principal, Regionales, Temporales).  
+- **Configuración por bodega:**  
+  - Tipo (Productos terminados/Materia prima/Activos).  
+  - Capacidad máxima (metros cuadrados, unidades).  
+  - Control de temperatura (para alimentos/farmacéuticos).  
+
+**Campos del formulario:**  
+| Campo                | Tipo               | Validación |  
+|----------------------|--------------------|------------|  
+| **Código Bodega**    | Texto (Único)      | Ej: `BOD-001` |  
+| **Nombre**          | Texto              | Obligatorio |  
+| **Ubicación**       | Dropdown (Provincias RD) | Validar geolocalización |  
+| **Responsable**     | Dropdown (Empleados) | Obligatorio |  
+| **Tipo de Bodega**  | Dropdown (Almacén/Retail/Consigna) | |  
+| **Capacidad Máx.**  | Número             | Opcional |  
+
+---
+
+## **2. Control de Inventario**  
+**Funcionalidades principales:**  
+- **Registro de productos** (SKU, descripción, categoría, proveedor).  
+- **Atributos especiales:**  
+  - **Lote/Serie** (para medicamentos, alimentos).  
+  - **Fecha de vencimiento** (alertas automáticas).  
+  - **Código de barras** (generación automática).  
+- **Niveles de stock:**  
+  - Mínimo/Máximo (alertas de reposición).  
+  - Stock disponible vs. reservado.  
+
+**Campos del formulario (Producto):**  
+| Campo                | Tipo               | Validación |  
+|----------------------|--------------------|------------|  
+| **SKU**             | Texto (Único)      | Ej: `PROD-001` |  
+| **Descripción**     | Texto              | Obligatorio |  
+| **Categoría**      | Dropdown           | (Alimentos/Electrónicos/Farmacia) |  
+| **Proveedor**      | Búsqueda (RNC)     | Validar en DGII |  
+| **Unidad de Medida**| Dropdown (UDS, KG, L) | Obligatorio |  
+| **Stock Mínimo**   | Número             | >=0 |  
+| **ITBIS**          | Dropdown (0%, 18%) | Según normativa |  
+
+---
+
+## **3. Movimientos de Almacén**  
+**Tipos de movimientos:**  
+- **Entradas** (Compras, Producción, Devoluciones).  
+- **Salidas** (Ventas, Consumos, Ajustes).  
+- **Transferencias** (Entre bodegas).  
+- **Ajustes** (Físicos, Mermas, Daños).  
+
+**Validaciones:**  
+- **No permitir salidas sin stock suficiente.**  
+- **Alertas de vencimiento (<30 días).**  
+- **Requerir NCF en movimientos con proveedores.**  
+
+**Flujo de trabajo:**  
+1. Seleccionar tipo de movimiento.  
+2. Elegir bodega origen/destino.  
+3. Agregar productos (con búsqueda por SKU/lote).  
+4. Confirmar y registrar (afecta Kardex en tiempo real).  
+
+---
+
+## **4. Kardex y Trazabilidad**  
+**Funcionalidades:**  
+- **Historial completo por producto** (entradas, salidas, saldo).  
+- **Métodos de costeo:**  
+  - **PEPS** (Primero en Entrar, Primero en Salir).  
+  - **Costo Promedio** (Automático).  
+- **Reportes:**  
+  - **Movimientos por período.**  
+  - **Productos próximos a vencer.**  
+  - **Nivel de rotación.**  
+
+**Filtros avanzados:**  
+✅ Por bodega  
+✅ Por rango de fechas  
+✅ Por lote/serie  
+
+---
+
+## **5. Reportes DGII y Auditorías**  
+**Documentos obligatorios:**  
+1. **Inventario Físico** (Formato para auditorías).  
+2. **Ajustes de Stock** (Con soporte documental).  
+3. **Movimientos Valorizados** (RD$).  
+
+**Formatos de exportación:**  
+- **Excel** (Para análisis interno).  
+- **PDF** (Para impresión y firmas).  
+- **TXT** (Integración con otros sistemas).  
+
+---
+
+## **6. Integración con Otros Módulos**  
+```mermaid
+graph TB
+  A[Almacén] -->|Descuenta Stock| B[Ventas]
+  A -->|Recibe| C[Compras]
+  A -->|Materias Primas| D[Manufactura]
+  A -->|Actualiza| E[Contabilidad]
+  A -->|Alertas| F[Notificaciones]
+```
+
+**Validaciones cruzadas:**  
+🔹 No permitir ventas sin stock.  
+🔹 Actualizar costo promedio automáticamente.  
+🔹 Sincronización en tiempo real con contabilidad.  
+
+---
+
+### **Prioridades de Desarrollo**  
+1. **Gestión básica de bodegas y productos.**  
+2. **Movimientos de entrada/salida.**  
+3. **Kardex y métodos de costeo.**  
+4. **Alertas y reportes DGII.**  
+
+**Requisitos técnicos:**  
+- **Frontend:** Tablas editables con búsqueda en tiempo real.  
+- **Backend:** Cálculo automático de stock y costos.  
+- **DB:** Estructura relacional (Productos → Movimientos → Bodegas).

@@ -1,0 +1,108 @@
+### **1. Lista de Materiales (BOM - Bill of Materials)**  
+**Funcionalidades principales:**  
+- **Estructura jerárquica de productos terminados y componentes.**  
+- **Relación entre materias primas y productos finales.**  
+- **Cálculo de costos de producción basado en:**  
+  - Costo unitario de materiales.  
+  - Mano de obra directa (horas/empleado).  
+  - Gastos indirectos (energía, depreciación de equipos).  
+- **Validaciones:**  
+  - No permitir productos sin BOM definida.  
+  - Alertar si faltan materias primas en inventario.  
+  - Soporte para múltiples versiones (actualizaciones de recetas).  
+
+**Campos del formulario:**  
+| Campo                | Tipo               | Validación |  
+|----------------------|--------------------|------------|  
+| **Producto Final**   | Dropdown (SKU)     | Obligatorio |  
+| **Versión BOM**      | Texto/Número       | Única por producto |  
+| **Componentes**      | Tabla dinámica     | > 1 registro |  
+| - Material           | Búsqueda (Inventario) | Obligatorio |  
+| - Cantidad Requerida | Número (>0)        | Validar stock |  
+| - Unidad de Medida   | Dropdown (UDS, KG, L) | Según producto |  
+| **Costo Estimado**   | Auto-calculado     | RD$ |  
+
+---
+
+### **2. Órdenes de Producción**  
+**Funcionalidades principales:**  
+- **Generación desde BOM o demanda de ventas.**  
+- **Seguimiento en tiempo real (Pendiente → En Progreso → Completada).**  
+- **Asignación de recursos:**  
+  - Personal (turnos, horas laboradas).  
+  - Equipos/maquinarias (disponibilidad).  
+  - Materias primas (reserva automática).  
+- **Cálculo de eficiencia:**  
+  - Tiempo estimado vs. real.  
+  - Mermas permitidas vs. reales.  
+
+**Campos del formulario:**  
+| Campo                     | Tipo               | Validación |  
+|---------------------------|--------------------|------------|  
+| **N° Orden**              | Autogenerado       | Único |  
+| **Producto a Fabricar**   | Dropdown (BOM)     | Obligatorio |  
+| **Cantidad Requerida**    | Número (>0)        | Máx. según stock |  
+| **Fecha Inicio/Término**  | DatePicker         | No superponer órdenes |  
+| **Estado**                | Dropdown           | (Pendiente/En Proceso/Completada/Cancelada) |  
+| **Asignación de Personal**| Tabla (Empleados)  | Validar horarios |  
+| **Materias Primas**       | Auto-cargado (BOM) | Ajustes manuales permitidos |  
+| **Notas**                 | TextArea           | Opcional |  
+
+---
+
+### **3. Recetas (Para Restaurantes o Industria Alimenticia)**  
+**Funcionalidades principales:**  
+- **Gestión de recetas con ingredientes y pasos.**  
+- **Escalado de cantiones (porciones individuales vs. producción masiva).**  
+- **Control de alérgenos y normas MSP (Ley 1-12).**  
+- **Integración con inventario (descuento automático al preparar).**  
+
+**Campos del formulario:**  
+| Campo                | Tipo               | Validación |  
+|----------------------|--------------------|------------|  
+| **Nombre Receta**    | Texto              | Obligatorio |  
+| **Categoría**       | Dropdown           | (Entrada/Plato Principal/Postre/Bebida) |  
+| **Tiempo Preparación** | Número (minutos)  | >0 |  
+| **Ingredientes**     | Tabla dinámica     | >1 registro |  
+| - Item              | Búsqueda (Inventario) | Obligatorio |  
+| - Cantidad         | Número             | >0 |  
+| - Unidad           | Dropdown (Gramos, Onzas, Unidades) | |  
+| **Instrucciones**   | TextArea (pasos)   | Formato paso a paso |  
+| **Alérgenos**      | Multi-select       | (Gluten/Lácteos/Frutos Secos/etc.) |  
+
+---
+
+### **4. Integración con Otros Módulos**  
+```mermaid
+graph LR
+  A[BOM] --> B[Órdenes de Producción]
+  B --> C[Inventario] --> D[Descuenta Stock]
+  B --> E[Contabilidad] --> F[Costo de Producción]
+  D --> G[Ventas]
+  H[Recetas] --> I[POS/Restaurante]
+```
+
+**Validaciones Clave:**  
+- **No permitir iniciar producción sin stock suficiente.**  
+- **Alertar si ingredientes están próximos a vencer (sector alimenticio).**  
+- **Generar asiento contable al completar orden (costo real vs. estimado).**  
+
+**Reportes Obligatorios:**  
+1. **Análisis de Costos de Producción** (RD$/unidad).  
+2. **Tiempos de Fabricación** (eficiencia por línea/turno).  
+3. **Mermas vs. Estándar** (en % y RD$).  
+
+**Requerimientos Técnicos:**  
+- **Frontend:** Tablas editables con validación en tiempo real.  
+- **Backend:** Cálculo de costos en tiempo real.  
+- **DB:** Estructura relacional (BOM → Órdenes → Inventario).  
+
+**Prioridad de Desarrollo:**  
+1. **BOM** (Base para todo el módulo).  
+2. **Órdenes de Producción** (Flujo principal).  
+3. **Recetas** (Para negocios de alimentos).  
+4. **Integración con inventario y contabilidad.**  
+
+--- 
+
+**Nota:** Asegurar que todos los campos cumplan con normativas RD (unidades de medida, códigos de producto MSP, etc.).

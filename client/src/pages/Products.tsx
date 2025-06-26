@@ -83,6 +83,11 @@ export default function Products() {
           cost: data.cost || undefined,
           stock: parseInt(data.stock),
           minStock: parseInt(data.minStock),
+          productType: 'product',
+          taxType: 'itbis_18',
+          canBeSold: true,
+          canBePurchased: true,
+          trackInventory: true
         }
       });
     },

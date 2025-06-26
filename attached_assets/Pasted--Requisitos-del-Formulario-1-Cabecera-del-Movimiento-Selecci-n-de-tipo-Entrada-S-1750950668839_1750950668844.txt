@@ -1,0 +1,67 @@
+**Requisitos del Formulario:**
+
+1. **Cabecera del Movimiento:**
+   - Selección de tipo (Entrada/Salida/Ajuste/Transferencia) *obligatorio*
+   - Fecha y hora (formato DD/MM/YYYY HH:mm) *obligatorio*
+   - Referencia (NCF/Orden/Factura) con validación de formato
+   - Selección de bodega(s) (origen/destino según tipo) *obligatorio*
+   - Campo para responsable (usuario autenticado) *automático*
+   - Motivo de ajuste (dropdown para movimientos tipo "Ajuste")
+
+2. **Detalle de Productos:**
+   - Tabla dinámica con filas editables
+   - Búsqueda inteligente de productos (por código/nombre/lote)
+   - Campos por producto:
+     - Descripción (autocompletado)
+     - Lote/serie (obligatorio para medicamentos)
+     - Fecha de vencimiento (validar formato RD)
+     - Cantidad (validar signo según tipo movimiento)
+     - Costo unitario (requerido para entradas/ajustes)
+     - ITBIS (dropdown Sin ITBIS/18% según tipo producto)
+     - Total línea (auto-calculado)
+
+3. **Validaciones Específicas:**
+   - Stock disponible al registrar salidas
+   - Alertas para productos próximos a vencer (<30 días)
+   - Bloqueo para productos vencidos
+
+4. **Documentación Adjunta:**
+   - Upload de archivos (PDF/Imágenes) para:
+     - Comprobantes de ajuste
+     - Documentación de productos exentos
+     - Autorizaciones internas
+
+5. **Integraciones:**
+   - Generación automática de asientos contables (opcional)
+   - Afectación en tiempo real a Kardex
+   - Cálculo automático de costos (PEPS/Promedio)
+
+6. **UI/UX:**
+   - Diseño responsive (móvil/escritorio)
+   - Notificaciones en tiempo real para:
+     - Stock mínimo alcanzado
+     - Discrepancias en conteos
+   - Confirmación antes de registrar movimientos masivos
+
+
+**Flujo Ideal:**
+1. Seleccionar tipo de movimiento
+2. Completar cabecera (con validaciones en tiempo real)
+3. Agregar productos (con sugerencias mientras escribe)
+4. Revisar resumen con desglose de impactos
+5. Confirmar registro (con opción a imprimir comprobante)
+
+**Salidas Obligatorias:**
+- Registro en base de datos con marca de tiempo
+- Comprobante PDF con formato legal RD
+- Actualización inmediata de inventario
+- Notificación a usuarios relacionados
+
+**Excepciones a Manejar:**
+- Intentos de salida sin stock suficiente
+- Movimientos con productos vencidos
+- Referencias duplicadas
+- Discrepancias en costos vs últimos registros
+
+
+Implementar primero las validaciones de stock, luego flujo completo y finalmente integración contable.

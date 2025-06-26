@@ -1,0 +1,131 @@
+## **1. Tipos de Documentos Fiscales**  
+**Comprobantes a generar:**  
+| Tipo NCF | Descripción | Uso |  
+|----------|------------|------|  
+| **B01** | Factura de Crédito Fiscal | Empresas con RNC |  
+| **B02** | Consumidor Final | Clientes sin RNC |  
+| **B14** | Régimen Especial (Zonas Francas) | Exportaciones |  
+| **B15** | Gubernamental | Instituciones Públicas |  
+| **E31** | Factura de Exportación | Ventas al exterior |  
+
+**Validaciones:**  
+✅ No permitir NCFs vencidos.  
+✅ Secuencia correcta (sin saltos).  
+✅ Bloquear facturas sin RNC válido (excepto B02).  
+
+---
+
+## **2. Formulario de Facturación**  
+### **Cabecera**  
+| Campo | Tipo | Validación |  
+|-------|------|------------|  
+| **Tipo NCF** | Dropdown (B01, B02, etc.) | Obligatorio |  
+| **NCF** | Autogenerado (secuencial) | Formato: `B02-000-0000001` |  
+| **Fecha** | DatePicker (DD/MM/YYYY) | <= Hoy |  
+| **Cliente** | Búsqueda (RNC o Nombre) | Validar en DGII (si aplica) |  
+| **Condición Pago** | Dropdown (Contado/Crédito) | Si es crédito → plazo obligatorio |  
+| **Vendedor** | Dropdown (Usuarios) | Asignación automática |  
+
+### **Detalle de Productos/Servicios**  
+| Campo | Tipo | Validación |  
+|-------|------|------------|  
+| **Producto** | Búsqueda (Código/Descripción) | Obligatorio |  
+| **Cantidad** | Número (>0) | Validar stock |  
+| **Precio Unitario** | Número (RD$) | >=0 |  
+| **ITBIS** | Dropdown (Sin ITBIS, 18%, 16%...) | Según tipo producto y comprobante |  
+| **Descuento** | Número (%) | Opcional (máx. 25%) |  
+| **Total Línea** | Auto-calculado | `(Cant * Precio) + ITBIS - Desc` |  
+
+### **Totales y Pago**  
+| Campo | Tipo |  
+|-------|------|  
+| **Subtotal** | Auto-calculado (RD$) |  
+| **ITBIS (18%)** | Auto-calculado |  
+| **Descuento Global** | Número (RD$ o %) |  
+| **Total General** | `Subtotal + ITBIS - DescGlobal` |  
+| **Forma de Pago** | Efectivo/Tarjeta/Transferencia |  
+| **Banco** | Dropdown (Opcional) |  
+
+---
+
+## **3. Validaciones DGII**  
+### **Para Clientes**  
+- **Con RNC:**  
+  - Validar en DGII (si está activo).  
+  - Obligar dirección fiscal.  
+- **Consumidor Final (B02):**  
+  - Permitir nombre genérico ("Cliente Final").  
+  - Máximo **RD$50,000** por factura (límite DGII).  
+
+### **Para Productos**  
+- **ITBIS Exento:**  
+  - Medicamentos, libros, alimentos básicos.  
+  - Requiere categoría fiscal válida.  
+- **Series/Lotes:**  
+  - Obligatorios para productos controlados (farmacia).  
+
+### **Para NCFs**  
+- **Secuencia estricta** (no saltar números).  
+- **Fecha de vencimiento** (alerta a 15/5 días).  
+- **Contingencia:**  
+  - Generar **NCFs offline** (formato TXT).  
+  - Sincronizar cuando se restablezca conexión.  
+
+---
+
+## **4. Flujo de Trabajo**  
+```mermaid
+graph TB
+  A[Seleccionar Cliente] --> B[Generar NCF]
+  B --> C[Agregar Productos]
+  C --> D[Calcular Totales]
+  D --> E[Seleccionar Pago]
+  E --> F[Imprimir/Enviar]
+  F --> G[Actualizar Inventario]
+  G --> H[Registrar en Contabilidad]
+```
+
+---
+
+## **5. Reportes Obligatorios**  
+### **Reporte 606 (Ventas)**  
+- **Formato TXT** (para carga en DGII).  
+- **Estructura:**  
+  ```plaintext
+  T|B01|B0100000001|01/01/2024|123456789|10000.00|1800.00|N|
+  ```
+- **Filtros:** Por fecha, tipo NCF, vendedor.  
+
+### **Reporte 607 (Compras)**  
+- Similar al 606, pero para **gastos**.  
+- Validar **RNC de proveedores**.  
+
+### **Libro de Ventas/Compras**  
+- **Formato PDF** (para auditorías).  
+- Incluir:  
+  - NCF, Fecha, RNC, Montos (RD$), ITBIS.  
+
+---
+
+## **6. Integración con Otros Módulos**  
+```mermaid
+graph LR
+  A[Facturación] -->|Descuenta Stock| B[Inventario]
+  A -->|Genera Asiento| C[Contabilidad]
+  A -->|Notifica| D[CRM]
+  A -->|Envía PDF| E[Correo/WhatsApp]
+```
+
+**Validaciones cruzadas:**  
+🔹 Stock insuficiente → Bloquear factura.  
+🔹 Cliente moroso → Alertar antes de vender.  
+🔹 NCFs offline → Sincronizar automáticamente.  
+
+---
+
+## **7. Prioridades de Desarrollo**  
+1. **Generación de NCFs** (secuencial + validación).  
+2. **Formulario de facturación** (con cálculos automáticos).  
+3. **Validaciones DGII** (RNC, ITBIS, montos).  
+4. **Reportes 606/607** (formato TXT).  
+5. **Integración con inventario/contabilidad**.

@@ -1,0 +1,170 @@
+### **Prompt para Módulos Restantes del ERP Dominicano (PWA Offline-First)**  
+
+---
+
+## **1. Módulo de Clientes**  
+**Funcionalidades clave:**  
+✅ **Registro completo** (RNC/Cédula, nombre, dirección fiscal, límite de crédito).  
+✅ **Clasificación** (Activo/Moroso/Inactivo).  
+✅ **Historial** (Compras, facturas pendientes, notas de crédito).  
+✅ **Búsqueda inteligente** (por RNC, nombre, zona geográfica).  
+✅ **Validación automática de RNC** (contra archivo DGII actualizado).  
+
+**Persistencia offline:**  
+- Guardar datos localmente (IndexedDB) y sincronizar al recuperar conexión.  
+
+---
+
+## **2. Módulo de Proveedores**  
+**Funcionalidades clave:**  
+✅ **Datos fiscales** (RNC, nombre comercial, dirección).  
+✅ **Contactos** (teléfono, email, representante legal).  
+✅ **Historial** (Compras, órdenes pendientes, documentos).  
+✅ **Alertas** (Vencimiento de certificados, documentos por vencer).  
+
+**Offline:**  
+- Permitir registro básico sin conexión (sincronizar después).  
+
+---
+
+## **3. Módulo DGII/Fiscal**  
+### **Gestión de NCFs**  
+- **Carga por rangos** (Ej: B02 del 1 al 500).  
+- **Validación de secuencia** (sin saltos ni duplicados).  
+- **Alertas de vencimiento** (15 y 5 días antes).  
+
+### **Reportes DGII**  
+- **606 (Ventas)** y **607 (Compras)** en formato TXT.  
+- **Generación automática** (mensual/trimestral).  
+- **Firma digital** (requerida para envío).  
+
+**Offline:**  
+- Guardar reportes generados localmente y enviar luego.  
+
+---
+
+## **4. Módulo de Contabilidad**  
+### **Plan de Cuentas**  
+- **Estructura jerárquica** (Activo/Pasivo/Patrimonio/Ingresos/Gastos).  
+- **Códigos compatibles con DGII** (Ej: 110101 = Caja RD$).  
+
+### **Asientos Contables**  
+- **Automáticos** (desde facturas, nómina, etc.).  
+- **Manuales** (con soporte de documentos).  
+
+### **Reportes Financieros**  
+- **Balance General**, **Estado de Resultados**, **Flujo de Efectivo**.  
+- **Exportar a Excel/PDF** (para auditorías).  
+
+**Offline:**  
+- Registrar asientos y sincronizar con el servidor después.  
+
+---
+
+## **5. Módulo de RRHH**  
+### **Empleados**  
+- **Datos personales** (Cédula, nombre, dirección).  
+- **Información laboral** (Salario, banco, cargo).  
+
+### **Control de Tiempo**  
+- **Registro de asistencia** (QR, huella, PIN).  
+- **Horas extras** (calculadas automáticamente).  
+
+### **Solicitud de Vacaciones**  
+- **Flujo de aprobación** (Supervisor → RRHH).  
+- **Cálculo de días disponibles**.  
+
+**Offline:**  
+- Registrar asistencia localmente y sincronizar después.  
+
+---
+
+## **6. Asistente IA (Claude)**  
+### **Insights**  
+- **Análisis de ventas** (tendencias, productos más vendidos).  
+- **Alertas** (clientes morosos, stock bajo).  
+
+### **Análisis Predictivo**  
+- **Pronósticos** (ventas, flujo de caja).  
+- **Recomendaciones** (mejores proveedores, precios).  
+
+### **Chat AI**  
+- **Respuestas contextuales** (ej: "¿Cómo generar un NCF?").  
+- **Soporte multilingüe** (español/inglés).  
+
+**Offline:**  
+- Funcionalidad básica (sin análisis en tiempo real).  
+
+---
+
+## **7. Chat Interno**  
+- **Mensajería instantánea** (1:1 y grupos).  
+- **Notificaciones** (sonido/push).  
+- **Archivos adjuntos** (PDF, imágenes).  
+
+**Offline:**  
+- Guardar mensajes localmente y enviar al reconectar.  
+
+---
+
+## **8. Configuración del Sistema**  
+### **Ajustes Generales**  
+- **Moneda base** (RD$).  
+- **Formato de fechas** (DD/MM/YYYY).  
+
+### **Seguridad**  
+- **Autenticación** (2FA, contraseñas seguras).  
+- **Encriptación** (AES-256 para datos sensibles).  
+
+### **POS**  
+- **Impresora térmica** (configuración).  
+- **Métodos de pago** (efectivo, tarjeta, transferencia).  
+
+**Offline:**  
+- Configuraciones guardadas localmente.  
+
+---
+
+## **9. Gestión de Permisos**  
+### **Roles y Permisos**  
+- **Predefinidos** (Admin, Contador, Vendedor).  
+- **Personalizados** (permisos granulares por módulo).  
+
+### **Usuarios**  
+- **Asignación de roles**.  
+- **Historial de acceso**.  
+
+**Offline:**  
+- Permisos cacheados localmente.  
+
+---
+
+## **10. Gestión de Empresas (Super Admin)**  
+- **Registro de empresas** (RNC, nombre, dirección).  
+- **Suscripciones** (activar/desactivar módulos).  
+- **Facturación** (planes de pago, vencimientos).  
+
+**Offline:**  
+- Solo disponible con conexión (por seguridad).  
+
+---
+
+## **Persistencia Offline (PWA)**  
+### **Tecnologías Clave:**  
+- **Service Workers** (cachear recursos estáticos).  
+- **IndexedDB** (almacenar datos localmente).  
+- **Background Sync** (sincronizar al recuperar conexión).  
+
+### **Flujo Offline:**  
+1. Usuario realiza acciones sin conexión.  
+2. Datos se guardan en IndexedDB.  
+3. Al reconectar, se sincronizan con el servidor.  
+4. Notificar conflictos (ej: datos modificados por otro usuario).  
+
+---
+
+### **Prioridades de Implementación**  
+1. **Módulos básicos** (Clientes, Proveedores, Facturación).  
+2. **Persistencia offline** (PWA).  
+3. **Integración con DGII** (NCFs, reportes).  
+4. **Asistente IA** (para insights avanzados).

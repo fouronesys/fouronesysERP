@@ -52,7 +52,7 @@ export default function Movements() {
   const isMobile = useIsMobile();
 
   const { data: movements, isLoading } = useQuery<InventoryMovement[]>({
-    queryKey: ["/api/movements"],
+    queryKey: ["/api/inventory/movements"],
   });
 
   const { data: products } = useQuery<Product[]>({
@@ -83,7 +83,7 @@ export default function Movements() {
         warehouseId: parseInt(data.warehouseId),
         quantity: parseInt(data.quantity),
       };
-      await apiRequest("/api/movements", {
+      await apiRequest("/api/inventory/movements", {
         method: "POST",
         body: payload,
       });
@@ -93,7 +93,7 @@ export default function Movements() {
         title: "Movimiento registrado",
         description: "El movimiento de inventario ha sido registrado exitosamente.",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/movements"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/inventory/movements"] });
       queryClient.invalidateQueries({ queryKey: ["/api/products"] });
       setIsDialogOpen(false);
       form.reset();
