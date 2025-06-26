@@ -146,7 +146,7 @@ export default function Manufacturing() {
 
   if (isLoading) {
     return (
-      <div className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900">
+      <div className="flex-1 h-screen overflow-y-auto bg-gray-50 dark:bg-gray-900">
         <Header title="Producción" subtitle="Gestiona las órdenes de producción y manufactura" />
         <div className="p-6">
           <div className="text-center py-12">

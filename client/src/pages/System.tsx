@@ -134,7 +134,7 @@ export default function System() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 h-screen overflow-y-auto max-h-screen p-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Configuración del Sistema</h1>
         <Button variant="outline" onClick={() => window.location.reload()}>

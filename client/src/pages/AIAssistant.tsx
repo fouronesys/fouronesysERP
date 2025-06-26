@@ -125,7 +125,7 @@ export default function AIAssistant() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 h-screen overflow-y-auto max-h-screen p-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Asistente IA</h1>
         <Badge variant="outline" className="flex items-center gap-1">

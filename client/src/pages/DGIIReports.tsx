@@ -221,7 +221,7 @@ export default function DGIIReports() {
   const years = Array.from({ length: 5 }, (_, i) => (currentYear - i).toString());
 
   return (
-    <div className="container mx-auto py-6">
+    <div className="container mx-auto py-6 h-screen overflow-y-auto max-h-screen">
       <div className="mb-6">
         <h1 className="text-3xl font-bold">Reportes DGII</h1>
         <p className="text-muted-foreground">

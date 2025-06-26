@@ -321,7 +321,7 @@ export default function Reports() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 h-screen overflow-y-auto max-h-screen p-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Reportes y Análisis</h1>
         <div className="flex gap-2">
