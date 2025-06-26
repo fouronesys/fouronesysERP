@@ -1,0 +1,133 @@
+# Four One Solutions ERP System
+
+## Overview
+
+Four One Solutions is a comprehensive Enterprise Resource Planning (ERP) system designed specifically for the Dominican Republic market. The system provides integrated business management capabilities including Point of Sale (POS), inventory management, accounting, customer relationship management, and regulatory compliance with Dominican tax authorities (DGII).
+
+## System Architecture
+
+### Technology Stack
+- **Frontend**: React 18 with TypeScript, Vite for build tooling
+- **UI Framework**: Shadcn/ui components with Radix UI primitives
+- **Styling**: Tailwind CSS for responsive design
+- **Backend**: Node.js with Express framework
+- **Database**: PostgreSQL with Drizzle ORM
+- **Authentication**: Passport.js with local strategy and bcrypt password hashing
+- **Session Management**: PostgreSQL-backed session store
+- **Real-time Features**: WebSocket support for notifications
+- **AI Integration**: Anthropic Claude API for business intelligence
+- **Payment Processing**: PayPal integration
+- **File Processing**: Multer for uploads, Sharp for image processing
+
+### Architecture Pattern
+The system follows a monolithic architecture with clear separation of concerns:
+- **Client-side**: Single Page Application (SPA) with React
+- **Server-side**: Express.js REST API with middleware-based request processing
+- **Database Layer**: Drizzle ORM providing type-safe database interactions
+- **Service Layer**: Specialized services for business logic (accounting, inventory, etc.)
+
+## Key Components
+
+### Core Business Modules
+1. **POS System**: Complete point-of-sale with NCF (tax receipt number) generation
+2. **Inventory Management**: Product catalog, stock tracking, and movement auditing
+3. **Customer Management**: CRM with RNC validation against DGII registry
+4. **Accounting Module**: Automated journal entries and financial reporting
+5. **Fiscal Compliance**: 605, 606, 607 tax reports for DGII submission
+6. **Audit System**: Comprehensive activity logging and compliance tracking
+7. **System Monitoring**: Real-time dashboard with health checks
+
+### Authentication & Authorization
+- Email/password authentication with session management
+- Role-based access control with company-scoped permissions
+- Password reset functionality with email notifications
+- Session persistence across browser restarts
+
+### Dominican Republic Compliance Features
+- **RNC Validation**: Real-time validation against DGII taxpayer registry
+- **NCF Generation**: Automatic tax receipt number sequences
+- **Tax Calculations**: Support for ITBIS and other Dominican tax types
+- **Fiscal Reports**: Automated generation of required DGII reports
+
+### Data Management
+- **Audit Logging**: Complete activity tracking for compliance
+- **Data Synchronization**: Multi-company data isolation
+- **Backup Systems**: Automated data protection
+- **Import/Export**: CSV and Excel file processing
+
+## Data Flow
+
+### Request Processing Flow
+1. **Client Request** → Express middleware chain
+2. **Authentication Check** → Session validation
+3. **Route Handler** → Business logic execution
+4. **Service Layer** → Database operations via Drizzle ORM
+5. **Audit Logging** → Activity recording
+6. **Response** → JSON data with proper error handling
+
+### Business Process Flow
+1. **POS Sales** → Automatic inventory updates → Accounting entries
+2. **Customer Creation** → RNC validation → Registry update
+3. **Product Management** → Stock tracking → Low stock alerts
+4. **Fiscal Reporting** → Data aggregation → DGII format generation
+
+### Real-time Updates
+- WebSocket connections for live notifications
+- System monitoring with health status broadcasting
+- Inventory alerts and low stock warnings
+- Sales performance metrics
+
+## External Dependencies
+
+### Required Services
+- **PostgreSQL Database**: Primary data storage
+- **Anthropic Claude API**: AI-powered business insights
+- **DGII Web Services**: RNC validation and tax compliance
+- **SendGrid**: Email notification service
+- **PayPal SDK**: Payment processing
+
+### Optional Integrations
+- **Thermal Printer Support**: 80mm receipt printing
+- **QR Code Generation**: Invoice verification
+- **Image Processing**: Logo and asset optimization
+- **Excel Export**: Financial report generation
+
+### Development Dependencies
+- **Vite**: Frontend build tooling and development server
+- **TypeScript**: Type safety across the application
+- **ESBuild**: Backend bundling for production
+- **Drizzle Kit**: Database migration management
+
+## Deployment Strategy
+
+### Environment Configuration
+- **Development**: Local development with hot reloading
+- **Production**: Optimized builds with asset compression
+- **Database**: PostgreSQL with connection pooling
+- **Sessions**: Server-side session storage for security
+
+### Performance Optimizations
+- **Frontend**: Code splitting and lazy loading
+- **Backend**: Database query optimization with proper indexing
+- **Assets**: Image compression and CDN-ready static files
+- **Caching**: Session-based caching for frequently accessed data
+
+### Scaling Considerations
+- **Database**: Prepared for horizontal scaling with proper indexing
+- **Sessions**: PostgreSQL-backed for multi-instance deployment
+- **File Storage**: Configurable upload directory for external storage
+- **API Rate Limiting**: Built-in protection against abuse
+
+### Security Measures
+- **Input Validation**: Zod schemas for all user inputs
+- **SQL Injection Protection**: Parameterized queries via Drizzle ORM
+- **Session Security**: Secure cookies with proper expiration
+- **CORS Configuration**: Controlled cross-origin access
+- **Password Security**: Bcrypt hashing with salt rounds
+
+## Changelog
+- June 26, 2025. Initial setup
+
+## User Preferences
+
+Preferred communication style: Simple, everyday language.
