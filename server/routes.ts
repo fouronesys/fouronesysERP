@@ -1410,6 +1410,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.patch("/api/suppliers/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const supplierId = parseInt(req.params.id);
+      const supplier = await storage.updateSupplier(supplierId, req.body);
+      if (!supplier) {
+        return res.status(404).json({ message: "Supplier not found" });
+      }
+      res.json(supplier);
+    } catch (error) {
+      console.error("Error updating supplier:", error);
+      res.status(500).json({ message: "Failed to update supplier" });
+    }
+  });
+
+  app.delete("/api/suppliers/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const supplierId = parseInt(req.params.id);
+      await storage.deleteSupplier(supplierId);
+      res.json({ message: "Supplier deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting supplier:", error);
+      res.status(500).json({ message: "Failed to delete supplier" });
+    }
+  });
+
   // Inventory movements routes
   app.get("/api/inventory-movements", isAuthenticated, async (req: any, res) => {
     try {

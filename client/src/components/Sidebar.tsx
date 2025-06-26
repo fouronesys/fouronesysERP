@@ -76,9 +76,8 @@ const navigation = [
     color: "from-orange-500 to-orange-600",
     feature: "manufacturing",
     children: [
-      { name: "Órdenes de Producción", href: "/production-orders", icon: Factory, feature: "manufacturing.orders" },
-      { name: "Lista de Materiales", href: "/bom", icon: List, feature: "manufacturing.bom" },
-      { name: "Recetas", href: "/recipes", icon: FlaskConical, feature: "manufacturing.recipes" }
+  
+      { name: "Manufacturación", href: "/recipes", icon: Factory, feature: "manufacturing.recipes" }
     ]
   },
   {

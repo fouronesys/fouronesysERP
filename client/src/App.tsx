@@ -58,6 +58,18 @@ import SetupPassword from "@/pages/SetupPassword";
 import ResetPassword from "@/pages/ResetPassword";
 import ApiRegistration from "@/pages/ApiRegistration";
 import ApiDocs from "@/pages/ApiDocs";
+import Suppliers from "@/pages/Suppliers";
+import ChartOfAccounts from "@/pages/accounting/ChartOfAccounts";
+import JournalEntries from "@/pages/accounting/JournalEntries";
+import FinancialReports from "@/pages/accounting/FinancialReports";
+import TimeTracking from "@/pages/hr/TimeTracking";
+import LeaveRequests from "@/pages/hr/LeaveRequests";
+import Reports from "@/pages/Reports";
+import AIAssistant from "@/pages/AIAssistant";
+import Permissions from "@/pages/Permissions";
+import System from "@/pages/System";
+import Invoices from "@/pages/Invoices";
+import InventoryMovements from "@/pages/InventoryMovements";
 
 import InstallationGuide from "@/pages/InstallationGuide";
 import VerifySale from "@/pages/VerifySale";
@@ -284,16 +296,25 @@ function Router() {
           <Route path="/movements" component={Movements} />
           <Route path="/recipes" component={Manufacturing} />
           <Route path="/purchases" component={Purchases} />
+          <Route path="/suppliers" component={Suppliers} />
           <Route path="/fiscal-management" component={FiscalManagement} />
           <Route path="/accounting" component={Accounting} />
+          <Route path="/accounting/chart-of-accounts" component={ChartOfAccounts} />
+          <Route path="/accounting/journal-entries" component={JournalEntries} />
+          <Route path="/accounting/reports" component={FinancialReports} />
           <Route path="/error-management" component={ErrorManagement} />
           <Route path="/system-monitoring" component={SystemMonitoring} />
           <Route path="/company-management" component={CompanyManagement} />
           <Route path="/module-manager" component={ModuleManager} />
+          <Route path="/invoices" component={Invoices} />
+          <Route path="/inventory-movements" component={InventoryMovements} />
 
           <Route path="/employees" component={Employees} />
+          <Route path="/time-tracking" component={TimeTracking} />
+          <Route path="/leave-requests" component={LeaveRequests} />
           <Route path="/payroll" component={Payroll} />
           <Route path="/ai-insights" component={AIInsights} />
+          <Route path="/ai-assistant" component={AIAssistant} />
           <Route path="/plans" component={SubscriptionPlans} />
           <Route path="/chat" component={Chat} />
           <Route path="/user-management" component={UserManagement} />
@@ -302,6 +323,9 @@ function Router() {
           <Route path="/profile" component={Profile} />
           <Route path="/notifications" component={Notifications} />
           <Route path="/settings" component={Settings} />
+          <Route path="/reports" component={Reports} />
+          <Route path="/permissions" component={Permissions} />
+          <Route path="/system" component={System} />
           <Route path="/help/installation" component={InstallationGuide} />
           <Route component={NotFound} />
         </Switch>
