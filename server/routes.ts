@@ -2570,6 +2570,148 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Recipes endpoints
+  app.get("/api/recipes", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      const recipes = await storage.getRecipes(company.id);
+      res.json(recipes);
+    } catch (error) {
+      console.error("Error fetching recipes:", error);
+      res.status(500).json({ message: "Failed to fetch recipes" });
+    }
+  });
+
+  app.post("/api/recipes", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      const recipeData = {
+        ...req.body,
+        companyId: company.id,
+        createdBy: userId
+      };
+
+      const recipe = await storage.createRecipe(recipeData);
+      
+      // Log audit activity
+      await auditLogger.logHRAction(
+        userId,
+        company.id,
+        'create_recipe',
+        'recipe',
+        recipe.id?.toString(),
+        undefined,
+        recipe,
+        req
+      );
+
+      res.status(201).json(recipe);
+    } catch (error) {
+      console.error("Error creating recipe:", error);
+      res.status(500).json({ message: "Failed to create recipe" });
+    }
+  });
+
+  app.get("/api/recipes/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      const recipe = await storage.getRecipe(parseInt(req.params.id), company.id);
+      if (!recipe) {
+        return res.status(404).json({ message: "Recipe not found" });
+      }
+
+      res.json(recipe);
+    } catch (error) {
+      console.error("Error fetching recipe:", error);
+      res.status(500).json({ message: "Failed to fetch recipe" });
+    }
+  });
+
+  app.put("/api/recipes/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      const recipeId = parseInt(req.params.id);
+      const oldRecipe = await storage.getRecipe(recipeId, company.id);
+      if (!oldRecipe) {
+        return res.status(404).json({ message: "Recipe not found" });
+      }
+
+      const updatedRecipe = await storage.updateRecipe(recipeId, req.body);
+      
+      // Log audit activity
+      await auditLogger.logHRAction(
+        userId,
+        company.id,
+        'update_recipe',
+        'recipe',
+        recipeId.toString(),
+        oldRecipe,
+        updatedRecipe,
+        req
+      );
+
+      res.json(updatedRecipe);
+    } catch (error) {
+      console.error("Error updating recipe:", error);
+      res.status(500).json({ message: "Failed to update recipe" });
+    }
+  });
+
+  app.delete("/api/recipes/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      const recipeId = parseInt(req.params.id);
+      const recipe = await storage.getRecipe(recipeId, company.id);
+      if (!recipe) {
+        return res.status(404).json({ message: "Recipe not found" });
+      }
+
+      await storage.deleteRecipe(recipeId);
+      
+      // Log audit activity
+      await auditLogger.logHRAction(
+        userId,
+        company.id,
+        'delete_recipe',
+        'recipe',
+        recipeId.toString(),
+        recipe,
+        undefined,
+        req
+      );
+
+      res.json({ message: "Recipe deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting recipe:", error);
+      res.status(500).json({ message: "Failed to delete recipe" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

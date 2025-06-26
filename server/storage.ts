@@ -448,6 +448,13 @@ export interface IStorage {
   clearPOSCart(companyId: number, userId: string): Promise<void>;
   addToPOSCart(cartData: any): Promise<any>;
   getPOSCartItems(companyId: number, userId: string): Promise<any[]>;
+
+  // Recipe operations
+  getRecipes(companyId: number): Promise<any[]>;
+  getRecipe(id: number, companyId: number): Promise<any | undefined>;
+  createRecipe(recipeData: any): Promise<any>;
+  updateRecipe(id: number, updateData: any): Promise<any>;
+  deleteRecipe(id: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -4582,6 +4589,83 @@ export class DatabaseStorage implements IStorage {
         .where(eq(posCartItems.id, cartId));
     } catch (error) {
       console.error("Error removing POS cart item:", error);
+      throw error;
+    }
+  }
+
+  // Recipe operations
+  async getRecipes(companyId: number): Promise<any[]> {
+    try {
+      const recipeList = await db
+        .select()
+        .from(recipes)
+        .where(eq(recipes.companyId, companyId))
+        .orderBy(recipes.createdAt);
+      
+      return recipeList;
+    } catch (error) {
+      console.error("Error fetching recipes:", error);
+      return [];
+    }
+  }
+
+  async getRecipe(id: number, companyId: number): Promise<any | undefined> {
+    try {
+      const [recipe] = await db
+        .select()
+        .from(recipes)
+        .where(and(
+          eq(recipes.id, id),
+          eq(recipes.companyId, companyId)
+        ))
+        .limit(1);
+      
+      return recipe;
+    } catch (error) {
+      console.error("Error fetching recipe:", error);
+      return undefined;
+    }
+  }
+
+  async createRecipe(recipeData: any): Promise<any> {
+    try {
+      const [recipe] = await db
+        .insert(recipes)
+        .values(recipeData)
+        .returning();
+      
+      return recipe;
+    } catch (error) {
+      console.error("Error creating recipe:", error);
+      throw error;
+    }
+  }
+
+  async updateRecipe(id: number, updateData: any): Promise<any> {
+    try {
+      const [recipe] = await db
+        .update(recipes)
+        .set({
+          ...updateData,
+          updatedAt: new Date()
+        })
+        .where(eq(recipes.id, id))
+        .returning();
+      
+      return recipe;
+    } catch (error) {
+      console.error("Error updating recipe:", error);
+      throw error;
+    }
+  }
+
+  async deleteRecipe(id: number): Promise<void> {
+    try {
+      await db
+        .delete(recipes)
+        .where(eq(recipes.id, id));
+    } catch (error) {
+      console.error("Error deleting recipe:", error);
       throw error;
     }
   }
