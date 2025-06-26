@@ -1,0 +1,107 @@
+{
+  "rnc": {
+    "updateSchedule": "0 0 3 * * *",
+    "sourceUrl": "https://dgii.gov.do/app/WebApps/Consultas/rnc/DGII_RNC.zip",
+    "localPath": "./storage/dgii/rncs.txt"
+  },
+  "reportes": {
+    "606": {
+      "campos": ["T", "TipoNCF", "NCF", "Fecha", "RNC", "Monto", "ITBIS", "ISC", "OtrosImpuestos", "Propina", "FormaPago", "NCFModificado", "TipoIngreso"],
+      "separador": "|",
+      "descripcion": "Reporte de Comprobantes Fiscales (Ventas)"
+    },
+    "607": {
+      "campos": ["E", "TipoNCF", "NCF", "Fecha", "RNC", "Monto", "ITBIS", "ISC", "OtrosImpuestos", "Propina", "FormaPago", "NCFModificado", "TipoGasto"],
+      "separador": "|",
+      "descripcion": "Reporte de Comprobantes Fiscales (Compras)"
+    },
+    "T-REGISTRO": {
+      "campos": ["Cedula", "Nombre", "Salario", "SFS", "AFP", "ISR", "OtrasRetenciones", "Periodo"],
+      "separador": "|",
+      "descripcion": "Registro de Nómina para TSS"
+    },
+    "formatoFecha": "DD/MM/YYYY"
+  },
+  "empresa": {
+    "rnc": "130625901",
+    "nombreComercial": "Four One Solutions SRL",
+    "regimen": "General",
+    "direccion": "Santo Domingo, República Dominicana",
+    "telefono": "809-555-0100"
+  },
+  "ncfTypes": {
+    "B01": {
+      "descripcion": "Facturas con Valor Fiscal",
+      "aplicaCredito": true,
+      "aplicaConsumidor": false
+    },
+    "B02": {
+      "descripcion": "Facturas Consumidor Final",
+      "aplicaCredito": false,
+      "aplicaConsumidor": true
+    },
+    "B14": {
+      "descripcion": "Facturas Gubernamentales",
+      "aplicaCredito": true,
+      "aplicaConsumidor": false
+    },
+    "B15": {
+      "descripcion": "Facturas para Exportaciones",
+      "aplicaCredito": true,
+      "aplicaConsumidor": false
+    },
+    "E31": {
+      "descripcion": "Facturas de Compras",
+      "aplicaCredito": true,
+      "aplicaConsumidor": false
+    },
+    "E32": {
+      "descripcion": "Facturas para Gastos Menores",
+      "aplicaCredito": true,
+      "aplicaConsumidor": false
+    },
+    "E33": {
+      "descripcion": "Facturas de Gastos",
+      "aplicaCredito": true,
+      "aplicaConsumidor": false
+    },
+    "E34": {
+      "descripcion": "Notas de Débito",
+      "aplicaCredito": true,
+      "aplicaConsumidor": false
+    },
+    "E41": {
+      "descripcion": "Comprobantes de Compras",
+      "aplicaCredito": false,
+      "aplicaConsumidor": false
+    },
+    "E43": {
+      "descripcion": "Notas de Crédito que afectan al NCF Fiscal",
+      "aplicaCredito": true,
+      "aplicaConsumidor": false
+    },
+    "E44": {
+      "descripcion": "Notas de Crédito al Consumidor Final",
+      "aplicaCredito": false,
+      "aplicaConsumidor": true
+    },
+    "E45": {
+      "descripcion": "Comprobantes de Anulación",
+      "aplicaCredito": false,
+      "aplicaConsumidor": false
+    }
+  },
+  "validaciones": {
+    "rncFormatos": {
+      "persona_fisica": "^[0-9]{9}$",
+      "persona_juridica": "^[0-9]{11}$"
+    },
+    "cedulaFormato": "^[0-9]{3}-[0-9]{7}-[0-9]{1}$",
+    "ncfFormato": "^[A-Z][0-9]{2}[0-9]{11}$"
+  },
+  "alertas": {
+    "ncfVencimientoDias": [30, 15, 5],
+    "ncfPorcentajeUso": [75, 90, 95],
+    "reporteVencimientoDias": 3
+  }
+}

@@ -137,6 +137,12 @@ The system follows a monolithic architecture with clear separation of concerns:
   - Suppliers: Added 40+ fields for complete vendor management including payment terms, credit limits, tax information, multiple contacts, business classification
   - Customers: Added 50+ fields for comprehensive CRM including loyalty programs, sales tracking, marketing preferences, multiple addresses, credit management
   - Products: Added 60+ fields for advanced inventory management including multi-warehouse support, physical attributes, supplier information, manufacturing data, warranty tracking
+- June 26, 2025. Implemented comprehensive Dominican Republic ERP features:
+  - NCF Management: Complete fiscal receipt number generation and tracking system with batch management, usage monitoring, and expiration alerts
+  - DGII Service: Automated RNC validation against government registry, scheduled updates at 3AM daily
+  - DGII Reports: Automated generation of 606 (sales), 607 (purchases), and T-REGISTRO (payroll) reports with proper formatting and checksums
+  - Enhanced POS: Integrated NCF selection, ITBIS tax calculations (0%, 18%, Exempt), and RNC validation during sales
+  - Fiscal Compliance: Complete audit trail for all fiscal operations, automatic journal entries for tax reporting
 
 ## User Preferences
 

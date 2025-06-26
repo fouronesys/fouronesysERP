@@ -1,0 +1,322 @@
+### Prompt Completo para Desarrollo ERP República Dominicana
+
+**Objetivo:** Sistema ERP con módulos integrados, validación local de RNCs y reportes DGII completos.
+
+---
+
+### **1. Módulo de NCFs (Comprobantes Fiscales)**
+**Implementación detallada:**
+```typescript
+interface NCFBatch {
+  tipo: 'B02' | 'B14' | 'E31' | 'B15'; // Tipos DGII RD
+  prefijo: string;                     // Ej: "B02"
+  inicio: number;                      // Primer número (1)
+  fin: number;                         // Último número (500)
+  vencimiento: Date;                   // Fecha límite uso
+}
+
+// Algoritmo de generación
+function generarSecuenciaNCF(batch: NCFBatch): string[] {
+  const ncfList: string[] = [];
+  for (let i = batch.inicio; i <= batch.fin; i++) {
+    const consecutivo = i.toString().padStart(11, '0');
+    ncfList.push(`${batch.prefijo}-${consecutivo}`);
+  }
+  return ncfList; // Ej: ["B02-00000000001", ..., "B02-00000000500"]
+}
+
+// Validaciones críticas
+function validarNCF(ncf: string, tipo: string): boolean {
+  // Estructura: 1 letra + 2 dígitos + 11 consecutivos
+  return /^[A-Z]\d{2}-\d{11}$/.test(ncf) && ncf.startsWith(tipo);
+}
+```
+**UI/UX:**
+- Formulario con campos: tipo (dropdown), inicio (number), fin (number), vencimiento (date picker RD)
+- Preview de primeros 3 y últimos 3 NCFs generados
+- Alerta si rango se superpone con existentes
+
+---
+
+### **2. Sistema de Validación de RNCs**
+**Flujo completo:**
+```mermaid
+graph LR
+  A[Cron Job 3AM] --> B[Descargar ZIP de DGII]
+  B --> C[Extraer RNCs.txt]
+  C --> D[Reemplazar archivo local]
+  D --> E[Indexar en memoria]
+  E --> F[Búsquedas rápidas]
+```
+
+**Estructura de datos:**
+```typescript
+class RNCManager {
+  private rncMap: Map<string, { 
+    nombre: string; 
+    estado: 'Activo'|'Suspendido'|'Cancelado';
+    tipo: string;
+  }> = new Map();
+
+  cargarArchivo(ruta: string): void {
+    const data = fs.readFileSync(ruta, 'latin1'); // Encoding DGII
+    data.split('\n').forEach(linea => {
+      const [rnc, nombre, estado, tipo] = linea.split('|');
+      this.rncMap.set(rnc.trim(), {nombre, estado, tipo});
+    });
+  }
+
+  buscarRNC(rnc: string): RNCResult | null {
+    const cleaned = rnc.replace(/\D/g, '');
+    return this.rncMap.get(cleaned) || null;
+  }
+}
+```
+
+**Integración en formularios:**
+- Campo RNC con autocompletado en tiempo real
+- Indicadores visuales:
+  - ✅ RNC válido y activo
+  - ⚠️ RNC válido pero suspendido
+  - ❌ RNC no encontrado
+- Tooltip con razón social al pasar mouse
+
+---
+
+### **3. Módulo de Facturación/POS**
+**Campos obligatorios por factura:**
+```typescript
+{
+  cliente: {
+    id?: string;          // Si existe en DB
+    rnc: string;          // Validado contra RNCs.txt
+    nombre: string;       // Autocompletado desde RNC
+  };
+  ncf: string;            // Selección de lista disponible
+  items: [{
+    producto: string;     // Código de barras/ID
+    descripcion: string;
+    cantidad: number;
+    precioUnitario: number;
+    itbis: '0%' | '18%' | 'Exento' | 'Sin ITBIS'; // Opciones
+    montoItbis: number;   // Auto-calculado
+  }];
+  pagos: [{
+    metodo: 'Efectivo' | 'Tarjeta' | 'Transferencia';
+    monto: number;
+    banco?: string;       // Si aplica
+  }];
+}
+```
+
+**Flujo POS:**
+1. Escanear producto → buscar en inventario
+2. Auto-detectar tipo ITBIS según categoría producto
+3. Permitir modificación manual de ITBIS
+4. Validación stock en tiempo real
+5. Al finalizar → reducir stock, consumir NCF, generar asiento contable
+
+---
+
+### **4. Reportes DGII (Generación exacta)**
+**Estructura de archivos:**
+```
+# Reporte 606 (Ventas)
+T|TipoNCF|NCF|Fecha|RNC_Cliente|MontoTotal|ITBIS|...|
+B02|B02123456789|01/01/2024|123456789|10000.00|1800.00|...|
+
+# Reporte 607 (Compras)
+E|TipoNCF|NCF|Fecha|RNC_Proveedor|MontoTotal|ITBIS|...|
+E31|E31123456789|01/01/2024|987654321|5000.00|900.00|...|
+
+# T-REGISTRO (Nómina)
+001-1234567-8|Juan Perez|25000.00|760.00|717.50|...|202404|
+```
+**Implementación:**
+```typescript
+function generarReporte606(fechaInicio: Date, fechaFin: Date): string {
+  const ventas = getVentasPeriodo(fechaInicio, fechaFin);
+  let contenido = '';
+  
+  ventas.forEach(v => {
+    contenido += `T|${v.tipoNCF}|${v.ncf}|${formatDateRD(v.fecha)}|`;
+    contenido += `${v.rncCliente}|${v.total}|${v.itbis}|...\n`;
+  });
+  
+  // Añadir checksum (requerimiento DGII)
+  const checksum = crc32(contenido).toString(16);
+  contenido += `F|${ventas.length}|${checksum.toUpperCase()}`;
+  
+  return contenido;
+}
+```
+
+---
+
+### **5. Módulo de Nómina RD**
+**Cálculo exacto de deducciones:**
+```typescript
+function calcularNomina(salarioBruto: number) {
+  const sfs = salarioBruto * 0.0304;      // SFS 3.04%
+  const afp = salarioBruto * 0.0287;      // AFP 2.87%
+  
+  // ISR escalonado (tabla DGII 2024)
+  let isr = 0;
+  if (salarioBruto > 416220) {
+    const excedente = salarioBruto - 416220;
+    isr = excedente * 0.25;
+  }
+  // ... otros escalones
+  
+  return {
+    sfs: parseFloat(sfs.toFixed(2)),
+    afp: parseFloat(afp.toFixed(2)),
+    isr: parseFloat(isr.toFixed(2)),
+    neto: salarioBruto - sfs - afp - isr
+  };
+}
+```
+
+**Formulario empleado:**
+```typescript
+{
+  cedula: string;       // Formato 001-1234567-8
+  nombre: string;
+  puesto: string;
+  salario: number;
+  banco: string;        // Banco RD
+  cuenta: string;       // Formato ###-#######-#
+  tipoContrato: 'Tiempo Indefinido' | 'Tiempo Determinado';
+  fechaIngreso: Date;
+}
+```
+
+---
+
+### **6. Flujo de Integración Completo**
+```mermaid
+graph TB
+  A[NCFs] --> B[Facturación]
+  C[RNCs.txt] --> D[Clientes]
+  C --> E[Proveedores]
+  D --> B
+  B --> F[Reporte 606]
+  E --> G[Compras]
+  G --> H[Reporte 607]
+  I[Nómina] --> J[T-REGISTRO]
+  B --> K[Inventario]
+  G --> K
+  K --> L[Ajustes Contables]
+  
+  style A fill:#f9f,stroke:#333
+  style C fill:#bbf,stroke:#333
+```
+
+---
+
+### **7. Configuración del Sistema**
+**Archivo de parámetros DGII (`dgii.config.json`):**
+```json
+{
+  "rnc": {
+    "updateSchedule": "0 0 3 * * *",
+    "sourceUrl": "https://dgii.gov.do/app/WebApps/Consultas/rnc/DGII_RNC.zip",
+    "localPath": "/storage/dgii/rncs.txt"
+  },
+  "reportes": {
+    "606": {
+      "campos": ["T", "TipoNCF", "NCF", "Fecha", "RNC", "Monto", "ITBIS"],
+      "separador": "|"
+    },
+    "formatoFecha": "DD/MM/YYYY"
+  },
+  "empresa": {
+    "rnc": "123456789",
+    "nombreComercial": "Mi Empresa SRL",
+    "regimen": "General"
+  }
+}
+```
+
+**Panel de control:**
+- Estado actualización RNCs (última fecha, registros cargados)
+- Botón "Forzar Actualización Ahora"
+- Alertas de vencimiento para:
+  - NCFs (30/15/5 días antes)
+  - Reportes pendientes (fechas límite DGII)
+- Generadores de reportes con selectores de período
+
+---
+
+### **8. Validaciones Esenciales en Todos los Módulos**
+1. **Formatos numéricos RD:**
+   - Separador miles: ninguno
+   - Decimales: punto (1000.50)
+   - Moneda: RD$ (opcional en displays)
+
+2. **Fechas:**
+   - Entrada: DD/MM/YYYY
+   - Base de datos: ISO8601 (UTC-4)
+
+3. **Errores DGII:**
+   - NCF inválido: "Error DGII-001: Formato NCF incorrecto"
+   - RNC no encontrado: "Error DGII-402: RNC no registrado"
+   - ITBIS incorrecto: "Error DGII-305: %ITBIS no corresponde"
+
+4. **Consistencias:**
+   - No permitir facturar sin stock
+   - Bloquear NCFs vencidos
+   - Validar cédulas en nómina (formato 001-1234567-8)
+
+---
+
+### **9. Funciones de Seguridad y Auditoría**
+```typescript
+// En cada operación crítica
+function registrarAuditoria(
+  usuario: string,
+  modulo: string,
+  accion: string,
+  datos: object
+) {
+  const registro = {
+    timestamp: new Date(),
+    ip: getClientIP(),
+    dispositivo: getDeviceInfo(),
+    ...datos
+  };
+  
+  db.insert('log_auditoria', registro);
+}
+
+// Ejemplo de uso en facturación
+registrarAuditoria(
+  currentUser, 
+  'facturacion', 
+  'creacion', 
+  { ncf, cliente, monto }
+);
+```
+
+**Políticas:**
+- Encriptación AES-256 para:
+  - RNCs de clientes
+  - Cuentas bancarias
+  - Nóminas
+- Registro detallado de:
+  - Cambios en NCFs
+  - Generación de reportes
+  - Actualizaciones de RNCs.txt
+
+---
+
+**Instrucciones finales de desarrollo:**  
+1. Implementar primero el sistema de RNCs y NCFs  
+2. Desarrollar módulo de facturación con validaciones en tiempo real  
+3. Conectar con inventario y contabilidad  
+4. Implementar generadores de reportes 606/607  
+5. Desarrollar módulo de nómina con T-REGISTRO  
+6. Añadir sistema de auditoría en todas las transacciones  
+7. Crear paneles de control con alertas DGII  
+
+¡Todos los módulos deben usar el mismo servicio de validación de RNCs y formatos numéricos/temporales RD!

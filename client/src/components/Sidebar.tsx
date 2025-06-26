@@ -37,7 +37,9 @@ import {
   Sparkles,
   ChevronDown,
   ChevronUp,
-  Cog
+  Cog,
+  FileBarChart,
+  Receipt
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -100,6 +102,17 @@ const navigation = [
     icon: Truck,
     color: "from-amber-500 to-amber-600",
     feature: "suppliers"
+  },
+  {
+    name: "DGII / Fiscal",
+    icon: ChartBar,
+    color: "from-red-500 to-red-600",
+    feature: "fiscal",
+    children: [
+      { name: "Gestión de NCF", href: "/ncf-management", icon: CreditCard, feature: "fiscal.ncf" },
+      { name: "Reportes DGII", href: "/dgii-reports", icon: FileText, feature: "fiscal.reports" },
+      { name: "Gestión Fiscal", href: "/fiscal-management", icon: Calculator, feature: "fiscal.management" }
+    ]
   },
   {
     name: "Contabilidad",

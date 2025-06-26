@@ -59,17 +59,9 @@ import ResetPassword from "@/pages/ResetPassword";
 import ApiRegistration from "@/pages/ApiRegistration";
 import ApiDocs from "@/pages/ApiDocs";
 import Suppliers from "@/pages/Suppliers";
-import ChartOfAccounts from "@/pages/accounting/ChartOfAccounts";
-import JournalEntries from "@/pages/accounting/JournalEntries";
-import FinancialReports from "@/pages/accounting/FinancialReports";
-import TimeTracking from "@/pages/hr/TimeTracking";
-import LeaveRequests from "@/pages/hr/LeaveRequests";
-import Reports from "@/pages/Reports";
-import AIAssistant from "@/pages/AIAssistant";
-import Permissions from "@/pages/Permissions";
-import System from "@/pages/System";
-import Invoices from "@/pages/Invoices";
-import InventoryMovements from "@/pages/InventoryMovements";
+// Import existing modules that are available
+import NCFManagement from "@/pages/NCFManagement";
+import DGIIReports from "@/pages/DGIIReports";
 
 import InstallationGuide from "@/pages/InstallationGuide";
 import VerifySale from "@/pages/VerifySale";
@@ -297,6 +289,8 @@ function Router() {
           <Route path="/recipes" component={Manufacturing} />
           <Route path="/purchases" component={Purchases} />
           <Route path="/suppliers" component={Suppliers} />
+          <Route path="/ncf-management" component={NCFManagement} />
+          <Route path="/dgii-reports" component={DGIIReports} />
           <Route path="/fiscal-management" component={FiscalManagement} />
           <Route path="/accounting" component={Accounting} />
           <Route path="/accounting/chart-of-accounts" component={ChartOfAccounts} />
