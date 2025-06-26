@@ -1,4 +1,4 @@
-import { db } from '@/db';
+import { db } from './db';
 import { promises as fs } from 'fs';
 import * as path from 'path';
 import { createReadStream } from 'fs';

@@ -160,7 +160,7 @@ export default function InventoryMovements() {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-64"
-                prefix={<Search className="h-4 w-4" />}
+                // prefix={<Search className="h-4 w-4" />}
               />
               <Select value={filterType} onValueChange={setFilterType}>
                 <SelectTrigger className="w-40">

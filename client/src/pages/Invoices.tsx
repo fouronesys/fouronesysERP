@@ -139,7 +139,7 @@ export default function Invoices() {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-64"
-                prefix={<Search className="h-4 w-4" />}
+                // prefix={<Search className="h-4 w-4" />}
               />
               <Select value={filterStatus} onValueChange={setFilterStatus}>
                 <SelectTrigger className="w-40">

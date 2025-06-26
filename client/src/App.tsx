@@ -62,6 +62,19 @@ import Suppliers from "@/pages/Suppliers";
 // Import existing modules that are available
 import NCFManagement from "@/pages/NCFManagement";
 import DGIIReports from "@/pages/DGIIReports";
+// Import accounting components
+import ChartOfAccounts from "@/pages/accounting/ChartOfAccounts";
+import JournalEntries from "@/pages/accounting/JournalEntries";
+import FinancialReports from "@/pages/accounting/FinancialReports";
+// Import other missing components
+import Invoices from "@/pages/Invoices";
+import InventoryMovements from "@/pages/InventoryMovements";
+import TimeTracking from "@/pages/hr/TimeTracking";
+import LeaveRequests from "@/pages/hr/LeaveRequests";
+import AIAssistant from "@/pages/AIAssistant";
+import Reports from "@/pages/Reports";
+import Permissions from "@/pages/Permissions";
+import System from "@/pages/System";
 
 import InstallationGuide from "@/pages/InstallationGuide";
 import VerifySale from "@/pages/VerifySale";
