@@ -1983,6 +1983,130 @@ export async function registerRoutes(app: Express): Promise<Server> {
     await capturePaypalOrder(req, res);
   });
 
+  // Manufacturing BOM Routes
+  app.get("/api/manufacturing/boms", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+      const boms = await storage.getBOMs(company.id);
+      res.json(boms);
+    } catch (error) {
+      console.error("Error fetching BOMs:", error);
+      res.status(500).json({ message: "Failed to fetch BOMs" });
+    }
+  });
+
+  app.post("/api/manufacturing/boms", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+      const bomData = {
+        ...req.body,
+        companyId: company.id,
+        createdBy: userId
+      };
+      const bom = await storage.createBOM(bomData);
+      res.json(bom);
+    } catch (error) {
+      console.error("Error creating BOM:", error);
+      res.status(500).json({ message: "Failed to create BOM" });
+    }
+  });
+
+  app.patch("/api/manufacturing/boms/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+      const bomId = parseInt(req.params.id);
+      const bom = await storage.updateBOM(bomId, req.body, company.id);
+      res.json(bom);
+    } catch (error) {
+      console.error("Error updating BOM:", error);
+      res.status(500).json({ message: "Failed to update BOM" });
+    }
+  });
+
+  app.delete("/api/manufacturing/boms/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+      const bomId = parseInt(req.params.id);
+      await storage.deleteBOM(bomId, company.id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting BOM:", error);
+      res.status(500).json({ message: "Failed to delete BOM" });
+    }
+  });
+
+  // Production Orders Routes
+  app.get("/api/production-orders", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+      const orders = await storage.getProductionOrders(company.id);
+      res.json(orders);
+    } catch (error) {
+      console.error("Error fetching production orders:", error);
+      res.status(500).json({ message: "Failed to fetch production orders" });
+    }
+  });
+
+  app.post("/api/production-orders", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+      
+      const orderNumber = req.body.orderNumber || `OP-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`;
+      const orderData = {
+        ...req.body,
+        orderNumber,
+        companyId: company.id,
+        status: req.body.status || "planned"
+      };
+      const order = await storage.createProductionOrder(orderData);
+      res.json(order);
+    } catch (error) {
+      console.error("Error creating production order:", error);
+      res.status(500).json({ message: "Failed to create production order" });
+    }
+  });
+
+  app.patch("/api/production-orders/:id/status", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+      const orderId = parseInt(req.params.id);
+      const { status } = req.body;
+      const order = await storage.updateProductionOrderStatus(orderId, status, company.id);
+      res.json(order);
+    } catch (error) {
+      console.error("Error updating production order status:", error);
+      res.status(500).json({ message: "Failed to update production order status" });
+    }
+  });
+
   // Downloads endpoint
   app.get("/api/downloads/available", async (req, res) => {
     try {

@@ -199,7 +199,7 @@ export default function FourOneLoginAnimation({ isVisible, onComplete }: FourOne
         <motion.div
           className="flex items-center justify-center space-x-2 mt-4"
           initial={{ opacity: 0 }}
-          animate={{ opacity: currentStep >= fourOnes.length ? 1 : 0 }}
+          animate={{ opacity: currentStep >= fourOnes.length ? 4 : 2 }}
           transition={{ delay: 2.5 }}
         >
           {[0, 1, 2].map((_, index) => (

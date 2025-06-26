@@ -530,13 +530,45 @@ export const productionSteps = pgTable("production_steps", {
   notes: text("notes"),
 });
 
+// Bill of Materials (BOM)
+export const billOfMaterials = pgTable("bill_of_materials", {
+  id: serial("id").primaryKey(),
+  productId: integer("product_id").notNull().references(() => products.id),
+  name: varchar("name", { length: 255 }).notNull(),
+  version: varchar("version", { length: 20 }).default("1.0"),
+  isActive: boolean("is_active").default(true),
+  notes: text("notes"),
+  companyId: integer("company_id").notNull().references(() => companies.id),
+  createdBy: varchar("created_by", { length: 255 }).references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// BOM Items
+export const bomItems = pgTable("bom_items", {
+  id: serial("id").primaryKey(),
+  bomId: integer("bom_id").notNull().references(() => billOfMaterials.id, { onDelete: "cascade" }),
+  componentId: integer("component_id").notNull().references(() => products.id),
+  quantity: decimal("quantity", { precision: 10, scale: 3 }).notNull(),
+  unit: varchar("unit", { length: 20 }).notNull(),
+  wastePercentage: decimal("waste_percentage", { precision: 5, scale: 2 }).default("0"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Production Orders
 export const productionOrders = pgTable("production_orders", {
   id: serial("id").primaryKey(),
+  orderNumber: varchar("order_number", { length: 50 }),
   number: varchar("number", { length: 50 }).notNull(),
   productId: integer("product_id").notNull().references(() => products.id),
+  bomId: integer("bom_id").references(() => billOfMaterials.id),
   quantity: integer("quantity").notNull(),
-  status: varchar("status", { length: 20 }).notNull().default("draft"), // draft, planned, in_progress, completed, cancelled
+  warehouseId: integer("warehouse_id").references(() => warehouses.id),
+  status: varchar("status", { length: 20 }).notNull().default("planned"), // planned, in_progress, completed, cancelled
+  priority: varchar("priority", { length: 20 }).default("medium"), // low, medium, high, urgent
+  scheduledDate: date("scheduled_date"),
   plannedStartDate: date("planned_start_date"),
   plannedEndDate: date("planned_end_date"),
   actualStartDate: date("actual_start_date"),
@@ -1201,6 +1233,19 @@ export const insertLeaveSchema = createInsertSchema(leaves).omit({
   updatedAt: true,
 });
 
+// Manufacturing schemas
+export const insertBillOfMaterialsSchema = createInsertSchema(billOfMaterials).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertBOMItemSchema = createInsertSchema(bomItems).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Module Management Insert Schemas
 export const insertSystemModuleSchema = createInsertSchema(systemModules).omit({
   id: true,
@@ -1497,6 +1542,10 @@ export type TimeTracking = typeof timeTracking.$inferSelect;
 export type InsertTimeTracking = z.infer<typeof insertTimeTrackingSchema>;
 export type Leave = typeof leaves.$inferSelect;
 export type InsertLeave = z.infer<typeof insertLeaveSchema>;
+export type BillOfMaterials = typeof billOfMaterials.$inferSelect;
+export type InsertBillOfMaterials = z.infer<typeof insertBillOfMaterialsSchema>;
+export type BOMItem = typeof bomItems.$inferSelect;
+export type InsertBOMItem = z.infer<typeof insertBOMItemSchema>;
 export type Comprobante605 = typeof comprobantes605.$inferSelect;
 export type InsertComprobante605 = z.infer<typeof insertComprobante605Schema>;
 export type Comprobante606 = typeof comprobantes606.$inferSelect;
