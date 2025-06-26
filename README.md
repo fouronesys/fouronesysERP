@@ -60,6 +60,6 @@ Para soporte técnico o consultas comerciales:
 
 **Desarrollado con ❤️ en República Dominicana**  
 
-[Ver documentación completa](/doc.md)  
+[Ver documentación completa](/Doc.md)  
 
 [![FourOne Systems](https://fourone.com.do/logo.png)](https://fourone.com.do)
