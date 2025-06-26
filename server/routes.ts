@@ -260,93 +260,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Customer endpoints
-  app.get("/api/customers", simpleAuth, async (req: any, res) => {
-    try {
-      const user = req.user;
-      const company = await storage.getCompanyByUserId(user.id);
-      if (!company) {
-        return res.status(404).json({ message: "Company not found" });
-      }
 
-      const customers = await storage.getCustomers(company.id);
-      res.json(customers);
-    } catch (error) {
-      console.error("Error fetching customers:", error);
-      res.status(500).json({ message: "Failed to fetch customers" });
-    }
-  });
-
-  app.post("/api/customers", simpleAuth, async (req: any, res) => {
-    try {
-      const user = req.user;
-      const company = await storage.getCompanyByUserId(user.id);
-      if (!company) {
-        return res.status(404).json({ message: "Company not found" });
-      }
-
-      // Validate request body with Zod schema
-      const validation = insertCustomerSchema.safeParse({
-        ...req.body,
-        companyId: company.id
-      });
-
-      if (!validation.success) {
-        console.error("Customer validation error:", validation.error);
-        return res.status(400).json({ 
-          message: "Validation error", 
-          errors: validation.error.issues.map(issue => ({
-            field: issue.path.join('.'),
-            message: issue.message
-          }))
-        });
-      }
-
-      const customer = await storage.createCustomer(validation.data);
-      res.json(customer);
-    } catch (error) {
-      console.error("Error creating customer:", error);
-      res.status(500).json({ message: "Failed to create customer" });
-    }
-  });
-
-  app.patch("/api/customers/:id", simpleAuth, async (req: any, res) => {
-    try {
-      const { id } = req.params;
-      const user = req.user;
-      const company = await storage.getCompanyByUserId(user.id);
-      if (!company) {
-        return res.status(404).json({ message: "Company not found" });
-      }
-
-      const customer = await storage.updateCustomer(parseInt(id), req.body, company.id);
-      if (!customer) {
-        return res.status(404).json({ message: "Customer not found" });
-      }
-
-      res.json(customer);
-    } catch (error) {
-      console.error("Error updating customer:", error);
-      res.status(500).json({ message: "Failed to update customer" });
-    }
-  });
-
-  app.delete("/api/customers/:id", simpleAuth, async (req: any, res) => {
-    try {
-      const { id } = req.params;
-      const user = req.user;
-      const company = await storage.getCompanyByUserId(user.id);
-      if (!company) {
-        return res.status(404).json({ message: "Company not found" });
-      }
-
-      await storage.deleteCustomer(parseInt(id), company.id);
-      res.json({ success: true });
-    } catch (error) {
-      console.error("Error deleting customer:", error);
-      res.status(500).json({ message: "Failed to delete customer" });
-    }
-  });
 
   // RNC verification endpoint
   app.get("/api/verify-rnc/:rnc", async (req, res) => {
@@ -2646,6 +2560,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // DGII RNC verification endpoint
   app.post("/api/dgii/validate-rnc", async (req, res) => {
     try {
+      console.log("DGII validate-rnc request body:", req.body);
       const { rnc } = req.body;
       
       if (!rnc) {
