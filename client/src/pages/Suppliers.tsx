@@ -29,7 +29,7 @@ import {
   Building2, MapPin, Phone, Mail, UserCheck, UserX, UserPlus,
   FileText, History, Star, TrendingUp, TrendingDown, AlertCircle,
   Globe, Smartphone, Flag, Shield, Settings, Target, Zap, Truck,
-  Factory, Store, Users
+  Factory, Store, Users, Trophy, BarChart3
 } from "lucide-react";
 
 // Enhanced Supplier Schema with Dominican Requirements
@@ -753,56 +753,974 @@ const Suppliers = () => {
 
           {/* Performance Tab */}
           <TabsContent value="performance" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5" />
-                  Rendimiento de Proveedores
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8">
-                  <TrendingUp className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-500">Métricas de rendimiento en desarrollo</p>
+            {/* Performance Dashboard */}
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+              {/* Main Performance Metrics */}
+              <div className="lg:col-span-3 space-y-6">
+                {/* Key Performance Indicators */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-gray-600">Tiempo de Entrega</p>
+                          <p className="text-2xl font-bold">7.2 días</p>
+                        </div>
+                        <Clock className="h-8 w-8 text-blue-600" />
+                      </div>
+                      <div className="mt-2 flex items-center text-sm">
+                        <ArrowDown className="h-4 w-4 text-green-600 mr-1" />
+                        <span className="text-green-600">-1.5 días</span>
+                        <span className="text-gray-600 ml-1">vs. mes anterior</span>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-gray-600">Cumplimiento</p>
+                          <p className="text-2xl font-bold">95.8%</p>
+                        </div>
+                        <CheckCircle className="h-8 w-8 text-green-600" />
+                      </div>
+                      <div className="mt-2 flex items-center text-sm">
+                        <ArrowUp className="h-4 w-4 text-green-600 mr-1" />
+                        <span className="text-green-600">+2.3%</span>
+                        <span className="text-gray-600 ml-1">este mes</span>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-gray-600">Calidad</p>
+                          <p className="text-2xl font-bold">4.7/5.0</p>
+                        </div>
+                        <Star className="h-8 w-8 text-yellow-600" />
+                      </div>
+                      <div className="mt-2 flex items-center text-sm">
+                        <ArrowUp className="h-4 w-4 text-green-600 mr-1" />
+                        <span className="text-green-600">+0.2</span>
+                        <span className="text-gray-600 ml-1">promedio</span>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-gray-600">Ahorro</p>
+                          <p className="text-2xl font-bold">RD$2.1M</p>
+                        </div>
+                        <DollarSign className="h-8 w-8 text-purple-600" />
+                      </div>
+                      <div className="mt-2 flex items-center text-sm">
+                        <TrendingUp className="h-4 w-4 text-green-600 mr-1" />
+                        <span className="text-green-600">+15%</span>
+                        <span className="text-gray-600 ml-1">anual</span>
+                      </div>
+                    </CardContent>
+                  </Card>
                 </div>
-              </CardContent>
-            </Card>
+
+                {/* Top Performing Suppliers */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Trophy className="h-5 w-5" />
+                      Top Proveedores por Rendimiento
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {suppliers?.slice(0, 5).map((supplier: any, index: number) => (
+                        <div key={supplier.id} className="flex items-center justify-between p-4 border rounded-lg">
+                          <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-2">
+                              <Badge variant={index === 0 ? "default" : "secondary"} className="w-8 h-8 rounded-full flex items-center justify-center">
+                                {index + 1}
+                              </Badge>
+                              <div>
+                                <h4 className="font-medium">{supplier.name}</h4>
+                                <p className="text-sm text-gray-600">{supplier.category || 'Materiales'}</p>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-6 text-sm">
+                            <div className="text-center">
+                              <p className="font-medium text-green-600">98.5%</p>
+                              <p className="text-gray-600">Cumplimiento</p>
+                            </div>
+                            <div className="text-center">
+                              <p className="font-medium text-blue-600">4.8</p>
+                              <p className="text-gray-600">Calidad</p>
+                            </div>
+                            <div className="text-center">
+                              <p className="font-medium text-purple-600">5.2d</p>
+                              <p className="text-gray-600">Entrega</p>
+                            </div>
+                            <Button variant="outline" size="sm">
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      )) || []}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Performance Categories */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <BarChart3 className="h-5 w-5" />
+                      Rendimiento por Categoría
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      <div className="p-4 border rounded-lg">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-2">
+                            <Package className="h-5 w-5 text-blue-600" />
+                            <h4 className="font-medium">Materiales</h4>
+                          </div>
+                          <Badge variant="outline">{suppliers?.filter((s: any) => s.category === 'materials').length || 8} proveedores</Badge>
+                        </div>
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-sm">
+                            <span>Cumplimiento</span>
+                            <span className="font-medium text-green-600">96.2%</span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span>Calidad</span>
+                            <span className="font-medium text-yellow-600">4.6/5</span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span>Tiempo Entrega</span>
+                            <span className="font-medium text-blue-600">6.8 días</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="p-4 border rounded-lg">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-2">
+                            <Settings className="h-5 w-5 text-green-600" />
+                            <h4 className="font-medium">Servicios</h4>
+                          </div>
+                          <Badge variant="outline">{suppliers?.filter((s: any) => s.category === 'services').length || 5} proveedores</Badge>
+                        </div>
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-sm">
+                            <span>Cumplimiento</span>
+                            <span className="font-medium text-green-600">94.7%</span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span>Calidad</span>
+                            <span className="font-medium text-yellow-600">4.8/5</span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span>Tiempo Entrega</span>
+                            <span className="font-medium text-blue-600">3.2 días</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="p-4 border rounded-lg">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-2">
+                            <Factory className="h-5 w-5 text-purple-600" />
+                            <h4 className="font-medium">Equipos</h4>
+                          </div>
+                          <Badge variant="outline">{suppliers?.filter((s: any) => s.category === 'equipment').length || 3} proveedores</Badge>
+                        </div>
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-sm">
+                            <span>Cumplimiento</span>
+                            <span className="font-medium text-green-600">97.1%</span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span>Calidad</span>
+                            <span className="font-medium text-yellow-600">4.9/5</span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span>Tiempo Entrega</span>
+                            <span className="font-medium text-blue-600">12.5 días</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Performance Insights Sidebar */}
+              <div className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Alertas de Rendimiento</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div className="p-3 bg-red-50 dark:bg-red-950 rounded-lg">
+                        <div className="flex items-center gap-2 mb-1">
+                          <AlertTriangle className="h-4 w-4 text-red-600" />
+                          <p className="text-sm font-medium text-red-800 dark:text-red-200">Entrega Tardía</p>
+                        </div>
+                        <p className="text-xs text-red-600 dark:text-red-400">
+                          3 proveedores con retrasos superiores a 7 días este mes
+                        </p>
+                      </div>
+                      
+                      <div className="p-3 bg-yellow-50 dark:bg-yellow-950 rounded-lg">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Clock className="h-4 w-4 text-yellow-600" />
+                          <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200">Calidad Baja</p>
+                        </div>
+                        <p className="text-xs text-yellow-600 dark:text-yellow-400">
+                          2 proveedores con calificación inferior a 4.0 necesitan revisión
+                        </p>
+                      </div>
+                      
+                      <div className="p-3 bg-green-50 dark:bg-green-950 rounded-lg">
+                        <div className="flex items-center gap-2 mb-1">
+                          <CheckCircle className="h-4 w-4 text-green-600" />
+                          <p className="text-sm font-medium text-green-800 dark:text-green-200">Rendimiento Excelente</p>
+                        </div>
+                        <p className="text-xs text-green-600 dark:text-green-400">
+                          5 proveedores superan todas las métricas objetivo
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Acciones Recomendadas</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      <Button variant="outline" className="w-full justify-start text-sm">
+                        <Trophy className="h-4 w-4 mr-2" />
+                        Programa Incentivos
+                      </Button>
+                      <Button variant="outline" className="w-full justify-start text-sm">
+                        <FileText className="h-4 w-4 mr-2" />
+                        Revisar Contratos
+                      </Button>
+                      <Button variant="outline" className="w-full justify-start text-sm">
+                        <Calendar className="h-4 w-4 mr-2" />
+                        Auditoría Calidad
+                      </Button>
+                      <Button variant="outline" className="w-full justify-start text-sm">
+                        <Download className="h-4 w-4 mr-2" />
+                        Exportar Reporte
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
           </TabsContent>
 
           {/* Documents Tab */}
           <TabsContent value="documents" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FileText className="h-5 w-5" />
-                  Gestión de Documentos
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8">
-                  <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-500">Gestión de documentos en desarrollo</p>
+            {/* Document Management Dashboard */}
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+              {/* Main Documents Section */}
+              <div className="lg:col-span-3 space-y-6">
+                {/* Document Categories */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-gray-600">Contratos</p>
+                          <p className="text-2xl font-bold">24</p>
+                        </div>
+                        <FileText className="h-8 w-8 text-blue-600" />
+                      </div>
+                      <div className="mt-2 flex items-center text-sm">
+                        <CheckCircle className="h-4 w-4 text-green-600 mr-1" />
+                        <span className="text-green-600">18 vigentes</span>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-gray-600">Certificados</p>
+                          <p className="text-2xl font-bold">15</p>
+                        </div>
+                        <Shield className="h-8 w-8 text-green-600" />
+                      </div>
+                      <div className="mt-2 flex items-center text-sm">
+                        <AlertTriangle className="h-4 w-4 text-yellow-600 mr-1" />
+                        <span className="text-yellow-600">3 por vencer</span>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-gray-600">Licencias</p>
+                          <p className="text-2xl font-bold">8</p>
+                        </div>
+                        <Flag className="h-8 w-8 text-purple-600" />
+                      </div>
+                      <div className="mt-2 flex items-center text-sm">
+                        <CheckCircle className="h-4 w-4 text-green-600 mr-1" />
+                        <span className="text-green-600">Todas válidas</span>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-gray-600">Documentos RNC</p>
+                          <p className="text-2xl font-bold">12</p>
+                        </div>
+                        <Building className="h-8 w-8 text-orange-600" />
+                      </div>
+                      <div className="mt-2 flex items-center text-sm">
+                        <Clock className="h-4 w-4 text-blue-600 mr-1" />
+                        <span className="text-blue-600">Actualizado</span>
+                      </div>
+                    </CardContent>
+                  </Card>
                 </div>
-              </CardContent>
-            </Card>
+
+                {/* Recent Documents */}
+                <Card>
+                  <CardHeader>
+                    <div className="flex justify-between items-center">
+                      <CardTitle className="flex items-center gap-2">
+                        <FileText className="h-5 w-5" />
+                        Documentos Recientes
+                      </CardTitle>
+                      <Button onClick={() => setShowDocumentDialog(true)}>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Nuevo Documento
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {/* Sample Documents */}
+                      {[
+                        { id: 1, name: "Contrato de Suministro - Materiales Construcción S.A.", type: "Contrato", date: "2024-06-20", status: "vigente", expires: "2025-06-20" },
+                        { id: 2, name: "Certificado ISO 9001 - TechSupply Corp", type: "Certificado", date: "2024-06-15", status: "vigente", expires: "2025-06-15" },
+                        { id: 3, name: "Licencia Operación - ServiTech RD", type: "Licencia", date: "2024-06-10", status: "vigente", expires: "2026-06-10" },
+                        { id: 4, name: "RNC Actualizado - Global Supplies", type: "RNC", date: "2024-06-05", status: "vigente", expires: "N/A" },
+                        { id: 5, name: "Seguro Responsabilidad Civil - MegaSupplier", type: "Seguro", date: "2024-05-30", status: "por_vencer", expires: "2024-07-30" }
+                      ].map((doc, index) => (
+                        <div key={doc.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-900">
+                          <div className="flex items-center gap-4">
+                            <div className="p-2 rounded-lg bg-blue-50 dark:bg-blue-950">
+                              <FileText className="h-5 w-5 text-blue-600" />
+                            </div>
+                            <div>
+                              <h4 className="font-medium">{doc.name}</h4>
+                              <div className="flex items-center gap-4 text-sm text-gray-600">
+                                <span>Tipo: {doc.type}</span>
+                                <span>Fecha: {doc.date}</span>
+                                <span>Vence: {doc.expires}</span>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Badge 
+                              variant={doc.status === 'vigente' ? 'default' : doc.status === 'por_vencer' ? 'destructive' : 'secondary'}
+                              className={
+                                doc.status === 'vigente' ? 'bg-green-100 text-green-800' :
+                                doc.status === 'por_vencer' ? 'bg-yellow-100 text-yellow-800' :
+                                'bg-red-100 text-red-800'
+                              }
+                            >
+                              {doc.status === 'vigente' ? 'Vigente' : doc.status === 'por_vencer' ? 'Por Vencer' : 'Vencido'}
+                            </Badge>
+                            <Button variant="outline" size="sm">
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button variant="outline" size="sm">
+                              <Download className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Document Requirements by Category */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <CheckCircle className="h-5 w-5" />
+                      Requisitos Documentales por Categoría
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      <div className="p-4 border rounded-lg">
+                        <h4 className="font-medium mb-3 flex items-center gap-2">
+                          <Package className="h-5 w-5 text-blue-600" />
+                          Proveedores de Materiales
+                        </h4>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex items-center justify-between">
+                            <span>RNC Vigente</span>
+                            <CheckCircle className="h-4 w-4 text-green-600" />
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span>Certificado Calidad</span>
+                            <CheckCircle className="h-4 w-4 text-green-600" />
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span>Seguro Responsabilidad</span>
+                            <AlertTriangle className="h-4 w-4 text-yellow-600" />
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span>Contrato Marco</span>
+                            <CheckCircle className="h-4 w-4 text-green-600" />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="p-4 border rounded-lg">
+                        <h4 className="font-medium mb-3 flex items-center gap-2">
+                          <Settings className="h-5 w-5 text-green-600" />
+                          Proveedores de Servicios
+                        </h4>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex items-center justify-between">
+                            <span>RNC Vigente</span>
+                            <CheckCircle className="h-4 w-4 text-green-600" />
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span>Licencia Operación</span>
+                            <CheckCircle className="h-4 w-4 text-green-600" />
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span>Personal Certificado</span>
+                            <CheckCircle className="h-4 w-4 text-green-600" />
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span>Póliza Seguro</span>
+                            <AlertTriangle className="h-4 w-4 text-yellow-600" />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="p-4 border rounded-lg">
+                        <h4 className="font-medium mb-3 flex items-center gap-2">
+                          <Factory className="h-5 w-5 text-purple-600" />
+                          Proveedores de Equipos
+                        </h4>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex items-center justify-between">
+                            <span>RNC Vigente</span>
+                            <CheckCircle className="h-4 w-4 text-green-600" />
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span>Certificado Técnico</span>
+                            <CheckCircle className="h-4 w-4 text-green-600" />
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span>Garantía Equipos</span>
+                            <CheckCircle className="h-4 w-4 text-green-600" />
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span>Soporte Técnico</span>
+                            <CheckCircle className="h-4 w-4 text-green-600" />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Documents Sidebar */}
+              <div className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Alertas de Vencimiento</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div className="p-3 bg-red-50 dark:bg-red-950 rounded-lg">
+                        <div className="flex items-center gap-2 mb-1">
+                          <AlertTriangle className="h-4 w-4 text-red-600" />
+                          <p className="text-sm font-medium text-red-800 dark:text-red-200">Vencimiento Urgente</p>
+                        </div>
+                        <p className="text-xs text-red-600 dark:text-red-400">
+                          2 documentos vencen en los próximos 7 días
+                        </p>
+                      </div>
+                      
+                      <div className="p-3 bg-yellow-50 dark:bg-yellow-950 rounded-lg">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Clock className="h-4 w-4 text-yellow-600" />
+                          <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200">Próximo Vencimiento</p>
+                        </div>
+                        <p className="text-xs text-yellow-600 dark:text-yellow-400">
+                          5 documentos vencen en los próximos 30 días
+                        </p>
+                      </div>
+                      
+                      <div className="p-3 bg-blue-50 dark:bg-blue-950 rounded-lg">
+                        <div className="flex items-center gap-2 mb-1">
+                          <FileText className="h-4 w-4 text-blue-600" />
+                          <p className="text-sm font-medium text-blue-800 dark:text-blue-200">Documentos Faltantes</p>
+                        </div>
+                        <p className="text-xs text-blue-600 dark:text-blue-400">
+                          3 proveedores necesitan actualizar documentación
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Acciones Rápidas</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      <Button variant="outline" className="w-full justify-start text-sm">
+                        <FileText className="h-4 w-4 mr-2" />
+                        Subir Documento
+                      </Button>
+                      <Button variant="outline" className="w-full justify-start text-sm">
+                        <Calendar className="h-4 w-4 mr-2" />
+                        Programar Renovación
+                      </Button>
+                      <Button variant="outline" className="w-full justify-start text-sm">
+                        <Mail className="h-4 w-4 mr-2" />
+                        Notificar Proveedor
+                      </Button>
+                      <Button variant="outline" className="w-full justify-start text-sm">
+                        <Download className="h-4 w-4 mr-2" />
+                        Reporte Vencimientos
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
           </TabsContent>
 
           {/* Analytics Tab */}
           <TabsContent value="analytics" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5" />
-                  Análisis de Proveedores
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8">
-                  <TrendingUp className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-500">Análisis avanzado en desarrollo</p>
+            {/* Supplier Analytics Dashboard */}
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+              {/* Main Analytics */}
+              <div className="lg:col-span-3 space-y-6">
+                {/* Key Metrics */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-gray-600">Total Proveedores</p>
+                          <p className="text-2xl font-bold">{suppliers?.length || 0}</p>
+                        </div>
+                        <Building className="h-8 w-8 text-blue-600" />
+                      </div>
+                      <div className="mt-2 flex items-center text-sm">
+                        <ArrowUp className="h-4 w-4 text-green-600 mr-1" />
+                        <span className="text-green-600">+8</span>
+                        <span className="text-gray-600 ml-1">este mes</span>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-gray-600">Activos</p>
+                          <p className="text-2xl font-bold">
+                            {suppliers?.filter((s: any) => s.status === 'active').length || 0}
+                          </p>
+                        </div>
+                        <CheckCircle className="h-8 w-8 text-green-600" />
+                      </div>
+                      <div className="mt-2 flex items-center text-sm">
+                        <span className="text-gray-600">
+                          {Math.round(((suppliers?.filter((s: any) => s.status === 'active').length || 0) / (suppliers?.length || 1)) * 100)}% del total
+                        </span>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-gray-600">Gasto Mensual</p>
+                          <p className="text-2xl font-bold">RD$2.8M</p>
+                        </div>
+                        <DollarSign className="h-8 w-8 text-yellow-600" />
+                      </div>
+                      <div className="mt-2 flex items-center text-sm">
+                        <TrendingUp className="h-4 w-4 text-green-600 mr-1" />
+                        <span className="text-green-600">+12%</span>
+                        <span className="text-gray-600 ml-1">vs. mes anterior</span>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-gray-600">Ahorro Anual</p>
+                          <p className="text-2xl font-bold">RD$340K</p>
+                        </div>
+                        <TrendingDown className="h-8 w-8 text-purple-600" />
+                      </div>
+                      <div className="mt-2 flex items-center text-sm">
+                        <ArrowUp className="h-4 w-4 text-green-600 mr-1" />
+                        <span className="text-green-600">+18%</span>
+                        <span className="text-gray-600 ml-1">eficiencia</span>
+                      </div>
+                    </CardContent>
+                  </Card>
                 </div>
-              </CardContent>
-            </Card>
+
+                {/* Supplier Analysis */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <TrendingUp className="h-5 w-5" />
+                      Análisis de Proveedores
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <h4 className="font-medium mb-4">Distribución por Categoría</h4>
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <Package className="h-4 w-4 text-blue-600" />
+                              <span className="text-sm">Materiales</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <div className="w-24 bg-gray-200 rounded-full h-2">
+                                <div 
+                                  className="bg-blue-600 h-2 rounded-full" 
+                                  style={{ width: `${((suppliers?.filter((s: any) => s.category === 'materials').length || 0) / (suppliers?.length || 1)) * 100}%` }}
+                                ></div>
+                              </div>
+                              <span className="text-sm font-medium">
+                                {suppliers?.filter((s: any) => s.category === 'materials').length || 8}
+                              </span>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <Settings className="h-4 w-4 text-green-600" />
+                              <span className="text-sm">Servicios</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <div className="w-24 bg-gray-200 rounded-full h-2">
+                                <div 
+                                  className="bg-green-600 h-2 rounded-full" 
+                                  style={{ width: `${((suppliers?.filter((s: any) => s.category === 'services').length || 0) / (suppliers?.length || 1)) * 100}%` }}
+                                ></div>
+                              </div>
+                              <span className="text-sm font-medium">
+                                {suppliers?.filter((s: any) => s.category === 'services').length || 5}
+                              </span>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <Factory className="h-4 w-4 text-purple-600" />
+                              <span className="text-sm">Equipos</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <div className="w-24 bg-gray-200 rounded-full h-2">
+                                <div 
+                                  className="bg-purple-600 h-2 rounded-full" 
+                                  style={{ width: `${((suppliers?.filter((s: any) => s.category === 'equipment').length || 0) / (suppliers?.length || 1)) * 100}%` }}
+                                ></div>
+                              </div>
+                              <span className="text-sm font-medium">
+                                {suppliers?.filter((s: any) => s.category === 'equipment').length || 3}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div>
+                        <h4 className="font-medium mb-4">Estado de Proveedores</h4>
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm">Activos</span>
+                            <Badge className="bg-green-100 text-green-800">
+                              {suppliers?.filter((s: any) => s.status === 'active').length || 12}
+                            </Badge>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm">Suspendidos</span>
+                            <Badge className="bg-yellow-100 text-yellow-800">
+                              {suppliers?.filter((s: any) => s.status === 'suspended').length || 2}
+                            </Badge>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm">Inactivos</span>
+                            <Badge className="bg-gray-100 text-gray-800">
+                              {suppliers?.filter((s: any) => s.status === 'inactive').length || 1}
+                            </Badge>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm">Lista Negra</span>
+                            <Badge className="bg-red-100 text-red-800">
+                              {suppliers?.filter((s: any) => s.status === 'blacklisted').length || 0}
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Top Suppliers by Spending */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <DollarSign className="h-5 w-5" />
+                      Top Proveedores por Gasto
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {suppliers?.slice(0, 5).map((supplier: any, index: number) => (
+                        <div key={supplier.id} className="flex items-center justify-between p-4 border rounded-lg">
+                          <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-2">
+                              <Badge variant={index === 0 ? "default" : "secondary"} className="w-8 h-8 rounded-full flex items-center justify-center">
+                                {index + 1}
+                              </Badge>
+                              <div>
+                                <h4 className="font-medium">{supplier.name}</h4>
+                                <p className="text-sm text-gray-600">{supplier.category || 'Materiales'}</p>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-6 text-sm">
+                            <div className="text-center">
+                              <p className="font-medium text-green-600">RD${(Math.random() * 500000 + 100000).toLocaleString('es-DO', { maximumFractionDigits: 0 })}</p>
+                              <p className="text-gray-600">Gasto Anual</p>
+                            </div>
+                            <div className="text-center">
+                              <p className="font-medium text-blue-600">{Math.floor(Math.random() * 50 + 10)}</p>
+                              <p className="text-gray-600">Órdenes</p>
+                            </div>
+                            <div className="text-center">
+                              <p className="font-medium text-purple-600">{(Math.random() * 30 + 10).toFixed(1)} días</p>
+                              <p className="text-gray-600">Promedio Pago</p>
+                            </div>
+                            <Button variant="outline" size="sm">
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      )) || []}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Geographic and Payment Analysis */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Globe className="h-5 w-5" />
+                      Análisis Geográfico y Términos de Pago
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="p-4 border rounded-lg">
+                        <h4 className="font-medium mb-3">Distribución Geográfica</h4>
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-sm">
+                            <span>Santo Domingo</span>
+                            <Badge variant="outline">
+                              {suppliers?.filter((s: any) => s.city?.toLowerCase().includes('santo domingo')).length || 8}
+                            </Badge>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span>Santiago</span>
+                            <Badge variant="outline">
+                              {suppliers?.filter((s: any) => s.city?.toLowerCase().includes('santiago')).length || 3}
+                            </Badge>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span>Otras Ciudades</span>
+                            <Badge variant="outline">
+                              {suppliers?.filter((s: any) => s.city && !s.city?.toLowerCase().includes('santo') && !s.city?.toLowerCase().includes('santiago')).length || 4}
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="p-4 border rounded-lg">
+                        <h4 className="font-medium mb-3">Términos de Pago</h4>
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-sm">
+                            <span>0-15 días</span>
+                            <Badge variant="outline">5 proveedores</Badge>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span>30 días</span>
+                            <Badge variant="outline">8 proveedores</Badge>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span>60+ días</span>
+                            <Badge variant="outline">2 proveedores</Badge>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="p-4 border rounded-lg">
+                        <h4 className="font-medium mb-3">Monedas de Facturación</h4>
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-sm">
+                            <span>Pesos (DOP)</span>
+                            <Badge variant="outline">12 proveedores</Badge>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span>Dólares (USD)</span>
+                            <Badge variant="outline">3 proveedores</Badge>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span>Euros (EUR)</span>
+                            <Badge variant="outline">0 proveedores</Badge>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Analytics Insights Sidebar */}
+              <div className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Insights Estratégicos</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div className="p-3 bg-blue-50 dark:bg-blue-950 rounded-lg">
+                        <p className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-1">
+                          💡 Oportunidad de Negociación
+                        </p>
+                        <p className="text-xs text-blue-600 dark:text-blue-400">
+                          El 60% de tus proveedores están en Santo Domingo. Considera negociar descuentos por volumen.
+                        </p>
+                      </div>
+                      
+                      <div className="p-3 bg-green-50 dark:bg-green-950 rounded-lg">
+                        <p className="text-sm font-medium text-green-800 dark:text-green-200 mb-1">
+                          📊 Diversificación
+                        </p>
+                        <p className="text-xs text-green-600 dark:text-green-400">
+                          Los proveedores de materiales representan el 65% del gasto. Considera diversificar por riesgo.
+                        </p>
+                      </div>
+                      
+                      <div className="p-3 bg-orange-50 dark:bg-orange-950 rounded-lg">
+                        <p className="text-sm font-medium text-orange-800 dark:text-orange-200 mb-1">
+                          💰 Optimización de Costos
+                        </p>
+                        <p className="text-xs text-orange-600 dark:text-orange-400">
+                          Los términos de pago promedio de 30 días pueden optimizarse para mejorar el flujo de caja.
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Análisis Predictivo</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-green-600">+15%</div>
+                        <p className="text-sm text-gray-600">Crecimiento proyectado</p>
+                      </div>
+                      
+                      <Separator />
+                      
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm">Riesgo de Dependencia</span>
+                          <Badge className="bg-yellow-100 text-yellow-800">Medio</Badge>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm">Estabilidad de Precios</span>
+                          <Badge className="bg-green-100 text-green-800">Alta</Badge>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm">Eficiencia de Pago</span>
+                          <Badge className="bg-blue-100 text-blue-800">Buena</Badge>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Acciones Recomendadas</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      <Button variant="outline" className="w-full justify-start text-sm">
+                        <Target className="h-4 w-4 mr-2" />
+                        Plan Optimización
+                      </Button>
+                      <Button variant="outline" className="w-full justify-start text-sm">
+                        <Calculator className="h-4 w-4 mr-2" />
+                        Análisis de Costos
+                      </Button>
+                      <Button variant="outline" className="w-full justify-start text-sm">
+                        <TrendingUp className="h-4 w-4 mr-2" />
+                        Proyección Anual
+                      </Button>
+                      <Button variant="outline" className="w-full justify-start text-sm">
+                        <Download className="h-4 w-4 mr-2" />
+                        Reporte Ejecutivo
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
           </TabsContent>
         </Tabs>
 

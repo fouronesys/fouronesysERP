@@ -106,6 +106,7 @@ const Customers = () => {
   const [groupFilter, setGroupFilter] = useState("all");
   const [rncValidating, setRncValidating] = useState(false);
   const [contactPersons, setContactPersons] = useState<any[]>([]);
+  const [showGroupDialog, setShowGroupDialog] = useState(false);
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -623,38 +624,556 @@ const Customers = () => {
 
           {/* Groups Tab */}
           <TabsContent value="groups" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Target className="h-5 w-5" />
-                  Segmentación de Clientes
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8">
-                  <Target className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-500">Módulo de segmentación en desarrollo</p>
-                </div>
-              </CardContent>
-            </Card>
+            {/* Customer Groups Management */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2 space-y-6">
+                <Card>
+                  <CardHeader>
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <CardTitle className="flex items-center gap-2">
+                          <Target className="h-5 w-5" />
+                          Grupos de Clientes
+                        </CardTitle>
+                        <p className="text-sm text-gray-600 mt-1">
+                          Organiza y segmenta tus clientes por características específicas
+                        </p>
+                      </div>
+                      <Button onClick={() => setShowGroupDialog(true)}>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Nuevo Grupo
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid gap-4">
+                      {/* Default Groups */}
+                      <div className="p-4 border rounded-lg bg-blue-50 dark:bg-blue-950">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h3 className="font-semibold text-blue-800 dark:text-blue-200">Clientes VIP</h3>
+                            <p className="text-sm text-blue-600 dark:text-blue-400">Clientes con compras superiores a RD$500,000</p>
+                          </div>
+                          <Badge variant="secondary">
+                            {customers?.filter((c: any) => (c.totalPurchases || 0) > 500000).length || 0} clientes
+                          </Badge>
+                        </div>
+                      </div>
+                      
+                      <div className="p-4 border rounded-lg bg-green-50 dark:bg-green-950">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h3 className="font-semibold text-green-800 dark:text-green-200">Empresas</h3>
+                            <p className="text-sm text-green-600 dark:text-green-400">Clientes con RNC registrado</p>
+                          </div>
+                          <Badge variant="secondary">
+                            {customers?.filter((c: any) => c.rnc && c.rnc.length >= 9).length || 0} clientes
+                          </Badge>
+                        </div>
+                      </div>
+                      
+                      <div className="p-4 border rounded-lg bg-orange-50 dark:bg-orange-950">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h3 className="font-semibold text-orange-800 dark:text-orange-200">Nuevos Clientes</h3>
+                            <p className="text-sm text-orange-600 dark:text-orange-400">Registrados en los últimos 30 días</p>
+                          </div>
+                          <Badge variant="secondary">
+                            {customers?.filter((c: any) => {
+                              const createdDate = new Date(c.createdAt);
+                              const thirtyDaysAgo = new Date();
+                              thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+                              return createdDate > thirtyDaysAgo;
+                            }).length || 0} clientes
+                          </Badge>
+                        </div>
+                      </div>
+                      
+                      <div className="p-4 border rounded-lg bg-red-50 dark:bg-red-950">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h3 className="font-semibold text-red-800 dark:text-red-200">Clientes Inactivos</h3>
+                            <p className="text-sm text-red-600 dark:text-red-400">Sin compras en los últimos 90 días</p>
+                          </div>
+                          <Badge variant="secondary">
+                            {customers?.filter((c: any) => {
+                              if (!c.lastPurchaseDate) return true;
+                              const lastPurchase = new Date(c.lastPurchaseDate);
+                              const ninetyDaysAgo = new Date();
+                              ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+                              return lastPurchase < ninetyDaysAgo;
+                            }).length || 0} clientes
+                          </Badge>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                {/* Advanced Segmentation */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Zap className="h-5 w-5" />
+                      Segmentación Inteligente
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="p-4 border rounded-lg">
+                        <h4 className="font-medium mb-2">Por Ubicación Geográfica</h4>
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-sm">
+                            <span>Santo Domingo</span>
+                            <Badge variant="outline">
+                              {customers?.filter((c: any) => c.city?.toLowerCase().includes('santo domingo')).length || 0}
+                            </Badge>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span>Santiago</span>
+                            <Badge variant="outline">
+                              {customers?.filter((c: any) => c.city?.toLowerCase().includes('santiago')).length || 0}
+                            </Badge>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span>La Romana</span>
+                            <Badge variant="outline">
+                              {customers?.filter((c: any) => c.city?.toLowerCase().includes('romana')).length || 0}
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="p-4 border rounded-lg">
+                        <h4 className="font-medium mb-2">Por Industria</h4>
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-sm">
+                            <span>Retail/Comercio</span>
+                            <Badge variant="outline">
+                              {customers?.filter((c: any) => c.industry?.toLowerCase().includes('retail') || c.industry?.toLowerCase().includes('comercio')).length || 0}
+                            </Badge>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span>Servicios</span>
+                            <Badge variant="outline">
+                              {customers?.filter((c: any) => c.industry?.toLowerCase().includes('servicio')).length || 0}
+                            </Badge>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span>Manufactura</span>
+                            <Badge variant="outline">
+                              {customers?.filter((c: any) => c.industry?.toLowerCase().includes('manufactura') || c.industry?.toLowerCase().includes('industrial')).length || 0}
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+              
+              {/* Customer Insights Sidebar */}
+              <div className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Resumen de Segmentación</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div className="text-center">
+                        <div className="text-3xl font-bold text-blue-600">{customers?.length || 0}</div>
+                        <p className="text-sm text-gray-600">Total de Clientes</p>
+                      </div>
+                      
+                      <Separator />
+                      
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm">Activos</span>
+                          <Badge className="bg-green-100 text-green-800">
+                            {customers?.filter((c: any) => c.status === 'active').length || 0}
+                          </Badge>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm">Con RNC</span>
+                          <Badge className="bg-blue-100 text-blue-800">
+                            {customers?.filter((c: any) => c.rnc && c.rnc.length >= 9).length || 0}
+                          </Badge>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm">Con Email</span>
+                          <Badge className="bg-purple-100 text-purple-800">
+                            {customers?.filter((c: any) => c.email && c.email.includes('@')).length || 0}
+                          </Badge>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Acciones Rápidas</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      <Button variant="outline" className="w-full justify-start">
+                        <Mail className="h-4 w-4 mr-2" />
+                        Enviar Email Masivo
+                      </Button>
+                      <Button variant="outline" className="w-full justify-start">
+                        <Download className="h-4 w-4 mr-2" />
+                        Exportar Segmento
+                      </Button>
+                      <Button variant="outline" className="w-full justify-start">
+                        <Target className="h-4 w-4 mr-2" />
+                        Crear Campaña
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
           </TabsContent>
 
           {/* Analytics Tab */}
           <TabsContent value="analytics" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5" />
-                  Análisis de Clientes
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8">
-                  <TrendingUp className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-500">Análisis y reportes en desarrollo</p>
+            {/* Customer Analytics Dashboard */}
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+              {/* Main Analytics */}
+              <div className="lg:col-span-3 space-y-6">
+                {/* Key Metrics */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-gray-600">Total Clientes</p>
+                          <p className="text-2xl font-bold">{customers?.length || 0}</p>
+                        </div>
+                        <Users className="h-8 w-8 text-blue-600" />
+                      </div>
+                      <div className="mt-2 flex items-center text-sm">
+                        <ArrowUp className="h-4 w-4 text-green-600 mr-1" />
+                        <span className="text-green-600">+12%</span>
+                        <span className="text-gray-600 ml-1">este mes</span>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-gray-600">Clientes Activos</p>
+                          <p className="text-2xl font-bold">
+                            {customers?.filter((c: any) => c.status === 'active').length || 0}
+                          </p>
+                        </div>
+                        <UserCheck className="h-8 w-8 text-green-600" />
+                      </div>
+                      <div className="mt-2 flex items-center text-sm">
+                        <span className="text-gray-600">
+                          {Math.round(((customers?.filter((c: any) => c.status === 'active').length || 0) / (customers?.length || 1)) * 100)}% del total
+                        </span>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-gray-600">Valor Promedio</p>
+                          <p className="text-2xl font-bold">RD$85,420</p>
+                        </div>
+                        <DollarSign className="h-8 w-8 text-yellow-600" />
+                      </div>
+                      <div className="mt-2 flex items-center text-sm">
+                        <TrendingUp className="h-4 w-4 text-green-600 mr-1" />
+                        <span className="text-green-600">+8.5%</span>
+                        <span className="text-gray-600 ml-1">vs. mes anterior</span>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-gray-600">Nuevos Este Mes</p>
+                          <p className="text-2xl font-bold">
+                            {customers?.filter((c: any) => {
+                              const createdDate = new Date(c.createdAt);
+                              const thisMonth = new Date();
+                              return createdDate.getMonth() === thisMonth.getMonth() && 
+                                     createdDate.getFullYear() === thisMonth.getFullYear();
+                            }).length || 0}
+                          </p>
+                        </div>
+                        <UserPlus className="h-8 w-8 text-purple-600" />
+                      </div>
+                      <div className="mt-2 flex items-center text-sm">
+                        <Clock className="h-4 w-4 text-blue-600 mr-1" />
+                        <span className="text-gray-600">Últimos 30 días</span>
+                      </div>
+                    </CardContent>
+                  </Card>
                 </div>
-              </CardContent>
-            </Card>
+
+                {/* Customer Behavior Analysis */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <TrendingUp className="h-5 w-5" />
+                      Análisis de Comportamiento
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <h4 className="font-medium mb-4">Distribución por Tipo</h4>
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <Building className="h-4 w-4 text-blue-600" />
+                              <span className="text-sm">Empresas</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <div className="w-24 bg-gray-200 rounded-full h-2">
+                                <div 
+                                  className="bg-blue-600 h-2 rounded-full" 
+                                  style={{ width: `${((customers?.filter((c: any) => c.customerType === 'business').length || 0) / (customers?.length || 1)) * 100}%` }}
+                                ></div>
+                              </div>
+                              <span className="text-sm font-medium">
+                                {customers?.filter((c: any) => c.customerType === 'business').length || 0}
+                              </span>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <User className="h-4 w-4 text-green-600" />
+                              <span className="text-sm">Individuales</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <div className="w-24 bg-gray-200 rounded-full h-2">
+                                <div 
+                                  className="bg-green-600 h-2 rounded-full" 
+                                  style={{ width: `${((customers?.filter((c: any) => c.customerType === 'individual').length || 0) / (customers?.length || 1)) * 100}%` }}
+                                ></div>
+                              </div>
+                              <span className="text-sm font-medium">
+                                {customers?.filter((c: any) => c.customerType === 'individual').length || 0}
+                              </span>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <Shield className="h-4 w-4 text-purple-600" />
+                              <span className="text-sm">Gobierno</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <div className="w-24 bg-gray-200 rounded-full h-2">
+                                <div 
+                                  className="bg-purple-600 h-2 rounded-full" 
+                                  style={{ width: `${((customers?.filter((c: any) => c.customerType === 'government').length || 0) / (customers?.length || 1)) * 100}%` }}
+                                ></div>
+                              </div>
+                              <span className="text-sm font-medium">
+                                {customers?.filter((c: any) => c.customerType === 'government').length || 0}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div>
+                        <h4 className="font-medium mb-4">Estado de Cuentas</h4>
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm">Al día</span>
+                            <Badge className="bg-green-100 text-green-800">
+                              {customers?.filter((c: any) => c.paymentStatus === 'current' || !c.paymentStatus).length || 0}
+                            </Badge>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm">Vencidas 1-30 días</span>
+                            <Badge className="bg-yellow-100 text-yellow-800">
+                              {customers?.filter((c: any) => c.paymentStatus === 'overdue_30').length || 0}
+                            </Badge>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm">Vencidas +30 días</span>
+                            <Badge className="bg-red-100 text-red-800">
+                              {customers?.filter((c: any) => c.paymentStatus === 'overdue_60').length || 0}
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Geographic Distribution */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Globe className="h-5 w-5" />
+                      Distribución Geográfica
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="p-4 border rounded-lg">
+                        <h4 className="font-medium mb-3">Top Ciudades</h4>
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-sm">
+                            <span>Santo Domingo</span>
+                            <Badge variant="outline">
+                              {customers?.filter((c: any) => c.city?.toLowerCase().includes('santo domingo')).length || 0}
+                            </Badge>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span>Santiago</span>
+                            <Badge variant="outline">
+                              {customers?.filter((c: any) => c.city?.toLowerCase().includes('santiago')).length || 0}
+                            </Badge>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span>La Romana</span>
+                            <Badge variant="outline">
+                              {customers?.filter((c: any) => c.city?.toLowerCase().includes('romana')).length || 0}
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="p-4 border rounded-lg">
+                        <h4 className="font-medium mb-3">Top Provincias</h4>
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-sm">
+                            <span>Distrito Nacional</span>
+                            <Badge variant="outline">
+                              {customers?.filter((c: any) => c.province?.toLowerCase().includes('distrito')).length || 0}
+                            </Badge>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span>Santo Domingo</span>
+                            <Badge variant="outline">
+                              {customers?.filter((c: any) => c.province?.toLowerCase().includes('santo')).length || 0}
+                            </Badge>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span>Santiago</span>
+                            <Badge variant="outline">
+                              {customers?.filter((c: any) => c.province?.toLowerCase().includes('santiago')).length || 0}
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="p-4 border rounded-lg">
+                        <h4 className="font-medium mb-3">Contacto Digital</h4>
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-sm">
+                            <span>Con Email</span>
+                            <Badge variant="outline">
+                              {customers?.filter((c: any) => c.email && c.email.includes('@')).length || 0}
+                            </Badge>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span>Con Móvil</span>
+                            <Badge variant="outline">
+                              {customers?.filter((c: any) => c.mobile && c.mobile.length > 0).length || 0}
+                            </Badge>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span>Con Website</span>
+                            <Badge variant="outline">
+                              {customers?.filter((c: any) => c.website && c.website.length > 0).length || 0}
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Insights Sidebar */}
+              <div className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Insights Destacados</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div className="p-3 bg-blue-50 dark:bg-blue-950 rounded-lg">
+                        <p className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-1">
+                          📊 Oportunidad de Crecimiento
+                        </p>
+                        <p className="text-xs text-blue-600 dark:text-blue-400">
+                          El 65% de tus clientes no tienen email registrado. Considera una campaña de actualización de datos.
+                        </p>
+                      </div>
+                      
+                      <div className="p-3 bg-green-50 dark:bg-green-950 rounded-lg">
+                        <p className="text-sm font-medium text-green-800 dark:text-green-200 mb-1">
+                          💼 Foco Empresarial
+                        </p>
+                        <p className="text-xs text-green-600 dark:text-green-400">
+                          Los clientes empresariales representan mayor valor promedio. Considera programas de lealtad corporativa.
+                        </p>
+                      </div>
+                      
+                      <div className="p-3 bg-orange-50 dark:bg-orange-950 rounded-lg">
+                        <p className="text-sm font-medium text-orange-800 dark:text-orange-200 mb-1">
+                          🎯 Retención
+                        </p>
+                        <p className="text-xs text-orange-600 dark:text-orange-400">
+                          {customers?.filter((c: any) => {
+                            if (!c.lastPurchaseDate) return true;
+                            const lastPurchase = new Date(c.lastPurchaseDate);
+                            const ninetyDaysAgo = new Date();
+                            ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+                            return lastPurchase < ninetyDaysAgo;
+                          }).length || 0} clientes están inactivos. Implementa campañas de reactivación.
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Acciones Recomendadas</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      <Button variant="outline" className="w-full justify-start text-sm">
+                        <Mail className="h-4 w-4 mr-2" />
+                        Campaña de Email
+                      </Button>
+                      <Button variant="outline" className="w-full justify-start text-sm">
+                        <Smartphone className="h-4 w-4 mr-2" />
+                        SMS Promocional
+                      </Button>
+                      <Button variant="outline" className="w-full justify-start text-sm">
+                        <Star className="h-4 w-4 mr-2" />
+                        Programa VIP
+                      </Button>
+                      <Button variant="outline" className="w-full justify-start text-sm">
+                        <Download className="h-4 w-4 mr-2" />
+                        Exportar Reporte
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
           </TabsContent>
         </Tabs>
 

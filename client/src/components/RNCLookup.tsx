@@ -96,11 +96,19 @@ export const RNCLookup = ({
   });
 
   // Company search query for suggestions
-  const { data: suggestions = [], isLoading: isLoadingSuggestions } = useQuery({
+  const { data: searchResponse, isLoading: isLoadingSuggestions } = useQuery({
     queryKey: ['/api/dgii/search-companies', searchTerm],
+    queryFn: async () => {
+      if (!searchTerm || searchTerm.length < 3) return { success: false, data: [] };
+      const response = await apiRequest(`/api/dgii/search-companies?q=${encodeURIComponent(searchTerm)}`);
+      return response;
+    },
     enabled: showSuggestions && searchTerm.length >= 3,
     staleTime: 30000, // Cache for 30 seconds
   });
+
+  // Extract suggestions from response
+  const suggestions = (searchResponse as any)?.success ? (searchResponse as any).data || [] : [];
 
   // Debounced RNC validation
   const debouncedValidateRNC = useCallback(
