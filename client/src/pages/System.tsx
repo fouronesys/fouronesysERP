@@ -153,12 +153,12 @@ export default function System() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className={`text-2xl font-bold ${getStatusColor(systemInfo?.status || "unknown")}`}>
-              {systemInfo?.status === "healthy" ? "Saludable" : 
-               systemInfo?.status === "warning" ? "Advertencia" : "Error"}
+            <div className={`text-2xl font-bold ${getStatusColor((systemInfo as any)?.status || "unknown")}`}>
+              {(systemInfo as any)?.status === "healthy" ? "Saludable" : 
+               (systemInfo as any)?.status === "warning" ? "Advertencia" : "Error"}
             </div>
             <p className="text-xs text-muted-foreground">
-              Uptime: {systemInfo?.uptime || "0h"}
+              Uptime: {(systemInfo as any)?.uptime || "0h"}
             </p>
           </CardContent>
         </Card>
@@ -172,7 +172,7 @@ export default function System() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {systemInfo?.database?.connections || 0}/{systemInfo?.database?.maxConnections || 100}
+              {(systemInfo as any)?.database?.connections || 0}/{(systemInfo as any)?.database?.maxConnections || 100}
             </div>
             <p className="text-xs text-muted-foreground">
               Conexiones activas
@@ -189,11 +189,11 @@ export default function System() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {systemInfo?.storage?.usedPercentage || 0}%
+              {(systemInfo as any)?.storage?.usedPercentage || 0}%
             </div>
-            <Progress value={systemInfo?.storage?.usedPercentage || 0} className="mt-2" />
+            <Progress value={(systemInfo as any)?.storage?.usedPercentage || 0} className="mt-2" />
             <p className="text-xs text-muted-foreground mt-1">
-              {formatBytes(systemInfo?.storage?.used || 0)} / {formatBytes(systemInfo?.storage?.total || 0)}
+              {formatBytes((systemInfo as any)?.storage?.used || 0)} / {formatBytes((systemInfo as any)?.storage?.total || 0)}
             </p>
           </CardContent>
         </Card>
@@ -207,10 +207,10 @@ export default function System() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {systemInfo?.performance?.cpu || 0}%
+              {(systemInfo as any)?.performance?.cpu || 0}%
             </div>
             <p className="text-xs text-muted-foreground">
-              RAM: {systemInfo?.performance?.memory || 0}%
+              RAM: {(systemInfo as any)?.performance?.memory || 0}%
             </p>
           </CardContent>
         </Card>
@@ -238,7 +238,7 @@ export default function System() {
                   <Label htmlFor="system-name">Nombre del Sistema</Label>
                   <Input
                     id="system-name"
-                    value={systemConfig?.name || "Four One Solutions"}
+                    value={(systemConfig as any)?.name || "Four One Solutions"}
                     onChange={(e) => updateConfigMutation.mutate({ name: e.target.value })}
                   />
                 </div>
@@ -246,7 +246,7 @@ export default function System() {
                 <div className="space-y-2">
                   <Label htmlFor="timezone">Zona Horaria</Label>
                   <Select 
-                    value={systemConfig?.timezone || "America/Santo_Domingo"}
+                    value={(systemConfig as any)?.timezone || "America/Santo_Domingo"}
                     onValueChange={(value) => updateConfigMutation.mutate({ timezone: value })}
                   >
                     <SelectTrigger>

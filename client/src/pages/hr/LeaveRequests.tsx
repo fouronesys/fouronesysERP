@@ -180,11 +180,11 @@ export default function LeaveRequests() {
   };
 
   const filteredRequests = filterStatus === "all" 
-    ? leaveRequests 
-    : leaveRequests.filter((req: any) => req.status === filterStatus);
+    ? (leaveRequests as any) || []
+    : ((leaveRequests as any) || []).filter((req: any) => req.status === filterStatus);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 h-screen overflow-y-auto max-h-screen p-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Solicitudes de Vacaciones</h1>
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
@@ -310,8 +310,8 @@ export default function LeaveRequests() {
             <CardTitle className="text-sm font-medium">Días Disponibles</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{leaveBalance?.available || 0}</div>
-            <p className="text-xs text-muted-foreground">de {leaveBalance?.total || 0} días totales</p>
+            <div className="text-2xl font-bold">{(leaveBalance as any)?.available || 0}</div>
+            <p className="text-xs text-muted-foreground">de {(leaveBalance as any)?.total || 0} días totales</p>
           </CardContent>
         </Card>
 
@@ -320,7 +320,7 @@ export default function LeaveRequests() {
             <CardTitle className="text-sm font-medium">Días Usados</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{leaveBalance?.used || 0}</div>
+            <div className="text-2xl font-bold">{(leaveBalance as any)?.used || 0}</div>
             <p className="text-xs text-muted-foreground">este año</p>
           </CardContent>
         </Card>
@@ -330,7 +330,7 @@ export default function LeaveRequests() {
             <CardTitle className="text-sm font-medium">Pendientes</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{leaveBalance?.pending || 0}</div>
+            <div className="text-2xl font-bold">{(leaveBalance as any)?.pending || 0}</div>
             <p className="text-xs text-muted-foreground">días en revisión</p>
           </CardContent>
         </Card>
@@ -340,7 +340,7 @@ export default function LeaveRequests() {
             <CardTitle className="text-sm font-medium">Próximas Vacaciones</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{leaveBalance?.upcoming || 0}</div>
+            <div className="text-2xl font-bold">{(leaveBalance as any)?.upcoming || 0}</div>
             <p className="text-xs text-muted-foreground">días aprobados</p>
           </CardContent>
         </Card>

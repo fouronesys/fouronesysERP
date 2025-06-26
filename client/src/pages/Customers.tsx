@@ -468,7 +468,7 @@ export default function Customers() {
           </DialogHeader>
           {editingCustomer && (
             <CustomerForm
-              defaultValues={editingCustomer}
+              defaultValues={editingCustomer as any}
               onSubmit={(data) => updateMutation.mutate({ id: editingCustomer.id, data })}
               isLoading={updateMutation.isPending}
             />

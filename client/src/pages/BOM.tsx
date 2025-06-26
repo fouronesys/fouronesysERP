@@ -61,11 +61,14 @@ export default function BOM() {
 
   const createBOMMutation = useMutation({
     mutationFn: async (data: BOMFormData) => {
-      return apiRequest("POST", "/api/bom", {
-        productId: parseInt(data.productId),
-        materialId: parseInt(data.materialId),
-        quantity: parseFloat(data.quantity),
-        unit: data.unit,
+      return apiRequest("/api/bom", {
+        method: "POST",
+        body: {
+          productId: parseInt(data.productId),
+          materialId: parseInt(data.materialId),
+          quantity: parseFloat(data.quantity),
+          unit: data.unit,
+        },
       });
     },
     onSuccess: () => {
@@ -89,11 +92,14 @@ export default function BOM() {
 
   const updateBOMMutation = useMutation({
     mutationFn: async (data: BOMFormData) => {
-      return apiRequest("PATCH", `/api/bom/${editingBOM?.id}`, {
-        productId: parseInt(data.productId),
-        materialId: parseInt(data.materialId),
-        quantity: parseFloat(data.quantity),
-        unit: data.unit,
+      return apiRequest(`/api/bom/${editingBOM?.id}`, {
+        method: "PATCH",
+        body: {
+          productId: parseInt(data.productId),
+          materialId: parseInt(data.materialId),
+          quantity: parseFloat(data.quantity),
+          unit: data.unit,
+        },
       });
     },
     onSuccess: () => {
@@ -118,7 +124,9 @@ export default function BOM() {
 
   const deleteBOMMutation = useMutation({
     mutationFn: async (bomId: number) => {
-      return apiRequest("DELETE", `/api/bom/${bomId}`, {});
+      return apiRequest(`/api/bom/${bomId}`, {
+        method: "DELETE",
+      });
     },
     onSuccess: () => {
       toast({
@@ -184,10 +192,10 @@ export default function BOM() {
   };
 
   return (
-    <div className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900">
+    <div className="h-screen overflow-y-auto space-y-6 p-6 max-h-screen">
       <Header title="Lista de Materiales (BOM)" subtitle="Gestiona las recetas y materiales de productos manufacturados" />
       
-      <div className="px-2 sm:px-4 lg:px-6 py-4 pb-24 space-y-6">
+      <div className="space-y-6">
         {/* Product Selection */}
         <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
           <CardHeader>
@@ -454,7 +462,7 @@ export default function BOM() {
                         </thead>
                         <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                           {filteredBOMItems.map((bomItem) => {
-                            const totalCost = bomItem.quantity * (bomItem.material?.price || 0);
+                            const totalCost = parseFloat(bomItem.quantity.toString()) * parseFloat(bomItem.material?.price?.toString() || "0");
                             const isAvailable = (bomItem.material?.stock || 0) >= bomItem.quantity;
                             
                             return (
@@ -471,7 +479,7 @@ export default function BOM() {
                                   {bomItem.quantity} {bomItem.unit}
                                 </td>
                                 <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                                  {formatCurrency(bomItem.material?.price || 0)}
+                                  {formatCurrency(parseFloat(bomItem.material?.price?.toString() || "0"))}
                                 </td>
                                 <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
                                   {formatCurrency(totalCost)}
@@ -517,7 +525,7 @@ export default function BOM() {
                     {/* Mobile Cards */}
                     <div className="lg:hidden space-y-4">
                       {filteredBOMItems.map((bomItem) => {
-                        const totalCost = bomItem.quantity * (bomItem.material?.price || 0);
+                        const totalCost = parseFloat(bomItem.quantity.toString()) * parseFloat(bomItem.material?.price?.toString() || "0");
                         const isAvailable = (bomItem.material?.stock || 0) >= bomItem.quantity;
                         
                         return (

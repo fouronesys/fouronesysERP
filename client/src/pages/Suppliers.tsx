@@ -276,11 +276,11 @@ export default function Suppliers() {
     });
   };
 
-  const filteredSuppliers = suppliers.filter((supplier: any) =>
+  const filteredSuppliers = Array.isArray(suppliers) ? (suppliers as any[]).filter((supplier: any) =>
     supplier.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     supplier.rnc?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     supplier.email?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  ) : [];
 
   const getPaymentTermsLabel = (terms: string) => {
     const labels: Record<string, string> = {
@@ -294,7 +294,7 @@ export default function Suppliers() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 h-screen overflow-y-auto max-h-screen p-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Proveedores</h1>
         <Dialog open={isAddDialogOpen || !!editingSupplier} onOpenChange={(open) => {

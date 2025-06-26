@@ -110,8 +110,7 @@ const navigation = [
     feature: "fiscal",
     children: [
       { name: "Gestión de NCF", href: "/ncf-management", icon: CreditCard, feature: "fiscal.ncf" },
-      { name: "Reportes DGII", href: "/dgii-reports", icon: FileText, feature: "fiscal.reports" },
-      { name: "Gestión Fiscal", href: "/fiscal-management", icon: Calculator, feature: "fiscal.management" }
+      { name: "Reportes DGII", href: "/dgii-reports", icon: FileText, feature: "fiscal.reports" }
     ]
   },
   {

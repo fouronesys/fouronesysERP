@@ -176,26 +176,26 @@ export default function TimeTracking() {
                   <Activity className="h-5 w-5 text-muted-foreground" />
                   <span className="font-medium">Estado:</span>
                 </div>
-                <Badge className={getStatusColor(currentStatus?.status || "out")}>
-                  {currentStatus?.status === "working" ? "Trabajando" :
-                   currentStatus?.status === "break" ? "En descanso" : "Fuera"}
+                <Badge className={getStatusColor((currentStatus as any)?.status || "out")}>
+                  {(currentStatus as any)?.status === "working" ? "Trabajando" :
+                   (currentStatus as any)?.status === "break" ? "En descanso" : "Fuera"}
                 </Badge>
               </div>
               
-              {currentStatus?.clockInTime && (
+              {(currentStatus as any)?.clockInTime && (
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <LogIn className="h-5 w-5 text-muted-foreground" />
                     <span>Entrada:</span>
                   </div>
                   <span className="font-mono">
-                    {format(new Date(currentStatus.clockInTime), "HH:mm")}
+                    {format(new Date((currentStatus as any).clockInTime), "HH:mm")}
                   </span>
                 </div>
               )}
 
               <div className="flex gap-2 mt-4">
-                {!currentStatus?.status || currentStatus?.status === "out" ? (
+                {!(currentStatus as any)?.status || (currentStatus as any)?.status === "out" ? (
                   <Button 
                     onClick={() => clockInMutation.mutate()}
                     disabled={clockInMutation.isPending}
@@ -204,7 +204,7 @@ export default function TimeTracking() {
                     <LogIn className="mr-2 h-4 w-4" />
                     Marcar Entrada
                   </Button>
-                ) : currentStatus?.status === "working" ? (
+                ) : (currentStatus as any)?.status === "working" ? (
                   <>
                     <Button 
                       onClick={() => breakStartMutation.mutate()}
@@ -225,7 +225,7 @@ export default function TimeTracking() {
                       Marcar Salida
                     </Button>
                   </>
-                ) : currentStatus?.status === "break" && (
+                ) : (currentStatus as any)?.status === "break" && (
                   <Button 
                     onClick={() => breakEndMutation.mutate()}
                     disabled={breakEndMutation.isPending}
@@ -249,11 +249,11 @@ export default function TimeTracking() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm text-muted-foreground">Total Trabajado</p>
-                  <p className="text-2xl font-bold">{calculateTotalHours(timeRecords)}</p>
+                  <p className="text-2xl font-bold">{calculateTotalHours((timeRecords as any) || [])}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Registros</p>
-                  <p className="text-2xl font-bold">{timeRecords.length}</p>
+                  <p className="text-2xl font-bold">{(timeRecords as any)?.length || 0}</p>
                 </div>
               </div>
             </div>
@@ -277,7 +277,7 @@ export default function TimeTracking() {
         <CardContent>
           {isLoading ? (
             <div className="text-center py-4">Cargando registros...</div>
-          ) : timeRecords.length === 0 ? (
+          ) : ((timeRecords as any) || []).length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <Clock className="h-12 w-12 mx-auto mb-4 opacity-20" />
               <p>No hay registros para esta fecha</p>
@@ -296,7 +296,7 @@ export default function TimeTracking() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {timeRecords.map((record: any) => (
+                {((timeRecords as any) || []).map((record: any) => (
                   <TableRow key={record.id}>
                     <TableCell>
                       <div className="flex items-center gap-2">

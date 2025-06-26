@@ -1233,7 +1233,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             if (product && product.stock !== null) {
               const currentStock = parseInt(product.stock?.toString() || "0");
               const newStock = Math.max(0, currentStock - parseInt(item.quantity));
-              await storage.updateProduct(parseInt(item.productId), { stock: newStock.toString() }, company.id);
+              await storage.updateProduct(parseInt(item.productId), { stock: newStock }, company.id);
             }
           } catch (stockError) {
             console.error("Error updating stock for product:", item.productId, stockError);
@@ -1528,7 +1528,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const product = await storage.getProduct(finalProductId, company.id);
         if (product && product.stock !== null && product.stock !== undefined) {
           const currentStock = parseInt(String(product.stock) || "0");
-          const newStock = currentStock - quantityDifference;
+          const newStock = Math.floor(currentStock - quantityDifference);
           
           if (newStock < 0) {
             return res.status(400).json({ 
@@ -1536,7 +1536,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             });
           }
           
-          await storage.updateProduct(finalProductId, { stock: newStock.toString() }, company.id);
+          await storage.updateProduct(finalProductId, { stock: newStock }, company.id);
         }
         
         // Update existing item quantity
@@ -1562,7 +1562,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
         
-        await storage.updateProduct(finalProductId, { stock: newStock.toString() }, company.id);
+        await storage.updateProduct(finalProductId, { stock: newStock }, company.id);
       }
 
       // For consumable products, check material availability
@@ -1617,14 +1617,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Calculate stock adjustment based on quantity change
-      const oldQuantity = parseInt(cartItem.quantity);
+      const oldQuantity = parseInt(cartItem.quantity.toString());
       const newQuantity = parseInt(quantity);
       const quantityDifference = newQuantity - oldQuantity;
 
       // Adjust stock if product tracks inventory (for regular products)
       if (product.stock !== null && product.stock !== undefined) {
         const currentStock = parseInt(product.stock?.toString() || "0");
-        const newStock = currentStock - quantityDifference; // Subtract difference from stock
+        const newStock = Math.floor(currentStock - quantityDifference); // Subtract difference from stock
         
         // Check if we have enough stock for the increase
         if (quantityDifference > 0 && newStock < 0) {
@@ -1633,7 +1633,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
         
-        await storage.updateProduct(cartItem.productId, { stock: newStock.toString() }, company.id);
+        await storage.updateProduct(cartItem.productId, { stock: newStock }, company.id);
       }
 
       // For consumable products, check material availability for the new quantity
@@ -1680,10 +1680,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (product && product.stock !== null && product.stock !== undefined) {
         // Restore stock when removing from cart
         const currentStock = parseInt(product.stock?.toString() || "0");
-        const quantityToRestore = parseInt(cartItem.quantity);
-        const newStock = currentStock + quantityToRestore;
+        const quantityToRestore = parseFloat(cartItem.quantity.toString());
+        const newStock = Math.floor(currentStock + quantityToRestore);
         
-        await storage.updateProduct(cartItem.productId, { stock: newStock.toString() }, company.id);
+        await storage.updateProduct(cartItem.productId, { stock: newStock }, company.id);
       }
 
       await storage.removePOSCartItem(cartId);
@@ -1716,7 +1716,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { id } = req.params;
 
       const success = await storage.removePOSCartItem(parseInt(id));
-      if (!success) {
+      if (success === undefined || success === null) {
         return res.status(404).json({ message: "Cart item not found" });
       }
 
@@ -2349,8 +2349,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Generate professional HTML invoice
       const htmlContent = await InvoiceHTMLService.generateInvoiceHTML(
-        invoice,
-        customer,
+        {
+          ...invoice,
+          selectiveConsumptionTax: "0",
+          otherTaxes: "0"
+        },
+        customer as any,
         company,
         invoiceItems
       );
@@ -2390,7 +2394,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Generate professional HTML invoice
       const htmlContent = await InvoiceHTMLService.generateInvoiceHTML(
         invoice,
-        customer,
+        customer as any,
         company,
         items
       );

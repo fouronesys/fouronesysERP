@@ -42,7 +42,7 @@ import Notifications from "@/pages/Notifications";
 import Settings from "@/pages/Settings";
 import Employees from "@/pages/Employees";
 import Payroll from "@/pages/Payroll";
-import FiscalManagement from "@/pages/FiscalManagement";
+
 import AIInsights from "@/pages/AIInsights";
 import SubscriptionPlans from "@/pages/SubscriptionPlans";
 import CompanyAnalytics from "@/pages/CompanyAnalytics";
@@ -304,7 +304,7 @@ function Router() {
           <Route path="/suppliers" component={Suppliers} />
           <Route path="/ncf-management" component={NCFManagement} />
           <Route path="/dgii-reports" component={DGIIReports} />
-          <Route path="/fiscal-management" component={FiscalManagement} />
+
           <Route path="/accounting" component={Accounting} />
           <Route path="/accounting/chart-of-accounts" component={ChartOfAccounts} />
           <Route path="/accounting/journal-entries" component={JournalEntries} />

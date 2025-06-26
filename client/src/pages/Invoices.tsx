@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import {
   Card,
   CardContent,
@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Table,
   TableBody,
@@ -24,7 +25,9 @@ import {
   Send,
   Calendar,
   DollarSign,
-  Eye
+  Eye,
+  Plus,
+  Minus
 } from "lucide-react";
 import {
   Select,
@@ -33,18 +36,85 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { format } from "date-fns";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Invoices() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const [dateRange, setDateRange] = useState({
     start: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0],
     end: new Date().toISOString().split('T')[0]
   });
+  const [invoiceData, setInvoiceData] = useState({
+    customerId: "",
+    date: new Date().toISOString().split('T')[0],
+    dueDate: new Date(Date.now() + 30*24*60*60*1000).toISOString().split('T')[0],
+    notes: "",
+    items: [{ productId: "", quantity: 1, price: 0, description: "" }]
+  });
+  const { toast } = useToast();
 
   const { data: invoices = [], isLoading } = useQuery({
     queryKey: ["/api/invoices", filterStatus, dateRange],
+  });
+
+  const { data: customers = [] } = useQuery({
+    queryKey: ["/api/customers"],
+  });
+
+  const { data: products = [] } = useQuery({
+    queryKey: ["/api/products"],
+  });
+
+  const createInvoiceMutation = useMutation({
+    mutationFn: async (data: typeof invoiceData) => {
+      return apiRequest("/api/invoices", {
+        method: "POST",
+        body: {
+          customerId: parseInt(data.customerId),
+          date: data.date,
+          dueDate: data.dueDate,
+          notes: data.notes,
+          items: data.items.map(item => ({
+            productId: parseInt(item.productId),
+            quantity: item.quantity,
+            price: item.price,
+            description: item.description
+          }))
+        }
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Factura creada",
+        description: "La factura ha sido creada exitosamente.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/invoices"] });
+      setShowCreateModal(false);
+      setInvoiceData({
+        customerId: "",
+        date: new Date().toISOString().split('T')[0],
+        dueDate: new Date(Date.now() + 30*24*60*60*1000).toISOString().split('T')[0],
+        notes: "",
+        items: [{ productId: "", quantity: 1, price: 0, description: "" }]
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "No se pudo crear la factura.",
+        variant: "destructive",
+      });
+    },
   });
 
   const getStatusColor = (status: string) => {
@@ -78,10 +148,10 @@ export default function Invoices() {
   }) : [];
 
   return (
-    <div className="space-y-6">
+    <div className="h-screen overflow-y-auto space-y-6 p-6 max-h-screen">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Facturas</h1>
-        <Button>
+        <Button onClick={() => setShowCreateModal(true)}>
           <FileText className="mr-2 h-4 w-4" />
           Nueva Factura
         </Button>
@@ -221,6 +291,184 @@ export default function Invoices() {
           )}
         </CardContent>
       </Card>
+
+      {/* Create Invoice Modal */}
+      <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Crear Nueva Factura</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-6 py-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="customer">Cliente</Label>
+                <Select value={invoiceData.customerId} onValueChange={(value) => setInvoiceData(prev => ({ ...prev, customerId: value }))}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar cliente" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Array.isArray(customers) && customers.map((customer: any) => (
+                      <SelectItem key={customer.id} value={customer.id.toString()}>
+                        {customer.name} - {customer.rnc || customer.cedula}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="date">Fecha</Label>
+                <Input
+                  id="date"
+                  type="date"
+                  value={invoiceData.date}
+                  onChange={(e) => setInvoiceData(prev => ({ ...prev, date: e.target.value }))}
+                />
+              </div>
+              <div>
+                <Label htmlFor="dueDate">Fecha de Vencimiento</Label>
+                <Input
+                  id="dueDate"
+                  type="date"
+                  value={invoiceData.dueDate}
+                  onChange={(e) => setInvoiceData(prev => ({ ...prev, dueDate: e.target.value }))}
+                />
+              </div>
+              <div>
+                <Label htmlFor="notes">Notas</Label>
+                <Input
+                  id="notes"
+                  value={invoiceData.notes}
+                  onChange={(e) => setInvoiceData(prev => ({ ...prev, notes: e.target.value }))}
+                  placeholder="Notas adicionales"
+                />
+              </div>
+            </div>
+
+            <div>
+              <div className="flex justify-between items-center mb-4">
+                <Label>Productos/Servicios</Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setInvoiceData(prev => ({
+                    ...prev,
+                    items: [...prev.items, { productId: "", quantity: 1, price: 0, description: "" }]
+                  }))}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Agregar Item
+                </Button>
+              </div>
+              
+              <div className="space-y-3">
+                {invoiceData.items.map((item, index) => (
+                  <div key={index} className="grid grid-cols-1 md:grid-cols-5 gap-2 p-3 border rounded">
+                    <div>
+                      <Select 
+                        value={item.productId} 
+                        onValueChange={(value) => {
+                          const product = Array.isArray(products) ? products.find((p: any) => p.id.toString() === value) : null;
+                          setInvoiceData(prev => ({
+                            ...prev,
+                            items: prev.items.map((itm, idx) => idx === index ? {
+                              ...itm,
+                              productId: value,
+                              price: product?.price || 0,
+                              description: product?.name || ""
+                            } : itm)
+                          }));
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Producto" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Array.isArray(products) && products.map((product: any) => (
+                            <SelectItem key={product.id} value={product.id.toString()}>
+                              {product.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Input
+                        type="number"
+                        value={item.quantity}
+                        onChange={(e) => setInvoiceData(prev => ({
+                          ...prev,
+                          items: prev.items.map((itm, idx) => idx === index ? { ...itm, quantity: parseInt(e.target.value) || 1 } : itm)
+                        }))}
+                        placeholder="Cant."
+                        min="1"
+                      />
+                    </div>
+                    <div>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={item.price}
+                        onChange={(e) => setInvoiceData(prev => ({
+                          ...prev,
+                          items: prev.items.map((itm, idx) => idx === index ? { ...itm, price: parseFloat(e.target.value) || 0 } : itm)
+                        }))}
+                        placeholder="Precio"
+                      />
+                    </div>
+                    <div>
+                      <Input
+                        value={item.description}
+                        onChange={(e) => setInvoiceData(prev => ({
+                          ...prev,
+                          items: prev.items.map((itm, idx) => idx === index ? { ...itm, description: e.target.value } : itm)
+                        }))}
+                        placeholder="Descripción"
+                      />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">
+                        ${(item.quantity * item.price).toFixed(2)}
+                      </span>
+                      {invoiceData.items.length > 1 && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setInvoiceData(prev => ({
+                            ...prev,
+                            items: prev.items.filter((_, idx) => idx !== index)
+                          }))}
+                        >
+                          <Minus className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-4 text-right">
+                <div className="text-lg font-semibold">
+                  Total: ${invoiceData.items.reduce((sum, item) => sum + (item.quantity * item.price), 0).toFixed(2)}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3">
+              <Button variant="outline" onClick={() => setShowCreateModal(false)}>
+                Cancelar
+              </Button>
+              <Button 
+                onClick={() => createInvoiceMutation.mutate(invoiceData)}
+                disabled={!invoiceData.customerId || invoiceData.items.length === 0 || createInvoiceMutation.isPending}
+              >
+                Crear Factura
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
