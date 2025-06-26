@@ -112,31 +112,172 @@ export const companies = pgTable("companies", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// Customers
+// Customers - Enhanced for complete ERP functionality
 export const customers = pgTable("customers", {
   id: serial("id").primaryKey(),
+  // Basic Information
+  code: varchar("code", { length: 50 }).unique(),
   name: varchar("name", { length: 255 }).notNull(),
-  email: varchar("email", { length: 255 }),
-  phone: varchar("phone", { length: 20 }),
-  address: text("address"),
+  businessName: varchar("business_name", { length: 255 }),
+  type: varchar("type", { length: 20 }).notNull().default("individual"), // individual, company
+  
+  // Identification
   rnc: varchar("rnc", { length: 20 }),
   cedula: varchar("cedula", { length: 15 }),
-  type: varchar("type", { length: 20 }).notNull().default("individual"), // individual, company
+  passportNumber: varchar("passport_number", { length: 50 }),
+  
+  // Contact Information
+  email: varchar("email", { length: 255 }),
+  phone: varchar("phone", { length: 20 }),
+  mobile: varchar("mobile", { length: 20 }),
+  fax: varchar("fax", { length: 20 }),
+  website: varchar("website", { length: 255 }),
+  
+  // Address Information
+  address: text("address"),
+  billingAddress: text("billing_address"),
+  shippingAddress: text("shipping_address"),
+  city: varchar("city", { length: 100 }),
+  state: varchar("state", { length: 100 }),
+  country: varchar("country", { length: 100 }).default("República Dominicana"),
+  postalCode: varchar("postal_code", { length: 20 }),
+  
+  // Business Information
+  industry: varchar("industry", { length: 100 }),
+  employeeCount: varchar("employee_count", { length: 50 }),
+  annualRevenue: decimal("annual_revenue", { precision: 15, scale: 2 }),
+  taxRegime: varchar("tax_regime", { length: 50 }),
+  
+  // Sales Information
+  salesRepId: varchar("sales_rep_id").references(() => users.id),
+  territory: varchar("territory", { length: 100 }),
+  customerGroup: varchar("customer_group", { length: 100 }),
+  priceList: varchar("price_list", { length: 50 }),
+  
+  // Payment Information
+  paymentTerms: integer("payment_terms").default(30), // days
+  creditLimit: decimal("credit_limit", { precision: 15, scale: 2 }).default("0"),
+  paymentMethod: varchar("payment_method", { length: 50 }).default("cash"),
+  currency: varchar("currency", { length: 3 }).default("DOP"),
+  discountPercentage: decimal("discount_percentage", { precision: 5, scale: 2 }).default("0"),
+  
+  // Financial Information
+  currentBalance: decimal("current_balance", { precision: 15, scale: 2 }).default("0"),
+  totalSales: decimal("total_sales", { precision: 15, scale: 2 }).default("0"),
+  lastPurchaseDate: date("last_purchase_date"),
+  
+  // Marketing Information
+  leadSource: varchar("lead_source", { length: 100 }),
+  marketingOptIn: boolean("marketing_opt_in").default(true),
+  preferredContactMethod: varchar("preferred_contact_method", { length: 50 }).default("email"),
+  birthDate: date("birth_date"),
+  
+  // Loyalty Program
+  loyaltyPoints: integer("loyalty_points").default(0),
+  loyaltyTier: varchar("loyalty_tier", { length: 50 }).default("bronze"), // bronze, silver, gold, platinum
+  memberSince: date("member_since"),
+  
+  // Status and Classification
+  status: varchar("status", { length: 20 }).default("active"), // active, inactive, blocked, suspended
+  rating: decimal("rating", { precision: 3, scale: 2 }), // 0-5
+  priority: varchar("priority", { length: 20 }).default("normal"), // low, normal, high, vip
+  tags: text("tags").array(),
+  
+  // Notes
+  internalNotes: text("internal_notes"),
+  publicNotes: text("public_notes"),
+  
+  // Audit Fields
   companyId: integer("company_id").notNull().references(() => companies.id),
+  createdBy: varchar("created_by").references(() => users.id),
+  updatedBy: varchar("updated_by").references(() => users.id),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// Suppliers (manteniendo la tabla original para compatibilidad)
+// Suppliers - Enhanced for complete ERP functionality
 export const suppliers = pgTable("suppliers", {
   id: serial("id").primaryKey(),
+  // Basic Information
+  code: varchar("code", { length: 50 }).unique(),
   name: varchar("name", { length: 255 }).notNull(),
+  businessName: varchar("business_name", { length: 255 }),
+  rnc: varchar("rnc", { length: 20 }),
+  
+  // Contact Information
   email: varchar("email", { length: 255 }),
   phone: varchar("phone", { length: 20 }),
-  address: text("address"),
-  rnc: varchar("rnc", { length: 20 }),
+  mobile: varchar("mobile", { length: 20 }),
+  fax: varchar("fax", { length: 20 }),
+  website: varchar("website", { length: 255 }),
+  
+  // Primary Contact Person
   contactPerson: varchar("contact_person", { length: 255 }),
+  contactPersonPosition: varchar("contact_person_position", { length: 100 }),
+  contactPersonPhone: varchar("contact_person_phone", { length: 20 }),
+  contactPersonEmail: varchar("contact_person_email", { length: 255 }),
+  
+  // Address Information
+  address: text("address"),
+  city: varchar("city", { length: 100 }),
+  state: varchar("state", { length: 100 }),
+  country: varchar("country", { length: 100 }).default("República Dominicana"),
+  postalCode: varchar("postal_code", { length: 20 }),
+  
+  // Business Information
+  supplierType: varchar("supplier_type", { length: 50 }).default("goods"), // goods, services, both
+  category: varchar("category", { length: 100 }), // Materials, Services, Equipment, etc.
+  industry: varchar("industry", { length: 100 }),
+  taxRegime: varchar("tax_regime", { length: 50 }),
+  
+  // Payment Information
+  paymentTerms: integer("payment_terms").default(30), // days
+  paymentMethod: varchar("payment_method", { length: 50 }).default("transfer"), // cash, check, transfer, card
+  creditLimit: decimal("credit_limit", { precision: 15, scale: 2 }).default("0"),
+  currency: varchar("currency", { length: 3 }).default("DOP"),
+  discountPercentage: decimal("discount_percentage", { precision: 5, scale: 2 }).default("0"),
+  
+  // Banking Information
+  bankName: varchar("bank_name", { length: 100 }),
+  bankAccount: varchar("bank_account", { length: 50 }),
+  bankAccountType: varchar("bank_account_type", { length: 20 }), // checking, savings
+  bankRoutingNumber: varchar("bank_routing_number", { length: 20 }),
+  
+  // Financial Information
+  currentBalance: decimal("current_balance", { precision: 15, scale: 2 }).default("0"),
+  totalPurchases: decimal("total_purchases", { precision: 15, scale: 2 }).default("0"),
+  lastPurchaseDate: date("last_purchase_date"),
+  
+  // Compliance & Documents
+  taxId: varchar("tax_id", { length: 50 }),
+  businessLicense: varchar("business_license", { length: 100 }),
+  certifications: text("certifications").array(),
+  
+  // Performance Metrics
+  averageDeliveryTime: integer("average_delivery_time"), // days
+  qualityRating: decimal("quality_rating", { precision: 3, scale: 2 }), // 0-5
+  onTimeDeliveryRate: decimal("on_time_delivery_rate", { precision: 5, scale: 2 }), // percentage
+  
+  // Status and Control
+  status: varchar("status", { length: 20 }).default("active"), // active, inactive, blocked, suspended
+  isVerified: boolean("is_verified").default(false),
+  verificationDate: timestamp("verification_date"),
+  blockedReason: text("blocked_reason"),
+  blockedDate: timestamp("blocked_date"),
+  
+  // Tags and Classification
+  tags: text("tags").array(),
+  priority: varchar("priority", { length: 20 }).default("normal"), // low, normal, high, critical
+  preferredSupplier: boolean("preferred_supplier").default(false),
+  
+  // Notes
+  internalNotes: text("internal_notes"),
+  publicNotes: text("public_notes"),
+  
+  // Audit Fields
   companyId: integer("company_id").notNull().references(() => companies.id),
+  createdBy: varchar("created_by").references(() => users.id),
+  updatedBy: varchar("updated_by").references(() => users.id),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -162,27 +303,124 @@ export const productCategories = pgTable("product_categories", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-// Products
+// Products - Enhanced for complete ERP functionality
 export const products = pgTable("products", {
   id: serial("id").primaryKey(),
-  code: varchar("code", { length: 50 }).notNull(),
+  // Basic Information
+  code: varchar("code", { length: 50 }).notNull().unique(),
   name: varchar("name", { length: 255 }).notNull(),
   description: text("description"),
+  detailedDescription: text("detailed_description"),
+  
+  // Product Type and Classification
+  productType: varchar("product_type", { length: 50 }).notNull().default("product"), // product, raw_material, consumable, service
   categoryId: integer("category_id").references(() => productCategories.id),
+  subcategory: varchar("subcategory", { length: 100 }),
+  brand: varchar("brand", { length: 100 }),
+  model: varchar("model", { length: 100 }),
+  tags: text("tags").array(),
+  
+  // Pricing Information
   price: decimal("price", { precision: 10, scale: 2 }).notNull(),
   cost: decimal("cost", { precision: 10, scale: 2 }),
+  priceList2: decimal("price_list_2", { precision: 10, scale: 2 }), // Wholesale price
+  priceList3: decimal("price_list_3", { precision: 10, scale: 2 }), // Special price
+  minimumPrice: decimal("minimum_price", { precision: 10, scale: 2 }),
+  suggestedPrice: decimal("suggested_price", { precision: 10, scale: 2 }),
+  
+  // Tax Information
+  taxType: varchar("tax_type", { length: 50 }).notNull().default("itbis_18"), // Tax type key
+  taxRate: decimal("tax_rate", { precision: 5, scale: 2 }).default("18"),
+  taxIncluded: boolean("tax_included").default(false),
+  
+  // Inventory Information
   stock: integer("stock").notNull().default(0),
+  availableStock: integer("available_stock").default(0),
+  reservedStock: integer("reserved_stock").default(0),
+  incomingStock: integer("incoming_stock").default(0),
+  unit: varchar("unit", { length: 20 }).notNull().default("unit"),
+  secondaryUnit: varchar("secondary_unit", { length: 20 }),
+  unitConversionFactor: decimal("unit_conversion_factor", { precision: 10, scale: 4 }),
+  
+  // Stock Control
+  trackInventory: boolean("track_inventory").default(true),
   minStock: integer("min_stock").default(0),
   maxStock: integer("max_stock"),
-  unit: varchar("unit", { length: 20 }).notNull().default("unit"),
-  imageUrl: varchar("image_url", { length: 1000 }),
-  isActive: boolean("is_active").notNull().default(true),
-  isManufactured: boolean("is_manufactured").notNull().default(false),
-  isConsumable: boolean("is_consumable").notNull().default(false), // Products that don't track stock, created from BOM
-  productType: varchar("product_type", { length: 20 }).notNull().default("product"), // product, raw_material, consumable
-  taxType: varchar("tax_type", { length: 20 }).notNull().default("itbis_18"), // itbis_18, itbis_16, itbis_8, itbis_0, exempt, selective_consumption
+  reorderPoint: integer("reorder_point").default(0),
+  reorderQuantity: integer("reorder_quantity").default(0),
+  leadTime: integer("lead_time").default(0), // days
+  
+  // Physical Attributes
+  weight: decimal("weight", { precision: 10, scale: 3 }),
+  weightUnit: varchar("weight_unit", { length: 10 }).default("kg"),
+  length: decimal("length", { precision: 10, scale: 2 }),
+  width: decimal("width", { precision: 10, scale: 2 }),
+  height: decimal("height", { precision: 10, scale: 2 }),
+  dimensionUnit: varchar("dimension_unit", { length: 10 }).default("cm"),
+  volume: decimal("volume", { precision: 10, scale: 3 }),
+  
+  // Identification
+  barcode: varchar("barcode", { length: 50 }),
+  sku: varchar("sku", { length: 100 }),
+  ean13: varchar("ean13", { length: 13 }),
+  upc: varchar("upc", { length: 12 }),
+  isbn: varchar("isbn", { length: 13 }),
+  
+  // Location and Storage
+  location: varchar("location", { length: 100 }),
   warehouseId: integer("warehouse_id"),
+  rack: varchar("rack", { length: 50 }),
+  row: varchar("row", { length: 50 }),
+  bin: varchar("bin", { length: 50 }),
+  
+  // Supplier Information
+  preferredSupplierId: integer("preferred_supplier_id").references(() => suppliers.id),
+  supplierCode: varchar("supplier_code", { length: 100 }),
+  manufacturerCode: varchar("manufacturer_code", { length: 100 }),
+  
+  // Sales Information
+  canBeSold: boolean("can_be_sold").default(true),
+  canBePurchased: boolean("can_be_purchased").default(true),
+  saleDescription: text("sale_description"),
+  purchaseDescription: text("purchase_description"),
+  
+  // Manufacturing
+  isManufactured: boolean("is_manufactured").notNull().default(false),
+  isConsumable: boolean("is_consumable").notNull().default(false), // Products that don't track stock
+  isBom: boolean("is_bom").default(false), // Bill of Materials
+  isComponent: boolean("is_component").default(false),
+  productionTime: integer("production_time"), // hours
+  
+  // Images and Media
+  imageUrl: varchar("image_url", { length: 1000 }),
+  thumbnailUrl: varchar("thumbnail_url", { length: 1000 }),
+  gallery: text("gallery").array(), // Additional images
+  
+  // Performance Metrics
+  salesCount: integer("sales_count").default(0),
+  averageRating: decimal("average_rating", { precision: 3, scale: 2 }),
+  reviewCount: integer("review_count").default(0),
+  
+  // Status and Control
+  isActive: boolean("is_active").notNull().default(true),
+  isPublished: boolean("is_published").default(false),
+  publishedAt: timestamp("published_at"),
+  discontinuedAt: timestamp("discontinued_at"),
+  
+  // Notes
+  internalNotes: text("internal_notes"),
+  publicNotes: text("public_notes"),
+  
+  // Warranty and Service
+  warrantyDays: integer("warranty_days").default(0),
+  hasSerialNumber: boolean("has_serial_number").default(false),
+  hasBatchNumber: boolean("has_batch_number").default(false),
+  expirationDays: integer("expiration_days"),
+  
+  // Audit Fields
   companyId: integer("company_id").notNull().references(() => companies.id),
+  createdBy: varchar("created_by").references(() => users.id),
+  updatedBy: varchar("updated_by").references(() => users.id),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

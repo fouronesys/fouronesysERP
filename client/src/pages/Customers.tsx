@@ -1,467 +1,604 @@
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Header } from "@/components/Header";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { queryClient } from "@/lib/queryClient";
+import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Search, Users, Edit, Trash2, Building2, User, Mail, Phone, MapPin, Loader2, CheckCircle, AlertTriangle } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { toast } from "@/hooks/use-toast";
+import { Plus, Search, Edit, Trash2, Phone, Mail, MapPin, Building2, User, CreditCard, Star } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { apiRequest } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { RNCCompanySuggestions } from "@/components/RNCCompanySuggestions";
-import type { Customer } from "@shared/schema";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 
 const customerSchema = z.object({
-  name: z.string().min(1, "El nombre es requerido"),
-  email: z.string().email("Email inválido").optional().or(z.literal("")),
-  phone: z.string().optional(),
-  address: z.string().optional(),
-  type: z.enum(["individual", "company"]),
+  // Basic Information
+  code: z.string().optional(),
+  name: z.string().min(1, "Name is required"),
+  businessName: z.string().optional(),
+  type: z.enum(["individual", "company"]).default("individual"),
+  
+  // Identification
   rnc: z.string().optional(),
   cedula: z.string().optional(),
+  passportNumber: z.string().optional(),
+  
+  // Contact Information
+  email: z.string().email().optional().or(z.literal("")),
+  phone: z.string().optional(),
+  mobile: z.string().optional(),
+  fax: z.string().optional(),
+  website: z.string().optional(),
+  
+  // Address Information
+  address: z.string().optional(),
+  billingAddress: z.string().optional(),
+  shippingAddress: z.string().optional(),
+  city: z.string().optional(),
+  state: z.string().optional(),
+  country: z.string().default("República Dominicana"),
+  postalCode: z.string().optional(),
+  
+  // Business Information
+  industry: z.string().optional(),
+  employeeCount: z.string().optional(),
+  annualRevenue: z.string().optional(),
+  taxRegime: z.string().optional(),
+  
+  // Sales Information
+  salesRepId: z.string().optional(),
+  territory: z.string().optional(),
+  customerGroup: z.string().optional(),
+  priceList: z.string().optional(),
+  
+  // Payment Information
+  paymentTerms: z.number().default(30),
+  creditLimit: z.string().default("0"),
+  paymentMethod: z.enum(["cash", "transfer", "check", "card"]).default("cash"),
+  currency: z.enum(["DOP", "USD", "EUR"]).default("DOP"),
+  discountPercentage: z.string().default("0"),
+  
+  // Marketing Information
+  leadSource: z.string().optional(),
+  marketingOptIn: z.boolean().default(true),
+  preferredContactMethod: z.enum(["email", "phone", "sms", "whatsapp"]).default("email"),
+  birthDate: z.string().optional(),
+  
+  // Loyalty Program
+  loyaltyTier: z.enum(["bronze", "silver", "gold", "platinum"]).default("bronze"),
+  
+  // Status
+  status: z.enum(["active", "inactive", "blocked", "suspended"]).default("active"),
+  priority: z.enum(["low", "normal", "high", "vip"]).default("normal"),
+  rating: z.string().optional(),
+  tags: z.array(z.string()).optional(),
+  
+  // Notes
+  internalNotes: z.string().optional(),
+  publicNotes: z.string().optional(),
 });
 
 type CustomerFormData = z.infer<typeof customerSchema>;
 
+interface Customer {
+  id: number;
+  code?: string;
+  name: string;
+  businessName?: string;
+  type: string;
+  rnc?: string;
+  cedula?: string;
+  email?: string;
+  phone?: string;
+  mobile?: string;
+  address?: string;
+  city?: string;
+  country: string;
+  creditLimit: string;
+  currentBalance: string;
+  totalSales: string;
+  status: string;
+  priority: string;
+  loyaltyTier: string;
+  loyaltyPoints: number;
+  rating?: string;
+  createdAt: string;
+}
+
 export default function Customers() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
-  const [isVerifyingRNC, setIsVerifyingRNC] = useState(false);
-  const [rncVerification, setRncVerification] = useState<{
-    isValid: boolean;
-    rnc: string;
-    companyName?: string;
-    businessName?: string;
-    status?: string;
-    category?: string;
-    regime?: string;
-    message: string;
-    source?: string;
-  } | null>(null);
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const isMobile = useIsMobile();
 
-  const form = useForm<CustomerFormData>({
-    resolver: zodResolver(customerSchema),
-    defaultValues: {
-      name: "",
-      email: "",
-      phone: "",
-      address: "",
-      type: "individual",
-      rnc: "",
-      cedula: "",
-    },
-  });
-
-  const { data: customers = [], isLoading } = useQuery({
+  const { data: customers = [], isLoading } = useQuery<Customer[]>({
     queryKey: ["/api/customers"],
   });
 
-  const createCustomerMutation = useMutation({
-    mutationFn: async (data: CustomerFormData) => {
-      const response = await apiRequest("/api/customers", {
-        method: "POST",
-        body: data
-      });
-      return response.json();
-    },
+  const createMutation = useMutation({
+    mutationFn: (data: CustomerFormData) => apiRequest("/api/customers", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/customers"] });
-      form.reset();
-      setIsDialogOpen(false);
-      setEditingCustomer(null);
-      setRncVerification(null);
+      setIsCreateOpen(false);
       toast({
-        title: "Cliente creado",
-        description: "El cliente ha sido creado exitosamente",
+        title: "Success",
+        description: "Customer created successfully",
       });
     },
-    onError: (error: Error) => {
-      console.error("Customer creation failed:", error);
-      toast({
-        title: "Error al crear cliente",
-        description: error.message || "Error desconocido al crear el cliente",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const updateCustomerMutation = useMutation({
-    mutationFn: async (data: CustomerFormData) => {
-      if (!editingCustomer) throw new Error("No customer selected");
-      const response = await apiRequest(`/api/customers/${editingCustomer.id}`, {
-        method: "PUT",
-        body: data
-      });
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/customers"] });
-      form.reset();
-      setIsDialogOpen(false);
-      setEditingCustomer(null);
-      setRncVerification(null);
-      toast({
-        title: "Cliente actualizado",
-        description: "El cliente ha sido actualizado exitosamente",
-      });
-    },
-    onError: (error: Error) => {
+    onError: (error: any) => {
       toast({
         title: "Error",
-        description: error.message,
+        description: error.message || "Failed to create customer",
         variant: "destructive",
       });
     },
   });
 
-  const deleteCustomerMutation = useMutation({
-    mutationFn: async (id: number) => {
-      await apiRequest(`/api/customers/${id}`, {
-        method: "DELETE"
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: CustomerFormData }) =>
+      apiRequest(`/api/customers/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify(data),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/customers"] });
+      setEditingCustomer(null);
+      toast({
+        title: "Success",
+        description: "Customer updated successfully",
       });
     },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update customer",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => apiRequest(`/api/customers/${id}`, {
+      method: "DELETE",
+    }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/customers"] });
       toast({
-        title: "Cliente eliminado",
-        description: "El cliente ha sido eliminado exitosamente",
+        title: "Success",
+        description: "Customer deleted successfully",
       });
     },
-    onError: (error: Error) => {
+    onError: (error: any) => {
       toast({
         title: "Error",
-        description: error.message,
+        description: error.message || "Failed to delete customer",
         variant: "destructive",
       });
     },
   });
 
-  const filteredCustomers = (customers as Customer[]).filter((customer: Customer) =>
+  const filteredCustomers = customers.filter(customer =>
     customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     customer.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     customer.rnc?.includes(searchTerm) ||
     customer.cedula?.includes(searchTerm)
   );
 
-  const onSubmit = (data: CustomerFormData) => {
-    if (editingCustomer) {
-      updateCustomerMutation.mutate(data);
-    } else {
-      createCustomerMutation.mutate(data);
-    }
+  const getStatusBadge = (status: string) => {
+    const variants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
+      active: "default",
+      inactive: "secondary",
+      blocked: "destructive",
+      suspended: "outline",
+    };
+    return <Badge variant={variants[status] || "default"}>{status}</Badge>;
   };
 
-  const handleEdit = (customer: Customer) => {
-    setEditingCustomer(customer);
-    form.reset({
-      name: customer.name,
-      email: customer.email || "",
-      phone: customer.phone || "",
-      address: customer.address || "",
-      type: customer.type as "individual" | "company",
-      rnc: customer.rnc || "",
-      cedula: customer.cedula || "",
-    });
-    setRncVerification(null);
-    setIsDialogOpen(true);
+  const getPriorityBadge = (priority: string) => {
+    const variants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
+      vip: "destructive",
+      high: "default",
+      normal: "secondary",
+      low: "outline",
+    };
+    return <Badge variant={variants[priority] || "secondary"}>{priority}</Badge>;
   };
 
-  const handleNewCustomer = () => {
-    setEditingCustomer(null);
-    form.reset({
-      name: "",
-      email: "",
-      phone: "",
-      address: "",
-      type: "individual",
-      rnc: "",
-      cedula: "",
-    });
-    setRncVerification(null);
-    setIsDialogOpen(true);
-  };
-
-  const handleRNCVerification = async (rnc: string) => {
-    if (!rnc || rnc.length < 9) {
-      setRncVerification(null);
-      return;
-    }
-
-    setIsVerifyingRNC(true);
-    try {
-      const response = await apiRequest(`/api/dgii/rnc-lookup?rnc=${encodeURIComponent(rnc)}`);
-      const result = await response.json();
-      
-      if (result.success && result.data) {
-        const verificationResult = {
-          isValid: true,
-          rnc: rnc,
-          companyName: result.data.razonSocial || result.data.name,
-          businessName: result.data.nombreComercial,
-          status: result.data.estado,
-          category: result.data.categoria,
-          regime: result.data.regimen,
-          message: "RNC válido y encontrado en DGII",
-          source: "dgii"
-        };
-        
-        setRncVerification(verificationResult);
-        
-        // Auto-fill company name if RNC is valid and name field is empty
-        if (result.data.razonSocial && !form.getValues("name")) {
-          form.setValue('name', result.data.razonSocial);
-        }
-        
-        toast({
-          title: "RNC Verificado",
-          description: `Empresa: ${result.data.razonSocial || result.data.name}`,
-        });
-      } else {
-        const verificationResult = {
-          isValid: false,
-          rnc: rnc,
-          message: result.message || "RNC no encontrado en DGII",
-          source: "dgii"
-        };
-        
-        setRncVerification(verificationResult);
-        
-        toast({
-          title: "RNC No Encontrado",
-          description: result.message || "RNC no encontrado en DGII",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      console.error('Error verifying RNC:', error);
-      const verificationResult = {
-        isValid: false,
-        rnc: rnc,
-        message: "Error al verificar RNC. Intente nuevamente.",
-        source: "error"
-      };
-      
-      setRncVerification(verificationResult);
-      
-      toast({
-        title: "Error",
-        description: "Error al verificar RNC. Intente nuevamente.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsVerifyingRNC(false);
-    }
-  };
-
-  if (isLoading) {
+  const getLoyaltyBadge = (tier: string) => {
+    const colors: Record<string, string> = {
+      bronze: "bg-orange-500",
+      silver: "bg-gray-400",
+      gold: "bg-yellow-500",
+      platinum: "bg-purple-500",
+    };
     return (
-      <div className="w-full">
-        <Header 
-          title="Clientes" 
-          subtitle="Gestiona tu base de clientes"
-        />
-        <div className="flex items-center justify-center min-h-[400px]">
-          <Loader2 className="h-8 w-8 animate-spin text-border" />
-        </div>
-      </div>
+      <Badge className={`${colors[tier] || "bg-gray-500"} text-white`}>
+        {tier}
+      </Badge>
     );
-  }
+  };
 
   return (
-    <div className="h-screen overflow-y-auto">
-      <div className="container mx-auto p-4 space-y-6 pb-20">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
-              Gestión de Clientes
-            </h1>
-            <p className="text-gray-600 dark:text-gray-400">
-              Administra tu base de clientes y contactos
-            </p>
-          </div>
-        </div>
-        <div className="p-3 sm:p-6 pb-32">
-        {/* Always visible action button */}
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-          Lista de Clientes
-        </h2>
-        <Button onClick={handleNewCustomer} className="bg-blue-600 hover:bg-blue-700 text-white">
-          <Plus className="h-4 w-4 mr-2" />
-          Nuevo Cliente
-        </Button>
+    <div className="container mx-auto py-6">
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold">Customer Management</h1>
+        <p className="text-muted-foreground">Manage your customer relationships and information</p>
       </div>
 
-      <div className="mb-6">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+      <div className="mb-6 flex gap-4">
+        <div className="flex-1 relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
           <Input
-            placeholder="Buscar clientes por nombre, email, RNC o cédula..."
+            placeholder="Search customers by name, email, RNC, or cedula..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10"
           />
         </div>
+        <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+          <DialogTrigger asChild>
+            <Button>
+              <Plus className="mr-2 h-4 w-4" />
+              New Customer
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Create New Customer</DialogTitle>
+              <DialogDescription>
+                Add a new customer to your database with complete information
+              </DialogDescription>
+            </DialogHeader>
+            <CustomerForm
+              onSubmit={(data) => createMutation.mutate(data)}
+              isLoading={createMutation.isPending}
+            />
+          </DialogContent>
+        </Dialog>
       </div>
 
-      {filteredCustomers.length === 0 && !searchTerm ? (
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <Users className="h-12 w-12 text-gray-400 mb-4" />
-            <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2">
-              No hay clientes
-            </h3>
-            <p className="text-gray-500 dark:text-gray-400 mb-4">
-              Comienza agregando tu primer cliente
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium">Total Customers</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{customers.length}</div>
+            <p className="text-xs text-muted-foreground">
+              {customers.filter(c => c.status === "active").length} active
             </p>
-            <Button onClick={handleNewCustomer} className="bg-blue-600 hover:bg-blue-700">
-              <Plus className="h-4 w-4 mr-2" />
-              Agregar Cliente
-            </Button>
           </CardContent>
         </Card>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
-          {filteredCustomers.map((customer) => (
-            <Card key={customer.id} className="hover:shadow-lg transition-shadow">
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className={`p-2 rounded-lg ${
-                      customer.type === "company" 
-                        ? "bg-purple-100 dark:bg-purple-900/20" 
-                        : "bg-green-100 dark:bg-green-900/20"
-                    }`}>
-                      {customer.type === "company" ? (
-                        <Building2 className={`h-4 w-4 ${
-                          customer.type === "company" 
-                            ? "text-purple-600 dark:text-purple-400" 
-                            : "text-green-600 dark:text-green-400"
-                        }`} />
-                      ) : (
-                        <User className="h-4 w-4 text-green-600 dark:text-green-400" />
-                      )}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <CardTitle className="text-sm sm:text-base truncate">{customer.name}</CardTitle>
-                      <Badge 
-                        variant="outline" 
-                        className="text-xs mt-1"
-                      >
-                        {customer.type === "company" ? "Empresa" : "Individual"}
-                      </Badge>
-                    </div>
-                  </div>
-                  
-                  <div className="flex gap-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleEdit(customer)}
-                      className="h-8 w-8 p-0"
-                    >
-                      <Edit className="h-3 w-3" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => deleteCustomerMutation.mutate(customer.id)}
-                      className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
-                  </div>
-                </div>
-              </CardHeader>
-              
-              <CardContent className="pt-0 space-y-2">
-                {customer.email && (
-                  <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
-                    <Mail className="h-3 w-3 flex-shrink-0" />
-                    <span className="truncate">{customer.email}</span>
-                  </div>
-                )}
-                
-                {customer.phone && (
-                  <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
-                    <Phone className="h-3 w-3 flex-shrink-0" />
-                    <span>{customer.phone}</span>
-                  </div>
-                )}
-                
-                {customer.address && (
-                  <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
-                    <MapPin className="h-3 w-3 flex-shrink-0" />
-                    <span className="truncate">{customer.address}</span>
-                  </div>
-                )}
-                
-                {(customer.rnc || customer.cedula) && (
-                  <div className="pt-2 border-t border-gray-100 dark:border-gray-700">
-                    <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
-                      {customer.type === "company" ? "RNC:" : "Cédula:"} {customer.rnc || customer.cedula}
-                    </span>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium">VIP Customers</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {customers.filter(c => c.priority === "vip").length}
+            </div>
+            <p className="text-xs text-muted-foreground">High value clients</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium">Total Sales</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              ${customers.reduce((sum, c) => sum + parseFloat(c.totalSales || "0"), 0).toLocaleString()}
+            </div>
+            <p className="text-xs text-muted-foreground">Lifetime value</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium">Avg Rating</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold flex items-center">
+              <Star className="h-5 w-5 text-yellow-500 mr-1" />
+              {(customers.reduce((sum, c) => sum + parseFloat(c.rating || "0"), 0) / customers.length || 0).toFixed(1)}
+            </div>
+            <p className="text-xs text-muted-foreground">Customer satisfaction</p>
+          </CardContent>
+        </Card>
+      </div>
 
-      {/* Customer Form Dialog */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="w-[95vw] max-w-md sm:max-w-lg max-h-[90vh] overflow-y-auto">
+      <Card>
+        <CardHeader>
+          <CardTitle>Customer List</CardTitle>
+          <CardDescription>
+            View and manage all your customers
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div>Loading customers...</div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Code</TableHead>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Contact</TableHead>
+                  <TableHead>Location</TableHead>
+                  <TableHead>Credit Limit</TableHead>
+                  <TableHead>Balance</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Priority</TableHead>
+                  <TableHead>Loyalty</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredCustomers.map((customer) => (
+                  <TableRow key={customer.id}>
+                    <TableCell className="font-mono text-sm">
+                      {customer.code || `C${customer.id.toString().padStart(5, "0")}`}
+                    </TableCell>
+                    <TableCell>
+                      <div>
+                        <p className="font-medium">{customer.name}</p>
+                        {customer.businessName && (
+                          <p className="text-sm text-muted-foreground">{customer.businessName}</p>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={customer.type === "company" ? "default" : "secondary"}>
+                        {customer.type === "company" ? <Building2 className="h-3 w-3 mr-1" /> : <User className="h-3 w-3 mr-1" />}
+                        {customer.type}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="space-y-1">
+                        {customer.email && (
+                          <div className="flex items-center text-sm">
+                            <Mail className="h-3 w-3 mr-1 text-muted-foreground" />
+                            {customer.email}
+                          </div>
+                        )}
+                        {customer.phone && (
+                          <div className="flex items-center text-sm">
+                            <Phone className="h-3 w-3 mr-1 text-muted-foreground" />
+                            {customer.phone}
+                          </div>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center text-sm">
+                        <MapPin className="h-3 w-3 mr-1 text-muted-foreground" />
+                        {customer.city || "N/A"}, {customer.country}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center">
+                        <CreditCard className="h-3 w-3 mr-1 text-muted-foreground" />
+                        ${parseFloat(customer.creditLimit).toLocaleString()}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      ${parseFloat(customer.currentBalance).toLocaleString()}
+                    </TableCell>
+                    <TableCell>{getStatusBadge(customer.status)}</TableCell>
+                    <TableCell>{getPriorityBadge(customer.priority)}</TableCell>
+                    <TableCell>
+                      <div className="space-y-1">
+                        {getLoyaltyBadge(customer.loyaltyTier)}
+                        <p className="text-xs text-muted-foreground">{customer.loyaltyPoints} pts</p>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setEditingCustomer(customer)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => deleteMutation.mutate(customer.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Edit Dialog */}
+      <Dialog open={!!editingCustomer} onOpenChange={(open) => !open && setEditingCustomer(null)}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>
-              {editingCustomer ? "Editar Cliente" : "Nuevo Cliente"}
-            </DialogTitle>
+            <DialogTitle>Edit Customer</DialogTitle>
+            <DialogDescription>
+              Update customer information and preferences
+            </DialogDescription>
           </DialogHeader>
-          
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          {editingCustomer && (
+            <CustomerForm
+              defaultValues={editingCustomer}
+              onSubmit={(data) => updateMutation.mutate({ id: editingCustomer.id, data })}
+              isLoading={updateMutation.isPending}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+interface CustomerFormProps {
+  defaultValues?: Partial<CustomerFormData>;
+  onSubmit: (data: CustomerFormData) => void;
+  isLoading: boolean;
+}
+
+function CustomerForm({ defaultValues, onSubmit, isLoading }: CustomerFormProps) {
+  const form = useForm<CustomerFormData>({
+    resolver: zodResolver(customerSchema),
+    defaultValues: {
+      name: "",
+      type: "individual",
+      country: "República Dominicana",
+      paymentTerms: 30,
+      creditLimit: "0",
+      paymentMethod: "cash",
+      currency: "DOP",
+      discountPercentage: "0",
+      marketingOptIn: true,
+      preferredContactMethod: "email",
+      loyaltyTier: "bronze",
+      status: "active",
+      priority: "normal",
+      ...defaultValues,
+    },
+  });
+
+  const customerType = form.watch("type");
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <Tabs defaultValue="basic" className="w-full">
+          <TabsList className="grid w-full grid-cols-6">
+            <TabsTrigger value="basic">Basic</TabsTrigger>
+            <TabsTrigger value="contact">Contact</TabsTrigger>
+            <TabsTrigger value="business">Business</TabsTrigger>
+            <TabsTrigger value="payment">Payment</TabsTrigger>
+            <TabsTrigger value="marketing">Marketing</TabsTrigger>
+            <TabsTrigger value="notes">Notes</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="basic" className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
-                name="name"
+                name="type"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Nombre *</FormLabel>
+                    <FormLabel>Customer Type</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select type" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="individual">Individual</SelectItem>
+                        <SelectItem value="company">Company</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="code"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Customer Code</FormLabel>
                     <FormControl>
-                      {form.watch("type") === "company" ? (
-                        <RNCCompanySuggestions
-                          label=""
-                          placeholder="Buscar empresa por nombre..."
-                          value={field.value}
-                          onChange={field.onChange}
-                          onCompanySelect={(company) => {
-                            form.setValue("name", company.name);
-                            form.setValue("rnc", company.rnc);
-                            setRncVerification({
-                              isValid: true,
-                              rnc: company.rnc,
-                              companyName: company.name,
-                              status: company.status,
-                              category: company.category,
-                              message: "Empresa encontrada en el registro DGII",
-                              source: "DGII"
-                            });
-                          }}
-                        />
-                      ) : (
-                        <Input placeholder="Nombre del cliente" {...field} />
-                      )}
+                      <Input placeholder="Auto-generated if empty" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Name *</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter customer name" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {customerType === "company" && (
+              <FormField
+                control={form.control}
+                name="businessName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Business Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Legal business name" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
+            <div className="grid grid-cols-3 gap-4">
+              <FormField
+                control={form.control}
+                name="rnc"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>RNC</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Tax ID" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -470,19 +607,51 @@ export default function Customers() {
 
               <FormField
                 control={form.control}
-                name="type"
+                name="cedula"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Tipo *</FormLabel>
+                    <FormLabel>Cédula</FormLabel>
+                    <FormControl>
+                      <Input placeholder="National ID" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="passportNumber"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Passport</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Passport number" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Status</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Selecciona el tipo" />
+                          <SelectValue placeholder="Select status" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="individual">Individual</SelectItem>
-                        <SelectItem value="company">Empresa</SelectItem>
+                        <SelectItem value="active">Active</SelectItem>
+                        <SelectItem value="inactive">Inactive</SelectItem>
+                        <SelectItem value="blocked">Blocked</SelectItem>
+                        <SelectItem value="suspended">Suspended</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -490,126 +659,34 @@ export default function Customers() {
                 )}
               />
 
-              {form.watch("type") === "company" && (
-                <FormField
-                  control={form.control}
-                  name="rnc"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>RNC</FormLabel>
-                      <div className="flex gap-2">
-                        <FormControl>
-                          <Input 
-                            placeholder="Ej: 101000013" 
-                            {...field}
-                            onChange={(e) => {
-                              field.onChange(e);
-                              if (rncVerification) {
-                                setRncVerification(null);
-                              }
-                            }}
-                            onBlur={(e) => {
-                              const rncValue = e.target.value?.replace(/\D/g, '') || '';
-                              if (rncValue && rncValue.length >= 9) {
-                                handleRNCVerification(rncValue);
-                              }
-                            }}
-                            className={
-                              rncVerification?.isValid === true 
-                                ? "border-green-500 bg-green-50 dark:bg-green-950" 
-                                : rncVerification?.isValid === false 
-                                ? "border-red-500 bg-red-50 dark:bg-red-950" 
-                                : ""
-                            }
-                          />
-                        </FormControl>
-                        
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          disabled={isVerifyingRNC}
-                          onClick={() => {
-                            const cleanRnc = field.value?.replace(/\D/g, '') || '';
-                            if (cleanRnc.length >= 9) {
-                              handleRNCVerification(cleanRnc);
-                            }
-                          }}
-                          className="shrink-0 min-w-[100px] bg-blue-600 text-white hover:bg-blue-700 border-blue-600"
-                        >
-                          {isVerifyingRNC ? (
-                            <>
-                              <Loader2 className="h-4 w-4 animate-spin mr-1" />
-                              Verificando
-                            </>
-                          ) : (
-                            <>
-                              <Search className="h-4 w-4 mr-1" />
-                              Verificar
-                            </>
-                          )}
-                        </Button>
-                      </div>
-                      
-                      {/* Verification Result */}
-                      {rncVerification && (
-                        <div className={`text-sm p-3 rounded-md border mt-2 ${
-                          rncVerification.isValid 
-                            ? 'bg-green-50 text-green-800 dark:bg-green-900 dark:text-green-200 border-green-200 dark:border-green-800' 
-                            : 'bg-red-50 text-red-800 dark:bg-red-900 dark:text-red-200 border-red-200 dark:border-red-800'
-                        }`}>
-                          <div className="flex items-start gap-2">
-                            {rncVerification.isValid ? (
-                              <CheckCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                            ) : (
-                              <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                            )}
-                            <div className="flex-1">
-                              <p className="font-medium">
-                                {rncVerification.isValid ? 'RNC Válido' : 'RNC No Válido'}
-                              </p>
-                              {rncVerification.isValid && rncVerification.companyName && (
-                                <p className="text-xs opacity-90 mt-1">
-                                  <strong>Empresa:</strong> {rncVerification.companyName}
-                                </p>
-                              )}
-                              {rncVerification.isValid && rncVerification.businessName && (
-                                <p className="text-xs opacity-90 mt-1">
-                                  <strong>Nombre Comercial:</strong> {rncVerification.businessName}
-                                </p>
-                              )}
-                              {!rncVerification.isValid && (
-                                <p className="text-xs opacity-90 mt-1">
-                                  {rncVerification.message}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                      
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              )}
-
-              {form.watch("type") === "individual" && (
-                <FormField
-                  control={form.control}
-                  name="cedula"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Cédula</FormLabel>
+              <FormField
+                control={form.control}
+                name="priority"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Priority</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
-                        <Input placeholder="000-0000000-0" {...field} />
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select priority" />
+                        </SelectTrigger>
                       </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              )}
+                      <SelectContent>
+                        <SelectItem value="low">Low</SelectItem>
+                        <SelectItem value="normal">Normal</SelectItem>
+                        <SelectItem value="high">High</SelectItem>
+                        <SelectItem value="vip">VIP</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          </TabsContent>
 
+          <TabsContent value="contact" className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="email"
@@ -617,7 +694,7 @@ export default function Customers() {
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input type="email" placeholder="cliente@ejemplo.com" {...field} />
+                      <Input type="email" placeholder="email@example.com" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -629,9 +706,25 @@ export default function Customers() {
                 name="phone"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Teléfono</FormLabel>
+                    <FormLabel>Phone</FormLabel>
                     <FormControl>
-                      <Input placeholder="(809) 000-0000" {...field} />
+                      <Input placeholder="+1 (809) 555-0123" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="mobile"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Mobile</FormLabel>
+                    <FormControl>
+                      <Input placeholder="+1 (829) 555-0123" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -640,16 +733,274 @@ export default function Customers() {
 
               <FormField
                 control={form.control}
-                name="address"
+                name="fax"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Dirección</FormLabel>
+                    <FormLabel>Fax</FormLabel>
                     <FormControl>
-                      <Textarea 
-                        placeholder="Dirección completa del cliente"
-                        className="resize-none"
-                        rows={2}
+                      <Input placeholder="+1 (809) 555-0124" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <FormField
+              control={form.control}
+              name="website"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Website</FormLabel>
+                  <FormControl>
+                    <Input placeholder="https://example.com" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="address"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Primary Address</FormLabel>
+                  <FormControl>
+                    <Textarea placeholder="Street address" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="billingAddress"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Billing Address</FormLabel>
+                  <FormControl>
+                    <Textarea placeholder="Billing street address" {...field} />
+                  </FormControl>
+                  <FormDescription>Leave empty to use primary address</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="shippingAddress"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Shipping Address</FormLabel>
+                  <FormControl>
+                    <Textarea placeholder="Shipping street address" {...field} />
+                  </FormControl>
+                  <FormDescription>Leave empty to use primary address</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="city"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>City</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Santo Domingo" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="state"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>State/Province</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Distrito Nacional" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="country"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Country</FormLabel>
+                    <FormControl>
+                      <Input placeholder="República Dominicana" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="postalCode"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Postal Code</FormLabel>
+                    <FormControl>
+                      <Input placeholder="10101" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          </TabsContent>
+
+          <TabsContent value="business" className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="industry"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Industry</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Retail, Manufacturing, Services..." {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="employeeCount"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Employee Count</FormLabel>
+                    <FormControl>
+                      <Input placeholder="1-10, 11-50, 51-200..." {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="annualRevenue"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Annual Revenue</FormLabel>
+                    <FormControl>
+                      <Input placeholder="1000000" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="taxRegime"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tax Regime</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Normal, Simplified..." {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="salesRepId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Sales Representative</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Assigned sales rep" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="territory"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Territory</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Sales territory" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="customerGroup"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Customer Group</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Wholesale, Retail..." {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="priceList"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Price List</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Standard, Wholesale..." {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          </TabsContent>
+
+          <TabsContent value="payment" className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="paymentTerms"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Payment Terms (days)</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        placeholder="30"
                         {...field}
+                        onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
                       />
                     </FormControl>
                     <FormMessage />
@@ -657,40 +1008,254 @@ export default function Customers() {
                 )}
               />
 
-              <div className="flex justify-end gap-2 pt-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    setIsDialogOpen(false);
-                    setEditingCustomer(null);
-                    setRncVerification(null);
-                    form.reset();
-                  }}
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={createCustomerMutation.isPending || updateCustomerMutation.isPending}
-                  className="bg-blue-600 hover:bg-blue-700"
-                >
-                  {createCustomerMutation.isPending || updateCustomerMutation.isPending ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                      {editingCustomer ? "Actualizando..." : "Creando..."}
-                    </>
-                  ) : (
-                    editingCustomer ? "Actualizar Cliente" : "Crear Cliente"
-                  )}
-                </Button>
-              </div>
-            </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
+              <FormField
+                control={form.control}
+                name="creditLimit"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Credit Limit</FormLabel>
+                    <FormControl>
+                      <Input placeholder="0.00" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="paymentMethod"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Payment Method</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select method" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="cash">Cash</SelectItem>
+                        <SelectItem value="transfer">Bank Transfer</SelectItem>
+                        <SelectItem value="check">Check</SelectItem>
+                        <SelectItem value="card">Credit Card</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="currency"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Currency</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select currency" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="DOP">DOP - Dominican Peso</SelectItem>
+                        <SelectItem value="USD">USD - US Dollar</SelectItem>
+                        <SelectItem value="EUR">EUR - Euro</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <FormField
+              control={form.control}
+              name="discountPercentage"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Discount Percentage</FormLabel>
+                  <FormControl>
+                    <Input placeholder="0" {...field} />
+                  </FormControl>
+                  <FormDescription>Default discount for this customer</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </TabsContent>
+
+          <TabsContent value="marketing" className="space-y-4">
+            <FormField
+              control={form.control}
+              name="leadSource"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Lead Source</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Website, Referral, Social Media..." {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="marketingOptIn"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                  <div className="space-y-1 leading-none">
+                    <FormLabel>
+                      Marketing Communications
+                    </FormLabel>
+                    <FormDescription>
+                      Customer agrees to receive marketing emails and promotions
+                    </FormDescription>
+                  </div>
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="preferredContactMethod"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Preferred Contact Method</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select method" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="email">Email</SelectItem>
+                      <SelectItem value="phone">Phone</SelectItem>
+                      <SelectItem value="sms">SMS</SelectItem>
+                      <SelectItem value="whatsapp">WhatsApp</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="birthDate"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Birth Date</FormLabel>
+                  <FormControl>
+                    <Input type="date" {...field} />
+                  </FormControl>
+                  <FormDescription>For birthday promotions and offers</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="loyaltyTier"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Loyalty Tier</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select tier" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="bronze">Bronze</SelectItem>
+                      <SelectItem value="silver">Silver</SelectItem>
+                      <SelectItem value="gold">Gold</SelectItem>
+                      <SelectItem value="platinum">Platinum</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="rating"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Customer Rating (0-5)</FormLabel>
+                  <FormControl>
+                    <Input placeholder="4.5" {...field} />
+                  </FormControl>
+                  <FormDescription>Internal rating based on payment history and behavior</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </TabsContent>
+
+          <TabsContent value="notes" className="space-y-4">
+            <FormField
+              control={form.control}
+              name="internalNotes"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Internal Notes</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Private notes visible only to staff..."
+                      className="min-h-[100px]"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    These notes are not visible to the customer
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="publicNotes"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Public Notes</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Notes that may appear on documents..."
+                      className="min-h-[100px]"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    These notes may appear on invoices and other documents
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </TabsContent>
+        </Tabs>
+
+        <div className="flex justify-end gap-4">
+          <Button type="submit" disabled={isLoading}>
+            {isLoading ? "Saving..." : "Save Customer"}
+          </Button>
         </div>
-      </div>
-    </div>
+      </form>
+    </Form>
   );
 }

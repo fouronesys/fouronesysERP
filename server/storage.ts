@@ -4,6 +4,7 @@ import {
   companyUsers,
   warehouses,
   customers,
+  suppliers,
   products,
   invoices,
   invoiceItems,
@@ -200,7 +201,10 @@ export interface IStorage {
   
   // Supplier operations
   getSuppliers(companyId: number): Promise<any[]>;
+  getSupplier(id: number, companyId: number): Promise<any | null>;
   createSupplier(supplier: any): Promise<any>;
+  updateSupplier(id: number, supplier: any): Promise<any>;
+  deleteSupplier(id: number, companyId: number): Promise<void>;
   
   // Purchase Orders operations
   getPurchaseOrders(companyId: number): Promise<any[]>;
@@ -2605,42 +2609,72 @@ export class DatabaseStorage implements IStorage {
   // Purchases Module Implementation
   async getSuppliers(companyId: number): Promise<any[]> {
     try {
-      const result = await db.select().from(customers).where(eq(customers.companyId, companyId));
-      return result.map(customer => ({
-        id: customer.id,
-        name: customer.name,
-        rnc: customer.rnc,
-        email: customer.email,
-        phone: customer.phone,
-        isActive: true,
-        category: "Proveedor",
-        contactPerson: customer.name,
-        currentBalance: "0.00"
-      }));
+      const result = await db.select().from(suppliers).where(eq(suppliers.companyId, companyId));
+      return result;
     } catch (error) {
       console.error("Error fetching suppliers:", error);
       return [];
     }
   }
 
+  async getSupplier(id: number, companyId: number): Promise<any | null> {
+    try {
+      const [result] = await db
+        .select()
+        .from(suppliers)
+        .where(and(eq(suppliers.id, id), eq(suppliers.companyId, companyId)))
+        .limit(1);
+      return result || null;
+    } catch (error) {
+      console.error("Error fetching supplier:", error);
+      return null;
+    }
+  }
+
   async createSupplier(supplier: any): Promise<any> {
     try {
       const [result] = await db
-        .insert(customers)
+        .insert(suppliers)
         .values({
           ...supplier,
           createdAt: new Date(),
           updatedAt: new Date()
         })
         .returning();
-      return {
-        ...result,
-        category: "Proveedor",
-        contactPerson: result.name,
-        currentBalance: "0.00"
-      };
+      return result;
     } catch (error) {
       console.error("Error creating supplier:", error);
+      throw error;
+    }
+  }
+
+  async updateSupplier(id: number, supplierData: any): Promise<any> {
+    try {
+      const [result] = await db
+        .update(suppliers)
+        .set({
+          ...supplierData,
+          updatedAt: new Date()
+        })
+        .where(eq(suppliers.id, id))
+        .returning();
+      return result;
+    } catch (error) {
+      console.error("Error updating supplier:", error);
+      throw error;
+    }
+  }
+
+  async deleteSupplier(id: number, companyId: number): Promise<void> {
+    try {
+      await db
+        .delete(suppliers)
+        .where(and(
+          eq(suppliers.id, id),
+          eq(suppliers.companyId, companyId)
+        ));
+    } catch (error) {
+      console.error("Error deleting supplier:", error);
       throw error;
     }
   }

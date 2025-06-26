@@ -1427,7 +1427,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/suppliers/:id", isAuthenticated, async (req: any, res) => {
     try {
       const supplierId = parseInt(req.params.id);
-      await storage.deleteSupplier(supplierId);
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+      await storage.deleteSupplier(supplierId, company.id);
       res.json({ message: "Supplier deleted successfully" });
     } catch (error) {
       console.error("Error deleting supplier:", error);
