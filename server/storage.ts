@@ -543,10 +543,10 @@ export class DatabaseStorage implements IStorage {
         const now = new Date();
         dataToInsert.subscriptionStartDate = now;
         dataToInsert.subscriptionExpiry = calculateSubscriptionExpiry(
-          companyData.subscriptionPlan || 'trial', 
+          companyData.subscriptionPlan || 'enterprise', 
           now
         );
-        console.log(`[Registration] Setting ${companyData.subscriptionPlan || 'trial'} plan expiry to:`, dataToInsert.subscriptionExpiry);
+        console.log(`[Registration] Setting ${companyData.subscriptionPlan || 'enterprise'} plan expiry to:`, dataToInsert.subscriptionExpiry);
       }
       
       console.log('Final data to insert:', JSON.stringify(dataToInsert, null, 2));

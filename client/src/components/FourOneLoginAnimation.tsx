@@ -194,8 +194,7 @@ export default function FourOneLoginAnimation({ isVisible, onComplete }: FourOne
             );
           })}
         </div>
-
-        {/* Connecting Lines */}
+        {/* Connecting Lines
         <motion.div
           className="flex items-center justify-center space-x-2 mt-4"
           initial={{ opacity: 0 }}
@@ -212,7 +211,7 @@ export default function FourOneLoginAnimation({ isVisible, onComplete }: FourOne
             />
           ))}
         </motion.div>
-
+          */}
         {/* Four One Solutions Logo Text */}
         <AnimatePresence>
           {showLogo && (
