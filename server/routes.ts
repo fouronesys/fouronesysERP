@@ -1784,6 +1784,79 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // POS Customer RNC search endpoint
+  app.post("/api/pos/customers/search-rnc", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      const { rnc } = req.body;
+      
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      if (!rnc) {
+        return res.status(400).json({ message: "RNC is required" });
+      }
+
+      // Clean and validate RNC
+      const cleanRnc = rnc.replace(/\D/g, "");
+      
+      if (cleanRnc.length < 9 || cleanRnc.length > 11) {
+        return res.json({
+          exists: false,
+          valid: false,
+          message: "RNC debe tener entre 9 y 11 dígitos"
+        });
+      }
+
+      // Search for existing customer first
+      const result = await storage.searchCustomerByRNC(cleanRnc, company.id);
+      
+      // If customer exists, return customer data
+      if (result.exists) {
+        return res.json({
+          exists: true,
+          customer: result.customer,
+          valid: true
+        });
+      }
+
+      // If customer doesn't exist, try to validate RNC against DGII registry
+      const rncData = await storage.getRNCFromRegistry(cleanRnc);
+      
+      if (rncData) {
+        return res.json({
+          exists: false,
+          valid: true,
+          rncData: {
+            rnc: cleanRnc,
+            name: rncData.razonSocial,
+            businessName: rncData.razonSocial,
+            commercialName: rncData.nombreComercial,
+            status: rncData.estado || "ACTIVO",
+            category: rncData.categoria || "CONTRIBUYENTE REGISTRADO"
+          }
+        });
+      }
+
+      // RNC not found in registry
+      return res.json({
+        exists: false,
+        valid: false,
+        message: "RNC no encontrado en el registro de DGII"
+      });
+
+    } catch (error) {
+      console.error("Error searching customer by RNC:", error);
+      res.status(500).json({ 
+        exists: false, 
+        valid: false, 
+        message: "Error interno del servidor" 
+      });
+    }
+  });
+
   // POS Sales routes
   app.get("/api/pos/sales", isAuthenticated, async (req: any, res) => {
     try {
