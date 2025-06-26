@@ -288,8 +288,8 @@ const Manufacturing = () => {
 
   if (isLoadingBOMs || isLoadingProducts || isLoadingOrders) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <Header />
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <Header title="Manufactura" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex items-center justify-center h-64">
             <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
@@ -300,17 +300,17 @@ const Manufacturing = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#09090b]">
-      <Header />
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <Header title="Manufactura" />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
                 <Factory className="h-8 w-8 text-blue-600" />
                 Manufactura
               </h1>
-              <p className="text-gray-600 mt-2">
+              <p className="text-gray-600 dark:text-gray-300 mt-2">
                 Gestión de listas de materiales, órdenes de producción y recetas
               </p>
             </div>

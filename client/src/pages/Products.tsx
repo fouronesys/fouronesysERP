@@ -36,7 +36,7 @@ const productSchema = z.object({
     .refine((val) => parseInt(val) >= 0, "El stock mínimo no puede ser negativo"),
   unit: z.string().default("unit"),
   isManufactured: z.boolean().default(false),
-  productType: z.enum(["product", "raw_material"]).default("product"),
+  productType: z.enum(["product", "raw_material", "service", "non_inventoriable"]).default("product"),
   imageUrl: z.string().optional(),
 });
 
@@ -172,13 +172,12 @@ export default function Products() {
 
   const generateImageMutation = useMutation({
     mutationFn: async (data: { productName: string; productCode?: string; description?: string; source?: string }) => {
-      const response = await apiRequest("/api/products/generate-image", {
+      return await apiRequest("/api/products/generate-image", {
         method: "POST",
         body: data
       });
-      return response.json();
     },
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       // Update both form and state to ensure immediate visual update
       form.setValue("imageUrl", data.imageUrl, { shouldDirty: true, shouldTouch: true, shouldValidate: true });
       setCurrentImageUrl(data.imageUrl);
@@ -422,6 +421,8 @@ export default function Products() {
                             <SelectContent>
                               <SelectItem value="product">Producto Final</SelectItem>
                               <SelectItem value="raw_material">Materia Prima</SelectItem>
+                              <SelectItem value="service">Servicio</SelectItem>
+                              <SelectItem value="non_inventoriable">No Inventariable</SelectItem>
                             </SelectContent>
                           </Select>
                           <FormMessage />

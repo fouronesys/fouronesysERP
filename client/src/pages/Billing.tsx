@@ -1,578 +1,352 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Header } from "@/components/Header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Search, FileText, Eye, Edit, Trash2, Calendar, DollarSign, User, Building2, X, ShoppingCart, Printer } from "lucide-react";
-import { useForm, useFieldArray } from "react-hook-form";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { useIsMobile } from "@/hooks/use-mobile";
-import type { Invoice, Customer, Product, Company } from "@shared/schema";
-import { DR_TAX_TYPES } from "@shared/schema";
-import { SEOHead, SEOConfigs } from "@/components/SEOHead";
+import { 
+  FileText, Plus, Search, Edit, Eye, Download, Send, Printer, 
+  Calculator, Users, Package, Calendar, AlertTriangle, CheckCircle,
+  DollarSign, Receipt, Building, User, CreditCard, Clock, Filter,
+  ArrowUp, ArrowDown, RotateCcw, Copy, Trash2, ExternalLink,
+  Building2, MapPin, Phone, Mail
+} from "lucide-react";
 
-const invoiceItemSchema = z.object({
-  productId: z.string().min(1, "Producto requerido"),
-  description: z.string().min(1, "Descripción requerida"),
-  quantity: z.string().min(1, "Cantidad requerida"),
-  unitPrice: z.string().min(1, "Precio unitario requerido"),
-  subtotal: z.string().min(1, "Subtotal requerido"),
-});
-
+// Enhanced Invoice Schema with Dominican Fiscal Requirements
 const invoiceSchema = z.object({
   customerId: z.string().min(1, "El cliente es requerido"),
-  number: z.string().optional(), // Made optional for auto-generation
-  ncfType: z.string().optional(),
-  ncf: z.string().optional(),
-  date: z.string().min(1, "La fecha es requerida"),
-  dueDate: z.string().min(1, "La fecha de vencimiento es requerida"),
-  status: z.enum(["pending", "paid", "overdue"]),
-  items: z.array(invoiceItemSchema).min(1, "Debe agregar al menos un producto"),
-  subtotal: z.string().min(1, "El subtotal es requerido"),
-  tax: z.string().default("0"),
-  total: z.string().min(1, "El total es requerido"),
+  ncfType: z.enum(["B01", "B02", "B14", "B15"], {
+    required_error: "El tipo de NCF es requerido"
+  }),
+  paymentMethod: z.enum(["cash", "credit_card", "debit_card", "check", "bank_transfer", "credit"]).default("cash"),
+  paymentTerms: z.number().min(0).default(0), // days
+  dueDate: z.string().optional(),
+  currency: z.enum(["DOP", "USD", "EUR"]).default("DOP"),
+  exchangeRate: z.number().min(0.01).default(1),
   notes: z.string().optional(),
-  taxType: z.string().default("itbis_18"),
+  internalNotes: z.string().optional(),
+  // Item management will be handled separately
+  items: z.array(z.object({
+    productId: z.string().min(1),
+    description: z.string().min(1),
+    quantity: z.number().min(0.001),
+    unitPrice: z.number().min(0),
+    discount: z.number().min(0).max(100).default(0),
+    taxType: z.enum(["itbis_18", "itbis_0", "exempt"]).default("itbis_18")
+  })).min(1, "Debe agregar al menos un producto")
 });
 
-type InvoiceFormData = z.infer<typeof invoiceSchema>;
+// NCF Status Schema for batch management
+const ncfBatchSchema = z.object({
+  ncfType: z.enum(["B01", "B02", "B14", "B15"]),
+  startNumber: z.number().min(1),
+  endNumber: z.number().min(1),
+  currentNumber: z.number().min(1),
+  authorizationDate: z.string(),
+  expirationDate: z.string(),
+  isActive: z.boolean().default(true)
+});
 
-export default function Billing() {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
+const Billing = () => {
+  const [activeTab, setActiveTab] = useState("invoices");
+  const [showInvoiceDialog, setShowInvoiceDialog] = useState(false);
+  const [showNCFBatchDialog, setShowNCFBatchDialog] = useState(false);
+  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  const [editingInvoice, setEditingInvoice] = useState<any>(null);
+  const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
+  const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
+  const [invoiceItems, setInvoiceItems] = useState<any[]>([]);
+  const [invoiceFilter, setInvoiceFilter] = useState("all");
+  const [paymentStatus, setPaymentStatus] = useState("all");
+
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const isMobile = useIsMobile();
 
-  // Function to handle professional invoice printing
-  const handlePrintProfessionalInvoice = async (invoice: Invoice) => {
-    try {
-      const response = await fetch(`/api/invoices/${invoice.id}/professional`, {
-        method: "GET",
-        credentials: 'include'
-      });
-
-      if (response.ok) {
-        const htmlContent = await response.text();
-        
-        // Open in new window for printing
-        const printWindow = window.open('', '_blank', 'width=800,height=1000,scrollbars=yes,resizable=yes');
-        if (!printWindow) {
-          toast({
-            title: "Error",
-            description: "No se pudo abrir la ventana de impresión. Verifica que no esté bloqueada por tu navegador.",
-            variant: "destructive",
-          });
-          return;
-        }
-
-        printWindow.document.write(htmlContent);
-        printWindow.document.close();
-        printWindow.focus();
-        
-        setTimeout(() => {
-          printWindow.print();
-        }, 500);
-
-        toast({
-          title: "Factura profesional generada",
-          description: "La factura profesional se ha abierto en una nueva ventana.",
-        });
-      } else {
-        throw new Error("Failed to generate professional invoice");
-      }
-    } catch (error) {
-      console.error("Error printing professional invoice:", error);
-      toast({
-        title: "Error",
-        description: "No se pudo generar la factura profesional",
-        variant: "destructive",
-      });
-    }
-  };
-
-  // Function to handle basic invoice printing
-  const handlePrintInvoice = async (invoice: Invoice) => {
-    try {
-      const customer = customers?.find(c => c.id === invoice.customerId);
-      if (!customer) {
-        toast({
-          title: "Error",
-          description: "Cliente no encontrado para la factura",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Generate simple invoice HTML for printing
-      const invoiceHTML = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <title>Factura ${invoice.number}</title>
-          <meta charset="utf-8">
-          <style>
-            body { 
-              font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-              margin: 0; 
-              padding: 40px; 
-              background: white;
-              color: #333;
-              line-height: 1.6;
-            }
-            .header { 
-              text-align: center; 
-              margin-bottom: 40px; 
-              border-bottom: 3px solid #2563eb;
-              padding-bottom: 20px;
-            }
-            .company-name { 
-              font-size: 32px; 
-              font-weight: bold; 
-              color: #2563eb; 
-              margin: 0;
-            }
-            .invoice-title { 
-              font-size: 24px; 
-              color: #1e40af; 
-              margin: 10px 0;
-            }
-            .invoice-info { 
-              display: flex; 
-              justify-content: space-between; 
-              margin-bottom: 30px;
-            }
-            .invoice-details, .customer-details { 
-              flex: 1; 
-              padding: 20px;
-              background: #f8fafc;
-              border-radius: 8px;
-              margin: 0 10px;
-            }
-            .detail-title { 
-              font-weight: bold; 
-              color: #2563eb; 
-              margin-bottom: 10px;
-              font-size: 16px;
-            }
-            .detail-line { 
-              margin-bottom: 8px;
-              font-size: 14px;
-            }
-            .total-section { 
-              margin-top: 40px; 
-              text-align: right;
-              background: #f1f5f9;
-              padding: 30px;
-              border-radius: 8px;
-            }
-            .total-amount { 
-              font-size: 32px; 
-              font-weight: bold; 
-              color: #059669;
-              margin-top: 10px;
-            }
-            .footer {
-              margin-top: 40px;
-              text-align: center;
-              color: #64748b;
-              font-size: 12px;
-              border-top: 1px solid #e2e8f0;
-              padding-top: 20px;
-            }
-            .qr-section {
-              text-align: center;
-              margin: 30px 0;
-              padding: 20px;
-              background: #f8fafc;
-              border-radius: 8px;
-            }
-            @media print {
-              body { padding: 20px; }
-              .invoice-info { flex-direction: column; }
-              .invoice-details, .customer-details { margin: 10px 0; }
-            }
-          </style>
-        </head>
-        <body>
-          <div class="header">
-            <h1 class="company-name">${company?.name || 'Four One Solutions'}</h1>
-            <h2 class="invoice-title">FACTURA</h2>
-          </div>
-          
-          <div class="invoice-info">
-            <div class="invoice-details">
-              <div class="detail-title">Información de Factura</div>
-              <div class="detail-line"><strong>Número:</strong> ${invoice.number}</div>
-              <div class="detail-line"><strong>Fecha:</strong> ${new Date(invoice.date).toLocaleDateString('es-DO')}</div>
-              <div class="detail-line"><strong>Vencimiento:</strong> ${invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString('es-DO') : 'N/A'}</div>
-              <div class="detail-line"><strong>NCF:</strong> ${invoice.ncf || 'N/A'}</div>
-              <div class="detail-line"><strong>Estado:</strong> ${invoice.status}</div>
-            </div>
-            
-            <div class="customer-details">
-              <div class="detail-title">Cliente</div>
-              <div class="detail-line"><strong>Nombre:</strong> ${customer.name}</div>
-              <div class="detail-line"><strong>Email:</strong> ${customer.email || 'N/A'}</div>
-              <div class="detail-line"><strong>Teléfono:</strong> ${customer.phone || 'N/A'}</div>
-              <div class="detail-line"><strong>${customer.type === 'company' ? 'RNC' : 'Cédula'}:</strong> ${customer.rnc || customer.cedula || 'N/A'}</div>
-            </div>
-          </div>
-
-          <div class="qr-section">
-            <p><strong>Código QR de Verificación</strong></p>
-            <p>Escanea para verificar esta factura</p>
-            <div style="margin: 10px 0; font-family: monospace; background: white; padding: 10px; border-radius: 4px;">
-              ${window.location.origin}/verify/invoice/${invoice.id}
-            </div>
-          </div>
-          
-          <div class="total-section">
-            <div style="font-size: 18px; margin-bottom: 10px;">
-              <div><strong>Subtotal:</strong> RD$ ${parseFloat(invoice.subtotal).toLocaleString('es-DO', { minimumFractionDigits: 2 })}</div>
-              <div><strong>ITBIS:</strong> RD$ ${parseFloat(invoice.tax).toLocaleString('es-DO', { minimumFractionDigits: 2 })}</div>
-            </div>
-            <div class="total-amount">
-              <strong>Total: RD$ ${parseFloat(invoice.total).toLocaleString('es-DO', { minimumFractionDigits: 2 })}</strong>
-            </div>
-          </div>
-
-          <div class="footer">
-            <p>Esta es una factura generada electrónicamente por Four One Solutions</p>
-            <p>Verifique la autenticidad en: ${window.location.origin}/verify/invoice/${invoice.id}</p>
-          </div>
-        </body>
-        </html>
-      `;
-
-      const printWindow = window.open('', '_blank', 'width=800,height=1000,scrollbars=yes,resizable=yes');
-      if (!printWindow) {
-        toast({
-          title: "Error",
-          description: "No se pudo abrir la ventana de impresión. Verifica que no esté bloqueada por tu navegador.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      printWindow.document.write(invoiceHTML);
-      printWindow.document.close();
-      printWindow.focus();
-      
-      setTimeout(() => {
-        printWindow.print();
-      }, 500);
-
-      toast({
-        title: "Impresión iniciada",
-        description: "La factura se está enviando a la impresora.",
-      });
-    } catch (error) {
-      console.error("Error printing invoice:", error);
-      toast({
-        title: "Error de impresión",
-        description: "No se pudo imprimir la factura.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const { data: invoices, isLoading } = useQuery<Invoice[]>({
-    queryKey: ["/api/invoices"],
+  // Data queries
+  const { data: invoices, isLoading: isLoadingInvoices } = useQuery({
+    queryKey: ['/api/invoices'],
   });
 
-  const { data: customers } = useQuery<Customer[]>({
-    queryKey: ["/api/customers"],
+  const { data: customers, isLoading: isLoadingCustomers } = useQuery({
+    queryKey: ['/api/customers'],
   });
 
-  const { data: products } = useQuery<Product[]>({
-    queryKey: ["/api/products"],
+  const { data: products, isLoading: isLoadingProducts } = useQuery({
+    queryKey: ['/api/products'],
   });
 
-  const { data: company } = useQuery<Company>({
-    queryKey: ["/api/companies/current"],
+  const { data: ncfSequences } = useQuery({
+    queryKey: ['/api/fiscal/ncf-sequences'],
   });
 
-  const form = useForm<InvoiceFormData>({
+  const { data: paymentMethods } = useQuery({
+    queryKey: ['/api/payment-methods'],
+  });
+
+  const { data: taxRates } = useQuery({
+    queryKey: ['/api/tax-rates'],
+  });
+
+  // Forms
+  const invoiceForm = useForm({
     resolver: zodResolver(invoiceSchema),
     defaultValues: {
       customerId: "",
-      number: "",
-      ncf: "",
-      date: new Date().toISOString().split('T')[0],
-      dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      status: "pending",
-      items: [],
-      subtotal: "0",
-      tax: "0",
-      total: "0",
+      ncfType: "B01",
+      paymentMethod: "cash",
+      paymentTerms: 0,
+      currency: "DOP",
+      exchangeRate: 1,
       notes: "",
-      taxType: "itbis_18",
+      internalNotes: "",
+      items: []
+    }
+  });
+
+  const ncfBatchForm = useForm({
+    resolver: zodResolver(ncfBatchSchema),
+    defaultValues: {
+      ncfType: "B01",
+      startNumber: 1,
+      endNumber: 1000,
+      currentNumber: 1,
+      isActive: true
+    }
+  });
+
+  // Mutations
+  const createInvoiceMutation = useMutation({
+    mutationFn: (data: any) => apiRequest('/api/invoices', {
+      method: 'POST',
+      body: JSON.stringify({ ...data, items: invoiceItems })
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/fiscal/ncf-sequences'] });
+      setShowInvoiceDialog(false);
+      setInvoiceItems([]);
+      invoiceForm.reset();
+      toast({ title: "Factura creada exitosamente" });
     },
+    onError: (error: any) => {
+      toast({ title: "Error al crear factura", description: error.message, variant: "destructive" });
+    }
   });
 
-  const { fields, append, remove } = useFieldArray({
-    control: form.control,
-    name: "items"
+  const createNCFBatchMutation = useMutation({
+    mutationFn: (data: any) => apiRequest('/api/fiscal/ncf-sequences', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/fiscal/ncf-sequences'] });
+      setShowNCFBatchDialog(false);
+      ncfBatchForm.reset();
+      toast({ title: "Lote de NCF creado exitosamente" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error al crear lote NCF", description: error.message, variant: "destructive" });
+    }
   });
 
-  // Filter tax types based on company business type
-  const getAvailableTaxTypes = () => {
-    const baseTaxTypes = Object.entries(DR_TAX_TYPES).filter(([key]) => key !== 'tip_10');
-    
-    if (company && 'businessType' in company && company.businessType === 'restaurant') {
-      return Object.entries(DR_TAX_TYPES); // Include all tax types including tip for restaurants
+  const payInvoiceMutation = useMutation({
+    mutationFn: (data: any) => apiRequest(`/api/invoices/${data.invoiceId}/payment`, {
+      method: 'POST',
+      body: JSON.stringify(data)
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/invoices'] });
+      setShowPaymentDialog(false);
+      setSelectedInvoice(null);
+      toast({ title: "Pago registrado exitosamente" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error al registrar pago", description: error.message, variant: "destructive" });
     }
-    
-    return baseTaxTypes; // Exclude tip for non-restaurant businesses
+  });
+
+  // NCF Type configurations
+  const getNCFTypeConfig = (type: string) => {
+    const configs = {
+      B01: {
+        name: "Crédito Fiscal",
+        description: "Para contribuyentes con RNC",
+        color: "bg-blue-100 text-blue-800",
+        requiresRNC: true,
+        allowedTax: ["itbis_18", "itbis_0"]
+      },
+      B02: {
+        name: "Consumidor Final",
+        description: "Para consumidores finales",
+        color: "bg-green-100 text-green-800",
+        requiresRNC: false,
+        allowedTax: ["itbis_18", "itbis_0"]
+      },
+      B14: {
+        name: "Regímenes Especiales",
+        description: "Para contribuyentes especiales",
+        color: "bg-purple-100 text-purple-800",
+        requiresRNC: true,
+        allowedTax: ["itbis_18", "itbis_0", "exempt"]
+      },
+      B15: {
+        name: "Gubernamental",
+        description: "Para instituciones gubernamentales",
+        color: "bg-orange-100 text-orange-800",
+        requiresRNC: true,
+        allowedTax: ["exempt"]
+      }
+    };
+    return configs[type as keyof typeof configs] || configs.B01;
   };
 
-  // Calculate totals when items change
-  const calculateTotals = () => {
-    const items = form.getValues("items");
-    const taxType = form.getValues("taxType") || "itbis_18";
-    const totalAmount = items.reduce((sum, item) => {
-      return sum + (parseFloat(item.quantity) * parseFloat(item.unitPrice));
-    }, 0);
-    
-    const taxInfo = DR_TAX_TYPES[taxType as keyof typeof DR_TAX_TYPES];
-    
-    let subtotal, tax, total;
-    
-    if (taxType === "exempt") {
-      subtotal = totalAmount;
-      tax = 0;
-      total = totalAmount;
-    } else if (taxInfo.isInclusive) {
-      // For inclusive taxes, extract tax from the total amount
-      const taxMultiplier = 1 + (taxInfo.rate / 100);
-      subtotal = totalAmount / taxMultiplier;
-      tax = totalAmount - subtotal;
-      total = totalAmount;
-    } else {
-      // For regular taxes, add tax to subtotal
-      subtotal = totalAmount;
-      tax = (subtotal * taxInfo.rate) / 100;
-      total = subtotal + tax;
-    }
-    
-    form.setValue("subtotal", subtotal.toFixed(2));
-    form.setValue("tax", tax.toFixed(2));
-    form.setValue("total", total.toFixed(2));
+  // Tax calculations
+  const calculateItemTax = (unitPrice: number, quantity: number, discount: number, taxType: string) => {
+    const subtotal = (unitPrice * quantity) * (1 - discount / 100);
+    const taxRates = {
+      itbis_18: 0.18,
+      itbis_0: 0,
+      exempt: 0
+    };
+    return subtotal * (taxRates[taxType as keyof typeof taxRates] || 0);
   };
 
-  // Add product to invoice
-  const addProduct = () => {
-    append({
+  const calculateInvoiceTotals = () => {
+    let subtotal = 0;
+    let totalTax = 0;
+    let totalDiscount = 0;
+
+    invoiceItems.forEach(item => {
+      const itemSubtotal = item.unitPrice * item.quantity;
+      const itemDiscount = itemSubtotal * (item.discount / 100);
+      const itemAfterDiscount = itemSubtotal - itemDiscount;
+      const itemTax = calculateItemTax(item.unitPrice, item.quantity, item.discount, item.taxType);
+
+      subtotal += itemSubtotal;
+      totalDiscount += itemDiscount;
+      totalTax += itemTax;
+    });
+
+    const total = subtotal - totalDiscount + totalTax;
+
+    return { subtotal, totalDiscount, totalTax, total };
+  };
+
+  // Customer selection and NCF auto-determination
+  const handleCustomerChange = (customerId: string) => {
+    const customer = customers?.find((c: any) => c.id.toString() === customerId);
+    setSelectedCustomer(customer);
+    
+    if (customer) {
+      // Auto-determine NCF type based on customer
+      let suggestedNCF = "B02"; // Default to consumer final
+      
+      if (customer.rnc && customer.rnc.trim()) {
+        // Customer has RNC - can use B01 (Credit Fiscal)
+        suggestedNCF = "B01";
+      }
+      
+      if (customer.type === "government") {
+        suggestedNCF = "B15"; // Government
+      }
+      
+      if (customer.customerGroup === "special_regime") {
+        suggestedNCF = "B14"; // Special regimes
+      }
+
+      invoiceForm.setValue("ncfType", suggestedNCF as any);
+      invoiceForm.setValue("paymentTerms", customer.paymentTerms || 0);
+    }
+  };
+
+  // Invoice item management
+  const addInvoiceItem = () => {
+    setInvoiceItems([...invoiceItems, {
       productId: "",
       description: "",
-      quantity: "1",
-      unitPrice: "0",
-      subtotal: "0"
-    });
+      quantity: 1,
+      unitPrice: 0,
+      discount: 0,
+      taxType: "itbis_18"
+    }]);
   };
 
-  // Update item subtotal when quantity or price changes
-  const updateItemSubtotal = (index: number) => {
-    const items = form.getValues("items");
-    const item = items[index];
-    const subtotal = parseFloat(item.quantity) * parseFloat(item.unitPrice);
-    form.setValue(`items.${index}.subtotal`, subtotal.toFixed(2));
-    calculateTotals();
+  const removeInvoiceItem = (index: number) => {
+    setInvoiceItems(invoiceItems.filter((_, i) => i !== index));
   };
 
-  const createInvoiceMutation = useMutation({
-    mutationFn: async (data: InvoiceFormData) => {
-      const payload = {
-        ...data,
-        customerId: parseInt(data.customerId),
-        subtotal: parseFloat(data.subtotal),
-        tax: parseFloat(data.tax),
-        total: parseFloat(data.total),
-      };
-      return await apiRequest("/api/invoices", { method: "POST", body: payload });
-    },
-    onSuccess: (response) => {
-      const newInvoice = response;
-      toast({
-        title: "Factura creada",
-        description: "La factura ha sido creada exitosamente.",
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/invoices"] });
-      setIsDialogOpen(false);
-      form.reset();
-      
-      // Auto-print the invoice after creation
-      if (newInvoice?.id) {
-        setTimeout(() => {
-          handlePrintInvoice(newInvoice);
-        }, 500);
-      }
-    },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "No se pudo crear la factura.",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const updateInvoiceMutation = useMutation({
-    mutationFn: async (data: InvoiceFormData) => {
-      if (!editingInvoice) return;
-      const payload = {
-        ...data,
-        customerId: parseInt(data.customerId),
-        subtotal: parseFloat(data.subtotal),
-        tax: parseFloat(data.tax),
-        total: parseFloat(data.total),
-      };
-      return await apiRequest(`/api/invoices/${editingInvoice.id}`, { method: "PUT", body: payload });
-    },
-    onSuccess: () => {
-      toast({
-        title: "Factura actualizada",
-        description: "La factura ha sido actualizada exitosamente.",
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/invoices"] });
-      setIsDialogOpen(false);
-      setEditingInvoice(null);
-      form.reset();
-    },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "No se pudo actualizar la factura.",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const deleteInvoiceMutation = useMutation({
-    mutationFn: async (id: number) => {
-      return await apiRequest(`/api/invoices/${id}`, { method: "DELETE" });
-    },
-    onSuccess: () => {
-      toast({
-        title: "Factura eliminada",
-        description: "La factura ha sido eliminada exitosamente.",
-      });
-      // Force cache invalidation and refetch
-      queryClient.invalidateQueries({ queryKey: ["/api/invoices"], exact: true });
-      queryClient.refetchQueries({ queryKey: ["/api/invoices"], exact: true });
-    },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "No se pudo eliminar la factura.",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const filteredInvoices = invoices?.filter(invoice =>
-    invoice.number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    invoice.ncf?.toLowerCase().includes(searchTerm.toLowerCase())
-  ) || [];
-
-  const getStatusBadge = (status: string) => {
-    const statusColors = {
-      paid: "bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300",
-      pending: "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300",
-      overdue: "bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300",
-    };
+  const updateInvoiceItem = (index: number, field: string, value: any) => {
+    const updated = [...invoiceItems];
+    updated[index] = { ...updated[index], [field]: value };
     
-    const statusLabels = {
-      paid: "Pagada",
-      pending: "Pendiente",
-      overdue: "Vencida",
-    };
-
-    return (
-      <Badge className={statusColors[status as keyof typeof statusColors] || statusColors.pending}>
-        {statusLabels[status as keyof typeof statusLabels] || "Pendiente"}
-      </Badge>
-    );
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-DO', {
-      style: 'currency',
-      currency: 'DOP'
-    }).format(amount);
-  };
-
-  const onSubmit = (data: InvoiceFormData) => {
-    if (editingInvoice) {
-      updateInvoiceMutation.mutate(data);
-    } else {
-      createInvoiceMutation.mutate(data);
+    // Auto-populate from product if product is selected
+    if (field === "productId" && value) {
+      const product = products?.find((p: any) => p.id.toString() === value);
+      if (product) {
+        updated[index] = {
+          ...updated[index],
+          description: product.name,
+          unitPrice: parseFloat(product.price) || 0,
+          taxType: product.taxType || "itbis_18"
+        };
+      }
     }
+    
+    setInvoiceItems(updated);
   };
 
-  const handleEdit = (invoice: Invoice) => {
-    setEditingInvoice(invoice);
-    form.reset({
-      customerId: invoice.customerId.toString(),
-      number: invoice.number,
-      ncf: invoice.ncf || "",
-      date: invoice.date.split('T')[0],
-      dueDate: invoice.dueDate ? invoice.dueDate.split('T')[0] : "",
-      status: invoice.status as "pending" | "paid" | "overdue",
-      subtotal: invoice.subtotal.toString(),
-      tax: invoice.itbis.toString(),
-      total: invoice.total.toString(),
-      notes: invoice.notes || "",
-    });
-    setIsDialogOpen(true);
+  // Status badges and formatting
+  const getInvoiceStatusBadge = (status: string) => {
+    const statuses = {
+      draft: { label: "Borrador", color: "bg-gray-100 text-gray-800" },
+      sent: { label: "Enviada", color: "bg-blue-100 text-blue-800" },
+      paid: { label: "Pagada", color: "bg-green-100 text-green-800" },
+      overdue: { label: "Vencida", color: "bg-red-100 text-red-800" },
+      cancelled: { label: "Cancelada", color: "bg-gray-100 text-gray-500" }
+    };
+    const statusConfig = statuses[status as keyof typeof statuses] || statuses.draft;
+    return <Badge className={statusConfig.color}>{statusConfig.label}</Badge>;
   };
 
-  const handleNewInvoice = () => {
-    setEditingInvoice(null);
-    form.reset({
-      customerId: "",
-      number: "",
-      ncf: "",
-      date: new Date().toISOString().split('T')[0],
-      dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      status: "pending",
-      items: [],
-      subtotal: "0",
-      tax: "0",
-      total: "0",
-      notes: "",
-    });
-    setIsDialogOpen(true);
+  const getPaymentStatusBadge = (status: string) => {
+    const statuses = {
+      pending: { label: "Pendiente", color: "bg-yellow-100 text-yellow-800" },
+      partial: { label: "Parcial", color: "bg-orange-100 text-orange-800" },
+      paid: { label: "Pagado", color: "bg-green-100 text-green-800" },
+      overdue: { label: "Vencido", color: "bg-red-100 text-red-800" }
+    };
+    const statusConfig = statuses[status as keyof typeof statuses] || statuses.pending;
+    return <Badge className={statusConfig.color}>{statusConfig.label}</Badge>;
   };
 
-  const getTotalRevenue = () => {
-    return invoices?.reduce((sum, invoice) => sum + parseFloat(invoice.total), 0) || 0;
+  const formatCurrency = (amount: number, currency: string = "DOP") => {
+    const symbols = { DOP: "RD$", USD: "$", EUR: "€" };
+    return `${symbols[currency as keyof typeof symbols] || "RD$"} ${amount.toLocaleString()}`;
   };
 
-  const getPendingInvoices = () => {
-    return invoices?.filter(invoice => invoice.status === "pending").length || 0;
-  };
-
-  if (isLoading) {
+  if (isLoadingInvoices || isLoadingCustomers || isLoadingProducts) {
     return (
-      <div className="w-full">
-        <Header title="Facturación" subtitle="Gestiona tus facturas y pagos" />
-        <div className="p-4 sm:p-6">
-          <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-2 text-gray-500 dark:text-gray-400">Cargando facturas...</p>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <Header title="Facturación y NCF" />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex items-center justify-center h-64">
+            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
           </div>
         </div>
       </div>
@@ -580,534 +354,199 @@ export default function Billing() {
   }
 
   return (
-    <div className="h-screen overflow-y-auto">
-      <div className="container mx-auto p-4 space-y-6 pb-20">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
-              Sistema de Facturación
-            </h1>
-            <p className="text-gray-600 dark:text-gray-400">
-              Gestiona facturas, NCF y documentos fiscales
-            </p>
-          </div>
-        </div>
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card>
-            <CardContent className="p-4 sm:p-6">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-green-100 dark:bg-green-900/20 rounded-lg">
-                  <DollarSign className="h-5 w-5 text-green-600 dark:text-green-400" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400">
-                    Ingresos Totales
-                  </p>
-                  <p className="text-lg sm:text-2xl font-bold text-green-600 dark:text-green-400 truncate">
-                    {formatCurrency(getTotalRevenue())}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-4 sm:p-6">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-yellow-100 dark:bg-yellow-900/20 rounded-lg">
-                  <FileText className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400">
-                    Facturas Pendientes
-                  </p>
-                  <p className="text-lg sm:text-2xl font-bold text-yellow-600 dark:text-yellow-400">
-                    {getPendingInvoices()}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-4 sm:p-6">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
-                  <FileText className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400">
-                    Total Facturas
-                  </p>
-                  <p className="text-lg sm:text-2xl font-bold text-blue-600 dark:text-blue-400">
-                    {invoices?.length || 0}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-4 sm:p-6">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-purple-100 dark:bg-purple-900/20 rounded-lg">
-                  <Calendar className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400">
-                    Este Mes
-                  </p>
-                  <p className="text-lg sm:text-2xl font-bold text-purple-600 dark:text-purple-400">
-                    {new Date().toLocaleDateString('es-DO', { month: 'short' })}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Actions and Search */}
-        <div className="flex flex-col sm:flex-row gap-4 sm:items-center sm:justify-between">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-            <Input
-              placeholder="Buscar por número o NCF..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-          
-          <Button 
-            onClick={handleNewInvoice} 
-            className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Nueva Factura
-          </Button>
-        </div>
-
-        {/* Invoices List */}
-        {filteredInvoices.length === 0 ? (
-          <Card>
-            <CardContent className="p-8 sm:p-12 text-center">
-              <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                No hay facturas
-              </h3>
-              <p className="text-gray-500 dark:text-gray-400 mb-4">
-                Comienza creando tu primera factura
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <Header title="Facturación y NCF" />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="mb-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
+                <Receipt className="h-8 w-8 text-blue-600" />
+                Facturación Fiscal
+              </h1>
+              <p className="text-gray-600 dark:text-gray-300 mt-2">
+                Sistema de facturación con NCF dominicano y cumplimiento DGII
               </p>
-              <Button onClick={handleNewInvoice} className="bg-blue-600 hover:bg-blue-700">
-                <Plus className="h-4 w-4 mr-2" />
-                Crear Factura
+            </div>
+            <div className="flex gap-3">
+              <Button onClick={() => setShowNCFBatchDialog(true)} variant="outline">
+                <Building2 className="h-4 w-4 mr-2" />
+                Gestionar NCF
               </Button>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
-            {filteredInvoices.map((invoice) => {
-              const customer = customers?.find(c => c.id === invoice.customerId);
-              return (
-                <Card key={invoice.id} className="hover:shadow-lg transition-shadow">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between">
-                      <div className="min-w-0 flex-1">
-                        <CardTitle className="text-sm sm:text-base truncate">
-                          Factura #{invoice.number}
-                        </CardTitle>
-                        {invoice.ncf && (
-                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                            NCF: {invoice.ncf}
-                          </p>
-                        )}
-                        <div className="flex items-center gap-2 mt-2">
-                          {getStatusBadge(invoice.status)}
-                        </div>
-                      </div>
-                      
-                      <div className="flex gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handlePrintInvoice(invoice)}
-                          className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700"
-                          title="Imprimir factura básica"
-                        >
-                          <Printer className="h-3 w-3" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handlePrintProfessionalInvoice(invoice)}
-                          className="h-8 w-8 p-0 text-green-600 hover:text-green-700"
-                          title="Factura profesional"
-                        >
-                          <FileText className="h-3 w-3" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleEdit(invoice)}
-                          className="h-8 w-8 p-0"
-                        >
-                          <Edit className="h-3 w-3" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => deleteInvoiceMutation.mutate(invoice.id)}
-                          className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  
-                  <CardContent className="pt-0 space-y-3">
-                    {customer && (
-                      <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
-                        {customer.type === "company" ? (
-                          <Building2 className="h-3 w-3 flex-shrink-0" />
-                        ) : (
-                          <User className="h-3 w-3 flex-shrink-0" />
-                        )}
-                        <span className="truncate">{customer.name}</span>
-                      </div>
-                    )}
-                    
-                    <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
-                      <Calendar className="h-3 w-3 flex-shrink-0" />
-                      <span>Vence: {invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString('es-DO') : 'Sin fecha'}</span>
-                    </div>
-                    
-                    <div className="pt-2 border-t border-gray-100 dark:border-gray-700">
-                      <div className="flex justify-between items-center">
-                        <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
-                          Total:
-                        </span>
-                        <span className="text-lg font-bold text-gray-900 dark:text-white">
-                          {formatCurrency(parseFloat(invoice.total))}
-                        </span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
+              <Button onClick={() => setShowInvoiceDialog(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Nueva Factura
+              </Button>
+            </div>
           </div>
-        )}
+        </div>
 
-        {/* Invoice Form Dialog */}
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent className="w-[95vw] max-w-4xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>
-                {editingInvoice ? "Editar Factura" : "Nueva Factura"}
-              </DialogTitle>
-            </DialogHeader>
-            
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="customerId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Cliente *</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Selecciona un cliente" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {customers?.map((customer) => (
-                              <SelectItem key={customer.id} value={customer.id.toString()}>
-                                {customer.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="invoices" className="flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              Facturas
+            </TabsTrigger>
+            <TabsTrigger value="ncf-management" className="flex items-center gap-2">
+              <Building2 className="h-4 w-4" />
+              NCF Management
+            </TabsTrigger>
+            <TabsTrigger value="payments" className="flex items-center gap-2">
+              <CreditCard className="h-4 w-4" />
+              Pagos
+            </TabsTrigger>
+            <TabsTrigger value="reports" className="flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              Reportes DGII
+            </TabsTrigger>
+          </TabsList>
 
-                  <FormField
-                    control={form.control}
-                    name="number"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Número de Factura</FormLabel>
-                        <FormControl>
-                          <Input 
-                            placeholder="Se genera automáticamente (opcional)" 
-                            {...field} 
-                          />
-                        </FormControl>
-                        <FormDescription className="text-xs">
-                          Deja vacío para generar automáticamente (INV-YYYYMM-0001)
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="ncfType"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Tipo de Comprobante</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Seleccionar tipo NCF" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="">Sin Comprobante</SelectItem>
-                            <SelectItem value="B01">B01 - Crédito Fiscal</SelectItem>
-                            <SelectItem value="B02">B02 - Consumidor Final</SelectItem>
-                            <SelectItem value="B14">B14 - Régimen Especial</SelectItem>
-                            <SelectItem value="B15">B15 - Gubernamental</SelectItem>
-                            <SelectItem value="B16">B16 - Exportaciones</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="ncf"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>NCF (Se asigna automáticamente)</FormLabel>
-                        <FormControl>
-                          <Input 
-                            placeholder="Se asignará automáticamente" 
-                            {...field} 
-                            disabled
-                            className="bg-gray-50 dark:bg-gray-800"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="date"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Fecha *</FormLabel>
-                        <FormControl>
-                          <Input type="date" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="dueDate"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Fecha Vencimiento *</FormLabel>
-                        <FormControl>
-                          <Input type="date" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="status"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Estado *</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Selecciona el estado" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="pending">Pendiente</SelectItem>
-                            <SelectItem value="paid">Pagada</SelectItem>
-                            <SelectItem value="overdue">Vencida</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                  <FormField
-                    control={form.control}
-                    name="taxType"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Tipo de Impuesto *</FormLabel>
-                        <Select 
-                          onValueChange={(value) => {
-                            field.onChange(value);
-                            setTimeout(calculateTotals, 0); // Recalculate when tax type changes
-                          }} 
-                          defaultValue={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Seleccionar tipo de impuesto" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {getAvailableTaxTypes().map(([key, value]) => (
-                              <SelectItem key={key} value={key}>
-                                {value.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                {/* Invoice Items Section */}
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-semibold">Productos</h3>
-                    <Button type="button" onClick={addProduct} size="sm">
+          {/* Invoices Tab */}
+          <TabsContent value="invoices" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    <FileText className="h-5 w-5" />
+                    Facturas Emitidas
+                  </CardTitle>
+                  <div className="flex gap-2">
+                    <Select value={invoiceFilter} onValueChange={setInvoiceFilter}>
+                      <SelectTrigger className="w-48">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todas las facturas</SelectItem>
+                        <SelectItem value="B01">Solo B01 - Crédito Fiscal</SelectItem>
+                        <SelectItem value="B02">Solo B02 - Consumidor Final</SelectItem>
+                        <SelectItem value="B14">Solo B14 - Regímenes Especiales</SelectItem>
+                        <SelectItem value="B15">Solo B15 - Gubernamental</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Select value={paymentStatus} onValueChange={setPaymentStatus}>
+                      <SelectTrigger className="w-48">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todos los estados</SelectItem>
+                        <SelectItem value="pending">Pendientes</SelectItem>
+                        <SelectItem value="paid">Pagadas</SelectItem>
+                        <SelectItem value="overdue">Vencidas</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Button onClick={() => setShowInvoiceDialog(true)}>
                       <Plus className="h-4 w-4 mr-2" />
-                      Agregar Producto
+                      Nueva Factura
                     </Button>
                   </div>
-
-                  {fields.length > 0 && (
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {invoices?.length === 0 ? (
+                    <div className="text-center py-8">
+                      <Receipt className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                      <p className="text-gray-500">No hay facturas registradas</p>
+                      <Button 
+                        onClick={() => setShowInvoiceDialog(true)} 
+                        className="mt-4"
+                        variant="outline"
+                      >
+                        Crear primera factura
+                      </Button>
+                    </div>
+                  ) : (
                     <div className="overflow-x-auto">
                       <Table>
                         <TableHeader>
                           <TableRow>
-                            <TableHead className="min-w-[200px]">Producto</TableHead>
-                            <TableHead className="min-w-[80px]">Cant.</TableHead>
-                            <TableHead className="min-w-[100px]">Precio</TableHead>
-                            <TableHead className="min-w-[100px]">Subtotal</TableHead>
-                            <TableHead className="w-[50px]"></TableHead>
+                            <TableHead>Número / NCF</TableHead>
+                            <TableHead>Cliente</TableHead>
+                            <TableHead>Fecha</TableHead>
+                            <TableHead>Total</TableHead>
+                            <TableHead>Estado</TableHead>
+                            <TableHead>Pago</TableHead>
+                            <TableHead>Acciones</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {fields.map((field, index) => (
-                            <TableRow key={field.id}>
+                          {invoices?.filter((invoice: any) => {
+                            if (invoiceFilter !== "all" && invoice.ncfType !== invoiceFilter) return false;
+                            if (paymentStatus !== "all" && invoice.paymentStatus !== paymentStatus) return false;
+                            return true;
+                          }).map((invoice: any) => (
+                            <TableRow key={invoice.id}>
                               <TableCell>
-                                <FormField
-                                  control={form.control}
-                                  name={`items.${index}.productId`}
-                                  render={({ field }) => (
-                                    <Select 
-                                      onValueChange={(value) => {
-                                        field.onChange(value);
-                                        const product = products?.find(p => p.id.toString() === value);
-                                        if (product) {
-                                          form.setValue(`items.${index}.description`, product.name);
-                                          form.setValue(`items.${index}.unitPrice`, product.price);
-                                          updateItemSubtotal(index);
-                                        }
+                                <div>
+                                  <div className="font-medium">{invoice.number}</div>
+                                  <div className="text-sm text-gray-500">
+                                    NCF: {invoice.ncfNumber}
+                                  </div>
+                                  <Badge className={getNCFTypeConfig(invoice.ncfType).color} size="sm">
+                                    {invoice.ncfType}
+                                  </Badge>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div>
+                                  <div className="font-medium">{invoice.customer?.name}</div>
+                                  {invoice.customer?.rnc && (
+                                    <div className="text-sm text-gray-500">
+                                      RNC: {invoice.customer.rnc}
+                                    </div>
+                                  )}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div>
+                                  <div>{new Date(invoice.issueDate).toLocaleDateString()}</div>
+                                  {invoice.dueDate && (
+                                    <div className="text-sm text-gray-500">
+                                      Vence: {new Date(invoice.dueDate).toLocaleDateString()}
+                                    </div>
+                                  )}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="font-medium">
+                                  {formatCurrency(invoice.total, invoice.currency)}
+                                </div>
+                                {invoice.totalTax > 0 && (
+                                  <div className="text-sm text-gray-500">
+                                    ITBIS: {formatCurrency(invoice.totalTax, invoice.currency)}
+                                  </div>
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                {getInvoiceStatusBadge(invoice.status)}
+                              </TableCell>
+                              <TableCell>
+                                {getPaymentStatusBadge(invoice.paymentStatus)}
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex items-center gap-2">
+                                  <Button variant="outline" size="sm">
+                                    <Eye className="h-4 w-4" />
+                                  </Button>
+                                  <Button variant="outline" size="sm">
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                  <Button variant="outline" size="sm">
+                                    <Download className="h-4 w-4" />
+                                  </Button>
+                                  {invoice.paymentStatus !== "paid" && (
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm"
+                                      onClick={() => {
+                                        setSelectedInvoice(invoice);
+                                        setShowPaymentDialog(true);
                                       }}
-                                      value={field.value}
                                     >
-                                      <SelectTrigger>
-                                        <SelectValue placeholder="Seleccionar producto" />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        {products?.map((product) => (
-                                          <SelectItem key={product.id} value={product.id.toString()}>
-                                            {product.name} - ${product.price}
-                                          </SelectItem>
-                                        ))}
-                                      </SelectContent>
-                                    </Select>
+                                      <CreditCard className="h-4 w-4" />
+                                    </Button>
                                   )}
-                                />
-                              </TableCell>
-                              <TableCell>
-                                <FormField
-                                  control={form.control}
-                                  name={`items.${index}.quantity`}
-                                  render={({ field }) => (
-                                    <Input
-                                      type="number"
-                                      min="1"
-                                      {...field}
-                                      onChange={(e) => {
-                                        field.onChange(e);
-                                        updateItemSubtotal(index);
-                                      }}
-                                      className="w-20"
-                                    />
-                                  )}
-                                />
-                              </TableCell>
-                              <TableCell>
-                                <FormField
-                                  control={form.control}
-                                  name={`items.${index}.unitPrice`}
-                                  render={({ field }) => (
-                                    <Input
-                                      type="number"
-                                      step="0.01"
-                                      {...field}
-                                      onChange={(e) => {
-                                        field.onChange(e);
-                                        updateItemSubtotal(index);
-                                      }}
-                                      className="w-24"
-                                    />
-                                  )}
-                                />
-                              </TableCell>
-                              <TableCell>
-                                <FormField
-                                  control={form.control}
-                                  name={`items.${index}.subtotal`}
-                                  render={({ field }) => (
-                                    <Input
-                                      {...field}
-                                      disabled
-                                      className="w-24 bg-gray-50 dark:bg-gray-800"
-                                    />
-                                  )}
-                                />
-                              </TableCell>
-                              <TableCell>
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => {
-                                    remove(index);
-                                    calculateTotals();
-                                  }}
-                                >
-                                  <X className="h-4 w-4 text-red-500" />
-                                </Button>
+                                </div>
                               </TableCell>
                             </TableRow>
                           ))}
@@ -1115,115 +554,480 @@ export default function Billing() {
                       </Table>
                     </div>
                   )}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-                  {fields.length === 0 && (
-                    <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                      <ShoppingCart className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                      <p>No hay productos agregados</p>
-                      <p className="text-sm">Haz clic en "Agregar Producto" para empezar</p>
+          {/* NCF Management Tab */}
+          <TabsContent value="ncf-management" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    <Building2 className="h-5 w-5" />
+                    Gestión de Secuencias NCF
+                  </CardTitle>
+                  <Button onClick={() => setShowNCFBatchDialog(true)}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Nuevo Lote NCF
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {ncfSequences?.map((sequence: any) => {
+                    const config = getNCFTypeConfig(sequence.ncfType);
+                    const usage = ((sequence.currentNumber - sequence.startNumber) / (sequence.endNumber - sequence.startNumber)) * 100;
+                    const remaining = sequence.endNumber - sequence.currentNumber + 1;
+                    const isExpiringSoon = new Date(sequence.expirationDate) <= new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+                    
+                    return (
+                      <Card key={sequence.id} className="border-l-4 border-l-blue-500">
+                        <CardContent className="p-4">
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between">
+                              <Badge className={config.color}>
+                                {sequence.ncfType}
+                              </Badge>
+                              <Badge variant={sequence.isActive ? "default" : "secondary"}>
+                                {sequence.isActive ? "Activo" : "Inactivo"}
+                              </Badge>
+                            </div>
+                            
+                            <div>
+                              <h3 className="font-semibold">{config.name}</h3>
+                              <p className="text-sm text-gray-600">{config.description}</p>
+                            </div>
+                            
+                            <div className="space-y-2">
+                              <div className="flex justify-between text-sm">
+                                <span>Progreso:</span>
+                                <span>{usage.toFixed(1)}%</span>
+                              </div>
+                              <div className="w-full bg-gray-200 rounded-full h-2">
+                                <div 
+                                  className={`h-2 rounded-full ${usage > 80 ? 'bg-red-500' : usage > 60 ? 'bg-yellow-500' : 'bg-green-500'}`}
+                                  style={{ width: `${Math.min(usage, 100)}%` }}
+                                ></div>
+                              </div>
+                              <div className="text-sm text-gray-600">
+                                <p><strong>Actual:</strong> {sequence.currentNumber.toLocaleString()}</p>
+                                <p><strong>Restantes:</strong> {remaining.toLocaleString()}</p>
+                              </div>
+                            </div>
+                            
+                            <div className="text-sm">
+                              <p><strong>Vigencia:</strong></p>
+                              <p>{new Date(sequence.authorizationDate).toLocaleDateString()} - {new Date(sequence.expirationDate).toLocaleDateString()}</p>
+                              {isExpiringSoon && (
+                                <div className="flex items-center gap-1 text-orange-600 mt-1">
+                                  <AlertTriangle className="h-4 w-4" />
+                                  <span>Próximo a vencer</span>
+                                </div>
+                              )}
+                            </div>
+                            
+                            <Button variant="outline" size="sm" className="w-full">
+                              <Edit className="h-4 w-4 mr-2" />
+                              Gestionar
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Payments Tab */}
+          <TabsContent value="payments" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CreditCard className="h-5 w-5" />
+                  Gestión de Pagos
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-8">
+                  <CreditCard className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-500">Módulo de pagos en desarrollo</p>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Reports Tab */}
+          <TabsContent value="reports" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  Reportes DGII
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <Button variant="outline" className="h-20 flex flex-col items-center justify-center">
+                    <FileText className="h-6 w-6 mb-2" />
+                    <span>Reporte 606</span>
+                    <span className="text-xs text-gray-500">Comprobantes Emitidos</span>
+                  </Button>
+                  <Button variant="outline" className="h-20 flex flex-col items-center justify-center">
+                    <FileText className="h-6 w-6 mb-2" />
+                    <span>Reporte 607</span>
+                    <span className="text-xs text-gray-500">Comprobantes Recibidos</span>
+                  </Button>
+                  <Button variant="outline" className="h-20 flex flex-col items-center justify-center">
+                    <FileText className="h-6 w-6 mb-2" />
+                    <span>IT-1</span>
+                    <span className="text-xs text-gray-500">Información de ITBIS</span>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+
+        {/* Invoice Dialog */}
+        <Dialog open={showInvoiceDialog} onOpenChange={setShowInvoiceDialog}>
+          <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>
+                {editingInvoice ? "Editar Factura" : "Nueva Factura"}
+              </DialogTitle>
+              <DialogDescription>
+                Complete los datos de la factura con NCF automático
+              </DialogDescription>
+            </DialogHeader>
+
+            <Form {...invoiceForm}>
+              <form onSubmit={invoiceForm.handleSubmit((data) => createInvoiceMutation.mutate(data))} className="space-y-6">
+                {/* Customer and NCF Section */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={invoiceForm.control}
+                    name="customerId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Cliente</FormLabel>
+                        <Select onValueChange={(value) => {
+                          field.onChange(value);
+                          handleCustomerChange(value);
+                        }} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Seleccionar cliente" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {customers?.map((customer: any) => (
+                              <SelectItem key={customer.id} value={customer.id.toString()}>
+                                <div className="flex flex-col">
+                                  <span>{customer.name}</span>
+                                  {customer.rnc && (
+                                    <span className="text-sm text-gray-500">RNC: {customer.rnc}</span>
+                                  )}
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={invoiceForm.control}
+                    name="ncfType"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Tipo de NCF</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {["B01", "B02", "B14", "B15"].map((type) => {
+                              const config = getNCFTypeConfig(type);
+                              return (
+                                <SelectItem key={type} value={type}>
+                                  <div className="flex flex-col">
+                                    <span>{type} - {config.name}</span>
+                                    <span className="text-sm text-gray-500">{config.description}</span>
+                                  </div>
+                                </SelectItem>
+                              );
+                            })}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                {/* Payment and Currency Section */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <FormField
+                    control={invoiceForm.control}
+                    name="paymentMethod"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Método de Pago</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="cash">Efectivo</SelectItem>
+                            <SelectItem value="credit_card">Tarjeta de Crédito</SelectItem>
+                            <SelectItem value="debit_card">Tarjeta de Débito</SelectItem>
+                            <SelectItem value="check">Cheque</SelectItem>
+                            <SelectItem value="bank_transfer">Transferencia</SelectItem>
+                            <SelectItem value="credit">Crédito</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={invoiceForm.control}
+                    name="paymentTerms"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Términos de Pago (días)</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            {...field} 
+                            onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={invoiceForm.control}
+                    name="currency"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Moneda</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="DOP">Peso Dominicano (RD$)</SelectItem>
+                            <SelectItem value="USD">Dólar Americano ($)</SelectItem>
+                            <SelectItem value="EUR">Euro (€)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                {/* Items Section */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold text-lg">Productos / Servicios</h3>
+                    <Button type="button" onClick={addInvoiceItem} variant="outline" size="sm">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Agregar Producto
+                    </Button>
+                  </div>
+
+                  {invoiceItems.map((item, index) => (
+                    <div key={index} className="border rounded-lg p-4 space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+                        <div className="md:col-span-2">
+                          <Label>Producto</Label>
+                          <Select 
+                            value={item.productId} 
+                            onValueChange={(value) => updateInvoiceItem(index, 'productId', value)}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Seleccionar producto" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {products?.map((product: any) => (
+                                <SelectItem key={product.id} value={product.id.toString()}>
+                                  {product.name} - {formatCurrency(parseFloat(product.price))}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div>
+                          <Label>Cantidad</Label>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            value={item.quantity}
+                            onChange={(e) => updateInvoiceItem(index, 'quantity', parseFloat(e.target.value) || 0)}
+                          />
+                        </div>
+
+                        <div>
+                          <Label>Precio Unit.</Label>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            value={item.unitPrice}
+                            onChange={(e) => updateInvoiceItem(index, 'unitPrice', parseFloat(e.target.value) || 0)}
+                          />
+                        </div>
+
+                        <div>
+                          <Label>Descuento %</Label>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            max="100"
+                            value={item.discount}
+                            onChange={(e) => updateInvoiceItem(index, 'discount', parseFloat(e.target.value) || 0)}
+                          />
+                        </div>
+
+                        <div>
+                          <Label>ITBIS</Label>
+                          <Select 
+                            value={item.taxType} 
+                            onValueChange={(value) => updateInvoiceItem(index, 'taxType', value)}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="itbis_18">ITBIS 18%</SelectItem>
+                              <SelectItem value="itbis_0">ITBIS 0%</SelectItem>
+                              <SelectItem value="exempt">Exento</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <Input
+                            placeholder="Descripción del producto o servicio"
+                            value={item.description}
+                            onChange={(e) => updateInvoiceItem(index, 'description', e.target.value)}
+                          />
+                        </div>
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => removeInvoiceItem(index)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+
+                  {invoiceItems.length === 0 && (
+                    <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
+                      <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                      <p className="text-gray-500">No hay productos agregados</p>
+                      <Button type="button" onClick={addInvoiceItem} variant="outline" className="mt-2">
+                        Agregar primer producto
+                      </Button>
                     </div>
                   )}
                 </div>
 
-                {/* Totals Summary */}
-                <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
-                  <h4 className="font-semibold mb-3">Resumen de Totales</h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="subtotal"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Subtotal</FormLabel>
-                          <FormControl>
-                            <Input 
-                              {...field} 
-                              disabled
-                              className="bg-white dark:bg-gray-700 font-semibold"
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="tax"
-                      render={({ field }) => {
-                        const taxType = form.watch("taxType") || "itbis_18";
-                        const taxInfo = DR_TAX_TYPES[taxType as keyof typeof DR_TAX_TYPES];
-                        const taxLabel = taxInfo.isInclusive 
-                          ? `${taxInfo.label} (${taxInfo.rate}% incl.)`
-                          : `${taxInfo.label} (${taxInfo.rate}%)`;
-                        
-                        return (
-                          <FormItem>
-                            <FormLabel>{taxLabel}</FormLabel>
-                            <FormControl>
-                              <Input 
-                                {...field}
-                                disabled
-                                className="bg-white dark:bg-gray-700 font-semibold"
-                              />
-                            </FormControl>
-                          </FormItem>
-                        );
-                      }}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="total"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Total</FormLabel>
-                          <FormControl>
-                            <Input 
-                              {...field} 
-                              disabled
-                              className="bg-white dark:bg-gray-700 font-bold text-lg text-green-600 dark:text-green-400"
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
+                {/* Totals Section */}
+                {invoiceItems.length > 0 && (
+                  <div className="border-t pt-4">
+                    <div className="flex justify-end">
+                      <div className="w-80 space-y-2">
+                        <div className="flex justify-between">
+                          <span>Subtotal:</span>
+                          <span>{formatCurrency(calculateInvoiceTotals().subtotal)}</span>
+                        </div>
+                        {calculateInvoiceTotals().totalDiscount > 0 && (
+                          <div className="flex justify-between text-red-600">
+                            <span>Descuento:</span>
+                            <span>-{formatCurrency(calculateInvoiceTotals().totalDiscount)}</span>
+                          </div>
+                        )}
+                        <div className="flex justify-between">
+                          <span>ITBIS:</span>
+                          <span>{formatCurrency(calculateInvoiceTotals().totalTax)}</span>
+                        </div>
+                        <Separator />
+                        <div className="flex justify-between font-bold text-lg">
+                          <span>Total:</span>
+                          <span>{formatCurrency(calculateInvoiceTotals().total)}</span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
+                )}
+
+                {/* Notes Section */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={invoiceForm.control}
+                    name="notes"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Notas (Públicas)</FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            placeholder="Notas que aparecerán en la factura..."
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={invoiceForm.control}
+                    name="internalNotes"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Notas Internas</FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            placeholder="Notas internas (no aparecen en la factura)..."
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </div>
 
-                <FormField
-                  control={form.control}
-                  name="notes"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Notas</FormLabel>
-                      <FormControl>
-                        <Textarea 
-                          placeholder="Notas adicionales..." 
-                          className="resize-none" 
-                          rows={3}
-                          {...field} 
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <div className="flex flex-col-reverse sm:flex-row gap-3 pt-4">
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    onClick={() => setIsDialogOpen(false)}
-                    className="w-full sm:w-auto"
-                  >
+                <div className="flex justify-end gap-3">
+                  <Button type="button" variant="outline" onClick={() => setShowInvoiceDialog(false)}>
                     Cancelar
                   </Button>
-                  <Button 
-                    type="submit" 
-                    disabled={createInvoiceMutation.isPending || updateInvoiceMutation.isPending}
-                    className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700"
-                  >
-                    {editingInvoice ? "Actualizar" : "Crear"} Factura
+                  <Button type="submit" disabled={createInvoiceMutation.isPending || invoiceItems.length === 0}>
+                    {createInvoiceMutation.isPending ? "Creando..." : editingInvoice ? "Actualizar" : "Crear Factura"}
                   </Button>
                 </div>
               </form>
@@ -1233,4 +1037,6 @@ export default function Billing() {
       </div>
     </div>
   );
-}
+};
+
+export default Billing;

@@ -313,7 +313,7 @@ export const products = pgTable("products", {
   detailedDescription: text("detailed_description"),
   
   // Product Type and Classification
-  productType: varchar("product_type", { length: 50 }).notNull().default("product"), // product, raw_material, consumable, service
+  productType: varchar("product_type", { length: 50 }).notNull().default("product"), // product, raw_material, consumable, service, non_inventoriable
   categoryId: integer("category_id").references(() => productCategories.id),
   subcategory: varchar("subcategory", { length: 100 }),
   brand: varchar("brand", { length: 100 }),
