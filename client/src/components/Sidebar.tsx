@@ -49,176 +49,192 @@ const navigation = [
     name: "Dashboard",
     href: "/",
     icon: BarChart3,
+    color: "from-blue-500 to-blue-600",
+    feature: "dashboard"
   },
   {
-    category: "Ventas",
-    items: [
-      { name: "Punto de Venta (POS)", href: "/pos", icon: CreditCard },
-      { name: "Ventas POS", href: "/pos-sales", icon: Star },
-      { name: "Facturación", href: "/billing", icon: FileText },
-      { name: "Clientes", href: "/customers", icon: Users },
-      { name: "Reportes de Ventas", href: "/sales-reports", icon: ChartBar },
-    ],
+    name: "POS",
+    href: "/pos",
+    icon: ShoppingCart,
+    color: "from-green-500 to-green-600",
+    feature: "pos"
   },
   {
-    category: "Inventario",
-    items: [
-      { name: "Productos", href: "/products", icon: Package },
-      { name: "Control de Stock", href: "/inventory", icon: Warehouse },
-      { name: "Almacenes", href: "/warehouses", icon: Warehouse },
-      { name: "Movimientos", href: "/movements", icon: ArrowLeftRight },
-    ],
+    name: "Inventario",
+    icon: Package,
+    color: "from-purple-500 to-purple-600",
+    feature: "inventory",
+    children: [
+      { name: "Productos", href: "/products", icon: Package, feature: "inventory.products" },
+      { name: "Movimientos", href: "/inventory-movements", icon: ArrowLeftRight, feature: "inventory.movements" },
+      { name: "Almacenes", href: "/warehouses", icon: Warehouse, feature: "inventory.warehouses" }
+    ]
   },
   {
-    category: "Producción",
-    items: [
-      { name: "Módulo de Producción", href: "/production", icon: Factory },
-    ],
+    name: "Manufactura",
+    icon: Factory,
+    color: "from-orange-500 to-orange-600",
+    feature: "manufacturing",
+    children: [
+      { name: "Órdenes de Producción", href: "/production-orders", icon: Factory, feature: "manufacturing.orders" },
+      { name: "Lista de Materiales", href: "/bom", icon: List, feature: "manufacturing.bom" },
+      { name: "Recetas", href: "/recipes", icon: FlaskConical, feature: "manufacturing.recipes" }
+    ]
   },
   {
-    category: "Compras",
-    items: [
-      { name: "Módulo de Compras", href: "/purchases", icon: ShoppingCart },
-    ],
+    name: "Facturación",
+    href: "/invoices",
+    icon: FileText,
+    color: "from-indigo-500 to-indigo-600",
+    feature: "invoicing"
   },
   {
-    category: "Fiscal",
-    items: [
-      { name: "Gestión Fiscal", href: "/fiscal-management", icon: FileText },
-    ],
+    name: "Clientes",
+    href: "/customers",
+    icon: Users,
+    color: "from-pink-500 to-pink-600",
+    feature: "customers"
   },
   {
-    category: "Recursos Humanos",
-    items: [
-      { name: "Empleados", href: "/employees", icon: Users },
-      { name: "Nómina", href: "/payroll", icon: Calculator },
-    ],
+    name: "Proveedores",
+    href: "/suppliers",
+    icon: Truck,
+    color: "from-amber-500 to-amber-600",
+    feature: "suppliers"
   },
   {
-    category: "Contabilidad",
-    items: [
-      { name: "Contabilidad", href: "/accounting", icon: Calculator },
-    ],
+    name: "Contabilidad",
+    icon: Calculator,
+    color: "from-emerald-500 to-emerald-600",
+    feature: "accounting",
+    children: [
+      { name: "Plan de Cuentas", href: "/accounting/chart-of-accounts", icon: List, feature: "accounting.chart" },
+      { name: "Asientos Contables", href: "/accounting/journal-entries", icon: FileText, feature: "accounting.entries" },
+      { name: "Reportes Financieros", href: "/accounting/reports", icon: ChartBar, feature: "accounting.reports" }
+    ]
   },
+  {
+    name: "RRHH",
+    icon: Users,
+    color: "from-teal-500 to-teal-600",
+    feature: "hr",
+    children: [
+      { name: "Empleados", href: "/employees", icon: Users, feature: "hr.employees" },
+      { name: "Control de Tiempo", href: "/time-tracking", icon: Activity, feature: "hr.time" },
+      { name: "Solicitud de Vacaciones", href: "/leave-requests", icon: FileText, feature: "hr.leaves" }
+    ]
+  },
+  {
+    name: "Reportes",
+    href: "/reports",
+    icon: ChartBar,
+    color: "from-rose-500 to-rose-600",
+    feature: "reports"
+  },
+  {
+    name: "Asistente IA",
+    href: "/ai-assistant",
+    icon: Brain,
+    color: "from-violet-500 to-violet-600",
+    feature: "ai",
+    badge: "IA"
+  },
+  {
+    name: "Chat Interno",
+    href: "/chat",
+    icon: MessageCircle,
+    color: "from-cyan-500 to-cyan-600",
+    feature: "chat"
+  }
+];
 
+const adminNavigation = [
   {
-    category: "Inteligencia Artificial",
-    items: [
-      { name: "Insights con IA", href: "/ai-insights", icon: Brain },
-    ],
+    name: "Configuración",
+    href: "/settings",
+    icon: Settings,
+    color: "from-gray-500 to-gray-600",
+    feature: "settings"
   },
   {
-    category: "Comunicación",
-    items: [
-      { name: "Chat Interno", href: "/chat", icon: MessageCircle },
-      { name: "Gestión de Usuarios", href: "/user-management", icon: UserCog },
-    ],
+    name: "Permisos",
+    href: "/permissions",
+    icon: Shield,
+    color: "from-red-500 to-red-600",
+    feature: "permissions"
   },
   {
-    category: "Configuración",
-    items: [
-      { name: "Empresa", href: "/company-settings", icon: Settings },
-      { name: "Gestión de Errores", href: "/error-management", icon: Bug },
-      { name: "Monitoreo del Sistema", href: "/system-monitoring", icon: Activity },
-    ],
-  },
-
+    name: "Sistema",
+    href: "/system",
+    icon: Cog,
+    color: "from-yellow-500 to-yellow-600",
+    feature: "system"
+  }
 ];
 
 export function Sidebar() {
   const [location] = useLocation();
+  const [isOpen, setIsOpen] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const { user } = useAuth();
   const { currentPlan, daysUntilExpiry } = useSubscription();
   const isMobile = useIsMobile();
-  const [isOpen, setIsOpen] = useState(false);
-  const [isCollapsed, setIsCollapsed] = useState(false);
-  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['Ventas']));
 
-  // Fetch active modules to control menu visibility
-  const { data: modulesData } = useQuery({
-    queryKey: ["/api/modules"],
-    retry: false
+  const { data: company } = useQuery({
+    queryKey: ['/api/company'],
+    enabled: !!user,
   });
-  
-  const activeModules = Array.isArray(modulesData) ? modulesData : [];
 
-  // Helper function to check if a module is active
-  const isModuleActive = (moduleName: string) => {
-    const module = activeModules.find(m => m.name === moduleName);
-    return module ? module.isActive : true; // Default to true if module not found
-  };
-
-  // Filter navigation items based on active modules
-  const getFilteredNavigation = () => {
-    return navigation.map(section => {
-      if (section.category) {
-        const filteredItems = section.items?.filter(item => {
-          // Map menu items to their corresponding modules
-          const moduleMap: { [key: string]: string } = {
-            '/pos': 'Punto de Venta (POS)',
-            '/billing': 'Facturación',
-            '/customers': 'Gestión de Clientes',
-            '/sales-reports': 'Reportes de Ventas',
-            '/products': 'Gestión de Productos',
-            '/inventory': 'Control de Inventario',
-            '/warehouses': 'Gestión de Almacenes',
-            '/movements': 'Movimientos de Inventario',
-            '/production': 'Módulo de Producción',
-            '/purchases': 'Módulo de Compras',
-            '/pos-sales': 'Ventas POS',
-            '/fiscal-management': 'Gestión Fiscal',
-            '/employees': 'Gestión de Empleados',
-            '/payroll': 'Gestión de Nómina',
-            '/accounting': 'Contabilidad',
-            '/ai-insights': 'Insights con IA',
-            '/chat': 'Chat Interno',
-            '/user-management': 'Gestión de Usuarios',
-            '/company-settings': 'Configuración de Empresa',
-            '/error-management': 'Gestión de Errores',
-            '/system-monitoring': 'Monitoreo del Sistema',
-            '/super-admin': 'Super Admin',
-            '/module-manager': 'Gestión de Módulos',
-            '/company-management': 'Gestión de Empresas',
-            '/company-analytics': 'Analytics de Empresas'
-          };
-
-          const moduleName = moduleMap[item.href];
-          return moduleName ? isModuleActive(moduleName) : true;
-        });
-
-        return {
-          ...section,
-          items: filteredItems
-        };
-      }
-      return section;
-    }).filter(section => {
-      // Filter out categories that have no visible items
-      if (section.category && section.items) {
-        return section.items.length > 0;
-      }
-      return true;
-    });
-  };
-
-  const filteredNavigation = getFilteredNavigation();
-
-  const toggleCategory = (category: string) => {
-    const newExpanded = new Set(expandedCategories);
-    if (newExpanded.has(category)) {
-      newExpanded.delete(category);
-    } else {
-      newExpanded.add(category);
-    }
-    setExpandedCategories(newExpanded);
-  };
-
-  // Cerrar menú móvil al cambiar de ruta
   useEffect(() => {
-    setIsOpen(false);
+    const savedState = localStorage.getItem("sidebarCollapsed");
+    if (savedState) {
+      setIsCollapsed(JSON.parse(savedState));
+    }
+  }, []);
+
+  const toggleCollapse = () => {
+    const newState = !isCollapsed;
+    setIsCollapsed(newState);
+    localStorage.setItem("sidebarCollapsed", JSON.stringify(newState));
+  };
+
+  const isActive = (path: string) => {
+    if (path === "/" && location === "/") return true;
+    if (path !== "/" && location.startsWith(path)) return true;
+    return false;
+  };
+
+  const toggleExpanded = (name: string) => {
+    setExpandedItems(prev => 
+      prev.includes(name) 
+        ? prev.filter(item => item !== name)
+        : [...prev, name]
+    );
+  };
+
+  const isSuperAdmin = user?.role === 'super_admin';
+
+  // Auto-expand active parent items
+  useEffect(() => {
+    navigation.forEach(item => {
+      if (item.children) {
+        const hasActiveChild = item.children.some(child => isActive(child.href));
+        if (hasActiveChild && !expandedItems.includes(item.name)) {
+          setExpandedItems(prev => [...prev, item.name]);
+        }
+      }
+    });
   }, [location]);
 
-  // Cerrar menú móvil al hacer clic fuera
+  // Close mobile menu on navigation
+  useEffect(() => {
+    if (isMobile) {
+      setIsOpen(false);
+    }
+  }, [location]);
+
+  // Close mobile menu when clicking outside
   useEffect(() => {
     if (isOpen && isMobile) {
       const handleClickOutside = (event: MouseEvent) => {
@@ -249,311 +265,128 @@ export function Sidebar() {
             className="flex items-center min-w-0"
             initial={{ x: -20 }}
             animate={{ x: 0 }}
+            transition={{ type: "spring", stiffness: 200 }}
           >
-            <motion.div
-              whileHover={{ rotate: 360 }}
-              transition={{ duration: 0.5 }}
-              className="relative"
-            >
-              <img 
-                src={logoImage} 
-                alt="Four One Solutions" 
-                className="w-10 h-10 object-contain flex-shrink-0 rounded-xl shadow-lg"
-              />
-              <motion.div
-                className="absolute -top-1 -right-1 w-3 h-3 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full"
-                animate={{ 
-                  scale: [1, 1.2, 1],
-                  opacity: [0.7, 1, 0.7]
-                }}
-                transition={{ 
-                  duration: 2,
-                  repeat: Infinity
-                }}
-              />
-            </motion.div>
             {!isCollapsed && (
-              <motion.div 
-                className="ml-3 min-w-0"
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.1 }}
-              >
-                <h1 className="text-lg lg:text-xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent truncate">
-                  Four One Solutions
-                </h1>
-                <div className="flex items-center gap-2">
-                  <p className="text-xs text-slate-600 dark:text-slate-400 hidden sm:block">
-                    Sistema ERP
+              <>
+                <img 
+                  src={logoImage} 
+                  alt="Four One Solutions" 
+                  className="h-10 w-10 object-contain flex-shrink-0 mr-3"
+                />
+                <div className="min-w-0">
+                  <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent truncate">
+                    Four One Solutions
+                  </h1>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                    {(company as any)?.name || "Sistema ERP"}
                   </p>
-                  <motion.div
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
-                  >
-                    <Sparkles className="w-3 h-3 text-blue-500" />
-                  </motion.div>
                 </div>
-              </motion.div>
+              </>
             )}
           </motion.div>
-          {isMobile && (
+          
+          {/* Desktop collapse button */}
+          {!isMobile && (
             <motion.button
-              onClick={() => setIsOpen(false)}
-              className="p-2 rounded-xl text-slate-500 hover:text-slate-700 hover:bg-slate-100 dark:hover:bg-gray-800 transition-colors"
+              onClick={toggleCollapse}
+              className="p-1.5 rounded-lg hover:bg-gray-200/50 dark:hover:bg-gray-700/50 transition-all duration-200"
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
             >
-              <X className="h-5 w-5" />
+              {isCollapsed ? (
+                <ChevronRight className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+              ) : (
+                <ChevronLeft className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+              )}
+            </motion.button>
+          )}
+          
+          {/* Mobile close button */}
+          {isMobile && (
+            <motion.button
+              onClick={() => setIsOpen(false)}
+              className="p-1.5 rounded-lg hover:bg-gray-200/50 dark:hover:bg-gray-700/50"
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+            >
+              <X className="h-5 w-5 text-gray-600 dark:text-gray-400" />
             </motion.button>
           )}
         </div>
       </motion.div>
 
       {/* Navigation */}
-      <nav className="flex-1 p-4 space-y-2 overflow-y-auto custom-scrollbar">
-        {filteredNavigation.map((item, index) => {
-          if ("href" in item) {
-            const isActive = location === item.href;
-            const Icon = item.icon;
-            return (
-              <motion.div
-                key={item.name}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.05 }}
-              >
-                <Link 
-                  href={item.href || "#"}
-                  className={cn(
-                    "group flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-300 relative overflow-hidden",
-                    isActive
-                      ? "text-white bg-gradient-to-r from-blue-600 to-blue-700 shadow-lg shadow-blue-500/25"
-                      : "text-slate-700 dark:text-slate-300 hover:bg-gradient-to-r hover:from-slate-100 hover:to-slate-50 dark:hover:from-gray-800 dark:hover:to-gray-750"
-                  )}
-                  title={isCollapsed ? item.name : undefined}
-                >
-                  <motion.div
-                    className="absolute inset-0 bg-gradient-to-r from-blue-600/10 to-purple-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                    layoutId={isActive ? "activeBackground" : undefined}
-                  />
-                  {Icon && (
-                    <motion.div
-                      whileHover={{ scale: 1.1 }}
-                      className="relative z-10"
-                    >
-                      <Icon className={cn("h-5 w-5 flex-shrink-0", isCollapsed ? "mr-0" : "mr-3")} />
-                    </motion.div>
-                  )}
-                  {!isCollapsed && (
-                    <span className="truncate relative z-10">{item.name}</span>
-                  )}
-                  {isActive && (
-                    <motion.div
-                      className="absolute right-2 w-2 h-2 bg-white rounded-full"
-                      layoutId="activeIndicator"
-                      transition={{ type: "spring", stiffness: 300 }}
-                    />
-                  )}
-                </Link>
-              </motion.div>
-            );
-          }
+      <nav className={cn(
+        "flex-1 p-2 lg:p-4 space-y-1 overflow-y-auto",
+        "scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-700",
+        "scrollbar-track-transparent hover:scrollbar-thumb-gray-400 dark:hover:scrollbar-thumb-gray-600"
+      )}>
+        <motion.div 
+          className="space-y-1"
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.1 }}
+        >
+          {navigation.map((item, index) => (
+            <NavItem 
+              key={item.name} 
+              item={item} 
+              isActive={isActive}
+              isCollapsed={isCollapsed}
+              isExpanded={expandedItems.includes(item.name)}
+              onToggleExpanded={() => toggleExpanded(item.name)}
+              index={index}
+            />
+          ))}
+        </motion.div>
 
-          const isExpanded = expandedCategories.has(item.category);
-          const hasActiveItem = item.items?.some(subItem => location === subItem.href);
-
-          return (
-            <motion.div 
-              key={index} 
-              className="pt-2"
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.05 }}
-            >
-              <motion.button
-                onClick={() => toggleCategory(item.category)}
-                className="w-full flex items-center justify-between px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider hover:text-blue-600 dark:hover:text-blue-400 transition-colors rounded-lg hover:bg-slate-100/50 dark:hover:bg-gray-800/50"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                <span className="flex items-center gap-2">
-                  {item.category}
-                  {hasActiveItem && (
-                    <motion.div
-                      className="w-2 h-2 bg-blue-500 rounded-full"
-                      animate={{ scale: [1, 1.2, 1] }}
-                      transition={{ duration: 2, repeat: Infinity }}
-                    />
-                  )}
-                </span>
-                <motion.div
-                  animate={{ rotate: isExpanded ? 180 : 0 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <ChevronDown className="h-4 w-4" />
-                </motion.div>
-              </motion.button>
-              
-              <AnimatePresence>
-                {isExpanded && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    exit={{ opacity: 0, height: 0 }}
-                    transition={{ duration: 0.3, ease: "easeInOut" }}
-                    className="overflow-hidden"
-                  >
-                    <div className="mt-2 space-y-1 pl-2">
-                      {item.items?.map((subItem, subIndex) => {
-                        const isActive = location === subItem.href;
-                        const Icon = subItem.icon;
-                        return (
-                          <motion.div
-                            key={subItem.name}
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: subIndex * 0.05 }}
-                          >
-                            <Link 
-                              href={subItem.href || "#"}
-                              className={cn(
-                                "group flex items-center px-4 py-2.5 text-sm font-medium rounded-xl transition-all duration-300 relative overflow-hidden",
-                                isActive
-                                  ? "text-white bg-gradient-to-r from-blue-600 to-blue-700 shadow-lg shadow-blue-500/25"
-                                  : "text-slate-700 dark:text-slate-300 hover:bg-gradient-to-r hover:from-slate-100 hover:to-slate-50 dark:hover:from-gray-800 dark:hover:to-gray-750"
-                              )}
-                            >
-                              <motion.div
-                                className="absolute inset-0 bg-gradient-to-r from-blue-600/10 to-purple-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                                layoutId={isActive ? "activeSubBackground" : undefined}
-                              />
-                              {Icon && (
-                                <motion.div
-                                  whileHover={{ scale: 1.1 }}
-                                  className="relative z-10"
-                                >
-                                  <Icon className="mr-3 h-4 w-4 flex-shrink-0" />
-                                </motion.div>
-                              )}
-                              <span className="truncate relative z-10">{subItem.name}</span>
-                              {isActive && (
-                                <motion.div
-                                  className="absolute right-2 w-2 h-2 bg-white rounded-full"
-                                  layoutId="activeSubIndicator"
-                                  transition={{ type: "spring", stiffness: 300 }}
-                                />
-                              )}
-                            </Link>
-                          </motion.div>
-                        );
-                      })}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </motion.div>
-          );
-        })}
-
-        {/* Super Admin Access */}
-        {user && user.email === 'admin@fourone.com.do' && (
+        {/* Admin Section */}
+        {isSuperAdmin && !isCollapsed && (
           <motion.div 
-            className="pt-4 border-t border-slate-200/50 dark:border-gray-700/50"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
+            className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700 space-y-1"
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.3 }}
           >
-            <motion.div
-              className="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider flex items-center gap-2"
-              whileHover={{ scale: 1.02 }}
-            >
-              <Crown className="w-3 h-3 text-yellow-500" />
+            <p className="px-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
               Administración
+            </p>
+            {adminNavigation.map((item, index) => (
+              <NavItem 
+                key={item.name} 
+                item={item} 
+                isActive={isActive}
+                isCollapsed={isCollapsed}
+                isExpanded={false}
+                onToggleExpanded={() => {}}
+                index={index + navigation.length}
+              />
+            ))}
+            
+            {/* Super Admin Link */}
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.4 }}
+            >
+              <Link
+                href="/admin/companies"
+                className={cn(
+                  "flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-300",
+                  "bg-gradient-to-r from-purple-600/10 to-pink-600/10 dark:from-purple-500/20 dark:to-pink-500/20",
+                  "border border-purple-200/50 dark:border-purple-700/50",
+                  "hover:from-purple-600/20 hover:to-pink-600/20 dark:hover:from-purple-500/30 dark:hover:to-pink-500/30",
+                  "text-purple-700 dark:text-purple-300"
+                )}
+              >
+                <Building2 className="h-4 w-4 flex-shrink-0" />
+                <span className="truncate">Gestión de Empresas</span>
+              </Link>
             </motion.div>
-            <div className="mt-2 space-y-1">
-              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                <Link 
-                  href="/super-admin"
-                  className={cn(
-                    "group flex items-center px-4 py-2.5 text-sm font-medium rounded-xl transition-all duration-300 relative overflow-hidden",
-                    location === "/super-admin"
-                      ? "text-white bg-gradient-to-r from-yellow-600 to-orange-600 shadow-lg shadow-yellow-500/25"
-                      : "text-slate-700 dark:text-slate-300 hover:bg-gradient-to-r hover:from-yellow-50 hover:to-orange-50 dark:hover:from-yellow-900/20 dark:hover:to-orange-900/20"
-                  )}
-                >
-                  <ShieldCheck className="mr-3 h-4 w-4 flex-shrink-0" />
-                  <span className="truncate">Panel de Admin</span>
-                </Link>
-              </motion.div>
-              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                <Link 
-                  href="/company-management"
-                  className={cn(
-                    "group flex items-center px-4 py-2.5 text-sm font-medium rounded-xl transition-all duration-300 relative overflow-hidden",
-                    location === "/company-management"
-                      ? "text-white bg-gradient-to-r from-yellow-600 to-orange-600 shadow-lg shadow-yellow-500/25"
-                      : "text-slate-700 dark:text-slate-300 hover:bg-gradient-to-r hover:from-yellow-50 hover:to-orange-50 dark:hover:from-yellow-900/20 dark:hover:to-orange-900/20"
-                  )}
-                >
-                  <Building2 className="mr-3 h-4 w-4 flex-shrink-0" />
-                  <span className="truncate">Gestión de Empresas</span>
-                </Link>
-              </motion.div>
-            </div>
           </motion.div>
         )}
       </nav>
-
-      {/* Trial Info - Enhanced with animations */}
-      {currentPlan === "trial" && !isCollapsed && (
-        <motion.div 
-          className="p-4 border-t border-slate-200/50 dark:border-gray-700/50"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-        >
-          <motion.div 
-            className="bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-2xl p-4 text-white relative overflow-hidden"
-            whileHover={{ scale: 1.02 }}
-            transition={{ type: "spring", stiffness: 300 }}
-          >
-            <motion.div
-              className="absolute inset-0 bg-gradient-to-r from-blue-600/20 to-purple-600/20"
-              animate={{ 
-                backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
-              }}
-              transition={{ 
-                duration: 3,
-                repeat: Infinity,
-                ease: "linear"
-              }}
-            />
-            <div className="relative z-10">
-              <div className="flex items-center justify-between mb-3">
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold">Prueba Gratuita</p>
-                  <p className="text-xs opacity-90 truncate">
-                    {daysUntilExpiry > 0 ? `${daysUntilExpiry} días restantes` : "Expirado"}
-                  </p>
-                </div>
-                <motion.div
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-                >
-                  <Star className="h-5 w-5 text-yellow-300 flex-shrink-0" />
-                </motion.div>
-              </div>
-              <motion.button 
-                className="w-full bg-white/20 hover:bg-white/30 rounded-xl px-3 py-2 text-xs font-medium transition-all duration-300 backdrop-blur-sm"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                Ver Planes Premium
-              </motion.button>
-            </div>
-          </motion.div>
-        </motion.div>
-      )}
     </motion.div>
   );
 
@@ -568,49 +401,195 @@ export function Sidebar() {
           <Menu className="h-5 w-5 text-gray-700 dark:text-gray-300" />
         </button>
 
-        {/* Mobile Overlay */}
-        {isOpen && (
-          <div className="fixed inset-0 z-40 bg-black/50 lg:hidden" onClick={() => setIsOpen(false)} />
-        )}
-
         {/* Mobile Sidebar */}
-        <aside
-          id="mobile-sidebar"
-          className={cn(
-            "fixed left-0 top-0 z-50 h-full w-64 sm:w-72 border-r border-gray-200 dark:border-gray-700 transform transition-transform duration-300 lg:hidden",
-            isOpen ? "translate-x-0" : "-translate-x-full"
+        <AnimatePresence>
+          {isOpen && (
+            <>
+              {/* Backdrop */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setIsOpen(false)}
+                className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden"
+              />
+
+              {/* Sidebar */}
+              <motion.div
+                id="mobile-sidebar"
+                initial={{ x: "-100%" }}
+                animate={{ x: 0 }}
+                exit={{ x: "-100%" }}
+                transition={{ type: "spring", damping: 20 }}
+                className="fixed inset-y-0 left-0 w-72 z-50 lg:hidden"
+              >
+                {sidebarContent}
+              </motion.div>
+            </>
           )}
-        >
-          {sidebarContent}
-        </aside>
+        </AnimatePresence>
       </>
     );
   }
 
   // Desktop Sidebar
   return (
-    <>
-      {/* Desktop Collapse Button */}
-      <button
-        onClick={() => setIsCollapsed(!isCollapsed)}
-        className="fixed top-4 left-4 z-50 p-2 rounded-md bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 shadow-md hidden lg:block transition-all duration-300"
-        style={{ left: isCollapsed ? '4px' : '272px' }}
-      >
-        {isCollapsed ? (
-          <Menu className="h-4 w-4 text-gray-700 dark:text-gray-300" />
-        ) : (
-          <X className="h-4 w-4 text-gray-700 dark:text-gray-300" />
-        )}
-      </button>
+    <div 
+      className={cn(
+        "relative transition-all duration-300 ease-in-out",
+        isCollapsed ? "w-16" : "w-64"
+      )}
+    >
+      {sidebarContent}
+    </div>
+  );
+}
 
-      <aside 
-        className={cn(
-          "hidden lg:flex border-r border-gray-200 dark:border-gray-700 theme-blue:border-blue-500 h-screen overflow-hidden transition-all duration-300",
-          isCollapsed ? "w-0" : "w-64 xl:w-72"
+// NavItem Component
+function NavItem({ 
+  item, 
+  isActive, 
+  isCollapsed, 
+  isExpanded, 
+  onToggleExpanded,
+  index 
+}: {
+  item: any;
+  isActive: (path: string) => boolean;
+  isCollapsed: boolean;
+  isExpanded: boolean;
+  onToggleExpanded: () => void;
+  index: number;
+}) {
+  const hasChildren = item.children && item.children.length > 0;
+  const isParentActive = hasChildren && item.children.some((child: any) => isActive(child.href));
+
+  const itemContent = (
+    <motion.div
+      initial={{ opacity: 0, x: -20 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ delay: index * 0.05 }}
+      className="relative"
+    >
+      {item.href && !hasChildren ? (
+        <Link
+          href={item.href}
+          className={cn(
+            "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-300 group relative overflow-hidden",
+            isActive(item.href)
+              ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg shadow-blue-500/25 dark:shadow-blue-500/10"
+              : "text-gray-700 dark:text-gray-300 hover:bg-gray-100/70 dark:hover:bg-gray-800/70"
+          )}
+        >
+          <motion.div
+            className={cn(
+              "absolute inset-0 bg-gradient-to-r opacity-0 transition-opacity duration-300",
+              item.color,
+              !isActive(item.href) && "group-hover:opacity-10"
+            )}
+          />
+          <item.icon className={cn(
+            "h-5 w-5 flex-shrink-0 relative z-10 transition-transform duration-300",
+            isActive(item.href) && "drop-shadow-sm",
+            !isActive(item.href) && "group-hover:scale-110"
+          )} />
+          {!isCollapsed && (
+            <>
+              <span className="relative z-10 truncate">{item.name}</span>
+              {item.badge && (
+                <motion.span 
+                  className="ml-auto px-2 py-0.5 text-xs font-bold bg-gradient-to-r from-violet-500 to-purple-500 text-white rounded-full shadow-sm"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: "spring", stiffness: 500, delay: 0.1 }}
+                >
+                  {item.badge}
+                </motion.span>
+              )}
+            </>
+          )}
+        </Link>
+      ) : (
+        <button
+          onClick={hasChildren ? onToggleExpanded : undefined}
+          className={cn(
+            "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-300 group relative overflow-hidden",
+            isParentActive
+              ? "bg-gradient-to-r from-blue-600/10 to-purple-600/10 dark:from-blue-500/20 dark:to-purple-500/20 text-blue-700 dark:text-blue-300"
+              : "text-gray-700 dark:text-gray-300 hover:bg-gray-100/70 dark:hover:bg-gray-800/70"
+          )}
+        >
+          <motion.div
+            className={cn(
+              "absolute inset-0 bg-gradient-to-r opacity-0 transition-opacity duration-300",
+              item.color,
+              !isParentActive && "group-hover:opacity-10"
+            )}
+          />
+          <item.icon className={cn(
+            "h-5 w-5 flex-shrink-0 relative z-10 transition-transform duration-300",
+            isParentActive && "text-blue-600 dark:text-blue-400",
+            "group-hover:scale-110"
+          )} />
+          {!isCollapsed && (
+            <>
+              <span className="relative z-10 truncate">{item.name}</span>
+              {hasChildren && (
+                <motion.div
+                  animate={{ rotate: isExpanded ? 180 : 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="ml-auto"
+                >
+                  <ChevronDown className="h-4 w-4" />
+                </motion.div>
+              )}
+            </>
+          )}
+        </button>
+      )}
+    </motion.div>
+  );
+
+  if (!hasChildren) {
+    return itemContent;
+  }
+
+  return (
+    <div>
+      {itemContent}
+      <AnimatePresence>
+        {isExpanded && !isCollapsed && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="ml-4 mt-1 space-y-1 overflow-hidden"
+          >
+            {item.children.map((child: any, childIndex: number) => (
+              <motion.div
+                key={child.name}
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: childIndex * 0.05 }}
+              >
+                <Link
+                  href={child.href}
+                  className={cn(
+                    "flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-200",
+                    isActive(child.href)
+                      ? "bg-blue-600/10 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300 font-medium"
+                      : "text-gray-600 dark:text-gray-400 hover:bg-gray-100/50 dark:hover:bg-gray-800/50"
+                  )}
+                >
+                  <child.icon className="h-4 w-4 flex-shrink-0" />
+                  <span className="truncate">{child.name}</span>
+                </Link>
+              </motion.div>
+            ))}
+          </motion.div>
         )}
-      >
-        {!isCollapsed && sidebarContent}
-      </aside>
-    </>
+      </AnimatePresence>
+    </div>
   );
 }

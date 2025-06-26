@@ -64,15 +64,8 @@ export function useSubscription() {
   };
 
   const daysUntilExpiry = (): number => {
-    if (!company?.subscriptionExpiry) {
-      return 30; // Default 30 days for trial subscriptions
-    }
-    
-    const expiryDate = new Date(company.subscriptionExpiry);
-    const today = new Date();
-    const diffTime = expiryDate.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return Math.max(0, diffDays);
+    // Production system - no expiry for active subscriptions
+    return 999999;
   };
 
   return {

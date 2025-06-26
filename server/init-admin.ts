@@ -55,6 +55,7 @@ export async function initializeAdminUser() {
       userId: adminUser.id,
       companyId: company.id,
       role: "company_admin",
+      permissions: ["all"], // Super admin has all permissions
       isActive: true
     });
 

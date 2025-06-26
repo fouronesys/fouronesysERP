@@ -92,7 +92,7 @@ export const companies = pgTable("companies", {
   taxRegime: varchar("tax_regime", { length: 50 }).default("general"), // régimen tributario
   currency: varchar("currency", { length: 3 }).default("DOP"),
   timezone: varchar("timezone", { length: 50 }).default("America/Santo_Domingo"),
-  subscriptionPlan: varchar("subscription_plan", { length: 20 }).default("trial"), // trial, monthly, annual
+  subscriptionPlan: varchar("subscription_plan", { length: 20 }).default("active"), // active, suspended, cancelled
   subscriptionExpiry: timestamp("subscription_expiry"),
   subscriptionStartDate: timestamp("subscription_start_date"),
   paymentConfirmed: boolean("payment_confirmed").default(false), // Admin-controlled payment confirmation

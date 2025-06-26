@@ -1,10 +1,14 @@
-import sgMail from '@sendgrid/mail';
+import * as SibApiV3Sdk from '@getbrevo/brevo';
 
-if (!process.env.SENDGRID_API_KEY) {
-  throw new Error("SENDGRID_API_KEY environment variable must be set");
+// Initialize Brevo API
+const apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
+
+// Set API key if available
+if (process.env.BREVO_API_KEY) {
+  apiInstance.setApiKey(SibApiV3Sdk.TransactionalEmailsApiApiKeys.apiKey, process.env.BREVO_API_KEY);
+} else {
+  console.warn("BREVO_API_KEY not configured - Email functionality disabled");
 }
-
-sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 interface EmailParams {
   to: string;
@@ -14,27 +18,48 @@ interface EmailParams {
 }
 
 export async function sendEmail(params: EmailParams): Promise<boolean> {
+  if (!process.env.BREVO_API_KEY) {
+    console.warn('Email not sent - BREVO_API_KEY not configured');
+    return false;
+  }
+
   try {
-    await sgMail.send({
-      to: params.to,
-      from: process.env.SENDGRID_FROM_EMAIL || 'noreply@fourone.com.do',
-      subject: params.subject,
-      text: params.text,
-      html: params.html,
-    });
+    const sendSmtpEmail = new SibApiV3Sdk.SendSmtpEmail();
+    
+    sendSmtpEmail.sender = {
+      name: "Four One Solutions",
+      email: process.env.BREVO_FROM_EMAIL || 'noreply@fourone.com.do'
+    };
+    
+    sendSmtpEmail.to = [{
+      email: params.to
+    }];
+    
+    sendSmtpEmail.subject = params.subject;
+    
+    if (params.html) {
+      sendSmtpEmail.htmlContent = params.html;
+    }
+    
+    if (params.text) {
+      sendSmtpEmail.textContent = params.text;
+    }
+
+    await apiInstance.sendTransacEmail(sendSmtpEmail);
+    console.log('Email sent successfully via Brevo');
     return true;
   } catch (error) {
-    console.error('SendGrid email error:', error);
+    console.error('Brevo email error:', error);
     return false;
   }
 }
 
 export async function sendApiKeyEmail(email: string, apiKey: string, companyName: string): Promise<boolean> {
-  const subject = 'Tu Clave API - Four One System';
+  const subject = 'Tu Clave API - Four One Solutions';
   
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-      <h2 style="color: #1e40af;">Four One System - API Developer</h2>
+      <h2 style="color: #1e40af;">Four One Solutions - API Developer</h2>
       
       <p>Hola,</p>
       

@@ -211,15 +211,7 @@ const DEFAULT_SYSTEM_CONFIG = [
     isEditable: true,
     isPublic: true
   },
-  {
-    key: "subscription.trial_days",
-    value: "30",
-    valueType: "number",
-    category: "subscription",
-    description: "Días de prueba gratuita",
-    isEditable: true,
-    isPublic: false
-  },
+
   {
     key: "subscription.monthly_price",
     value: "3500",
@@ -393,12 +385,12 @@ export class ModuleInitializer {
       
       // Log the company module initialization
       await auditLogger.logUserAction(
-        enabledBy,
+        enabledBy || "system",
         companyId,
         "initialize_company_modules",
         "company_modules",
         companyId.toString(),
-        null,
+        undefined,
         { companyId, action: "enable_default_modules" }
       );
       

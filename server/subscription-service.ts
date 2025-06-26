@@ -4,7 +4,7 @@ import { eq } from "drizzle-orm";
 import { storage } from "./storage";
 
 export interface SubscriptionUpdate {
-  subscriptionPlan: 'trial' | 'monthly' | 'annual';
+  subscriptionPlan: 'active' | 'suspended' | 'cancelled';
   subscriptionStartDate?: Date;
   subscriptionExpiry?: Date;
 }
@@ -22,8 +22,9 @@ export function calculateSubscriptionExpiry(plan: string, startDate: Date = new 
     case 'annual':
       expiryDate.setFullYear(expiryDate.getFullYear() + 1);
       break;
-    case 'trial':
-      expiryDate.setDate(expiryDate.getDate() + 15); // 15 days trial
+    case 'active':
+      // Active subscriptions don't expire automatically
+      expiryDate.setFullYear(expiryDate.getFullYear() + 100);
       break;
     default:
       throw new Error(`Invalid subscription plan: ${plan}`);
