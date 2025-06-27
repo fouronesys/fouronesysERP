@@ -190,6 +190,7 @@ export interface IStorage {
   
   // Warehouse operations
   getWarehouses(companyId: number): Promise<Warehouse[]>;
+  getDefaultWarehouse(companyId: number): Promise<Warehouse>;
   createWarehouse(warehouse: InsertWarehouse): Promise<Warehouse>;
   updateWarehouse(id: number, warehouse: Partial<InsertWarehouse>, companyId: number): Promise<Warehouse | undefined>;
   deleteWarehouse(id: number, companyId: number): Promise<void>;
@@ -835,6 +836,43 @@ export class DatabaseStorage implements IStorage {
   // Warehouse operations
   async getWarehouses(companyId: number): Promise<Warehouse[]> {
     return await db.select().from(warehouses).where(eq(warehouses.companyId, companyId));
+  }
+
+  async getDefaultWarehouse(companyId: number): Promise<Warehouse> {
+    // First try to find an existing warehouse
+    const existingWarehouses = await db.select().from(warehouses)
+      .where(eq(warehouses.companyId, companyId))
+      .limit(1);
+    
+    if (existingWarehouses.length > 0) {
+      return existingWarehouses[0];
+    }
+    
+    // If no warehouse exists, create a default one
+    const defaultWarehouse: InsertWarehouse = {
+      companyId,
+      code: "DEFAULT",
+      name: "Almacén Principal",
+      location: "Ubicación principal",
+      type: "general",
+      isActive: true,
+      temperatureControlled: false,
+      maxCapacity: null,
+      address: null,
+      phone: null,
+      email: null,
+      manager: null,
+      minTemperature: null,
+      maxTemperature: null,
+      notes: "Almacén creado automáticamente como predeterminado"
+    };
+    
+    const [warehouse] = await db
+      .insert(warehouses)
+      .values(defaultWarehouse)
+      .returning();
+    
+    return warehouse;
   }
 
   async createWarehouse(warehouseData: InsertWarehouse): Promise<Warehouse> {

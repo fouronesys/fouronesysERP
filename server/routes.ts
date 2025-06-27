@@ -2370,6 +2370,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get default warehouse for the company
+  app.get("/api/warehouse/default", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+      
+      const defaultWarehouse = await storage.getDefaultWarehouse(company.id);
+      res.json(defaultWarehouse);
+    } catch (error) {
+      console.error("Error fetching default warehouse:", error);
+      res.status(500).json({ message: "Failed to fetch default warehouse" });
+    }
+  });
+
   // Get warehouse stock data
   app.get("/api/warehouse-stock", isAuthenticated, async (req: any, res) => {
     try {
@@ -2379,16 +2396,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Company not found" });
       }
       
+      // Get default warehouse to ensure consistent data
+      const defaultWarehouse = await storage.getDefaultWarehouse(company.id);
+      
       // Create sample warehouse stock data for testing
       const warehouseStock = [
-        { productId: 3, warehouseId: 2, quantity: 150, avgCost: 25.50 },
-        { productId: 4, warehouseId: 2, quantity: 75, avgCost: 15.75 },
-        { productId: 5, warehouseId: 2, quantity: 0, avgCost: 0 },
-        { productId: 6, warehouseId: 2, quantity: 200, avgCost: 8.30 },
-        { productId: 7, warehouseId: 2, quantity: 50, avgCost: 45.00 },
-        { productId: 8, warehouseId: 2, quantity: 120, avgCost: 12.80 },
-        { productId: 9, warehouseId: 2, quantity: 30, avgCost: 35.00 },
-        { productId: 10, warehouseId: 2, quantity: 90, avgCost: 18.50 },
+        { productId: 3, warehouseId: defaultWarehouse.id, quantity: 150, avgCost: 25.50 },
+        { productId: 4, warehouseId: defaultWarehouse.id, quantity: 75, avgCost: 15.75 },
+        { productId: 5, warehouseId: defaultWarehouse.id, quantity: 0, avgCost: 0 },
+        { productId: 6, warehouseId: defaultWarehouse.id, quantity: 200, avgCost: 8.30 },
+        { productId: 7, warehouseId: defaultWarehouse.id, quantity: 50, avgCost: 45.00 },
+        { productId: 8, warehouseId: defaultWarehouse.id, quantity: 120, avgCost: 12.80 },
+        { productId: 9, warehouseId: defaultWarehouse.id, quantity: 30, avgCost: 35.00 },
+        { productId: 10, warehouseId: defaultWarehouse.id, quantity: 90, avgCost: 18.50 },
       ];
       
       res.json(warehouseStock);

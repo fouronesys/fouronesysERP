@@ -75,19 +75,20 @@ export default function Products() {
 
   const createProductMutation = useMutation({
     mutationFn: async (data: ProductFormData) => {
+      const isInventoriable = data.productType === 'product' || data.productType === 'raw_material';
       await apiRequest("/api/products", {
         method: "POST",
         body: {
           ...data,
           price: data.price,
           cost: data.cost || undefined,
-          stock: parseInt(data.stock),
-          minStock: parseInt(data.minStock),
-          productType: 'product',
+          stock: isInventoriable ? parseInt(data.stock) : 0,
+          minStock: isInventoriable ? parseInt(data.minStock) : 0,
+          productType: data.productType,
           taxType: 'itbis_18',
           canBeSold: true,
-          canBePurchased: true,
-          trackInventory: true
+          canBePurchased: data.productType !== 'service',
+          trackInventory: isInventoriable
         }
       });
     },
@@ -480,34 +481,37 @@ export default function Products() {
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="stock"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Stock Actual</FormLabel>
-                          <FormControl>
-                            <Input type="number" placeholder="0" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="minStock"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Stock Mínimo</FormLabel>
-                          <FormControl>
-                            <Input type="number" placeholder="0" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
+                  {/* Solo mostrar campos de inventario para productos inventariables */}
+                  {(form.watch("productType") === "product" || form.watch("productType") === "raw_material") && (
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="stock"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Stock Actual</FormLabel>
+                            <FormControl>
+                              <Input type="number" placeholder="0" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="minStock"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Stock Mínimo</FormLabel>
+                            <FormControl>
+                              <Input type="number" placeholder="0" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  )}
 
                   {/* Image Management Section */}
                   <div className="space-y-4">
