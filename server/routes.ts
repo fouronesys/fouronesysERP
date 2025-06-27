@@ -2561,19 +2561,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/fiscal/ncf-sequences", isAuthenticated, async (req: any, res) => {
     try {
-      console.log("[DEBUG] POST /api/fiscal/ncf-sequences - Body:", JSON.stringify(req.body, null, 2));
+      console.log("[DEBUG] POST /api/fiscal/ncf-sequences - Headers:", req.headers);
+      console.log("[DEBUG] POST /api/fiscal/ncf-sequences - Raw Body:", req.body);
+      console.log("[DEBUG] POST /api/fiscal/ncf-sequences - Body Type:", typeof req.body);
       
       const userId = req.user.id;
       const company = await storage.getCompanyByUserId(userId);
       if (!company) {
+        console.log("[DEBUG] Company not found for user:", userId);
         return res.status(404).json({ message: "Company not found" });
       }
+
+      console.log("[DEBUG] Company found:", company.id);
 
       // Map frontend field names to database field names
       const { type, series, rangeStart, rangeEnd, currentNumber, expirationDate, isActive, description } = req.body;
       
+      console.log("[DEBUG] Extracted fields:", { type, series, rangeStart, rangeEnd, currentNumber, expirationDate, isActive, description });
+      
       // Validate required fields
       if (!type || !rangeStart || !rangeEnd) {
+        console.log("[DEBUG] Missing required fields");
         return res.status(400).json({ message: "Missing required fields: type, rangeStart, rangeEnd" });
       }
       

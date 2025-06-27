@@ -190,25 +190,27 @@ export default function NCFManagement() {
 
   useEffect(() => {
     if (watchedTipo && watchedInicio && watchedFin && watchedInicio <= watchedFin) {
-      const preview = [];
-      for (let i = 0; i < 3 && watchedInicio + i <= watchedFin; i++) {
-        const consecutivo = (watchedInicio + i).toString().padStart(8, '0');
-        preview.push(`${watchedTipo}${consecutivo}`);
+      // Find the last sequence for this NCF type
+      const existingSequences = ncfSequences?.filter(seq => seq.ncfType === watchedTipo) || [];
+      let nextNumber = watchedInicio;
+      
+      if (existingSequences.length > 0) {
+        // Get the highest current sequence number for this type
+        const lastSequence = existingSequences.reduce((latest, current) => {
+          return current.currentSequence > latest.currentSequence ? current : latest;
+        });
+        nextNumber = Math.max(lastSequence.currentSequence + 1, watchedInicio);
       }
       
-      if (watchedFin > watchedInicio + 5) {
-        preview.push('...');
-        for (let i = 2; i >= 0; i--) {
-          const consecutivo = (watchedFin - i).toString().padStart(8, '0');
-          preview.push(`${watchedTipo}${consecutivo}`);
-        }
-      }
+      // Show only the next available number
+      const consecutivo = nextNumber.toString().padStart(8, '0');
+      const nextNCF = `${watchedTipo}${consecutivo}`;
       
-      setPreviewNCFs(preview);
+      setPreviewNCFs([nextNCF]);
     } else {
       setPreviewNCFs([]);
     }
-  }, [watchedTipo, watchedInicio, watchedFin]);
+  }, [watchedTipo, watchedInicio, watchedFin, ncfSequences]);
 
   const getStatusBadge = (batch: NCFBatch) => {
     const now = new Date();
