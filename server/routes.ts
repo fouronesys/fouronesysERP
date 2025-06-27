@@ -2372,30 +2372,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/warehouses", isAuthenticated, async (req: any, res) => {
     try {
-      console.log("Creating warehouse - Request body:", req.body);
+      console.log("[DEBUG] Creating warehouse - Headers:", req.headers);
+      console.log("[DEBUG] Creating warehouse - Raw body:", req.body);
+      console.log("[DEBUG] Body type:", typeof req.body);
+      console.log("[DEBUG] Body stringified:", JSON.stringify(req.body, null, 2));
+      
       const userId = req.user.id;
-      console.log("User ID:", userId);
+      console.log("[DEBUG] User ID:", userId);
       
       const company = await storage.getCompanyByUserId(userId);
       if (!company) {
-        console.log("Company not found for user:", userId);
+        console.log("[DEBUG] Company not found for user:", userId);
         return res.status(404).json({ message: "Company not found" });
       }
-      console.log("Company found:", company.id, company.name);
+      console.log("[DEBUG] Company found:", company.id, company.name);
       
       const warehouseData = {
         ...req.body,
         companyId: company.id,
+        createdAt: new Date(),
+        updatedAt: new Date()
       };
-      console.log("Warehouse data to insert:", warehouseData);
+      console.log("[DEBUG] Warehouse data to insert:", JSON.stringify(warehouseData, null, 2));
       
       const warehouse = await storage.createWarehouse(warehouseData);
-      console.log("Warehouse created successfully:", warehouse);
+      console.log("[DEBUG] Warehouse created successfully:", warehouse);
       res.json(warehouse);
-    } catch (error) {
-      console.error("Error creating warehouse:", error);
-      console.error("Error stack:", error.stack);
-      res.status(500).json({ message: "Failed to create warehouse", error: error.message });
+    } catch (error: any) {
+      console.error("[ERROR] Error creating warehouse:", error);
+      console.error("[ERROR] Error stack:", error?.stack);
+      console.error("[ERROR] Error message:", error?.message);
+      res.status(500).json({ 
+        message: "Failed to create warehouse", 
+        error: error?.message || "Unknown error",
+        details: error?.stack 
+      });
     }
   });
 

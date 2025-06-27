@@ -57,12 +57,10 @@ const WarehouseManagementSimple = () => {
   const createWarehouseMutation = useMutation({
     mutationFn: async (data: any) => {
       console.log("Creating warehouse with data:", data);
-      const response = await apiRequest('/api/warehouses', {
+      return await apiRequest('/api/warehouses', {
         method: 'POST',
-        body: JSON.stringify(data)
+        body: data
       });
-      console.log("Warehouse creation response:", response);
-      return response;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/warehouses'] });
