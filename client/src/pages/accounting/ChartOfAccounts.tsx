@@ -443,31 +443,33 @@ export default function ChartOfAccounts() {
             />
           </div>
         </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="text-center py-4">Cargando plan de cuentas...</div>
-          ) : hierarchicalAccounts.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <Calculator className="h-12 w-12 mx-auto mb-4 opacity-20" />
-              <p>No se encontraron cuentas contables</p>
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Código</TableHead>
-                  <TableHead>Nombre</TableHead>
-                  <TableHead>Tipo</TableHead>
-                  <TableHead>Estado</TableHead>
-                  <TableHead className="text-right">Saldo</TableHead>
-                  <TableHead>Acciones</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {hierarchicalAccounts.map(account => renderAccountRow(account))}
-              </TableBody>
-            </Table>
-          )}
+        <CardContent className="max-h-[450px] overflow-y-auto pr-2">
+          <div className="pb-6">
+            {isLoading ? (
+              <div className="text-center py-4">Cargando plan de cuentas...</div>
+            ) : hierarchicalAccounts.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <Calculator className="h-12 w-12 mx-auto mb-4 opacity-20" />
+                <p>No se encontraron cuentas contables</p>
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Código</TableHead>
+                    <TableHead>Nombre</TableHead>
+                    <TableHead>Tipo</TableHead>
+                    <TableHead>Estado</TableHead>
+                    <TableHead className="text-right">Saldo</TableHead>
+                    <TableHead>Acciones</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {hierarchicalAccounts.map(account => renderAccountRow(account))}
+                </TableBody>
+              </Table>
+            )}
+          </div>
         </CardContent>
       </Card>
     </div>
