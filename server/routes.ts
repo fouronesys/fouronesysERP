@@ -4068,6 +4068,90 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Search accounts with smart filtering
+  app.get("/api/accounting/accounts", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      const { query, category } = req.query;
+      const { enhancedAccountingService } = await import('./enhanced-accounting-service');
+      const accounts = await enhancedAccountingService.searchAccounts(company.id, query || "", category);
+      
+      res.json(accounts);
+    } catch (error) {
+      console.error("Error fetching accounts:", error);
+      res.status(500).json({ message: "Failed to fetch accounts" });
+    }
+  });
+
+  // Generate financial reports
+  app.post("/api/accounting/generate-report", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      const { reportType, startDate, endDate } = req.body;
+      const { enhancedAccountingService } = await import('./enhanced-accounting-service');
+      
+      let result;
+      if (reportType === 'BALANCE_GENERAL') {
+        result = await enhancedAccountingService.generateBalanceSheet(company.id, new Date(endDate));
+      } else if (reportType === 'ESTADO_RESULTADOS') {
+        result = await enhancedAccountingService.generateIncomeStatement(company.id, new Date(startDate), new Date(endDate));
+      } else {
+        return res.status(400).json({ message: "Invalid report type" });
+      }
+      
+      res.json(result.savedReport);
+    } catch (error) {
+      console.error("Error generating financial report:", error);
+      res.status(500).json({ message: "Failed to generate financial report" });
+    }
+  });
+
+  // Get journal entries with documents
+  app.get("/api/accounting/journal-entries", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      const { enhancedAccountingService } = await import('./enhanced-accounting-service');
+      const entries = await enhancedAccountingService.getJournalEntriesWithDocuments(company.id);
+      
+      res.json(entries);
+    } catch (error) {
+      console.error("Error fetching journal entries:", error);
+      res.status(500).json({ message: "Failed to fetch journal entries" });
+    }
+  });
+
+  // Get financial reports
+  app.get("/api/accounting/financial-reports", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      const reports = await storage.getFinancialReports(company.id);
+      res.json(reports);
+    } catch (error) {
+      console.error("Error fetching financial reports:", error);
+      res.status(500).json({ message: "Failed to fetch financial reports" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

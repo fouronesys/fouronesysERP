@@ -634,7 +634,7 @@ const Billing = () => {
                                 ></div>
                               </div>
                               <div className="text-sm text-gray-600">
-                                <p><strong>Actual:</strong> {sequence.currentNumber.toLocaleString()}</p>
+                                <p><strong>Actual:</strong> {(sequence.currentNumber || 0).toLocaleString()}</p>
                                 <p><strong>Restantes:</strong> {remaining.toLocaleString()}</p>
                               </div>
                             </div>
