@@ -532,9 +532,11 @@ export default function POS() {
                                 addToCart(product);
                               }}
                               disabled={
-                                product.productType !== 'service' && 
-                                product.productType !== 'non_inventoriable' && 
-                                parseInt(product.stock.toString()) <= 0
+                                // Only disable for regular products with no stock
+                                (product.productType !== 'service' && 
+                                 product.productType !== 'non_inventoriable' && 
+                                 product.trackInventory !== false && 
+                                 parseInt(product.stock.toString()) <= 0)
                               }
                             >
                               <Plus className="h-3 w-3 mr-1" />
