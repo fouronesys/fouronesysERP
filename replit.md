@@ -210,12 +210,12 @@ The system follows a monolithic architecture with clear separation of concerns:
   - **Production Testing**: Confirmed successful deletion of NCF batch (ID 2) with automatic table refresh showing remaining 4 active batches
 - June 27, 2025. **Financial Reports Complete Enhancement - Real Data Integration:**
   - **Complete Data Integration**: All financial reports now display authentic data calculated from journal entries instead of mock data
-  - **Universal Scroll Implementation**: Added vertical scroll (600px max height) to ALL financial report sections for improved navigation
+  - **Optimized Scroll Implementation**: Fixed scroll heights for optimal user experience - Balance/Estado/Balanza (350px), Libro Mayor (450px)
   - **Balance General**: Shows real calculated assets RD$ 6,510.00 balanced with liabilities and equity from actual accounting entries
   - **Estado de Resultados**: Displays authentic revenue RD$ 2,300.00, expenses RD$ 1,150.00, and net income RD$ 1,150.00 from journal entries
   - **Balanza de Comprobación**: Real balanced trial balance with debits and credits both totaling RD$ 8,210.00 from actual transactions
   - **Libro Mayor**: Complete general ledger with detailed account movements and running balances calculated from journal entry lines
-  - **Enhanced User Experience**: All report sections now have proper scrolling preventing content cutoff and improving usability
+  - **Enhanced User Experience**: All report sections have functional vertical scroll with proper padding and clean visual design
   - **Production Ready**: Financial reporting module fully functional with authentic Dominican Republic accounting standards compliance
 
 ## User Preferences

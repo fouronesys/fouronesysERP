@@ -92,7 +92,7 @@ export default function FinancialReports() {
           <CardTitle>Balance General</CardTitle>
           <p className="text-sm text-muted-foreground">Al {format(new Date(endDate), "dd/MM/yyyy")}</p>
         </CardHeader>
-        <CardContent className="max-h-[600px] overflow-y-auto pr-2">
+        <CardContent className="max-h-[350px] overflow-y-auto pr-2">
           <div className="space-y-6 pb-6">
             <div className="grid grid-cols-2 gap-6">
               {/* Activos */}
@@ -172,7 +172,7 @@ export default function FinancialReports() {
             Del {format(new Date(startDate), "dd/MM/yyyy")} al {format(new Date(endDate), "dd/MM/yyyy")}
           </p>
         </CardHeader>
-        <CardContent className="max-h-[600px] overflow-y-auto pr-2">
+        <CardContent className="max-h-[350px] overflow-y-auto pr-2">
           <div className="space-y-6 pb-6">
             {/* Ingresos */}
             <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
@@ -299,7 +299,7 @@ export default function FinancialReports() {
               <CardTitle>Balanza de Comprobación</CardTitle>
               <p className="text-sm text-muted-foreground">Al {format(new Date(endDate), "dd/MM/yyyy")}</p>
             </CardHeader>
-            <CardContent className="max-h-[600px] overflow-y-auto pr-2">
+            <CardContent className="max-h-[350px] overflow-y-auto pr-2">
               {isLoadingTrial ? (
                 <div className="text-center py-8">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
@@ -373,7 +373,7 @@ export default function FinancialReports() {
                 Del {format(new Date(startDate), "dd/MM/yyyy")} al {format(new Date(endDate), "dd/MM/yyyy")}
               </p>
             </CardHeader>
-            <CardContent className="max-h-[600px] overflow-y-auto pr-2">
+            <CardContent className="max-h-[450px] overflow-y-auto pr-2">
               {isLoadingLedger ? (
                 <div className="text-center py-8">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
