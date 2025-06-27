@@ -2561,11 +2561,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/fiscal/ncf-sequences", isAuthenticated, async (req: any, res) => {
     try {
-      console.log("[DEBUG] POST /api/fiscal/ncf-sequences - Headers:", req.headers);
+      console.log("[DEBUG] POST /api/fiscal/ncf-sequences - Starting");
       console.log("[DEBUG] POST /api/fiscal/ncf-sequences - Raw Body:", req.body);
-      console.log("[DEBUG] POST /api/fiscal/ncf-sequences - Body Type:", typeof req.body);
       
       const userId = req.user.id;
+      console.log("[DEBUG] User ID:", userId);
+      
       const company = await storage.getCompanyByUserId(userId);
       if (!company) {
         console.log("[DEBUG] Company not found for user:", userId);
@@ -2580,7 +2581,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("[DEBUG] Extracted fields:", { type, series, rangeStart, rangeEnd, currentNumber, expirationDate, isActive, description });
       
       // Validate required fields
-      if (!type || !rangeStart || !rangeEnd) {
+      if (!type || rangeStart === undefined || rangeEnd === undefined) {
         console.log("[DEBUG] Missing required fields");
         return res.status(400).json({ message: "Missing required fields: type, rangeStart, rangeEnd" });
       }
@@ -2589,8 +2590,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         companyId: company.id,
         ncfType: type,
         series: series || '001',
-        currentSequence: rangeStart || currentNumber || 1,
-        maxSequence: rangeEnd || 50000000,
+        currentSequence: parseInt(rangeStart) || parseInt(currentNumber) || 1,
+        maxSequence: parseInt(rangeEnd) || 50000000,
         isActive: isActive !== false,
         description: description || '',
         expirationDate: expirationDate ? new Date(expirationDate) : null,
@@ -2598,11 +2599,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         updatedAt: new Date()
       };
 
+      console.log("[DEBUG] Sequence data prepared:", sequenceData);
+
       const sequence = await storage.createNCFSequence(sequenceData);
-      res.json(sequence);
+      console.log("[DEBUG] Sequence created successfully:", sequence);
+      
+      res.status(201).json(sequence);
     } catch (error) {
-      console.error("Error creating NCF sequence:", error);
-      res.status(500).json({ message: "Failed to create NCF sequence" });
+      console.error("[ERROR] Error creating NCF sequence:", error);
+      console.error("[ERROR] Error stack:", error.stack);
+      res.status(500).json({ message: "Failed to create NCF sequence", error: error.message });
     }
   });
 
