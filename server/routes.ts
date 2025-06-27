@@ -2917,17 +2917,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Missing required fields: tipo, year, month" });
       }
 
+      // Import DGII generator
+      const { DGIIReportGenerator } = await import('./dgii-report-generator');
+
       // Generate the report based on type
       let reportData;
+      let reportContent = '';
       const periodo = `${year}-${String(month).padStart(2, '0')}`;
       const fechaInicio = `${year}-${String(month).padStart(2, '0')}-01`;
       const fechaFin = new Date(parseInt(year), parseInt(month), 0).toISOString().split('T')[0];
 
       if (tipo === '606') {
-        // Sales report - get all POS sales for the period
+        // Purchase report - get all POS sales for the period (treated as purchases for demo)
         const sales = await storage.getPOSSalesByPeriod(company.id, fechaInicio, fechaFin);
-        const totalAmount = sales.reduce((sum, sale) => sum + parseFloat(sale.total || '0'), 0);
-        const totalItbis = sales.reduce((sum, sale) => sum + parseFloat(sale.itbis || '0'), 0);
+        const summary = DGIIReportGenerator.generateReportSummary(tipo, sales);
+        reportContent = DGIIReportGenerator.generate606Report(company.rnc || '', periodo, sales);
         
         reportData = {
           companyId: company.id,
@@ -2935,30 +2939,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
           periodo,
           fechaInicio,
           fechaFin,
-          numeroRegistros: sales.length,
-          montoTotal: totalAmount.toFixed(2),
-          itbisTotal: totalItbis.toFixed(2),
+          numeroRegistros: summary.totalRecords,
+          montoTotal: summary.totalAmount.toFixed(2),
+          itbisTotal: summary.totalItbis.toFixed(2),
           estado: 'generated',
           generatedAt: new Date(),
-          checksum: `CHK${Date.now()}`
+          checksum: `CHK${Date.now()}`,
+          fileName: `606_${company.rnc}_${periodo}.txt`
         };
       } else if (tipo === '607') {
-        // Purchases report - for now return empty
+        // Sales report - get all POS sales for the period
+        const sales = await storage.getPOSSalesByPeriod(company.id, fechaInicio, fechaFin);
+        const summary = DGIIReportGenerator.generateReportSummary(tipo, sales);
+        reportContent = DGIIReportGenerator.generate607Report(company.rnc || '', periodo, sales);
+        
         reportData = {
           companyId: company.id,
           tipo: '607',
           periodo,
           fechaInicio,
           fechaFin,
-          numeroRegistros: 0,
-          montoTotal: '0.00',
-          itbisTotal: '0.00',
+          numeroRegistros: summary.totalRecords,
+          montoTotal: summary.totalAmount.toFixed(2),
+          itbisTotal: summary.totalItbis.toFixed(2),
           estado: 'generated',
           generatedAt: new Date(),
-          checksum: `CHK${Date.now()}`
+          checksum: `CHK${Date.now()}`,
+          fileName: `607_${company.rnc}_${periodo}.txt`
         };
       } else if (tipo === 'T-REGISTRO') {
-        // Payroll report - for now return empty
+        // Payroll report - placeholder for now
+        reportContent = DGIIReportGenerator.generateTRegistroReport(company.rnc || '', periodo, []);
+        
         reportData = {
           companyId: company.id,
           tipo: 'T-REGISTRO',
@@ -2970,11 +2982,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
           itbisTotal: '0.00',
           estado: 'generated',
           generatedAt: new Date(),
-          checksum: `CHK${Date.now()}`
+          checksum: `CHK${Date.now()}`,
+          fileName: `T-REGISTRO_${company.rnc}_${periodo}.txt`
         };
       } else {
         return res.status(400).json({ message: "Invalid report type" });
       }
+
+      // Save report content to file for download
+      const fs = require('fs');
+      const path = require('path');
+      const uploadsDir = path.join(process.cwd(), 'uploads');
+      if (!fs.existsSync(uploadsDir)) {
+        fs.mkdirSync(uploadsDir, { recursive: true });
+      }
+      
+      const filePath = path.join(uploadsDir, reportData.fileName!);
+      fs.writeFileSync(filePath, reportContent, 'utf8');
+      reportData.filePath = filePath;
 
       // Save the report
       const savedReport = await storage.createDGIIReport(reportData);
@@ -2983,6 +3008,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error generating DGII report:", error);
       res.status(500).json({ message: "Failed to generate DGII report", error: error.message });
+    }
+  });
+
+  // DGII Report Download endpoint
+  app.get("/api/dgii/reports/:id/download", isAuthenticated, async (req: any, res) => {
+    try {
+      const reportId = parseInt(req.params.id);
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      // Get the report from database
+      const reports = await storage.getDGIIReports(company.id);
+      const report = reports.find(r => r.id === reportId);
+      
+      if (!report) {
+        return res.status(404).json({ message: "Report not found" });
+      }
+
+      // Check if file exists
+      const fs = require('fs');
+      if (report.filePath && fs.existsSync(report.filePath)) {
+        // Serve the actual generated file
+        const content = fs.readFileSync(report.filePath, 'utf8');
+        res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+        res.setHeader('Content-Disposition', `attachment; filename="${report.fileName || `${report.tipo}_${report.periodo}.txt`}"`);
+        res.send(content);
+      } else {
+        // Fallback: regenerate the report content
+        const { DGIIReportGenerator } = await import('./dgii-report-generator');
+        let content = '';
+        
+        if (report.tipo === '606') {
+          const sales = await storage.getPOSSalesByPeriod(company.id, report.fechaInicio, report.fechaFin);
+          content = DGIIReportGenerator.generate606Report(company.rnc || '', report.periodo, sales);
+        } else if (report.tipo === '607') {
+          const sales = await storage.getPOSSalesByPeriod(company.id, report.fechaInicio, report.fechaFin);
+          content = DGIIReportGenerator.generate607Report(company.rnc || '', report.periodo, sales);
+        } else if (report.tipo === 'T-REGISTRO') {
+          content = DGIIReportGenerator.generateTRegistroReport(company.rnc || '', report.periodo, []);
+        }
+        
+        res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+        res.setHeader('Content-Disposition', `attachment; filename="${report.fileName || `${report.tipo}_${report.periodo}.txt`}"`);
+        res.send(content);
+      }
+    } catch (error) {
+      console.error("Error downloading DGII report:", error);
+      res.status(500).json({ message: "Failed to download DGII report" });
     }
   });
 
