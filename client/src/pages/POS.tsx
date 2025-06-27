@@ -750,9 +750,13 @@ export default function POS() {
                                 if (!customerRnc || customerRnc.length < 9) return;
                                 
                                 try {
-                                  const response = await apiRequest('/api/pos/customers/search-rnc', {
+                                  const response = await fetch('/api/pos/customers/search-rnc', {
                                     method: 'POST',
-                                    body: { rnc: customerRnc }
+                                    headers: {
+                                      'Content-Type': 'application/json',
+                                    },
+                                    credentials: 'include',
+                                    body: JSON.stringify({ rnc: customerRnc })
                                   });
                                   
                                   if (response.ok) {
@@ -762,18 +766,40 @@ export default function POS() {
                                       setCustomerName(result.customer.name || "");
                                       setCustomerPhone(result.customer.phone || "");
                                       setCustomerAddress(result.customer.address || "");
-                                      alert("Cliente existente encontrado. Datos cargados automáticamente.");
-                                    } else if (result.validation?.valid && result.validation?.data) {
+                                      toast({
+                                        title: "Cliente existente",
+                                        description: "Datos cargados automáticamente",
+                                      });
+                                    } else if (result.valid && result.rncData) {
                                       // RNC is valid, auto-fill with DGII data
-                                      setCustomerName(result.validation.data.name || "");
-                                      setCustomerAddress(result.validation.data.businessName || "");
-                                      alert("RNC validado exitosamente. Datos completados automáticamente.");
+                                      setCustomerName(result.rncData.name || "");
+                                      setCustomerAddress(result.rncData.businessName || "");
+                                      toast({
+                                        title: "RNC válido",
+                                        description: "Datos completados automáticamente",
+                                      });
                                     } else {
-                                      alert("RNC no encontrado en el registro DGII");
+                                      toast({
+                                        title: "RNC no encontrado",
+                                        description: result.message || "RNC no encontrado en el registro DGII",
+                                        variant: "destructive",
+                                      });
                                     }
+                                  } else {
+                                    const errorData = await response.json();
+                                    toast({
+                                      title: "Error de validación",
+                                      description: errorData.message || "Error al verificar RNC",
+                                      variant: "destructive",
+                                    });
                                   }
                                 } catch (error) {
                                   console.error("Error validating RNC:", error);
+                                  toast({
+                                    title: "Error de conexión",
+                                    description: "No se pudo verificar el RNC",
+                                    variant: "destructive",
+                                  });
                                 }
                               }}
                               disabled={!customerRnc || customerRnc.length < 9}
@@ -943,155 +969,167 @@ export default function POS() {
 
           {/* Tab Content móvil para carrito */}
           {layout.isMobile && activeTab === "cart" && (
-            <div className="space-y-4">
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base flex items-center justify-between">
-                    <span>Carrito ({cart.length})</span>
-                    {cart.length > 0 && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={clearCart}
-                        className="text-red-600"
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3 max-h-[calc(100vh-400px)] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent">
-                  {cart.length === 0 ? (
-                    <p className="text-gray-500 text-center py-8">Carrito vacío</p>
-                  ) : (
-                    cart.map((item) => (
-                      <div key={item.product.id} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                        <div className="flex justify-between items-start mb-2">
-                          <div>
-                            <p className="font-medium text-sm">{item.product.name}</p>
-                            <p className="text-xs text-gray-500">
-                              {formatDOP(parseFloat(item.product.price))} c/u
-                            </p>
-                          </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => removeFromCart(item.product.id)}
-                            className="text-red-600"
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        </div>
-                        
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
-                              className="h-10 w-10 p-0 touch-manipulation"
-                            >
-                              <Minus className="h-4 w-4" />
-                            </Button>
-                            <span className="font-medium text-base w-12 text-center">{item.quantity}</span>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
-                              className="h-10 w-10 p-0 touch-manipulation"
-                            >
-                              <Plus className="h-4 w-4" />
-                            </Button>
-                          </div>
-                          <span className="font-bold text-green-600">
-                            {formatDOP(item.subtotal)}
-                          </span>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Totales móvil */}
-              <Card>
-                <CardContent className="p-4">
-                  <div className="space-y-3 mb-4">
-                    <div className="flex justify-between text-base">
-                      <span>Subtotal:</span>
-                      <span className="font-medium">{formatDOP(subtotal)}</span>
-                    </div>
-                    <div className="flex justify-between text-base">
-                      <span>ITBIS:</span>
-                      <span className="font-medium">{formatDOP(itbis)}</span>
-                    </div>
-                    <div className="border-t pt-3">
-                      <div className="flex justify-between font-bold text-xl">
-                        <span>Total:</span>
-                        <span className="text-green-600 dark:text-green-400">{formatDOP(total)}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Método de pago móvil */}
-                  <div className="space-y-3 mb-4">
-                    <Input
-                      placeholder="Nombre del cliente"
-                      value={customerName}
-                      onChange={(e) => setCustomerName(e.target.value)}
-                    />
-                    <Input
-                      placeholder="Teléfono"
-                      value={customerPhone}
-                      onChange={(e) => setCustomerPhone(e.target.value)}
-                    />
-                  </div>
-
-                  <div className="flex gap-2 mb-4">
-                    <Button
-                      variant={paymentMethod === "cash" ? "default" : "outline"}
-                      onClick={() => setPaymentMethod("cash")}
-                      className="flex-1"
-                    >
-                      <Banknote className="h-4 w-4 mr-2" />
-                      Efectivo
-                    </Button>
-                    <Button
-                      variant={paymentMethod === "card" ? "default" : "outline"}
-                      onClick={() => setPaymentMethod("card")}
-                      className="flex-1"
-                    >
-                      <CreditCard className="h-4 w-4 mr-2" />
-                      Tarjeta
-                    </Button>
-                  </div>
-
-                  {paymentMethod === "cash" && (
-                    <Input
-                      type="number"
-                      step="0.01"
-                      placeholder="Efectivo recibido"
-                      value={cashReceived}
-                      onChange={(e) => setCashReceived(e.target.value)}
-                      className="mb-4"
-                    />
-                  )}
-
-                  <Button
-                    onClick={processSale}
-                    disabled={cart.length === 0 || isProcessing || (paymentMethod === "cash" && (!cashReceived || parseFloat(cashReceived) < total))}
-                    className="w-full bg-green-600 hover:bg-green-700"
-                    size="lg"
-                  >
-                    {isProcessing ? (
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+            <div className="h-full flex flex-col space-y-4 overflow-hidden">
+              {/* Cart Items - Scrollable */}
+              <div className="flex-1 overflow-hidden">
+                <Card className="h-full flex flex-col">
+                  <CardHeader className="pb-3 flex-shrink-0">
+                    <CardTitle className="text-base flex items-center justify-between">
+                      <span>Carrito ({cart.length})</span>
+                      {cart.length > 0 && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={clearCart}
+                          className="text-red-600"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="flex-1 overflow-y-auto space-y-3 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent">
+                    {cart.length === 0 ? (
+                      <p className="text-gray-500 text-center py-8">Carrito vacío</p>
                     ) : (
-                      <Receipt className="h-4 w-4 mr-2" />
+                      cart.map((item) => (
+                        <div key={item.product.id} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                          <div className="flex justify-between items-start mb-2">
+                            <div>
+                              <p className="font-medium text-sm">{item.product.name}</p>
+                              <p className="text-xs text-gray-500">
+                                {formatDOP(parseFloat(item.product.price))} c/u
+                              </p>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => removeFromCart(item.product.id)}
+                              className="text-red-600"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
+                          
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
+                                className="h-10 w-10 p-0 touch-manipulation"
+                              >
+                                <Minus className="h-4 w-4" />
+                              </Button>
+                              <span className="font-medium text-base w-12 text-center">{item.quantity}</span>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
+                                className="h-10 w-10 p-0 touch-manipulation"
+                              >
+                                <Plus className="h-4 w-4" />
+                              </Button>
+                            </div>
+                            <span className="font-bold text-green-600">
+                              {formatDOP(item.subtotal)}
+                            </span>
+                          </div>
+                        </div>
+                      ))
                     )}
-                    {isProcessing ? "Procesando..." : "Procesar Venta"}
-                  </Button>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Payment Section - Fixed at bottom */}
+              <div className="flex-shrink-0">
+                <Card>
+                  <CardContent className="p-4 space-y-4">
+                    {/* Totals */}
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span>Subtotal:</span>
+                        <span className="font-medium">{formatDOP(subtotal)}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span>ITBIS:</span>
+                        <span className="font-medium">{formatDOP(itbis)}</span>
+                      </div>
+                      <div className="border-t pt-2">
+                        <div className="flex justify-between font-bold text-lg">
+                          <span>Total:</span>
+                          <span className="text-green-600 dark:text-green-400">{formatDOP(total)}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Customer inputs */}
+                    <div className="space-y-2">
+                      <Input
+                        placeholder="Nombre del cliente"
+                        value={customerName}
+                        onChange={(e) => setCustomerName(e.target.value)}
+                        size="sm"
+                      />
+                      <Input
+                        placeholder="Teléfono"
+                        value={customerPhone}
+                        onChange={(e) => setCustomerPhone(e.target.value)}
+                        size="sm"
+                      />
+                    </div>
+
+                    {/* Payment method */}
+                    <div className="flex gap-2">
+                      <Button
+                        variant={paymentMethod === "cash" ? "default" : "outline"}
+                        onClick={() => setPaymentMethod("cash")}
+                        className="flex-1"
+                        size="sm"
+                      >
+                        <Banknote className="h-4 w-4 mr-1" />
+                        Efectivo
+                      </Button>
+                      <Button
+                        variant={paymentMethod === "card" ? "default" : "outline"}
+                        onClick={() => setPaymentMethod("card")}
+                        className="flex-1"
+                        size="sm"
+                      >
+                        <CreditCard className="h-4 w-4 mr-1" />
+                        Tarjeta
+                      </Button>
+                    </div>
+
+                    {paymentMethod === "cash" && (
+                      <Input
+                        type="number"
+                        step="0.01"
+                        placeholder="Efectivo recibido"
+                        value={cashReceived}
+                        onChange={(e) => setCashReceived(e.target.value)}
+                        size="sm"
+                      />
+                    )}
+
+                    {/* Process sale button */}
+                    <Button
+                      onClick={processSale}
+                      disabled={cart.length === 0 || isProcessing || (paymentMethod === "cash" && (!cashReceived || parseFloat(cashReceived) < total))}
+                      className="w-full bg-green-600 hover:bg-green-700"
+                      size="lg"
+                    >
+                      {isProcessing ? (
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                      ) : (
+                        <Receipt className="h-4 w-4 mr-2" />
+                      )}
+                      {isProcessing ? "Procesando..." : "Procesar Venta"}
+                    </Button>
+                  </CardContent>
+                </Card>
+              </div>
             </div>
           )}
         </div>

@@ -205,21 +205,24 @@ const Customers = () => {
   });
 
   const validateRNCMutation = useMutation({
-    mutationFn: (rnc: string) => apiRequest('/api/dgii/validate-rnc', {
-      method: 'POST',
-      body: JSON.stringify({ rnc })
-    }),
+    mutationFn: async (rnc: string) => {
+      const response = await fetch(`/api/dgii/rnc-lookup?rnc=${encodeURIComponent(rnc)}`, {
+        credentials: 'include'
+      });
+      return await response.json();
+    },
     onSuccess: (data: any) => {
-      if (data.valid) {
-        customerForm.setValue("businessName", data.businessName || "");
+      if (data.success && data.data) {
+        customerForm.setValue("businessName", data.data.razonSocial || "");
+        customerForm.setValue("commercialName", data.data.nombreComercial || "");
         toast({ 
           title: "RNC Válido", 
-          description: `Contribuyente: ${data.businessName}` 
+          description: `Contribuyente: ${data.data.razonSocial}` 
         });
       } else {
         toast({ 
           title: "RNC No Válido", 
-          description: "El RNC no existe en el registro de DGII",
+          description: data.message || "El RNC no existe en el registro de DGII",
           variant: "destructive" 
         });
       }
