@@ -2372,20 +2372,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/warehouses", isAuthenticated, async (req: any, res) => {
     try {
+      console.log("Creating warehouse - Request body:", req.body);
       const userId = req.user.id;
+      console.log("User ID:", userId);
+      
       const company = await storage.getCompanyByUserId(userId);
       if (!company) {
+        console.log("Company not found for user:", userId);
         return res.status(404).json({ message: "Company not found" });
       }
+      console.log("Company found:", company.id, company.name);
+      
       const warehouseData = {
         ...req.body,
         companyId: company.id,
       };
+      console.log("Warehouse data to insert:", warehouseData);
+      
       const warehouse = await storage.createWarehouse(warehouseData);
+      console.log("Warehouse created successfully:", warehouse);
       res.json(warehouse);
     } catch (error) {
       console.error("Error creating warehouse:", error);
-      res.status(500).json({ message: "Failed to create warehouse" });
+      console.error("Error stack:", error.stack);
+      res.status(500).json({ message: "Failed to create warehouse", error: error.message });
     }
   });
 

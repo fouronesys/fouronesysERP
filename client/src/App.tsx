@@ -35,7 +35,7 @@ import SuperAdmin from "@/pages/SuperAdmin";
 import CompanySettings from "@/pages/CompanySettings";
 import SalesReports from "@/pages/SalesReports";
 import POSSales from "@/pages/POSSales";
-import Warehouses from "@/pages/Warehouses";
+import WarehouseManagementSimple from "@/pages/WarehouseManagementSimple";
 import Movements from "@/pages/Movements";
 import Profile from "@/pages/Profile";
 import Notifications from "@/pages/Notifications";
@@ -293,7 +293,7 @@ function Router() {
           <Route path="/pos" component={POS} />
           <Route path="/sales-reports" component={SalesReports} />
           <Route path="/pos-sales" component={POSSales} />
-          <Route path="/warehouses" component={Warehouses} />
+          <Route path="/warehouses" component={WarehouseManagementSimple} />
           <Route path="/bom" component={BOM} />
           <Route path="/admin" component={SuperAdmin} />
           <Route path="/companies" component={CompanySettings} />

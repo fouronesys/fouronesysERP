@@ -22,27 +22,19 @@ import { useToast } from "@/hooks/use-toast";
 import { 
   Warehouse, Plus, Search, Edit, AlertCircle, Package, 
   MapPin, Users, BarChart3, TrendingUp, ArrowUpRight, 
-  ArrowDownLeft, Transfer, RefreshCw, Eye, FileText,
+  ArrowDownLeft, ArrowLeftRight, RefreshCw, Eye, FileText,
   Calendar, Clock, AlertTriangle, CheckCircle, XCircle,
   Filter, Download, Upload, Printer, RotateCcw
 } from "lucide-react";
 
-// Enhanced Warehouse Schema
+// Simplified Warehouse Schema for forms
 const warehouseSchema = z.object({
   code: z.string().min(1, "El código es requerido"),
   name: z.string().min(1, "El nombre es requerido"),
   location: z.string().min(1, "La ubicación es requerida"),
   type: z.enum(["main", "regional", "temporary", "finished_goods", "raw_materials", "assets"]),
-  manager: z.string().optional(),
-  maxCapacity: z.number().min(0).optional(),
   isActive: z.boolean().default(true),
-  address: z.string().optional(),
-  phone: z.string().optional(),
-  email: z.string().optional(),
-  temperatureControlled: z.boolean().default(false),
-  minTemperature: z.number().optional(),
-  maxTemperature: z.number().optional(),
-  notes: z.string().optional()
+  temperatureControlled: z.boolean().default(false)
 });
 
 // Inventory Movement Schema
@@ -123,7 +115,7 @@ const WarehouseManagement = () => {
       code: "",
       name: "",
       location: "",
-      type: "main",
+      type: "main" as const,
       isActive: true,
       temperatureControlled: false
     }
@@ -151,18 +143,34 @@ const WarehouseManagement = () => {
 
   // Mutations
   const createWarehouseMutation = useMutation({
-    mutationFn: (data: any) => apiRequest('/api/warehouses', {
-      method: 'POST',
-      body: JSON.stringify(data)
-    }),
-    onSuccess: () => {
+    mutationFn: async (data: any) => {
+      console.log("Creating warehouse with data:", data);
+      try {
+        const response = await apiRequest('/api/warehouses', {
+          method: 'POST',
+          body: JSON.stringify(data)
+        });
+        console.log("Warehouse creation response:", response);
+        return response;
+      } catch (error) {
+        console.error("Warehouse creation error:", error);
+        throw error;
+      }
+    },
+    onSuccess: (data) => {
+      console.log("Warehouse created successfully:", data);
       queryClient.invalidateQueries({ queryKey: ['/api/warehouses'] });
       setShowWarehouseDialog(false);
       warehouseForm.reset();
       toast({ title: "Almacén creado exitosamente" });
     },
     onError: (error: any) => {
-      toast({ title: "Error al crear almacén", description: error.message, variant: "destructive" });
+      console.error("Warehouse creation mutation error:", error);
+      toast({ 
+        title: "Error al crear almacén", 
+        description: error.message || "Error desconocido", 
+        variant: "destructive" 
+      });
     }
   });
 
