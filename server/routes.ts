@@ -9,7 +9,7 @@ import { initializeAdminUser } from "./init-admin";
 import { moduleInitializer } from "./module-initializer";
 import { sendApiKeyEmail } from "./email-service";
 import { createPaypalOrder, capturePaypalOrder, loadPaypalDefault } from "./paypal";
-import { insertCustomerSchema, invoiceItems, posSales, ncfSequences } from "../shared/schema";
+import { insertCustomerSchema, invoiceItems, posSales, ncfSequences, users as usersTable, companyUsers as companyUsersTable } from "../shared/schema";
 import { dgiiRegistryUpdater } from "./dgii-registry-updater";
 import { InvoicePOS80mmService } from "./invoice-pos-80mm-service";
 import { InvoiceHTMLService } from "./invoice-html-service";
@@ -240,8 +240,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Users management endpoints
   app.get("/api/users", isAuthenticated, async (req: any, res) => {
     try {
-      const users = await storage.getCompanyUsers(req.user.companyId);
-      res.json(users);
+      // Use SQL directly to avoid TypeScript conflicts
+      const usersList = await db.execute(sql`
+        SELECT u.id, u.email, u.first_name as "firstName", u.last_name as "lastName", 
+               cu.role, u.is_active as "isActive", cu.permissions, 
+               u.last_login_at as "lastLoginAt", u.created_at as "createdAt"
+        FROM users u
+        INNER JOIN company_users cu ON u.id = cu.user_id
+        WHERE cu.company_id = ${req.user.companyId}
+        ORDER BY u.first_name, u.last_name
+      `);
+      
+      res.json(usersList.rows);
     } catch (error) {
       console.error("Error fetching users:", error);
       res.status(500).json({ message: "Failed to fetch users" });

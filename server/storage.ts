@@ -1508,12 +1508,14 @@ export class DatabaseStorage implements IStorage {
         email: users.email,
         firstName: users.firstName,
         lastName: users.lastName,
-        role: users.role,
+        role: companyUsers.role,
         isActive: users.isActive,
-        companyId: users.companyId
+        permissions: companyUsers.permissions,
+        companyId: companyUsers.companyId
       })
       .from(users)
-      .where(eq(users.companyId, companyId))
+      .innerJoin(companyUsers, eq(users.id, companyUsers.userId))
+      .where(eq(companyUsers.companyId, companyId))
       .orderBy(users.firstName, users.lastName);
   }
 
