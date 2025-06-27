@@ -213,13 +213,18 @@ export default function NCFManagement() {
   }, [watchedTipo, watchedInicio, watchedFin, ncfBatches]);
 
   const getStatusBadge = (batch: NCFBatch) => {
-    const now = new Date();
-    const vencimiento = new Date(batch.vencimiento);
-    const diasRestantes = Math.ceil((vencimiento.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-    
     if (batch.estado === 'inactive') {
       return <Badge variant="secondary">Inactivo</Badge>;
     }
+    
+    // If no expiration date, show as active (e.g., B02 types)
+    if (!batch.vencimiento) {
+      return <Badge variant="default">Activo</Badge>;
+    }
+    
+    const now = new Date();
+    const vencimiento = new Date(batch.vencimiento);
+    const diasRestantes = Math.ceil((vencimiento.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
     
     if (diasRestantes < 0) {
       return <Badge variant="destructive">Vencido</Badge>;
@@ -587,7 +592,7 @@ export default function NCFManagement() {
                           </div>
                         </TableCell>
                         <TableCell>
-                          {format(new Date(batch.vencimiento), 'dd/MM/yyyy')}
+                          {batch.vencimiento ? format(new Date(batch.vencimiento), 'dd/MM/yyyy') : 'No aplica'}
                         </TableCell>
                         <TableCell>{getStatusBadge(batch)}</TableCell>
                         <TableCell className="text-right">
