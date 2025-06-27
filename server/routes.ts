@@ -240,17 +240,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Users management endpoints
   app.get("/api/users", isAuthenticated, async (req: any, res) => {
     try {
+      console.log("[DEBUG] GET /api/users - Starting");
+      console.log("[DEBUG] User ID:", req.user?.id);
+      console.log("[DEBUG] Company ID:", req.user?.companyId);
+      
       // Use SQL directly to avoid TypeScript conflicts
       const usersList = await db.execute(sql`
-        SELECT u.id, u.email, u.first_name as "firstName", u.last_name as "lastName", 
-               cu.role, u.is_active as "isActive", cu.permissions, 
-               u.last_login_at as "lastLoginAt", u.created_at as "createdAt"
+        SELECT u.id, u.email, u.first_name as firstName, u.last_name as lastName, 
+               cu.role, u.is_active as isActive, cu.permissions, 
+               u.last_login_at as lastLoginAt, u.created_at as createdAt
         FROM users u
         INNER JOIN company_users cu ON u.id = cu.user_id
         WHERE cu.company_id = ${req.user.companyId}
         ORDER BY u.first_name, u.last_name
       `);
       
+      console.log("[DEBUG] Users found:", usersList.rows.length);
       res.json(usersList.rows);
     } catch (error) {
       console.error("Error fetching users:", error);
@@ -4740,10 +4745,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/leave-requests", isAuthenticated, async (req: any, res) => {
     try {
+      console.log("[DEBUG] POST /api/leave-requests - Starting");
+      console.log("[DEBUG] Request body:", req.body);
+      console.log("[DEBUG] User:", req.user);
+      
       const userId = req.user.id;
       const company = await storage.getCompanyByUserId(userId);
       if (!company) {
+        console.log("[DEBUG] Company not found for user:", userId);
         return res.status(404).json({ message: "Company not found" });
+      }
+
+      console.log("[DEBUG] Company found:", company.id);
+      console.log("[DEBUG] Employee ID from body:", req.body.employeeId);
+
+      // Validate required fields
+      if (!req.body.employeeId) {
+        console.log("[DEBUG] Missing employeeId");
+        return res.status(400).json({ message: "Employee ID is required" });
       }
 
       // Calculate days between dates
@@ -4762,7 +4781,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status: 'pending'
       };
 
+      console.log("[DEBUG] Leave data to create:", leaveData);
       const leave = await storage.createLeave(leaveData);
+      console.log("[DEBUG] Leave created successfully:", leave);
       res.status(201).json(leave);
     } catch (error) {
       console.error("Error creating leave request:", error);
