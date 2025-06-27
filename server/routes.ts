@@ -4246,6 +4246,304 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get trial balance (Balanza de Comprobación)
+  app.get("/api/accounting/reports/trial-balance", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      // Calculate trial balance from journal entry lines
+      const trialBalanceData = await db.execute(sql`
+        SELECT 
+          c.code as account_code,
+          c.name as account_name,
+          c.account_type,
+          COALESCE(SUM(jel.debit_amount), 0) as total_debit,
+          COALESCE(SUM(jel.credit_amount), 0) as total_credit,
+          CASE 
+            WHEN c.account_type IN ('ASSET', 'EXPENSE') THEN 
+              COALESCE(SUM(jel.debit_amount), 0) - COALESCE(SUM(jel.credit_amount), 0)
+            ELSE 
+              COALESCE(SUM(jel.credit_amount), 0) - COALESCE(SUM(jel.debit_amount), 0)
+          END as balance
+        FROM chart_of_accounts c
+        LEFT JOIN journal_entry_lines jel ON c.code = jel.account_code
+        LEFT JOIN journal_entries je ON jel.journal_entry_id = je.id
+        WHERE c.company_id = ${company.id}
+        AND (je.status = 'POSTED' OR je.id IS NULL)
+        GROUP BY c.id, c.code, c.name, c.account_type
+        HAVING COALESCE(SUM(jel.debit_amount), 0) > 0 OR COALESCE(SUM(jel.credit_amount), 0) > 0
+        ORDER BY c.code
+      `);
+
+      const totalDebits = trialBalanceData.rows.reduce((sum: number, row: any) => sum + parseFloat(row.total_debit), 0);
+      const totalCredits = trialBalanceData.rows.reduce((sum: number, row: any) => sum + parseFloat(row.total_credit), 0);
+
+      const response = {
+        accounts: trialBalanceData.rows.map((row: any) => ({
+          accountCode: row.account_code,
+          accountName: row.account_name,
+          accountType: row.account_type,
+          debitBalance: parseFloat(row.total_debit),
+          creditBalance: parseFloat(row.total_credit),
+          balance: Math.abs(parseFloat(row.balance))
+        })),
+        totals: {
+          totalDebits,
+          totalCredits,
+          isBalanced: Math.abs(totalDebits - totalCredits) < 0.01
+        },
+        asOfDate: new Date().toISOString()
+      };
+
+      res.json(response);
+    } catch (error) {
+      console.error("Error generating trial balance:", error);
+      res.status(500).json({ message: "Failed to generate trial balance" });
+    }
+  });
+
+  // Get general ledger (Libro Mayor)
+  app.get("/api/accounting/reports/general-ledger", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      const { startDate, endDate } = req.query;
+
+      // Get all accounts with their transactions
+      const ledgerData = await db.execute(sql`
+        SELECT 
+          c.code as account_code,
+          c.name as account_name,
+          c.account_type,
+          je.entry_number,
+          je.date,
+          je.description,
+          jel.debit_amount,
+          jel.credit_amount,
+          jel.description as line_description
+        FROM chart_of_accounts c
+        LEFT JOIN journal_entry_lines jel ON c.code = jel.account_code
+        LEFT JOIN journal_entries je ON jel.journal_entry_id = je.id
+        WHERE c.company_id = ${company.id}
+        AND je.status = 'POSTED'
+        ${startDate ? sql`AND je.date >= ${startDate}` : sql``}
+        ${endDate ? sql`AND je.date <= ${endDate}` : sql``}
+        ORDER BY c.code, je.date, je.id
+      `);
+
+      // Group by account
+      const accountsMap = new Map();
+      ledgerData.rows.forEach((row: any) => {
+        const accountCode = row.account_code;
+        if (!accountsMap.has(accountCode)) {
+          accountsMap.set(accountCode, {
+            accountCode: row.account_code,
+            accountName: row.account_name,
+            accountType: row.account_type,
+            transactions: [],
+            totalDebit: 0,
+            totalCredit: 0,
+            balance: 0
+          });
+        }
+        
+        if (row.entry_number) {
+          const account = accountsMap.get(accountCode);
+          account.transactions.push({
+            entryNumber: row.entry_number,
+            date: row.date,
+            description: row.line_description || row.description,
+            debit: parseFloat(row.debit_amount) || 0,
+            credit: parseFloat(row.credit_amount) || 0
+          });
+          account.totalDebit += parseFloat(row.debit_amount) || 0;
+          account.totalCredit += parseFloat(row.credit_amount) || 0;
+        }
+      });
+
+      // Calculate balances
+      const accounts = Array.from(accountsMap.values()).map((account: any) => {
+        if (account.accountType === 'ASSET' || account.accountType === 'EXPENSE') {
+          account.balance = account.totalDebit - account.totalCredit;
+        } else {
+          account.balance = account.totalCredit - account.totalDebit;
+        }
+        return account;
+      });
+
+      res.json({ accounts, period: { startDate, endDate } });
+    } catch (error) {
+      console.error("Error generating general ledger:", error);
+      res.status(500).json({ message: "Failed to generate general ledger" });
+    }
+  });
+
+  // Get balance sheet
+  app.get("/api/accounting/reports/balance-sheet", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      // Calculate balance sheet from account balances
+      const balanceData = await db.execute(sql`
+        SELECT 
+          c.code,
+          c.name,
+          c.account_type,
+          c.category,
+          COALESCE(SUM(jel.debit_amount), 0) as total_debit,
+          COALESCE(SUM(jel.credit_amount), 0) as total_credit,
+          CASE 
+            WHEN c.account_type = 'ASSET' THEN COALESCE(SUM(jel.debit_amount), 0) - COALESCE(SUM(jel.credit_amount), 0)
+            WHEN c.account_type = 'LIABILITY' THEN COALESCE(SUM(jel.credit_amount), 0) - COALESCE(SUM(jel.debit_amount), 0)
+            WHEN c.account_type = 'EQUITY' THEN COALESCE(SUM(jel.credit_amount), 0) - COALESCE(SUM(jel.debit_amount), 0)
+            ELSE 0
+          END as balance
+        FROM chart_of_accounts c
+        LEFT JOIN journal_entry_lines jel ON c.code = jel.account_code
+        LEFT JOIN journal_entries je ON jel.journal_entry_id = je.id
+        WHERE c.company_id = ${company.id}
+        AND (je.status = 'POSTED' OR je.id IS NULL)
+        GROUP BY c.id, c.code, c.name, c.account_type, c.category
+        ORDER BY c.code
+      `);
+
+      const assets: any[] = [];
+      const liabilities: any[] = [];
+      const equity: any[] = [];
+
+      balanceData.rows.forEach((row: any) => {
+        const balance = parseFloat(row.balance);
+        if (balance > 0) {
+          const item = {
+            code: row.code,
+            name: row.name,
+            category: row.category,
+            balance: balance
+          };
+          
+          if (row.account_type === 'ASSET') {
+            assets.push(item);
+          } else if (row.account_type === 'LIABILITY') {
+            liabilities.push(item);
+          } else if (row.account_type === 'EQUITY') {
+            equity.push(item);
+          }
+        }
+      });
+
+      const totalAssets = assets.reduce((sum, item) => sum + item.balance, 0);
+      const totalLiabilities = liabilities.reduce((sum, item) => sum + item.balance, 0);
+      const totalEquity = equity.reduce((sum, item) => sum + item.balance, 0);
+
+      res.json({
+        assets,
+        liabilities,
+        equity,
+        totals: {
+          totalAssets,
+          totalLiabilities,
+          totalEquity,
+          isBalanced: Math.abs(totalAssets - (totalLiabilities + totalEquity)) < 0.01
+        },
+        asOfDate: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error("Error generating balance sheet:", error);
+      res.status(500).json({ message: "Failed to generate balance sheet" });
+    }
+  });
+
+  // Get income statement
+  app.get("/api/accounting/reports/income-statement", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      const { startDate, endDate } = req.query;
+
+      // Calculate income statement from revenue and expense accounts
+      const incomeData = await db.execute(sql`
+        SELECT 
+          c.code,
+          c.name,
+          c.account_type,
+          c.category,
+          COALESCE(SUM(jel.debit_amount), 0) as total_debit,
+          COALESCE(SUM(jel.credit_amount), 0) as total_credit,
+          CASE 
+            WHEN c.account_type = 'REVENUE' THEN COALESCE(SUM(jel.credit_amount), 0) - COALESCE(SUM(jel.debit_amount), 0)
+            WHEN c.account_type = 'EXPENSE' THEN COALESCE(SUM(jel.debit_amount), 0) - COALESCE(SUM(jel.credit_amount), 0)
+            ELSE 0
+          END as balance
+        FROM chart_of_accounts c
+        LEFT JOIN journal_entry_lines jel ON c.code = jel.account_code
+        LEFT JOIN journal_entries je ON jel.journal_entry_id = je.id
+        WHERE c.company_id = ${company.id}
+        AND je.status = 'POSTED'
+        AND c.account_type IN ('REVENUE', 'EXPENSE')
+        ${startDate ? sql`AND je.date >= ${startDate}` : sql``}
+        ${endDate ? sql`AND je.date <= ${endDate}` : sql``}
+        GROUP BY c.id, c.code, c.name, c.account_type, c.category
+        ORDER BY c.code
+      `);
+
+      const revenues: any[] = [];
+      const expenses: any[] = [];
+
+      incomeData.rows.forEach((row: any) => {
+        const balance = parseFloat(row.balance);
+        if (balance > 0) {
+          const item = {
+            code: row.code,
+            name: row.name,
+            category: row.category,
+            amount: balance
+          };
+          
+          if (row.account_type === 'REVENUE') {
+            revenues.push(item);
+          } else if (row.account_type === 'EXPENSE') {
+            expenses.push(item);
+          }
+        }
+      });
+
+      const totalRevenues = revenues.reduce((sum, item) => sum + item.amount, 0);
+      const totalExpenses = expenses.reduce((sum, item) => sum + item.amount, 0);
+      const netIncome = totalRevenues - totalExpenses;
+
+      res.json({
+        revenues,
+        expenses,
+        totals: {
+          totalRevenues,
+          totalExpenses,
+          grossProfit: totalRevenues,
+          netIncome
+        },
+        period: { startDate, endDate }
+      });
+    } catch (error) {
+      console.error("Error generating income statement:", error);
+      res.status(500).json({ message: "Failed to generate income statement" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

@@ -16,6 +16,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Separator } from "@/components/ui/separator";
 import { 
   FileSpreadsheet, 
   Download, 
@@ -54,6 +57,13 @@ export default function FinancialReports() {
     queryKey: ["/api/accounting/reports/general-ledger", startDate, endDate],
     enabled: selectedReport === "general-ledger",
   });
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('es-DO', {
+      style: 'currency',
+      currency: 'DOP',
+    }).format(amount);
+  };
 
   const exportReport = (format: 'pdf' | 'excel') => {
     // Implementar exportación
@@ -358,11 +368,68 @@ export default function FinancialReports() {
               <CardTitle>Balanza de Comprobación</CardTitle>
               <p className="text-sm text-muted-foreground">Al {format(new Date(endDate), "dd/MM/yyyy")}</p>
             </CardHeader>
-            <CardContent>
-              <div className="text-center py-8 text-muted-foreground">
-                <BarChart3 className="h-12 w-12 mx-auto mb-4 opacity-20" />
-                <p>Reporte en desarrollo</p>
-              </div>
+            <CardContent className="max-h-[600px] overflow-y-auto">
+              {isLoadingTrial ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                  <p className="mt-2 text-muted-foreground">Generando balanza de comprobación...</p>
+                </div>
+              ) : trialBalance ? (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <Badge variant={trialBalance.totals?.isBalanced ? "default" : "destructive"}>
+                      {trialBalance.totals?.isBalanced ? "Balanceada" : "Desbalanceada"}
+                    </Badge>
+                  </div>
+                  
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Código</TableHead>
+                        <TableHead>Cuenta</TableHead>
+                        <TableHead>Tipo</TableHead>
+                        <TableHead className="text-right">Débito</TableHead>
+                        <TableHead className="text-right">Crédito</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {trialBalance.accounts?.map((account: any) => (
+                        <TableRow key={account.accountCode}>
+                          <TableCell className="font-medium">{account.accountCode}</TableCell>
+                          <TableCell>{account.accountName}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline">{account.accountType}</Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {account.debitBalance > 0 ? formatCurrency(account.debitBalance) : "-"}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {account.creditBalance > 0 ? formatCurrency(account.creditBalance) : "-"}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                  
+                  <Separator />
+                  
+                  <div className="flex justify-end space-x-8 bg-muted p-4 rounded">
+                    <div className="text-right">
+                      <p className="font-semibold">Total Débitos:</p>
+                      <p className="text-lg font-bold">{formatCurrency(trialBalance.totals?.totalDebits || 0)}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-semibold">Total Créditos:</p>
+                      <p className="text-lg font-bold">{formatCurrency(trialBalance.totals?.totalCredits || 0)}</p>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <BarChart3 className="h-12 w-12 mx-auto mb-4 opacity-20" />
+                  <p>No hay datos de balanza de comprobación disponibles</p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -375,11 +442,91 @@ export default function FinancialReports() {
                 Del {format(new Date(startDate), "dd/MM/yyyy")} al {format(new Date(endDate), "dd/MM/yyyy")}
               </p>
             </CardHeader>
-            <CardContent>
-              <div className="text-center py-8 text-muted-foreground">
-                <FileText className="h-12 w-12 mx-auto mb-4 opacity-20" />
-                <p>Reporte en desarrollo</p>
-              </div>
+            <CardContent className="max-h-[600px] overflow-y-auto">
+              {isLoadingLedger ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                  <p className="mt-2 text-muted-foreground">Generando libro mayor...</p>
+                </div>
+              ) : generalLedger?.accounts ? (
+                <div className="space-y-6">
+                  {generalLedger.accounts.map((account: any) => (
+                    <div key={account.accountCode} className="border rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-4">
+                        <div>
+                          <h3 className="font-semibold text-lg">
+                            {account.accountCode} - {account.accountName}
+                          </h3>
+                          <Badge variant="outline" className="mt-1">
+                            {account.accountType}
+                          </Badge>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm text-muted-foreground">Saldo Final</p>
+                          <p className="font-bold text-lg">
+                            {formatCurrency(account.balance)}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      {account.transactions && account.transactions.length > 0 ? (
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Fecha</TableHead>
+                              <TableHead>Asiento</TableHead>
+                              <TableHead>Descripción</TableHead>
+                              <TableHead className="text-right">Débito</TableHead>
+                              <TableHead className="text-right">Crédito</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {account.transactions.map((transaction: any, index: number) => (
+                              <TableRow key={`${account.accountCode}-${index}`}>
+                                <TableCell>
+                                  {format(new Date(transaction.date), "dd/MM/yyyy")}
+                                </TableCell>
+                                <TableCell className="font-medium">
+                                  {transaction.entryNumber}
+                                </TableCell>
+                                <TableCell>{transaction.description}</TableCell>
+                                <TableCell className="text-right">
+                                  {transaction.debit > 0 ? formatCurrency(transaction.debit) : "-"}
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  {transaction.credit > 0 ? formatCurrency(transaction.credit) : "-"}
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      ) : (
+                        <p className="text-muted-foreground text-center py-4">
+                          No hay movimientos en el período seleccionado
+                        </p>
+                      )}
+                      
+                      <Separator className="my-4" />
+                      
+                      <div className="flex justify-end space-x-8 text-sm">
+                        <div className="text-right">
+                          <p className="font-medium">Total Débitos:</p>
+                          <p>{formatCurrency(account.totalDebit)}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-medium">Total Créditos:</p>
+                          <p>{formatCurrency(account.totalCredit)}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <FileText className="h-12 w-12 mx-auto mb-4 opacity-20" />
+                  <p>No hay datos de libro mayor disponibles</p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

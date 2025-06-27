@@ -438,7 +438,7 @@ export default function EnhancedAccounting() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="border rounded-lg">
+              <div className="border rounded-lg max-h-[600px] overflow-y-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -553,7 +553,7 @@ export default function EnhancedAccounting() {
               </div>
 
               {/* Reports List */}
-              <div className="border rounded-lg">
+              <div className="border rounded-lg max-h-[600px] overflow-y-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
