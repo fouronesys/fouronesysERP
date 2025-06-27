@@ -191,15 +191,15 @@ export default function NCFManagement() {
   useEffect(() => {
     if (watchedTipo && watchedInicio && watchedFin && watchedInicio <= watchedFin) {
       // Find the last sequence for this NCF type
-      const existingSequences = ncfSequences?.filter(seq => seq.ncfType === watchedTipo) || [];
+      const existingSequences = ncfBatches?.filter((seq: NCFBatch) => seq.tipo === watchedTipo) || [];
       let nextNumber = watchedInicio;
       
       if (existingSequences.length > 0) {
         // Get the highest current sequence number for this type
-        const lastSequence = existingSequences.reduce((latest, current) => {
-          return current.currentSequence > latest.currentSequence ? current : latest;
+        const lastSequence = existingSequences.reduce((latest: NCFBatch, current: NCFBatch) => {
+          return current.ultimo_usado > latest.ultimo_usado ? current : latest;
         });
-        nextNumber = Math.max(lastSequence.currentSequence + 1, watchedInicio);
+        nextNumber = Math.max(lastSequence.ultimo_usado + 1, watchedInicio);
       }
       
       // Show only the next available number
@@ -210,7 +210,7 @@ export default function NCFManagement() {
     } else {
       setPreviewNCFs([]);
     }
-  }, [watchedTipo, watchedInicio, watchedFin, ncfSequences]);
+  }, [watchedTipo, watchedInicio, watchedFin, ncfBatches]);
 
   const getStatusBadge = (batch: NCFBatch) => {
     const now = new Date();
