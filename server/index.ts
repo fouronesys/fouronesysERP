@@ -51,42 +51,64 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  const server = await registerRoutes(app);
+  try {
+    // Test database connection first
+    const { testDatabaseConnection } = await import("./db");
+    const dbConnected = await testDatabaseConnection();
+    
+    if (!dbConnected) {
+      console.error("Failed to connect to database. Exiting...");
+      process.exit(1);
+    }
 
-  // Global error handler middleware
-  app.use(errorHandlerMiddleware);
+    const server = await registerRoutes(app);
 
-  // importantly only setup vite in development and after
-  // setting up all the other routes so the catch-all route
-  // doesn't interfere with the other routes
-  if (app.get("env") === "development") {
-    await setupVite(app, server);
-  } else {
-    serveStatic(app);
+    // Global error handler middleware
+    app.use(errorHandlerMiddleware);
+
+    // importantly only setup vite in development and after
+    // setting up all the other routes so the catch-all route
+    // doesn't interfere with the other routes
+    if (app.get("env") === "development") {
+      await setupVite(app, server);
+    } else {
+      serveStatic(app);
+    }
+
+    // ALWAYS serve the app on port 5000
+    // this serves both the API and the client.
+    // It is the only port that is not firewalled.
+    const port = 5000;
+    server.listen({
+      port,
+      host: "0.0.0.0",
+      reusePort: true,
+    }, () => {
+      log(`serving on port ${port}`);
+      
+      // Start the DGII registry auto-updater (only after successful DB connection)
+      try {
+        dgiiRegistryUpdater.startAutoUpdate();
+        log("DGII RNC registry system initialized with auto-update enabled");
+      } catch (error) {
+        console.warn("DGII registry updater failed to start:", error);
+      }
+      
+      // Start DGII server monitoring
+      try {
+        dgiiMonitor.startMonitoring();
+        dgiiMonitor.on('server_online', (status) => {
+          log(`DGII server is online - Response time: ${status.responseTime}ms`);
+        });
+        dgiiMonitor.on('server_offline', (status) => {
+          log(`DGII server is offline - Last error: ${status.lastError}`);
+        });
+      } catch (error) {
+        console.warn("DGII monitor failed to start:", error);
+      }
+    });
+  } catch (error) {
+    console.error("Application startup failed:", error);
+    process.exit(1);
   }
-
-  // ALWAYS serve the app on port 5000
-  // this serves both the API and the client.
-  // It is the only port that is not firewalled.
-  const port = 5000;
-  server.listen({
-    port,
-    host: "0.0.0.0",
-    reusePort: true,
-  }, () => {
-    log(`serving on port ${port}`);
-    
-    // Start the DGII registry auto-updater
-    dgiiRegistryUpdater.startAutoUpdate();
-    log("DGII RNC registry system initialized with auto-update enabled");
-    
-    // Start DGII server monitoring
-    dgiiMonitor.startMonitoring();
-    dgiiMonitor.on('server_online', (status) => {
-      log(`DGII server is online - Response time: ${status.responseTime}ms`);
-    });
-    dgiiMonitor.on('server_offline', (status) => {
-      log(`DGII server is offline - Last error: ${status.lastError}`);
-    });
-  });
 })();

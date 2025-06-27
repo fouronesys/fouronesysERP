@@ -11,5 +11,31 @@ if (!process.env.DATABASE_URL) {
   );
 }
 
-export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+// Create pool with more robust configuration
+export const pool = new Pool({ 
+  connectionString: process.env.DATABASE_URL,
+  max: 10,
+  connectionTimeoutMillis: 5000,
+  idleTimeoutMillis: 10000,
+});
+
+// Add connection error handling
+pool.on('error', (err) => {
+  console.error('PostgreSQL pool error:', err);
+});
+
 export const db = drizzle({ client: pool, schema });
+
+// Test database connection on startup
+export async function testDatabaseConnection() {
+  try {
+    const client = await pool.connect();
+    await client.query('SELECT 1');
+    client.release();
+    console.log('✓ Database connection successful');
+    return true;
+  } catch (error) {
+    console.error('✗ Database connection failed:', error);
+    return false;
+  }
+}
