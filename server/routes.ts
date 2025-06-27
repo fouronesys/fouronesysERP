@@ -2957,6 +2957,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
           generatedAt: new Date(),
           checksum: `CHK${Date.now()}`
         };
+      } else if (tipo === 'T-REGISTRO') {
+        // Payroll report - for now return empty
+        reportData = {
+          companyId: company.id,
+          tipo: 'T-REGISTRO',
+          periodo,
+          fechaInicio,
+          fechaFin,
+          numeroRegistros: 0,
+          montoTotal: '0.00',
+          itbisTotal: '0.00',
+          estado: 'generated',
+          generatedAt: new Date(),
+          checksum: `CHK${Date.now()}`
+        };
       } else {
         return res.status(400).json({ message: "Invalid report type" });
       }
