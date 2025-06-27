@@ -2648,6 +2648,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         series: series ? String(series).trim() : '001',
         currentSequence: parsedCurrentNumber || parsedRangeStart,
         maxSequence: parsedRangeEnd,
+        fiscalPeriod: new Date().getFullYear().toString(), // Add fiscal period (current year)
         isActive: isActive !== false && isActive !== 'false',
         description: description ? String(description).trim() : '',
         expirationDate: expirationDate ? new Date(expirationDate) : null,
