@@ -2545,17 +2545,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Fiscal Documents / NCF Management Routes
   app.get("/api/fiscal/ncf-sequences", isAuthenticated, async (req: any, res) => {
     try {
+      console.log("[DEBUG] GET /api/fiscal/ncf-sequences - Starting");
       const userId = req.user.id;
+      console.log("[DEBUG] User ID:", userId);
+      
       const company = await storage.getCompanyByUserId(userId);
       if (!company) {
+        console.log("[DEBUG] Company not found for user:", userId);
         return res.status(404).json({ message: "Company not found" });
       }
 
+      console.log("[DEBUG] Company found:", company.id);
       const sequences = await storage.getNCFSequences(company.id);
-      res.json(sequences);
+      console.log("[DEBUG] Sequences fetched:", sequences);
+      console.log("[DEBUG] Sequences count:", sequences?.length || 0);
+      
+      // Ensure we're sending valid JSON
+      const response = Array.isArray(sequences) ? sequences : [];
+      console.log("[DEBUG] Sending response:", response);
+      
+      res.json(response);
     } catch (error) {
-      console.error("Error fetching NCF sequences:", error);
-      res.status(500).json({ message: "Failed to fetch NCF sequences" });
+      console.error("[ERROR] Error fetching NCF sequences:", error);
+      console.error("[ERROR] Error stack:", error.stack);
+      res.status(500).json({ message: "Failed to fetch NCF sequences", error: error.message });
     }
   });
 
