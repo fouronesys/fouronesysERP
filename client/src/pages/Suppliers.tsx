@@ -1835,9 +1835,48 @@ const Suppliers = () => {
                         <FormItem>
                           <FormLabel>RNC</FormLabel>
                           <FormControl>
-                            <Input {...field} placeholder="RNC del proveedor" />
+                            <div className="flex gap-2">
+                              <Input 
+                                {...field} 
+                                placeholder="RNC del proveedor"
+                                onBlur={(e) => {
+                                  field.onBlur();
+                                  const rnc = e.target.value.trim();
+                                  if (rnc && rnc.length >= 9) {
+                                    validateRNC(rnc);
+                                  }
+                                }}
+                              />
+                              <Button 
+                                type="button" 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => {
+                                  const rnc = field.value?.trim();
+                                  if (rnc && rnc.length >= 9) {
+                                    validateRNC(rnc);
+                                  } else {
+                                    toast({
+                                      title: "RNC requerido",
+                                      description: "Ingrese un RNC válido para validar",
+                                      variant: "destructive"
+                                    });
+                                  }
+                                }}
+                                disabled={rncValidating}
+                              >
+                                {rncValidating ? (
+                                  <div className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full" />
+                                ) : (
+                                  <Search className="h-4 w-4" />
+                                )}
+                              </Button>
+                            </div>
                           </FormControl>
                           <FormMessage />
+                          {rncValidating && (
+                            <p className="text-sm text-blue-600">Validando RNC con DGII...</p>
+                          )}
                         </FormItem>
                       )}
                     />

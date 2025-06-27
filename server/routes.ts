@@ -9,11 +9,12 @@ import { initializeAdminUser } from "./init-admin";
 import { moduleInitializer } from "./module-initializer";
 import { sendApiKeyEmail } from "./email-service";
 import { createPaypalOrder, capturePaypalOrder, loadPaypalDefault } from "./paypal";
-import { insertCustomerSchema, invoiceItems } from "../shared/schema";
+import { insertCustomerSchema, invoiceItems, posSales, ncfSequences } from "../shared/schema";
 import { dgiiRegistryUpdater } from "./dgii-registry-updater";
 import { InvoicePOS80mmService } from "./invoice-pos-80mm-service";
 import { InvoiceHTMLService } from "./invoice-html-service";
 import { db } from "./db";
+import { and, eq, isNotNull, desc, sql } from "drizzle-orm";
 
 // File upload configuration
 const upload = multer({
@@ -2587,6 +2588,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error creating NCF sequence:", error);
       res.status(500).json({ message: "Failed to create NCF sequence" });
+    }
+  });
+
+  // Get used NCFs endpoint
+  app.get("/api/fiscal/ncf-used", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      // Get NCFs used in sales
+      const usedNCFs = await db.select({
+        id: posSales.id,
+        ncf: posSales.ncf,
+        tipo: posSales.ncfType,
+        documentoTipo: sql<string>`'Venta'`,
+        fecha: posSales.createdAt,
+        monto: posSales.total,
+        rncCliente: posSales.customerRnc,
+        nombreCliente: posSales.customerName,
+        estado: sql<string>`'Usado'`
+      })
+      .from(posSales)
+      .where(
+        and(
+          eq(posSales.companyId, company.id),
+          isNotNull(posSales.ncf)
+        )
+      )
+      .orderBy(desc(posSales.createdAt))
+      .limit(100);
+
+      res.json(usedNCFs);
+    } catch (error) {
+      console.error("Error getting used NCFs:", error);
+      res.status(500).json({ message: "Failed to get used NCFs" });
     }
   });
 

@@ -57,8 +57,8 @@ const ncfBatchSchema = z.object({
   message: "El número final debe ser mayor o igual al inicial",
   path: ["fin"],
 }).refine(data => {
-  // Only certain NCF types require expiration dates
-  const typesRequiringExpiration = ['B01', 'B02', 'B14', 'B15'];
+  // Only certain NCF types require expiration dates (NOT B02 - Consumer Final)
+  const typesRequiringExpiration = ['B01', 'B14', 'B15'];
   if (typesRequiringExpiration.includes(data.tipo) && !data.vencimiento) {
     return false;
   }
@@ -127,20 +127,34 @@ export default function NCFManagement() {
   const [previewNCFs, setPreviewNCFs] = useState<string[]>([]);
 
   const { data: ncfBatches = [], isLoading } = useQuery<NCFBatch[]>({
-    queryKey: ["/api/ncf/batches"],
+    queryKey: ["/api/fiscal/ncf-sequences"],
   });
 
   const { data: ncfUsados = [] } = useQuery<NCFUsado[]>({
-    queryKey: ["/api/ncf/used"],
+    queryKey: ["/api/fiscal/ncf-used"],
   });
 
   const createMutation = useMutation({
-    mutationFn: (data: NCFBatchFormData) => apiRequest("/api/ncf/batches", {
-      method: "POST",
-      body: JSON.stringify(data),
-    }),
+    mutationFn: (data: NCFBatchFormData) => {
+      // Transform data to match backend expectations
+      const transformedData = {
+        type: data.tipo,
+        series: '001',
+        rangeStart: data.inicio,
+        rangeEnd: data.fin,
+        currentNumber: data.inicio,
+        expirationDate: data.vencimiento || null,
+        isActive: true,
+        description: `Secuencia ${data.tipo} del ${data.inicio} al ${data.fin}`
+      };
+      
+      return apiRequest("/api/fiscal/ncf-sequences", {
+        method: "POST",
+        body: JSON.stringify(transformedData),
+      });
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/ncf/batches"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/fiscal/ncf-sequences"] });
       setIsCreateOpen(false);
       form.reset();
       toast({
