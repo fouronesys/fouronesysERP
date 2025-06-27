@@ -409,20 +409,22 @@ export default function NCFManagement() {
                             </SelectContent>
                           </Select>
                           <FormDescription>
-                            {selectedNCFType && (
-                              <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-950 rounded-md">
-                                <span className="text-sm font-medium block">{selectedNCFType.descripcion}</span>
-                                <span className="text-xs text-muted-foreground mt-1 block">
-                                  {selectedNCFType.aplicaCredito && "✓ Aplica para crédito fiscal"}
-                                  {selectedNCFType.aplicaConsumidor && "✓ Para consumidor final"}
-                                </span>
-                              </div>
-                            )}
+                            Seleccione el tipo de comprobante fiscal según la operación
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
+                    
+                    {selectedNCFType && (
+                      <div className="p-3 bg-blue-50 dark:bg-blue-950 rounded-md">
+                        <span className="text-sm font-medium block">{selectedNCFType.descripcion}</span>
+                        <span className="text-xs text-muted-foreground mt-1 block">
+                          {selectedNCFType.aplicaCredito && "✓ Aplica para crédito fiscal"}
+                          {selectedNCFType.aplicaConsumidor && "✓ Para consumidor final"}
+                        </span>
+                      </div>
+                    )}
 
                     <div className="grid grid-cols-2 gap-4">
                       <FormField
