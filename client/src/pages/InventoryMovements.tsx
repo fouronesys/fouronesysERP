@@ -234,7 +234,7 @@ export default function InventoryMovements() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-500">Total Movimientos</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
+                  <p className="text-2xl font-bold text-[#7c48ed]">{stats.total}</p>
                 </div>
                 <Package className="h-8 w-8 text-gray-400" />
               </div>
