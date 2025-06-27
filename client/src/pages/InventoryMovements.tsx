@@ -226,7 +226,6 @@ export default function InventoryMovements() {
         title="Gestión de Bodegas" 
         subtitle="Control completo de movimientos de inventario" 
       />
-      
       <div className="p-4 sm:p-6 space-y-6">
         {/* Statistics Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -455,10 +454,10 @@ export default function InventoryMovements() {
                             const product = products?.find(p => p.id === item.productId);
                             return (
                               <div key={item.productId} className="flex justify-between text-xs bg-gray-50 p-2 rounded">
-                                <span className="truncate flex-1">
+                                <span className="truncate flex-1 text-[#09090b]">
                                   {product?.name || `Producto ${item.productId}`}
                                 </span>
-                                <span className="font-medium ml-2">
+                                <span className="font-medium ml-2 text-[#a60808]">
                                   {item.quantity} unid.
                                 </span>
                               </div>
