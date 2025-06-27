@@ -81,21 +81,36 @@ export default function DGIIReports() {
         method: "POST",
         body: data,
       }),
-    onSuccess: () => {
+    onSuccess: (newReport: any) => {
       queryClient.invalidateQueries({ queryKey: ["/api/dgii/reports"] });
       setGeneratingReport(false);
       toast({
         title: "Éxito",
-        description: "Reporte generado correctamente",
+        description: "Reporte generado correctamente. Descargando archivo...",
       });
+      
+      // Auto-download the generated report
+      setTimeout(() => {
+        downloadReportMutation.mutate(newReport.id);
+      }, 500);
     },
     onError: (error: any) => {
       setGeneratingReport(false);
-      toast({
-        title: "Error",
-        description: error.message || "Error al generar el reporte",
-        variant: "destructive",
-      });
+      
+      // Handle duplicate report error
+      if (error.status === 409) {
+        toast({
+          title: "Reporte ya existe",
+          description: "Ya existe un reporte de este tipo para este período. Puedes descargarlo desde la tabla.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: error.message || "Error al generar el reporte",
+          variant: "destructive",
+        });
+      }
     },
   });
 

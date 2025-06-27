@@ -48,6 +48,7 @@ import SubscriptionPlans from "@/pages/SubscriptionPlans";
 import CompanyAnalytics from "@/pages/CompanyAnalytics";
 import Purchases from "@/pages/Purchases";
 import Accounting from "@/pages/Accounting";
+import EnhancedAccounting from "@/pages/EnhancedAccounting";
 import ErrorManagement from "@/pages/ErrorManagement";
 import Inventory from "@/pages/Inventory";
 import ModuleManager from "@/pages/ModuleManager";
@@ -306,6 +307,7 @@ function Router() {
           <Route path="/dgii-reports" component={DGIIReports} />
 
           <Route path="/accounting" component={Accounting} />
+          <Route path="/accounting-enhanced" component={EnhancedAccounting} />
           <Route path="/accounting/chart-of-accounts" component={ChartOfAccounts} />
           <Route path="/accounting/journal-entries" component={JournalEntries} />
           <Route path="/accounting/reports" component={FinancialReports} />

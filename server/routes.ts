@@ -2919,13 +2919,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Missing required fields: tipo, year, month" });
       }
 
+      // Check if report already exists for this period
+      const periodo = `${year}-${month.padStart(2, '0')}`;
+      const existingReports = await storage.getDGIIReports(company.id);
+      const existingReport = existingReports.find(r => r.tipo === tipo && r.periodo === periodo);
+      
+      if (existingReport) {
+        return res.status(409).json({ 
+          message: "Ya existe un reporte de este tipo para este período",
+          existingReport: existingReport
+        });
+      }
+
       // Import DGII generator
       const { DGIIReportGenerator } = await import('./dgii-report-generator');
 
       // Generate the report based on type
       let reportData;
       let reportContent = '';
-      const periodo = `${year}-${String(month).padStart(2, '0')}`;
+      // Using periodo already defined above for validation
       const fechaInicio = `${year}-${String(month).padStart(2, '0')}-01`;
       const fechaFin = new Date(parseInt(year), parseInt(month), 0).toISOString().split('T')[0];
 
@@ -4032,6 +4044,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error generating product report:", error);
       res.status(500).json({ message: "Failed to generate product report" });
+    }
+  });
+
+  // Enhanced Accounting Module Endpoints
+  
+  // Initialize DGII Chart of Accounts
+  app.post("/api/accounting/initialize-dgii", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      const { enhancedAccountingService } = await import('./enhanced-accounting-service');
+      const result = await enhancedAccountingService.initializeDGIIChartOfAccounts(company.id, userId);
+      
+      res.json(result);
+    } catch (error) {
+      console.error("Error initializing DGII chart of accounts:", error);
+      res.status(500).json({ message: "Failed to initialize DGII chart of accounts" });
     }
   });
 

@@ -1705,7 +1705,7 @@ export const accountTypes = pgTable("account_types", {
 export const accounts = pgTable("accounts", {
   id: serial("id").primaryKey(),
   companyId: integer("company_id").notNull().references(() => companies.id),
-  code: varchar("code", { length: 20 }).notNull(),
+  code: varchar("code", { length: 6 }).notNull(), // DGII standard 6-digit format
   name: varchar("name", { length: 200 }).notNull(),
   description: text("description"),
   accountTypeId: integer("account_type_id").references(() => accountTypes.id),
@@ -1714,6 +1714,11 @@ export const accounts = pgTable("accounts", {
   isParent: boolean("is_parent").default(false),
   allowTransactions: boolean("allow_transactions").default(true),
   currentBalance: decimal("current_balance", { precision: 15, scale: 2 }).default("0.00"),
+  dgiiCode: varchar("dgii_code", { length: 6 }), // Official DGII classification code
+  category: varchar("category", { length: 20 }).notNull(), // ACTIVO, PASIVO, PATRIMONIO, INGRESO, GASTO
+  subcategory: varchar("subcategory", { length: 50 }), // Corriente, No Corriente, etc.
+  isActive: boolean("is_active").default(true),
+  searchableText: text("searchable_text"), // For smart search functionality
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -2214,6 +2219,92 @@ export type InsertExchangeRate = z.infer<typeof insertExchangeRateSchema>;
 export type ExchangeRate = typeof exchangeRates.$inferSelect;
 
 // Tipos del módulo de compras movidos a shared/purchases-schema.ts
+
+// Support Documents - Documentos de Soporte para Asientos
+export const supportDocuments = pgTable("support_documents", {
+  id: serial("id").primaryKey(),
+  journalEntryId: integer("journal_entry_id").notNull().references(() => journalEntries.id),
+  fileName: varchar("file_name", { length: 255 }).notNull(),
+  originalName: varchar("original_name", { length: 255 }),
+  filePath: varchar("file_path", { length: 500 }).notNull(),
+  fileType: varchar("file_type", { length: 50 }), // PDF, image, etc.
+  fileSize: integer("file_size"),
+  documentType: varchar("document_type", { length: 50 }), // FACTURA, RECIBO, NCF, etc.
+  uploadedBy: varchar("uploaded_by").notNull().references(() => users.id),
+  uploadedAt: timestamp("uploaded_at").defaultNow(),
+});
+
+// Financial Reports - Reportes Financieros
+export const financialReports = pgTable("financial_reports", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull().references(() => companies.id),
+  reportType: varchar("report_type", { length: 50 }).notNull(), // BALANCE_GENERAL, ESTADO_RESULTADOS, FLUJO_EFECTIVO
+  reportName: varchar("report_name", { length: 200 }).notNull(),
+  periodo: varchar("periodo", { length: 7 }).notNull(), // YYYY-MM
+  startDate: date("start_date").notNull(),
+  endDate: date("end_date").notNull(),
+  reportData: jsonb("report_data"), // Store calculated report data
+  fileName: varchar("file_name", { length: 255 }),
+  filePath: varchar("file_path", { length: 500 }),
+  generatedBy: varchar("generated_by").notNull().references(() => users.id),
+  generatedAt: timestamp("generated_at").defaultNow(),
+});
+
+// DGII Compliance - Cumplimiento DGII
+export const dgiiCompliance = pgTable("dgii_compliance", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull().references(() => companies.id),
+  transactionId: integer("transaction_id"), // Reference to POS sale, purchase, etc.
+  transactionType: varchar("transaction_type", { length: 50 }), // VENTA, COMPRA, NOMINA
+  ncf: varchar("ncf", { length: 19 }),
+  itbisAmount: decimal("itbis_amount", { precision: 12, scale: 2 }).default("0.00"),
+  itbisRate: decimal("itbis_rate", { precision: 5, scale: 4 }).default("0.18"), // 18%
+  retentionAmount: decimal("retention_amount", { precision: 12, scale: 2 }).default("0.00"),
+  retentionType: varchar("retention_type", { length: 50 }), // ISR, ITBIS_RET
+  reportPeriod: varchar("report_period", { length: 7 }), // YYYY-MM for DGII reports
+  isReported: boolean("is_reported").default(false),
+  reportedAt: timestamp("reported_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// DGII Chart of Accounts - Plan de Cuentas Oficial DGII
+export const dgiiChartOfAccounts = pgTable("dgii_chart_of_accounts", {
+  id: serial("id").primaryKey(),
+  code: varchar("code", { length: 6 }).notNull().unique(), // DGII official 6-digit code
+  name: varchar("name", { length: 200 }).notNull(),
+  description: text("description"),
+  category: varchar("category", { length: 20 }).notNull(), // ACTIVO, PASIVO, PATRIMONIO, INGRESO, GASTO
+  subcategory: varchar("subcategory", { length: 50 }),
+  level: integer("level").notNull(),
+  parentCode: varchar("parent_code", { length: 6 }),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Insert schema for new tables
+export const insertSupportDocumentSchema = createInsertSchema(supportDocuments).omit({
+  id: true,
+  uploadedAt: true,
+});
+
+export const insertFinancialReportSchema = createInsertSchema(financialReports).omit({
+  id: true,
+  generatedAt: true,
+});
+
+export const insertDgiiComplianceSchema = createInsertSchema(dgiiCompliance).omit({
+  id: true,
+  createdAt: true,
+});
+
+// Types for new tables
+export type SupportDocument = typeof supportDocuments.$inferSelect;
+export type InsertSupportDocument = z.infer<typeof insertSupportDocumentSchema>;
+export type FinancialReport = typeof financialReports.$inferSelect;
+export type InsertFinancialReport = z.infer<typeof insertFinancialReportSchema>;
+export type DgiiCompliance = typeof dgiiCompliance.$inferSelect;
+export type InsertDgiiCompliance = z.infer<typeof insertDgiiComplianceSchema>;
+export type DgiiChartOfAccount = typeof dgiiChartOfAccounts.$inferSelect;
 
 // Import notifications schema
 export * from "./notifications-schema";

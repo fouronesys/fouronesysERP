@@ -1,0 +1,124 @@
+
+#### **Objetivo:**  
+Desarrollar un módulo de contabilidad completo que cumpla con los estándares de la **DGII**, permita gestión offline y se integre con todos los módulos del ERP.  
+
+---
+
+## **1. Plan de Cuentas**  
+### **Funcionalidades Clave:**  
+✅ **Estructura jerárquica** (5 categorías principales):  
+   - **Activo** (Corriente/No corriente)  
+   - **Pasivo** (Corriente/Largo plazo)  
+   - **Patrimonio** (Capital/Utilidades)  
+   - **Ingresos** (Ventas/No operacionales)  
+   - **Gastos** (Operativos/Financieros)  
+
+✅ **Códigos DGII** (6 dígitos):  
+   - Ejemplo:  
+     - `110101` = Caja RD$  
+     - `210101` = Cuentas por Pagar (Proveedores)  
+   - Validación automática de formato.  
+
+✅ **Búsqueda inteligente** por:  
+   - Código, nombre o descripción.  
+   - Filtros por categoría/subcategoría.  
+
+✅ **Importar/Exportar** desde Excel (formato DGII).  
+
+---
+
+## **2. Asientos Contables**  
+### **A. Automáticos**  
+🔹 **Orígenes:**  
+   - Facturación (ingresos/ITBIS).  
+   - Nómina (SFS, AFP, ISR).  
+   - Compras (gastos, crédito fiscal).  
+   - Movimientos de inventario.  
+
+🔹 **Validaciones:**  
+   - Partida doble (débito = crédito).  
+   - Cuentas válidas (según Plan de Cuentas).  
+   - Fechas dentro del período fiscal.  
+
+### **B. Manuales**  
+🔹 **Campos obligatorios:**  
+   - Fecha (DD/MM/YYYY).  
+   - Referencia (NCF, documento soporte).  
+   - Descripción detallada.  
+   - Cuentas afectadas (mínimo 2 líneas).  
+
+🔹 **Soporte documental:**  
+   - Adjuntar PDF/Imagen (facturas, recibos).  
+   - Vinculación con transacciones existentes.  
+
+---
+
+## **3. Reportes Financieros**  
+### **A. Principales Reportes**  
+| Reporte               | Contenido                              | Formato Salida       |  
+|-----------------------|----------------------------------------|----------------------|  
+| **Balance General**   | Activo = Pasivo + Patrimonio           | PDF/Excel (DGII)     |  
+| **Estado de Resultados** | Ingresos - Gastos = Utilidad Neta   | Gráfico + Tabla      |  
+| **Flujo de Efectivo** | Operaciones/Inversiones/Financiamiento | Excel (Esquema RD)   |  
+
+### **B. Validaciones DGII:**  
+   - ITBIS desglosado (18% vs 0%).  
+   - Retenciones (ISR, pagos a proveedores).  
+   - Conciliación bancaria (formato .ABA).  
+
+---
+
+## **4. Funcionalidad Offline (PWA)**  
+### **Flujo de Trabajo:**  
+1. **Registro offline**:  
+   - Almacenar en IndexedDB (con marca de tiempo).  
+   - Permitir edición pendiente de sincronización.  
+
+2. **Sincronización**:  
+   - Al recuperar conexión, enviar al servidor.  
+   - Resolver conflictos (ej: cuentas modificadas).  
+
+3. **Alertas**:  
+   - "Asientos pendientes de sincronizar: 5".  
+
+### **Datos Locales:**  
+   - Plan de cuentas completo (solo lectura).  
+   - Últimos 3 meses de transacciones (caché).  
+
+---
+
+## **5. Integración con Otros Módulos**  
+```mermaid
+graph LR
+  A[Facturación] -->|ITBIS/Ventas| B[Contabilidad]
+  C[Nómina] -->|Deducciones| B
+  D[Compras] -->|Gastos| B
+  E[Inventario] -->|Ajustes| B
+  B --> F[Reportes DGII]
+```
+
+---
+
+## **6. Requerimientos Técnicos**  
+### **Frontend:**  
+- **React** + **Material-UI** (tablas editables).  
+- **Formik** + **Yup** (validación de asientos).  
+- **PDFKit** (generación de reportes).  
+
+### **Backend:**  
+- **API RESTful** (Node.js/Express).  
+- **WebSockets** (sincronización en tiempo real).  
+- **PostgreSQL** (transacciones ACID).  
+
+### **Offline:**  
+- **Service Workers** (caché de recursos).  
+- **IndexedDB** (almacenamiento local).  
+- **Conflict Resolution** (timestamp + UUID).  
+
+---
+
+## **7. Prioridades de Desarrollo**  
+1. **Plan de Cuentas** (base del módulo).  
+2. **Asientos automáticos** (desde facturación/nómina).  
+3. **Reportes DGII** (Balance General 606/607).  
+4. **Sincronización offline**.  
