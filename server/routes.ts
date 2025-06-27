@@ -4087,7 +4087,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Generate financial reports
+  // Generate financial reports automatically from journal entries
   app.post("/api/accounting/generate-report", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.id;
@@ -4097,18 +4097,114 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const { reportType, startDate, endDate } = req.body;
-      const { enhancedAccountingService } = await import('./enhanced-accounting-service');
       
-      let result;
       if (reportType === 'BALANCE_GENERAL') {
-        result = await enhancedAccountingService.generateBalanceSheet(company.id, new Date(endDate));
+        // Calculate balance sheet from journal entry lines
+        const balanceData = await db.execute(sql`
+          SELECT 
+            c.category,
+            c.account_type,
+            c.code,
+            c.name,
+            COALESCE(SUM(jel.debit_amount), 0) as total_debit,
+            COALESCE(SUM(jel.credit_amount), 0) as total_credit,
+            CASE 
+              WHEN c.account_type IN ('ASSET') THEN COALESCE(SUM(jel.debit_amount), 0) - COALESCE(SUM(jel.credit_amount), 0)
+              ELSE COALESCE(SUM(jel.credit_amount), 0) - COALESCE(SUM(jel.debit_amount), 0)
+            END as balance
+          FROM chart_of_accounts c
+          LEFT JOIN journal_entry_lines jel ON c.code = jel.account_code
+          LEFT JOIN journal_entries je ON jel.journal_entry_id = je.id
+          WHERE c.company_id = ${company.id}
+          AND (je.date <= ${endDate} OR je.id IS NULL)
+          AND je.status = 'POSTED'
+          GROUP BY c.id, c.category, c.account_type, c.code, c.name
+          ORDER BY c.code
+        `);
+
+        const reportData = {
+          activos: { total: 0 },
+          pasivos: { total: 0 }, 
+          patrimonio: { total: 0 }
+        };
+
+        balanceData.rows.forEach((account: any) => {
+          if (account.account_type === 'ASSET' && account.balance > 0) {
+            reportData.activos.total += parseFloat(account.balance);
+          } else if (account.account_type === 'LIABILITY' && account.balance > 0) {
+            reportData.pasivos.total += parseFloat(account.balance);
+          } else if (account.account_type === 'EQUITY' && account.balance > 0) {
+            reportData.patrimonio.total += parseFloat(account.balance);
+          }
+        });
+
+        const savedReport = await storage.saveFinancialReport({
+          companyId: company.id,
+          reportType: 'BALANCE_GENERAL',
+          reportName: `Balance General - ${new Date(endDate).toLocaleDateString()}`,
+          periodStart: startDate,
+          periodEnd: endDate,
+          generatedBy: userId,
+          reportData
+        });
+
+        res.json(savedReport);
       } else if (reportType === 'ESTADO_RESULTADOS') {
-        result = await enhancedAccountingService.generateIncomeStatement(company.id, new Date(startDate), new Date(endDate));
+        // Calculate income statement from journal entry lines
+        const incomeData = await db.execute(sql`
+          SELECT 
+            c.category,
+            c.account_type,
+            c.code,
+            c.name,
+            COALESCE(SUM(jel.debit_amount), 0) as total_debit,
+            COALESCE(SUM(jel.credit_amount), 0) as total_credit,
+            CASE 
+              WHEN c.account_type = 'REVENUE' THEN COALESCE(SUM(jel.credit_amount), 0) - COALESCE(SUM(jel.debit_amount), 0)
+              WHEN c.account_type = 'EXPENSE' THEN COALESCE(SUM(jel.debit_amount), 0) - COALESCE(SUM(jel.credit_amount), 0)
+              ELSE 0
+            END as balance
+          FROM chart_of_accounts c
+          LEFT JOIN journal_entry_lines jel ON c.code = jel.account_code
+          LEFT JOIN journal_entries je ON jel.journal_entry_id = je.id
+          WHERE c.company_id = ${company.id}
+          AND je.date BETWEEN ${startDate} AND ${endDate}
+          AND je.status = 'POSTED'
+          AND c.account_type IN ('REVENUE', 'EXPENSE')
+          GROUP BY c.id, c.category, c.account_type, c.code, c.name
+          ORDER BY c.code
+        `);
+
+        const reportData = {
+          ingresos: { total: 0 },
+          gastos: { total: 0 },
+          utilidad_neta: 0
+        };
+
+        incomeData.rows.forEach((account: any) => {
+          if (account.account_type === 'REVENUE' && account.balance > 0) {
+            reportData.ingresos.total += parseFloat(account.balance);
+          } else if (account.account_type === 'EXPENSE' && account.balance > 0) {
+            reportData.gastos.total += parseFloat(account.balance);
+          }
+        });
+
+        reportData.utilidad_neta = reportData.ingresos.total - reportData.gastos.total;
+
+        const savedReport = await storage.saveFinancialReport({
+          companyId: company.id,
+          reportType: 'ESTADO_RESULTADOS',
+          reportName: `Estado de Resultados - ${new Date(startDate).toLocaleDateString()} al ${new Date(endDate).toLocaleDateString()}`,
+          periodStart: startDate,
+          periodEnd: endDate,
+          generatedBy: userId,
+          reportData
+        });
+
+        res.json(savedReport);
       } else {
         return res.status(400).json({ message: "Invalid report type" });
       }
-      
-      res.json(result.savedReport);
     } catch (error) {
       console.error("Error generating financial report:", error);
       res.status(500).json({ message: "Failed to generate financial report" });

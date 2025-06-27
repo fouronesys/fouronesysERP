@@ -5097,9 +5097,26 @@ export class DatabaseStorage implements IStorage {
   async getJournalEntries(companyId: number): Promise<any[]> {
     try {
       const entries = await db.execute(sql`
-        SELECT * FROM journal_entries 
-        WHERE company_id = ${companyId} 
-        ORDER BY date DESC, id DESC
+        SELECT je.*, 
+               COALESCE(
+                 json_agg(
+                   json_build_object(
+                     'id', jel.id,
+                     'account_code', jel.account_code,
+                     'account_name', jel.account_name,
+                     'description', jel.description,
+                     'debit_amount', jel.debit_amount,
+                     'credit_amount', jel.credit_amount,
+                     'line_number', jel.line_number
+                   ) ORDER BY jel.line_number
+                 ) FILTER (WHERE jel.id IS NOT NULL), 
+                 '[]'
+               ) as lines
+        FROM journal_entries je
+        LEFT JOIN journal_entry_lines jel ON je.id = jel.journal_entry_id
+        WHERE je.company_id = ${companyId} 
+        GROUP BY je.id
+        ORDER BY je.date DESC, je.id DESC
       `);
       return entries.rows;
     } catch (error) {
