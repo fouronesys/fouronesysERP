@@ -150,7 +150,7 @@ export default function NCFManagement() {
       
       return apiRequest("/api/fiscal/ncf-sequences", {
         method: "POST",
-        body: JSON.stringify(transformedData),
+        body: transformedData,
       });
     },
     onSuccess: () => {

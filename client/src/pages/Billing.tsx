@@ -157,7 +157,7 @@ const Billing = () => {
   const createNCFBatchMutation = useMutation({
     mutationFn: (data: any) => apiRequest('/api/fiscal/ncf-sequences', {
       method: 'POST',
-      body: JSON.stringify(data)
+      body: data
     }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/fiscal/ncf-sequences'] });
