@@ -167,7 +167,13 @@ Responde en español con formato JSON:
         throw new Error('Expected text response from AI');
       }
       
-      const aiResponse = JSON.parse(content.text);
+      let aiResponse;
+      try {
+        aiResponse = JSON.parse(content.text);
+      } catch (parseError) {
+        console.error('Failed to parse AI response as JSON:', content.text);
+        throw new Error('AI response is not valid JSON');
+      }
       
       return {
         analysis: `${aiResponse.analysis}\n\nPrevención: ${aiResponse.prevention}`,
