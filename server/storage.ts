@@ -5158,6 +5158,143 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  // Payroll methods for automatic deduction calculations
+  async getPayrollRecords(companyId: number): Promise<any[]> {
+    try {
+      const records = await db
+        .select({
+          id: payrollEntries.id,
+          employeeId: payrollEntries.employeeId,
+          companyId: payrollEntries.companyId,
+          periodId: payrollEntries.periodId,
+          baseSalary: payrollEntries.baseSalary,
+          grossPay: payrollEntries.grossPay,
+          tssDeduction: payrollEntries.tssDeduction,
+          sfsDeduction: payrollEntries.sfsDeduction,
+          incomeTaxDeduction: payrollEntries.incomeTaxDeduction,
+          totalDeductions: payrollEntries.totalDeductions,
+          netPay: payrollEntries.netPay,
+          createdAt: payrollEntries.createdAt,
+          employee: {
+            id: employees.id,
+            firstName: employees.firstName,
+            lastName: employees.lastName,
+            cedula: employees.cedula,
+            salary: employees.salary
+          }
+        })
+        .from(payrollEntries)
+        .leftJoin(employees, eq(payrollEntries.employeeId, employees.id))
+        .where(eq(payrollEntries.companyId, companyId))
+        .orderBy(payrollEntries.createdAt);
+
+      return records;
+    } catch (error) {
+      console.error("Error getting payroll records:", error);
+      return [];
+    }
+  }
+
+  async createPayrollRecord(data: any): Promise<any> {
+    try {
+      // First, create or get the payroll period
+      const periodData = {
+        companyId: data.companyId,
+        periodName: `${data.month}/${data.year}`,
+        startDate: new Date(data.year, data.month - 1, 1),
+        endDate: new Date(data.year, data.month, 0),
+        payDate: new Date(data.year, data.month, 0),
+        status: 'open'
+      };
+      
+      const [period] = await db
+        .insert(payrollPeriods)
+        .values(periodData)
+        .onConflictDoUpdate({
+          target: [payrollPeriods.companyId, payrollPeriods.periodName],
+          set: { status: 'open' }
+        })
+        .returning();
+
+      // Create the payroll entry
+      const [record] = await db
+        .insert(payrollEntries)
+        .values({
+          employeeId: data.employeeId,
+          companyId: data.companyId,
+          periodId: period.id,
+          baseSalary: data.grossSalary,
+          grossPay: data.grossSalary,
+          sfsDeduction: data.deductions.sfs || 0,
+          tssDeduction: data.deductions.afp || 0,
+          incomeTaxDeduction: data.deductions.isr || 0,
+          totalDeductions: data.deductions.total || 0,
+          netPay: data.netSalary
+        })
+        .returning();
+
+      return record;
+    } catch (error) {
+      console.error("Error creating payroll record:", error);
+      throw error;
+    }
+  }
+
+  async getPayrollRecordsByPeriod(companyId: number, month: number, year: number): Promise<any[]> {
+    try {
+      // First, find the payroll period for the specified month/year
+      const periodName = `${month}/${year}`;
+      const periods = await db
+        .select()
+        .from(payrollPeriods)
+        .where(
+          and(
+            eq(payrollPeriods.companyId, companyId),
+            eq(payrollPeriods.periodName, periodName)
+          )
+        );
+
+      if (periods.length === 0) {
+        return [];
+      }
+
+      const periodId = periods[0].id;
+
+      // Now get all payroll entries for this period
+      const records = await db
+        .select({
+          id: payrollEntries.id,
+          employeeId: payrollEntries.employeeId,
+          companyId: payrollEntries.companyId,
+          periodId: payrollEntries.periodId,
+          baseSalary: payrollEntries.baseSalary,
+          grossPay: payrollEntries.grossPay,
+          tssDeduction: payrollEntries.tssDeduction,
+          sfsDeduction: payrollEntries.sfsDeduction,
+          incomeTaxDeduction: payrollEntries.incomeTaxDeduction,
+          totalDeductions: payrollEntries.totalDeductions,
+          netPay: payrollEntries.netPay,
+          createdAt: payrollEntries.createdAt,
+          employee: {
+            id: employees.id,
+            firstName: employees.firstName,
+            lastName: employees.lastName,
+            cedula: employees.cedula,
+            salary: employees.salary
+          }
+        })
+        .from(payrollEntries)
+        .leftJoin(employees, eq(payrollEntries.employeeId, employees.id))
+        .where(eq(payrollEntries.periodId, periodId))
+        .orderBy(employees.firstName, employees.lastName);
+
+      return records;
+    } catch (error) {
+      console.error("Error getting payroll records by period:", error);
+      return [];
+    }
+  }
+
 }
 
 export const storage = new DatabaseStorage();

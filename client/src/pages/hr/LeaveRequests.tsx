@@ -49,6 +49,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { format } from "date-fns";
 
 const leaveRequestSchema = z.object({
+  employeeId: z.string().min(1, "Debe seleccionar un empleado"),
   type: z.enum(["vacation", "sick", "personal", "unpaid"]),
   startDate: z.string(),
   endDate: z.string(),
@@ -72,9 +73,14 @@ export default function LeaveRequests() {
     queryKey: ["/api/leave-balance"],
   });
 
+  const { data: employees = [] } = useQuery({
+    queryKey: ["/api/employees"],
+  });
+
   const form = useForm<LeaveRequestFormData>({
     resolver: zodResolver(leaveRequestSchema),
     defaultValues: {
+      employeeId: "",
       type: "vacation",
       startDate: "",
       endDate: "",
@@ -200,6 +206,31 @@ export default function LeaveRequests() {
             </DialogHeader>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="employeeId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Empleado</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Seleccionar empleado" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {(employees as any[]).map((employee: any) => (
+                            <SelectItem key={employee.id} value={employee.id.toString()}>
+                              {employee.firstName} {employee.lastName} - {employee.position}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
                 <FormField
                   control={form.control}
                   name="type"

@@ -217,6 +217,17 @@ The system follows a monolithic architecture with clear separation of concerns:
   - **Libro Mayor**: Complete general ledger with detailed account movements and running balances calculated from journal entry lines
   - **Enhanced User Experience**: All report sections have functional vertical scroll with proper padding and clean visual design
   - **Production Ready**: Financial reporting module fully functional with authentic Dominican Republic accounting standards compliance
+- June 27, 2025. **RRHH Module Enhancement & Time Tracking Removal:**
+  - **Time Tracking Module Eliminated**: Completely removed Time Tracking module as requested (files, routes, navigation references)
+  - **Employee Management Fixed**: Resolved critical backend API routes (/api/employees GET, POST, PUT, DELETE) enabling proper employee creation and display
+  - **Leave Request System Enhanced**: Implemented mandatory employee selection dropdown with proper backend validation and employeeId field integration
+  - **Payroll Calculation System**: Added comprehensive automatic deduction calculations following Dominican Republic labor law:
+    * SFS (Social Security): 2.87% employee contribution
+    * AFP (Pension): 2.87% employee contribution  
+    * ISR (Income Tax): Progressive rates based on annual salary brackets (RD$416,220, RD$624,329, RD$867,123)
+    * Complete T-REGISTRO report generation for DGII compliance
+  - **Backend Payroll Integration**: Created payroll period management with proper database relationships and calculation storage
+  - **Frontend Payroll Calculator**: Implemented user-friendly interface for payroll calculations with real-time deduction preview and processing
 
 ## User Preferences
 

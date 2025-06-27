@@ -70,7 +70,7 @@ import FinancialReports from "@/pages/accounting/FinancialReports";
 // Import other missing components
 import Invoices from "@/pages/Invoices";
 import InventoryMovements from "@/pages/InventoryMovements";
-import TimeTracking from "@/pages/hr/TimeTracking";
+
 import LeaveRequests from "@/pages/hr/LeaveRequests";
 import AIAssistant from "@/pages/AIAssistant";
 import Reports from "@/pages/Reports";
@@ -319,7 +319,7 @@ function Router() {
           <Route path="/inventory-movements" component={InventoryMovements} />
 
           <Route path="/employees" component={Employees} />
-          <Route path="/time-tracking" component={TimeTracking} />
+
           <Route path="/leave-requests" component={LeaveRequests} />
           <Route path="/payroll" component={Payroll} />
           <Route path="/ai-insights" component={AIInsights} />

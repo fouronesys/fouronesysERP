@@ -4544,6 +4544,405 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // RRHH - Employee Management Routes
+  app.get("/api/employees", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      const employees = await storage.getEmployees(company.id);
+      res.json(employees);
+    } catch (error) {
+      console.error("Error fetching employees:", error);
+      res.status(500).json({ message: "Failed to fetch employees" });
+    }
+  });
+
+  app.get("/api/employees/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      const employee = await storage.getEmployee(parseInt(req.params.id), company.id);
+      if (!employee) {
+        return res.status(404).json({ message: "Employee not found" });
+      }
+
+      res.json(employee);
+    } catch (error) {
+      console.error("Error fetching employee:", error);
+      res.status(500).json({ message: "Failed to fetch employee" });
+    }
+  });
+
+  app.post("/api/employees", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      const employeeData = {
+        ...req.body,
+        companyId: company.id,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+
+      const employee = await storage.createEmployee(employeeData);
+      res.status(201).json(employee);
+    } catch (error) {
+      console.error("Error creating employee:", error);
+      res.status(500).json({ message: "Failed to create employee" });
+    }
+  });
+
+  app.put("/api/employees/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      const employee = await storage.updateEmployee(
+        parseInt(req.params.id),
+        { ...req.body, updatedAt: new Date() },
+        company.id
+      );
+
+      if (!employee) {
+        return res.status(404).json({ message: "Employee not found" });
+      }
+
+      res.json(employee);
+    } catch (error) {
+      console.error("Error updating employee:", error);
+      res.status(500).json({ message: "Failed to update employee" });
+    }
+  });
+
+  app.delete("/api/employees/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      await storage.deleteEmployee(parseInt(req.params.id), company.id);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting employee:", error);
+      res.status(500).json({ message: "Failed to delete employee" });
+    }
+  });
+
+  // Leave Requests Routes
+  app.get("/api/leave-requests", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      const leaves = await storage.getLeaves(company.id);
+      res.json(leaves);
+    } catch (error) {
+      console.error("Error fetching leave requests:", error);
+      res.status(500).json({ message: "Failed to fetch leave requests" });
+    }
+  });
+
+  app.post("/api/leave-requests", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      // Calculate days between dates
+      const startDate = new Date(req.body.startDate);
+      const endDate = new Date(req.body.endDate);
+      const days = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+
+      const leaveData = {
+        companyId: company.id,
+        employeeId: parseInt(req.body.employeeId),
+        leaveType: req.body.type,
+        startDate,
+        endDate,
+        days,
+        reason: req.body.reason,
+        status: 'pending'
+      };
+
+      const leave = await storage.createLeave(leaveData);
+      res.status(201).json(leave);
+    } catch (error) {
+      console.error("Error creating leave request:", error);
+      res.status(500).json({ message: "Failed to create leave request" });
+    }
+  });
+
+  app.post("/api/leave-requests/:id/approve", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      const leave = await storage.updateLeave(
+        parseInt(req.params.id),
+        { 
+          status: 'approved',
+          approvedBy: userId,
+          approvedAt: new Date()
+        },
+        company.id
+      );
+
+      if (!leave) {
+        return res.status(404).json({ message: "Leave request not found" });
+      }
+
+      res.json(leave);
+    } catch (error) {
+      console.error("Error approving leave request:", error);
+      res.status(500).json({ message: "Failed to approve leave request" });
+    }
+  });
+
+  app.post("/api/leave-requests/:id/reject", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      const leave = await storage.updateLeave(
+        parseInt(req.params.id),
+        { 
+          status: 'rejected',
+          approvedBy: userId,
+          approvedAt: new Date()
+        },
+        company.id
+      );
+
+      if (!leave) {
+        return res.status(404).json({ message: "Leave request not found" });
+      }
+
+      res.json(leave);
+    } catch (error) {
+      console.error("Error rejecting leave request:", error);
+      res.status(500).json({ message: "Failed to reject leave request" });
+    }
+  });
+
+  app.get("/api/leave-balance", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      // This should calculate based on employee's entitlement and used days
+      // For now, returning mock data - implement proper calculation later
+      const balance = {
+        vacation: { available: 20, used: 5, remaining: 15 },
+        sick: { available: 10, used: 2, remaining: 8 },
+        personal: { available: 5, used: 1, remaining: 4 }
+      };
+
+      res.json(balance);
+    } catch (error) {
+      console.error("Error fetching leave balance:", error);
+      res.status(500).json({ message: "Failed to fetch leave balance" });
+    }
+  });
+
+  // Payroll routes for automatic deduction calculations
+  app.get("/api/payroll", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      const payrollRecords = await storage.getPayrollRecords(company.id);
+      res.json(payrollRecords);
+    } catch (error) {
+      console.error("Error fetching payroll records:", error);
+      res.status(500).json({ message: "Failed to fetch payroll records" });
+    }
+  });
+
+  app.post("/api/payroll/calculate", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      const { employeeId, month, year } = req.body;
+      
+      // Get employee data
+      const employee = await storage.getEmployee(employeeId, company.id);
+      if (!employee) {
+        return res.status(404).json({ message: "Employee not found" });
+      }
+
+      // Calculate automatic deductions based on Dominican Republic labor law
+      const grossSalary = Number(employee.salary) || 0;
+      
+      // Calculate SFS (Social Security) - 2.87% employee contribution
+      const sfsDeduction = Math.round(grossSalary * 0.0287);
+      
+      // Calculate AFP (Pension) - 2.87% employee contribution  
+      const afpDeduction = Math.round(grossSalary * 0.0287);
+      
+      // Calculate ISR (Income Tax) based on annual salary brackets
+      const annualSalary = grossSalary * 12;
+      let isrDeduction = 0;
+      
+      if (annualSalary > 867123.00) { // Above RD$867,123
+        isrDeduction = Math.round(((annualSalary - 867123.00) * 0.25 + 79776.00) / 12);
+      } else if (annualSalary > 624329.00) { // RD$624,329 to RD$867,123
+        isrDeduction = Math.round(((annualSalary - 624329.00) * 0.20 + 31216.00) / 12);
+      } else if (annualSalary > 416220.00) { // RD$416,220 to RD$624,329
+        isrDeduction = Math.round(((annualSalary - 416220.00) * 0.15) / 12);
+      } // Below RD$416,220 - no ISR
+
+      const totalDeductions = sfsDeduction + afpDeduction + isrDeduction;
+      const netSalary = grossSalary - totalDeductions;
+
+      const payrollCalculation = {
+        employeeId,
+        employeeName: `${employee.firstName} ${employee.lastName}`,
+        month,
+        year,
+        grossSalary,
+        deductions: {
+          sfs: sfsDeduction,
+          afp: afpDeduction,
+          isr: isrDeduction,
+          total: totalDeductions
+        },
+        netSalary,
+        calculatedAt: new Date()
+      };
+
+      res.json(payrollCalculation);
+    } catch (error) {
+      console.error("Error calculating payroll:", error);
+      res.status(500).json({ message: "Failed to calculate payroll" });
+    }
+  });
+
+  app.post("/api/payroll", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      const payrollData = {
+        ...req.body,
+        companyId: company.id,
+        processedBy: userId,
+        processedAt: new Date()
+      };
+
+      const payrollRecord = await storage.createPayrollRecord(payrollData);
+      res.json(payrollRecord);
+    } catch (error) {
+      console.error("Error creating payroll record:", error);
+      res.status(500).json({ message: "Failed to create payroll record" });
+    }
+  });
+
+  // T-REGISTRO (Payroll tax report) generation
+  app.get("/api/dgii-reports/t-registro/:month/:year", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      const { month, year } = req.params;
+      
+      // Get all payroll records for the specified period
+      const payrollRecords = await storage.getPayrollRecordsByPeriod(
+        company.id, 
+        parseInt(month), 
+        parseInt(year)
+      );
+
+      if (!payrollRecords || payrollRecords.length === 0) {
+        return res.status(404).json({ 
+          message: "No payroll records found for the specified period" 
+        });
+      }
+
+      // Generate T-REGISTRO format
+      let totalGrossSalary = 0;
+      let totalSFS = 0;
+      let totalAFP = 0;
+      let totalISR = 0;
+
+      const reportLines = payrollRecords.map(record => {
+        const employee = record.employee;
+        const deductions = JSON.parse(record.deductions as string);
+        
+        totalGrossSalary += record.grossSalary;
+        totalSFS += deductions.sfs || 0;
+        totalAFP += deductions.afp || 0;
+        totalISR += deductions.isr || 0;
+
+        // T-REGISTRO format: RNC|Name|Gross|SFS|AFP|ISR
+        return `${employee.cedula || ''}|${employee.firstName} ${employee.lastName}|${record.grossSalary}|${deductions.sfs || 0}|${deductions.afp || 0}|${deductions.isr || 0}`;
+      });
+
+      const reportData = {
+        companyRnc: company.rnc,
+        companyName: company.businessName,
+        period: `${month}/${year}`,
+        totalEmployees: payrollRecords.length,
+        totals: {
+          grossSalary: totalGrossSalary,
+          sfs: totalSFS,
+          afp: totalAFP,
+          isr: totalISR
+        },
+        details: reportLines,
+        generatedAt: new Date()
+      };
+
+      res.json(reportData);
+    } catch (error) {
+      console.error("Error generating T-REGISTRO report:", error);
+      res.status(500).json({ message: "Failed to generate T-REGISTRO report" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

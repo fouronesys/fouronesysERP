@@ -1,482 +1,375 @@
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Edit, Trash2, Calculator, DollarSign, Calendar, FileText } from "lucide-react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { Header } from "@/components/Header";
-import { FeatureGuard } from "@/components/FeatureGuard";
-import type { PayrollPeriod, PayrollEntry, Employee } from "@shared/schema";
+import { Calculator, Users, FileText, TrendingUp } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+
+interface PayrollCalculation {
+  employeeId: number;
+  employeeName: string;
+  month: number;
+  year: number;
+  grossSalary: number;
+  deductions: {
+    sfs: number;
+    afp: number;
+    isr: number;
+    total: number;
+  };
+  netSalary: number;
+  calculatedAt: Date;
+}
+
+interface PayrollFormData {
+  employeeId: string;
+  month: string;
+  year: string;
+}
 
 export default function Payroll() {
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingPeriod, setEditingPeriod] = useState<PayrollPeriod | null>(null);
-  const [selectedPeriod, setSelectedPeriod] = useState<PayrollPeriod | null>(null);
   const { toast } = useToast();
-  const queryClient = useQueryClient();
+  const [selectedCalculation, setSelectedCalculation] = useState<PayrollCalculation | null>(null);
+  const [showCalculator, setShowCalculator] = useState(false);
 
-  const { data: periods = [], isLoading: loadingPeriods } = useQuery({
-    queryKey: ["/api/payroll/periods"],
-  });
+  const { register, handleSubmit, setValue, watch, reset } = useForm<PayrollFormData>();
+  const watchedEmployee = watch("employeeId");
+  const watchedMonth = watch("month");
+  const watchedYear = watch("year");
 
+  // Fetch employees
   const { data: employees = [] } = useQuery({
     queryKey: ["/api/employees"],
   });
 
-  const { data: entries = [], isLoading: loadingEntries } = useQuery({
-    queryKey: ["/api/payroll/entries", selectedPeriod?.id],
-    enabled: !!selectedPeriod,
+  // Fetch payroll records
+  const { data: payrollRecords = [], refetch } = useQuery({
+    queryKey: ["/api/payroll"],
   });
 
-  const createPeriodMutation = useMutation({
-    mutationFn: (data: any) => apiRequest("/api/payroll/periods", {
-      method: "POST",
-      body: JSON.stringify(data),
-    }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/payroll/periods"] });
-      setIsDialogOpen(false);
-      setEditingPeriod(null);
-      toast({
-        title: "Período creado",
-        description: "El período de nómina ha sido creado exitosamente.",
+  // Calculate payroll mutation
+  const calculatePayrollMutation = useMutation({
+    mutationFn: async (data: PayrollFormData) => {
+      return apiRequest("/api/payroll/calculate", {
+        method: "POST",
+        body: {
+          employeeId: parseInt(data.employeeId),
+          month: parseInt(data.month),
+          year: parseInt(data.year),
+        },
       });
     },
-    onError: (error: Error) => {
+    onSuccess: (data) => {
+      setSelectedCalculation(data);
+      toast({
+        title: "Cálculo completado",
+        description: "Deducciones calculadas automáticamente según leyes dominicanas",
+      });
+    },
+    onError: (error) => {
       toast({
         title: "Error",
-        description: error.message,
+        description: "No se pudo calcular la nómina",
         variant: "destructive",
       });
     },
   });
 
-  const updatePeriodMutation = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: any }) => 
-      apiRequest(`/api/payroll/periods/${id}`, {
-        method: "PUT",
-        body: JSON.stringify(data),
-      }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/payroll/periods"] });
-      setIsDialogOpen(false);
-      setEditingPeriod(null);
-      toast({
-        title: "Período actualizado",
-        description: "El período de nómina ha sido actualizado.",
+  // Process payroll mutation
+  const processPayrollMutation = useMutation({
+    mutationFn: async (calculation: PayrollCalculation) => {
+      return apiRequest("/api/payroll", {
+        method: "POST",
+        body: calculation,
       });
     },
-    onError: (error: Error) => {
+    onSuccess: () => {
+      toast({
+        title: "Nómina procesada",
+        description: "El registro de nómina ha sido guardado exitosamente",
+      });
+      setSelectedCalculation(null);
+      setShowCalculator(false);
+      reset();
+      refetch();
+    },
+    onError: (error) => {
       toast({
         title: "Error",
-        description: error.message,
+        description: "No se pudo procesar la nómina",
         variant: "destructive",
       });
     },
   });
 
-  const generatePayrollMutation = useMutation({
-    mutationFn: (periodId: number) => apiRequest(`/api/payroll/generate/${periodId}`, {
-      method: "POST",
-    }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/payroll/entries", selectedPeriod?.id] });
-      toast({
-        title: "Nómina generada",
-        description: "La nómina ha sido generada exitosamente.",
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
+  const onCalculate = (data: PayrollFormData) => {
+    calculatePayrollMutation.mutate(data);
+  };
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    const data = {
-      periodName: formData.get("periodName"),
-      startDate: formData.get("startDate"),
-      endDate: formData.get("endDate"),
-      payDate: formData.get("payDate"),
-      status: formData.get("status"),
-    };
-
-    if (editingPeriod) {
-      updatePeriodMutation.mutate({ id: editingPeriod.id, data });
-    } else {
-      createPeriodMutation.mutate(data);
+  const onProcessPayroll = () => {
+    if (selectedCalculation) {
+      processPayrollMutation.mutate(selectedCalculation);
     }
   };
 
-  const handleEdit = (period: PayrollPeriod) => {
-    setEditingPeriod(period);
-    setIsDialogOpen(true);
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('es-DO', {
+      style: 'currency',
+      currency: 'DOP'
+    }).format(amount);
   };
 
-  const getStatusBadge = (status: string) => {
-    const variants = {
-      draft: "secondary",
-      processing: "default",
-      paid: "default",
-      closed: "outline",
-    } as const;
-    
-    const labels = {
-      draft: "Borrador",
-      processing: "Procesando",
-      paid: "Pagado",
-      closed: "Cerrado",
-    } as const;
-
-    return (
-      <Badge variant={variants[status as keyof typeof variants] || "secondary"}>
-        {labels[status as keyof typeof labels] || status}
-      </Badge>
-    );
-  };
-
-  const calculateTotalPay = (entries: PayrollEntry[]) => {
-    return entries.reduce((sum, entry) => sum + parseFloat(entry.netPay), 0);
-  };
-
-  const getEmployeeName = (employeeId: number) => {
-    const employee = (employees as Employee[]).find((emp: Employee) => emp.id === employeeId);
-    return employee ? `${employee.firstName} ${employee.lastName}` : "Empleado no encontrado";
-  };
+  const currentMonth = new Date().getMonth() + 1;
+  const currentYear = new Date().getFullYear();
 
   return (
-    <div className="h-screen overflow-y-auto">
-      <div className="container mx-auto p-4 space-y-6 pb-20">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
-              Sistema de Nómina
-            </h1>
-            <p className="text-gray-600 dark:text-gray-400">
-              Gestiona períodos de nómina y pagos de empleados
-            </p>
-          </div>
+    <div className="container mx-auto p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Nómina</h1>
+          <p className="text-muted-foreground">
+            Cálculo automático de deducciones según leyes dominicanas
+          </p>
         </div>
+        <Button 
+          onClick={() => setShowCalculator(!showCalculator)}
+          className="flex items-center gap-2"
+        >
+          <Calculator className="h-4 w-4" />
+          {showCalculator ? "Ocultar Calculadora" : "Nueva Nómina"}
+        </Button>
+      </div>
 
-        <Tabs defaultValue="periods" className="w-full">
-          <TabsList>
-            <TabsTrigger value="periods">Períodos de Nómina</TabsTrigger>
-            <TabsTrigger value="entries">Entradas de Nómina</TabsTrigger>
-          </TabsList>
+      {/* Statistics Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Empleados</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{employees.length}</div>
+          </CardContent>
+        </Card>
 
-          <TabsContent value="periods" className="space-y-6">
-            <div className="flex justify-end">
-              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button onClick={() => setEditingPeriod(null)}>
-                    <Plus className="w-4 h-4 mr-2" />
-                    Nuevo Período
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>
-                      {editingPeriod ? "Editar Período" : "Nuevo Período"}
-                    </DialogTitle>
-                  </DialogHeader>
-                  
-                  <form onSubmit={handleSubmit} className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="periodName">Nombre del Período</Label>
-                      <Input
-                        id="periodName"
-                        name="periodName"
-                        defaultValue={editingPeriod?.periodName || ""}
-                        placeholder="Ej: Enero 2024"
-                        required
-                      />
-                    </div>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Registros Nómina</CardTitle>
+            <FileText className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{payrollRecords.length}</div>
+          </CardContent>
+        </Card>
 
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="startDate">Fecha de Inicio</Label>
-                        <Input
-                          id="startDate"
-                          name="startDate"
-                          type="date"
-                          defaultValue={editingPeriod?.startDate ? new Date(editingPeriod.startDate).toISOString().split('T')[0] : ""}
-                          required
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="endDate">Fecha de Fin</Label>
-                        <Input
-                          id="endDate"
-                          name="endDate"
-                          type="date"
-                          defaultValue={editingPeriod?.endDate ? new Date(editingPeriod.endDate).toISOString().split('T')[0] : ""}
-                          required
-                        />
-                      </div>
-                    </div>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Nómina Actual</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{currentMonth}/{currentYear}</div>
+          </CardContent>
+        </Card>
+      </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="payDate">Fecha de Pago</Label>
-                        <Input
-                          id="payDate"
-                          name="payDate"
-                          type="date"
-                          defaultValue={editingPeriod?.payDate ? new Date(editingPeriod.payDate).toISOString().split('T')[0] : ""}
-                          required
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="status">Estado</Label>
-                        <Select name="status" defaultValue={editingPeriod?.status || "draft"}>
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="draft">Borrador</SelectItem>
-                            <SelectItem value="processing">Procesando</SelectItem>
-                            <SelectItem value="paid">Pagado</SelectItem>
-                            <SelectItem value="closed">Cerrado</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-
-                    <div className="flex justify-end space-x-2 pt-4">
-                      <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
-                        Cancelar
-                      </Button>
-                      <Button 
-                        type="submit" 
-                        disabled={createPeriodMutation.isPending || updatePeriodMutation.isPending}
-                      >
-                        {editingPeriod ? "Actualizar" : "Crear"}
-                      </Button>
-                    </div>
-                  </form>
-                </DialogContent>
-              </Dialog>
-            </div>
-
-            {loadingPeriods ? (
-              <div className="flex justify-center items-center h-32">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      {/* Payroll Calculator */}
+      {showCalculator && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Calculator className="h-5 w-5" />
+              Calculadora de Nómina
+            </CardTitle>
+            <CardDescription>
+              Calcula automáticamente SFS (2.87%), AFP (2.87%) e ISR según escalas vigentes
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <form onSubmit={handleSubmit(onCalculate)} className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="employee">Empleado</Label>
+                <Select 
+                  value={watchedEmployee} 
+                  onValueChange={(value) => setValue("employeeId", value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar empleado" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {employees.map((employee: any) => (
+                      <SelectItem key={employee.id} value={employee.id.toString()}>
+                        {employee.firstName} {employee.lastName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-            ) : (
-              <div className="grid gap-4">
-                {(periods as PayrollPeriod[]).map((period: PayrollPeriod) => (
-                  <Card key={period.id}>
-                    <CardHeader>
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <CardTitle className="text-lg">{period.periodName}</CardTitle>
-                          <p className="text-sm text-muted-foreground">
-                            {new Date(period.startDate).toLocaleDateString()} - {new Date(period.endDate).toLocaleDateString()}
-                          </p>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          {getStatusBadge(period.status)}
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setSelectedPeriod(period)}
-                          >
-                            <FileText className="w-4 h-4 mr-1" />
-                            Ver Entradas
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleEdit(period)}
-                          >
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="flex items-center space-x-2">
-                          <Calendar className="w-4 h-4 text-muted-foreground" />
-                          <span className="text-sm">
-                            Pago: {new Date(period.payDate).toLocaleDateString()}
-                          </span>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <Calculator className="w-4 h-4 text-muted-foreground" />
-                          <span className="text-sm">
-                            Estado: {period.status}
-                          </span>
-                        </div>
-                        {period.status === "draft" && (
-                          <Button
-                            size="sm"
-                            onClick={() => generatePayrollMutation.mutate(period.id)}
-                            disabled={generatePayrollMutation.isPending}
-                          >
-                            <Calculator className="w-4 h-4 mr-1" />
-                            Generar Nómina
-                          </Button>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
 
-                {(periods as PayrollPeriod[]).length === 0 && (
-                  <Card>
-                    <CardContent className="text-center py-12">
-                      <Calendar className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                      <h3 className="text-lg font-medium mb-2">No hay períodos de nómina</h3>
-                      <p className="text-muted-foreground mb-4">
-                        Comienza creando tu primer período de nómina.
-                      </p>
-                      <Button onClick={() => setIsDialogOpen(true)}>
-                        <Plus className="w-4 h-4 mr-2" />
-                        Crear Período
-                      </Button>
-                    </CardContent>
-                  </Card>
-                )}
+              <div className="space-y-2">
+                <Label htmlFor="month">Mes</Label>
+                <Select 
+                  value={watchedMonth} 
+                  onValueChange={(value) => setValue("month", value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Mes" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => (
+                      <SelectItem key={month} value={month.toString()}>
+                        {new Date(2024, month - 1, 1).toLocaleDateString('es-DO', { month: 'long' })}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-            )}
-          </TabsContent>
 
-          <TabsContent value="entries" className="space-y-6">
-            {selectedPeriod ? (
-              <>
-                <div className="flex justify-between items-center">
-                  <div>
-                    <h3 className="text-lg font-medium">{selectedPeriod.periodName}</h3>
-                    <p className="text-sm text-muted-foreground">
-                      {new Date(selectedPeriod.startDate).toLocaleDateString()} - {new Date(selectedPeriod.endDate).toLocaleDateString()}
-                    </p>
+              <div className="space-y-2">
+                <Label htmlFor="year">Año</Label>
+                <Select 
+                  value={watchedYear} 
+                  onValueChange={(value) => setValue("year", value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Año" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[currentYear - 1, currentYear, currentYear + 1].map((year) => (
+                      <SelectItem key={year} value={year.toString()}>
+                        {year}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex items-end">
+                <Button 
+                  type="submit" 
+                  disabled={!watchedEmployee || !watchedMonth || !watchedYear || calculatePayrollMutation.isPending}
+                  className="w-full"
+                >
+                  {calculatePayrollMutation.isPending ? "Calculando..." : "Calcular"}
+                </Button>
+              </div>
+            </form>
+
+            {/* Calculation Results */}
+            {selectedCalculation && (
+              <div className="mt-6 p-4 border rounded-lg bg-muted/50">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold">Resultado del Cálculo</h3>
+                  <Badge variant="outline">
+                    {selectedCalculation.month}/{selectedCalculation.year}
+                  </Badge>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="font-medium">Empleado:</span>
+                      <span>{selectedCalculation.employeeName}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="font-medium">Salario Bruto:</span>
+                      <span className="font-mono">{formatCurrency(selectedCalculation.grossSalary)}</span>
+                    </div>
+                    <Separator />
+                    <div className="flex justify-between text-sm">
+                      <span>SFS (2.87%):</span>
+                      <span className="font-mono text-red-600">-{formatCurrency(selectedCalculation.deductions.sfs)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span>AFP (2.87%):</span>
+                      <span className="font-mono text-red-600">-{formatCurrency(selectedCalculation.deductions.afp)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span>ISR:</span>
+                      <span className="font-mono text-red-600">-{formatCurrency(selectedCalculation.deductions.isr)}</span>
+                    </div>
                   </div>
-                  <div className="flex items-center space-x-4">
-                    <div className="text-right">
-                      <p className="text-sm text-muted-foreground">Total a Pagar</p>
-                      <p className="text-lg font-semibold">
-                        DOP ${calculateTotalPay(entries as PayrollEntry[]).toLocaleString()}
-                      </p>
+
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="font-medium">Total Deducciones:</span>
+                      <span className="font-mono text-red-600">-{formatCurrency(selectedCalculation.deductions.total)}</span>
                     </div>
-                    {getStatusBadge(selectedPeriod.status)}
+                    <Separator />
+                    <div className="flex justify-between text-lg font-bold">
+                      <span>Salario Neto:</span>
+                      <span className="font-mono text-green-600">{formatCurrency(selectedCalculation.netSalary)}</span>
+                    </div>
                   </div>
                 </div>
 
-                {loadingEntries ? (
-                  <div className="flex justify-center items-center h-32">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                  </div>
-                ) : (
-                  <div className="grid gap-4">
-                    {(entries as PayrollEntry[]).map((entry: PayrollEntry) => (
-                      <Card key={entry.id}>
-                        <CardHeader>
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <CardTitle className="text-lg">
-                                {getEmployeeName(entry.employeeId)}
-                              </CardTitle>
-                              <p className="text-sm text-muted-foreground">
-                                Salario Base: DOP ${parseFloat(entry.baseSalary).toLocaleString()}
-                              </p>
-                            </div>
-                            <div className="text-right">
-                              <p className="text-lg font-semibold">
-                                DOP ${parseFloat(entry.netPay).toLocaleString()}
-                              </p>
-                              <p className="text-sm text-muted-foreground">Pago Neto</p>
-                            </div>
-                          </div>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                            <div>
-                              <p className="text-muted-foreground">Horas Trabajadas</p>
-                              <p className="font-medium">{entry.hoursWorked || 0}</p>
-                            </div>
-                            <div>
-                              <p className="text-muted-foreground">Horas Extras</p>
-                              <p className="font-medium">{entry.overtimeHours || 0}</p>
-                            </div>
-                            <div>
-                              <p className="text-muted-foreground">Bonificaciones</p>
-                              <p className="font-medium">DOP ${parseFloat(entry.bonuses || "0").toLocaleString()}</p>
-                            </div>
-                            <div>
-                              <p className="text-muted-foreground">Pago Bruto</p>
-                              <p className="font-medium">DOP ${parseFloat(entry.grossPay).toLocaleString()}</p>
-                            </div>
-                            <div>
-                              <p className="text-muted-foreground">TSS</p>
-                              <p className="font-medium">DOP ${parseFloat(entry.tssDeduction || "0").toLocaleString()}</p>
-                            </div>
-                            <div>
-                              <p className="text-muted-foreground">SFS</p>
-                              <p className="font-medium">DOP ${parseFloat(entry.sfsDeduction || "0").toLocaleString()}</p>
-                            </div>
-                            <div>
-                              <p className="text-muted-foreground">INFOTEP</p>
-                              <p className="font-medium">DOP ${parseFloat(entry.infotepDeduction || "0").toLocaleString()}</p>
-                            </div>
-                            <div>
-                              <p className="text-muted-foreground">Total Deducciones</p>
-                              <p className="font-medium">DOP ${parseFloat(entry.totalDeductions).toLocaleString()}</p>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-
-                    {(entries as PayrollEntry[]).length === 0 && (
-                      <Card>
-                        <CardContent className="text-center py-12">
-                          <DollarSign className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                          <h3 className="text-lg font-medium mb-2">No hay entradas de nómina</h3>
-                          <p className="text-muted-foreground mb-4">
-                            {selectedPeriod.status === "draft" 
-                              ? "Genera la nómina para este período para ver las entradas."
-                              : "No se encontraron entradas para este período."
-                            }
-                          </p>
-                          {selectedPeriod.status === "draft" && (
-                            <Button onClick={() => generatePayrollMutation.mutate(selectedPeriod.id)}>
-                              <Calculator className="w-4 h-4 mr-2" />
-                              Generar Nómina
-                            </Button>
-                          )}
-                        </CardContent>
-                      </Card>
-                    )}
-                  </div>
-                )}
-              </>
-            ) : (
-              <Card>
-                <CardContent className="text-center py-12">
-                  <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-medium mb-2">Selecciona un período</h3>
-                  <p className="text-muted-foreground">
-                    Selecciona un período de nómina para ver sus entradas.
-                  </p>
-                </CardContent>
-              </Card>
+                <div className="mt-4 flex gap-2">
+                  <Button 
+                    onClick={onProcessPayroll}
+                    disabled={processPayrollMutation.isPending}
+                    className="flex-1"
+                  >
+                    {processPayrollMutation.isPending ? "Procesando..." : "Procesar Nómina"}
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setSelectedCalculation(null)}
+                  >
+                    Cancelar
+                  </Button>
+                </div>
+              </div>
             )}
-          </TabsContent>
-        </Tabs>
-      </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Payroll Records */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Registros de Nómina</CardTitle>
+          <CardDescription>
+            Historial de nóminas procesadas con deducciones automáticas
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {payrollRecords.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              No hay registros de nómina. Calcula tu primera nómina usando la calculadora.
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {payrollRecords.map((record: any) => (
+                <div key={record.id} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div className="flex-1">
+                    <div className="font-medium">
+                      {record.employee?.firstName} {record.employee?.lastName}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      Procesado: {new Date(record.createdAt).toLocaleDateString('es-DO')}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-mono font-medium">
+                      {formatCurrency(Number(record.netPay))}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      Bruto: {formatCurrency(Number(record.grossPay))}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
