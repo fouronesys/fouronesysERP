@@ -2560,11 +2560,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("[DEBUG] Sequences fetched:", sequences);
       console.log("[DEBUG] Sequences count:", sequences?.length || 0);
       
-      // Ensure we're sending valid JSON
-      const response = Array.isArray(sequences) ? sequences : [];
-      console.log("[DEBUG] Sending response:", response);
+      // Transform sequences to match frontend interface
+      const transformedSequences = sequences.map((seq: any) => ({
+        id: seq.id,
+        tipo: seq.ncfType,
+        prefijo: seq.series || '001',
+        descripcion: seq.description || `Secuencia ${seq.ncfType}`,
+        inicio: seq.currentSequence,
+        fin: seq.maxSequence,
+        ultimo_usado: seq.currentSequence - 1,
+        vencimiento: seq.expirationDate ? new Date(seq.expirationDate).toISOString().split('T')[0] : '',
+        estado: seq.isActive ? 'active' : 'inactive',
+        disponibles: seq.maxSequence - seq.currentSequence + 1,
+        usados: seq.currentSequence - 1,
+        porcentajeUso: Math.round(((seq.currentSequence - 1) / (seq.maxSequence - 1)) * 100) || 0,
+        createdAt: seq.createdAt
+      }));
       
-      res.json(response);
+      console.log("[DEBUG] Transformed sequences:", transformedSequences);
+      
+      res.json(transformedSequences);
     } catch (error) {
       console.error("[ERROR] Error fetching NCF sequences:", error);
       console.error("[ERROR] Error stack:", error.stack);
