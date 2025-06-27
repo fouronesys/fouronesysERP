@@ -267,8 +267,8 @@ export default function NCFManagement() {
   };
 
   const filteredBatches = ncfBatches.filter(batch =>
-    batch.tipo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    batch.descripcion.toLowerCase().includes(searchTerm.toLowerCase())
+    batch.tipo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    batch.descripcion?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -411,11 +411,11 @@ export default function NCFManagement() {
                           <FormDescription>
                             {selectedNCFType && (
                               <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-950 rounded-md">
-                                <p className="text-sm font-medium">{selectedNCFType.descripcion}</p>
-                                <p className="text-xs text-muted-foreground mt-1">
+                                <span className="text-sm font-medium block">{selectedNCFType.descripcion}</span>
+                                <span className="text-xs text-muted-foreground mt-1 block">
                                   {selectedNCFType.aplicaCredito && "✓ Aplica para crédito fiscal"}
                                   {selectedNCFType.aplicaConsumidor && "✓ Para consumidor final"}
-                                </p>
+                                </span>
                               </div>
                             )}
                           </FormDescription>
