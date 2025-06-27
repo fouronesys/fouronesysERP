@@ -1615,7 +1615,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Get product details for stock management
         const product = await storage.getProduct(finalProductId, company.id);
-        if (product && product.stock !== null && product.stock !== undefined) {
+        
+        // Skip stock validation for services and non-inventoriable products
+        const isStockless = product?.productType === 'service' || 
+                           product?.productType === 'non_inventoriable' || 
+                           product?.trackInventory === false;
+        
+        if (product && !isStockless && product.stock !== null && product.stock !== undefined) {
           const currentStock = parseInt(String(product.stock) || "0");
           const newStock = Math.floor(currentStock - quantityDifference);
           
@@ -1640,8 +1646,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Product not found" });
       }
 
-      // Check and update stock for regular products
-      if (product.stock !== null && product.stock !== undefined) {
+      // Skip stock validation for services and non-inventoriable products
+      const isStockless = product.productType === 'service' || 
+                         product.productType === 'non_inventoriable' || 
+                         product.trackInventory === false;
+      
+      // Check and update stock for regular products only
+      if (!isStockless && product.stock !== null && product.stock !== undefined) {
         const currentStock = parseInt(String(product.stock) || "0");
         const newStock = currentStock - finalQuantity;
         

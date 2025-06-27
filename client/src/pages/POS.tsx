@@ -512,9 +512,15 @@ export default function POS() {
                                 {formatDOP(parseFloat(product.price))}
                               </p>
                               <div className="flex items-center justify-between mt-2">
-                                <Badge variant={parseInt(product.stock.toString()) > 10 ? "default" : "destructive"}>
-                                  Stock: {product.stock}
-                                </Badge>
+                                {product.productType === 'service' || product.productType === 'non_inventoriable' ? (
+                                  <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                                    Servicio
+                                  </Badge>
+                                ) : (
+                                  <Badge variant={parseInt(product.stock.toString()) > 10 ? "default" : "destructive"}>
+                                    Stock: {product.stock}
+                                  </Badge>
+                                )}
                               </div>
                             </div>
                             
@@ -525,7 +531,11 @@ export default function POS() {
                                 e.stopPropagation();
                                 addToCart(product);
                               }}
-                              disabled={parseInt(product.stock.toString()) <= 0}
+                              disabled={
+                                product.productType !== 'service' && 
+                                product.productType !== 'non_inventoriable' && 
+                                parseInt(product.stock.toString()) <= 0
+                              }
                             >
                               <Plus className="h-3 w-3 mr-1" />
                               Agregar

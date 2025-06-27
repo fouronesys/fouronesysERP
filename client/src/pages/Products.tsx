@@ -262,6 +262,11 @@ export default function Products() {
   };
 
   const getStockStatus = (product: Product) => {
+    // For services and non-inventoriable products, don't show stock status
+    if (product.productType === 'service' || product.productType === 'non_inventoriable') {
+      return { label: "Servicio", color: "bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300" };
+    }
+    
     if (product.stock === 0) {
       return { label: "Sin stock", color: "bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300" };
     }

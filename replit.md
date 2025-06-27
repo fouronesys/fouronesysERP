@@ -164,6 +164,13 @@ The system follows a monolithic architecture with clear separation of concerns:
   - **Enhanced Suppliers Module**: Complete vendor management system with RNC validation, certificate tracking, performance monitoring, multi-contact management, banking details
   - **Fixed NCF Batch Management**: Corrected validation to handle NCF types without expiration dates (E-series), proper fiscal compliance rules
   - All modules now use real data integration, eliminated mock data completely
+- June 27, 2025. **Critical Service Products and Inventory Management Fix:**
+  - **Fixed Service Product Handling**: Resolved issue where services and non-inventoriable products showed "Sin stock" preventing sales
+  - **Enhanced POS Interface**: Services now display "Servicio" badge instead of stock status, buttons remain enabled for service products
+  - **Backend Stock Validation**: Added proper logic to skip stock validation for service and non-inventoriable product types
+  - **Products Page Enhancement**: Services display "Servicio" status instead of stock information in product catalog
+  - **Form Logic Improvement**: Product creation form now properly handles service types, hiding inventory fields conditionally
+  - **Default Warehouse Integration**: Implemented getDefaultWarehouse() function with automatic warehouse creation for companies
 - June 26, 2025. **MASSIVE DGII RNC REGISTRY COMPLETION - ENTERPRISE MILESTONE:**
   - **NEAR-COMPLETE AUTHENTIC DATA**: Successfully imported 732,578+ authentic RNCs from official DGII registry (99.05% of 739,594 total records)
   - **Complete Data Replacement**: Eliminated all 1.1M synthetic records and replaced with 100% authentic DGII data
