@@ -15,6 +15,8 @@ import { InvoicePOS80mmService } from "./invoice-pos-80mm-service";
 import { InvoiceHTMLService } from "./invoice-html-service";
 import { db } from "./db";
 import { and, eq, isNotNull, desc, sql } from "drizzle-orm";
+import fs from "fs";
+import path from "path";
 
 // File upload configuration
 const upload = multer({
@@ -2990,8 +2992,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Save report content to file for download
-      const fs = require('fs');
-      const path = require('path');
       const uploadsDir = path.join(process.cwd(), 'uploads');
       if (!fs.existsSync(uploadsDir)) {
         fs.mkdirSync(uploadsDir, { recursive: true });
@@ -3031,7 +3031,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Check if file exists
-      const fs = require('fs');
       if (report.filePath && fs.existsSync(report.filePath)) {
         // Serve the actual generated file
         const content = fs.readFileSync(report.filePath, 'utf8');
