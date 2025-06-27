@@ -4693,6 +4693,234 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  // Users and Permissions Management
+  async getCompanyUsers(companyId: number): Promise<any[]> {
+    try {
+      const result = await db
+        .select({
+          id: users.id,
+          email: users.email,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          role: users.role,
+          isActive: users.isActive,
+          lastLoginAt: users.lastLoginAt,
+          createdAt: users.createdAt,
+          permissions: companyUsers.permissions,
+        })
+        .from(users)
+        .leftJoin(companyUsers, eq(users.id, companyUsers.userId))
+        .where(eq(companyUsers.companyId, companyId));
+      
+      return result;
+    } catch (error) {
+      console.error("Error getting company users:", error);
+      throw error;
+    }
+  }
+
+  async createUser(userData: any): Promise<any> {
+    try {
+      // Hash password if provided
+      if (userData.password) {
+        const bcrypt = require('bcrypt');
+        userData.password = await bcrypt.hash(userData.password, 10);
+      }
+
+      const [user] = await db
+        .insert(users)
+        .values({
+          id: `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          email: userData.email,
+          firstName: userData.firstName,
+          lastName: userData.lastName,
+          password: userData.password,
+          role: userData.role || 'user',
+          isActive: true,
+        })
+        .returning();
+
+      // Create company user relationship
+      if (userData.companyId) {
+        await db
+          .insert(companyUsers)
+          .values({
+            userId: user.id,
+            companyId: userData.companyId,
+            role: userData.role || 'user',
+            permissions: userData.permissions || [],
+            isActive: true,
+          });
+      }
+
+      return user;
+    } catch (error) {
+      console.error("Error creating user:", error);
+      throw error;
+    }
+  }
+
+  async updateUser(userId: string, updateData: any): Promise<any> {
+    try {
+      // Hash password if provided
+      if (updateData.password) {
+        const bcrypt = require('bcrypt');
+        updateData.password = await bcrypt.hash(updateData.password, 10);
+      }
+
+      const [user] = await db
+        .update(users)
+        .set({
+          ...updateData,
+          updatedAt: new Date(),
+        })
+        .where(eq(users.id, userId))
+        .returning();
+
+      // Update company user permissions if provided
+      if (updateData.permissions) {
+        await db
+          .update(companyUsers)
+          .set({
+            permissions: updateData.permissions,
+            updatedAt: new Date(),
+          })
+          .where(eq(companyUsers.userId, userId));
+      }
+
+      return user;
+    } catch (error) {
+      console.error("Error updating user:", error);
+      throw error;
+    }
+  }
+
+  async getCompanyRoles(companyId: number): Promise<any[]> {
+    try {
+      // For now, return default roles since we don't have a roles table
+      const rolesData = [
+        {
+          id: 'role_admin',
+          name: 'Administrador',
+          description: 'Acceso completo al sistema',
+          permissions: [
+            'pos.view', 'pos.create', 'pos.edit', 'pos.delete',
+            'inventory.view', 'inventory.create', 'inventory.edit', 'inventory.delete',
+            'customers.view', 'customers.create', 'customers.edit', 'customers.delete',
+            'suppliers.view', 'suppliers.create', 'suppliers.edit', 'suppliers.delete',
+            'billing.view', 'billing.create', 'billing.edit', 'billing.delete',
+            'accounting.view', 'accounting.create', 'accounting.edit', 'accounting.delete',
+            'reports.view', 'reports.export', 'reports.advanced',
+            'warehouse.view', 'warehouse.create', 'warehouse.edit', 'warehouse.delete',
+            'hr.view', 'hr.create', 'hr.edit', 'hr.payroll',
+            'system.view', 'system.edit', 'system.admin',
+            'ai.view', 'ai.use',
+            'audit.view', 'audit.export',
+          ],
+          isActive: true,
+          userCount: 0,
+        },
+        {
+          id: 'role_manager',
+          name: 'Gerente',
+          description: 'Acceso a gestión y reportes',
+          permissions: [
+            'pos.view', 'pos.create', 'pos.edit',
+            'inventory.view', 'inventory.create', 'inventory.edit',
+            'customers.view', 'customers.create', 'customers.edit',
+            'suppliers.view', 'suppliers.create', 'suppliers.edit',
+            'billing.view', 'billing.create', 'billing.edit',
+            'reports.view', 'reports.export',
+            'warehouse.view', 'warehouse.create', 'warehouse.edit',
+            'hr.view', 'hr.create', 'hr.edit',
+            'ai.view', 'ai.use',
+          ],
+          isActive: true,
+          userCount: 0,
+        },
+        {
+          id: 'role_user',
+          name: 'Usuario',
+          description: 'Acceso básico al sistema',
+          permissions: [
+            'pos.view', 'pos.create',
+            'inventory.view',
+            'customers.view', 'customers.create',
+            'billing.view', 'billing.create',
+            'reports.view',
+            'warehouse.view',
+          ],
+          isActive: true,
+          userCount: 0,
+        },
+      ];
+
+      return rolesData;
+    } catch (error) {
+      console.error("Error getting company roles:", error);
+      throw error;
+    }
+  }
+
+  async createRole(roleData: any): Promise<any> {
+    try {
+      // For now, just return the role data since we don't have a roles table
+      const role = {
+        id: `role_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        name: roleData.name,
+        description: roleData.description,
+        permissions: roleData.permissions || [],
+        isActive: true,
+        userCount: 0,
+        createdAt: new Date(),
+      };
+
+      return role;
+    } catch (error) {
+      console.error("Error creating role:", error);
+      throw error;
+    }
+  }
+
+  async updateRole(roleId: string, updateData: any): Promise<any> {
+    try {
+      // For now, just return the updated role data
+      const role = {
+        id: roleId,
+        name: updateData.name,
+        description: updateData.description,
+        permissions: updateData.permissions || [],
+        isActive: updateData.isActive !== undefined ? updateData.isActive : true,
+        userCount: 0,
+        updatedAt: new Date(),
+      };
+
+      return role;
+    } catch (error) {
+      console.error("Error updating role:", error);
+      throw error;
+    }
+  }
+
+  async getRole(roleId: string): Promise<any> {
+    try {
+      // For now, return a default role since we don't have a roles table
+      const role = {
+        id: roleId,
+        name: 'Usuario',
+        description: 'Rol básico del sistema',
+        permissions: ['pos.view', 'inventory.view'],
+        isActive: true,
+        userCount: 0,
+      };
+
+      return role;
+    } catch (error) {
+      console.error("Error getting role:", error);
+      throw error;
+    }
+  }
+
 }
 
 export const storage = new DatabaseStorage();

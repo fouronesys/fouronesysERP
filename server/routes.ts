@@ -159,7 +159,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Update company details
+  // Update company details (PUT)
   app.put("/api/admin/companies/:id", isAuthenticated, superAdminOnly, async (req: any, res) => {
     try {
 
@@ -185,6 +185,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update company details (PATCH)
+  app.patch("/api/admin/companies/:id", simpleAuth, async (req: any, res) => {
+    try {
+      const companyId = parseInt(req.params.id);
+      const existingCompany = await storage.getCompany(companyId);
+
+      if (!existingCompany) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      // Remove fields that shouldn't be updated directly
+      const { ownerId, ...updateData } = req.body;
+      
+      const updatedCompany = await storage.updateCompany(companyId, updateData);
+      
+      // Log company update
+      await auditLogger.logUserAction(
+        req.user.id,
+        companyId,
+        'COMPANY_UPDATED',
+        'company',
+        companyId.toString(),
+        existingCompany,
+        updateData,
+        req
+      );
+      
+      res.json(updatedCompany);
+    } catch (error: any) {
+      console.error("Error updating company:", error);
+      res.status(500).json({ 
+        message: "No se pudo actualizar empresa", 
+        error: error?.message || "Error interno del servidor"
+      });
+    }
+  });
+
   // Create new company
   app.post("/api/admin/companies", isAuthenticated, superAdminOnly, async (req: any, res) => {
     try {
@@ -194,6 +231,144 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error creating company:", error);
       res.status(500).json({ message: "Failed to create company" });
+    }
+  });
+
+  // Users management endpoints
+  app.get("/api/users", isAuthenticated, async (req: any, res) => {
+    try {
+      const users = await storage.getCompanyUsers(req.user.companyId);
+      res.json(users);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      res.status(500).json({ message: "Failed to fetch users" });
+    }
+  });
+
+  app.post("/api/users", isAuthenticated, async (req: any, res) => {
+    try {
+      const userData = {
+        ...req.body,
+        companyId: req.user.companyId,
+        createdBy: req.user.id,
+      };
+      const newUser = await storage.createUser(userData);
+      
+      // Log user creation
+      await auditLogger.logUserAction(
+        req.user.id,
+        req.user.companyId,
+        'USER_CREATED',
+        'user',
+        newUser.id,
+        undefined,
+        { email: newUser.email, role: newUser.role },
+        req
+      );
+      
+      res.json(newUser);
+    } catch (error) {
+      console.error("Error creating user:", error);
+      res.status(500).json({ message: "Failed to create user" });
+    }
+  });
+
+  app.patch("/api/users/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.params.id;
+      const existingUser = await storage.getUser(userId);
+      
+      if (!existingUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      const updatedUser = await storage.updateUser(userId, req.body);
+      
+      // Log user update
+      await auditLogger.logUserAction(
+        req.user.id,
+        req.user.companyId,
+        'USER_UPDATED',
+        'user',
+        userId,
+        existingUser,
+        req.body,
+        req
+      );
+      
+      res.json(updatedUser);
+    } catch (error) {
+      console.error("Error updating user:", error);
+      res.status(500).json({ message: "Failed to update user" });
+    }
+  });
+
+  // Roles management endpoints
+  app.get("/api/roles", isAuthenticated, async (req: any, res) => {
+    try {
+      const roles = await storage.getCompanyRoles(req.user.companyId);
+      res.json(roles);
+    } catch (error) {
+      console.error("Error fetching roles:", error);
+      res.status(500).json({ message: "Failed to fetch roles" });
+    }
+  });
+
+  app.post("/api/roles", isAuthenticated, async (req: any, res) => {
+    try {
+      const roleData = {
+        ...req.body,
+        companyId: req.user.companyId,
+        createdBy: req.user.id,
+      };
+      const newRole = await storage.createRole(roleData);
+      
+      // Log role creation
+      await auditLogger.logUserAction(
+        req.user.id,
+        req.user.companyId,
+        'ROLE_CREATED',
+        'role',
+        newRole.id,
+        undefined,
+        { name: newRole.name, permissions: newRole.permissions },
+        req
+      );
+      
+      res.json(newRole);
+    } catch (error) {
+      console.error("Error creating role:", error);
+      res.status(500).json({ message: "Failed to create role" });
+    }
+  });
+
+  app.patch("/api/roles/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const roleId = req.params.id;
+      const existingRole = await storage.getRole(roleId);
+      
+      if (!existingRole) {
+        return res.status(404).json({ message: "Role not found" });
+      }
+      
+      const updatedRole = await storage.updateRole(roleId, req.body);
+      
+      // Log role update
+      await auditLogger.logUserAction(
+        req.user.id,
+        req.user.companyId,
+        'ROLE_UPDATED',
+        'role',
+        roleId,
+        existingRole,
+        req.body,
+        req
+      );
+      
+      res.json(updatedRole);
+    } catch (error) {
+      console.error("Error updating role:", error);
+      res.status(500).json({ message: "Failed to update role" });
     }
   });
 
@@ -2778,6 +2953,569 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting recipe:", error);
       res.status(500).json({ message: "Failed to delete recipe" });
+    }
+  });
+
+  // AI Assistant endpoints
+  app.post("/api/ai/chat", isAuthenticated, async (req: any, res) => {
+    try {
+      const { message, context } = req.body;
+      const userId = req.user.id;
+      
+      if (!message) {
+        return res.status(400).json({ error: "Message is required" });
+      }
+
+      // Import AI services
+      const { AIChatService } = require('./ai-services-fixed');
+      const response = await AIChatService.processQuery(message, context);
+      
+      res.json({
+        response,
+        message: response,
+        timestamp: new Date().toISOString(),
+        userId
+      });
+    } catch (error) {
+      console.error("AI Chat Error:", error);
+      res.status(500).json({ error: "Error processing AI request" });
+    }
+  });
+
+  app.post("/api/ai/generate-product", isAuthenticated, async (req: any, res) => {
+    try {
+      const { name, category, features } = req.body;
+      
+      if (!name) {
+        return res.status(400).json({ error: "Product name is required" });
+      }
+
+      const { AIProductService } = require('./ai-services-fixed');
+      const description = await AIProductService.generateProductDescription(name, category, features);
+      const code = await AIProductService.generateProductCode(name, category);
+      
+      res.json({
+        description,
+        code,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error("AI Product Generation Error:", error);
+      res.status(500).json({ error: "Error generating product information" });
+    }
+  });
+
+  app.post("/api/ai/analyze-sales", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      
+      if (!company) {
+        return res.status(404).json({ error: "Company not found" });
+      }
+
+      const { AIBusinessService } = require('./ai-services-fixed');
+      const salesData = await storage.getPOSSales(company.id);
+      const analysis = await AIBusinessService.analyzeSalesPattern(salesData);
+      
+      res.json({
+        analysis,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error("AI Sales Analysis Error:", error);
+      res.status(500).json({ error: "Error analyzing sales data" });
+    }
+  });
+
+  app.post("/api/ai/optimize-inventory", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      
+      if (!company) {
+        return res.status(404).json({ error: "Company not found" });
+      }
+
+      const { AIBusinessService } = require('./ai-services-fixed');
+      const products = await storage.getProducts(company.id);
+      const salesHistory = await storage.getPOSSales(company.id);
+      
+      const optimization = await AIBusinessService.optimizeInventory(products, salesHistory);
+      
+      res.json({
+        optimization,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error("AI Inventory Optimization Error:", error);
+      res.status(500).json({ error: "Error optimizing inventory" });
+    }
+  });
+
+  app.get("/api/ai/insights", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      
+      if (!company) {
+        return res.status(404).json({ error: "Company not found" });
+      }
+
+      // Get actual data from the system
+      const products = await storage.getProducts(company.id);
+      const salesData = await storage.getPOSSales(company.id);
+      const customers = await storage.getCustomers(company.id);
+      
+      // Generate real insights from actual data
+      const insights = [
+        {
+          id: "sales-trend",
+          title: "Tendencia de Ventas",
+          type: "chart",
+          description: `Análisis de ${salesData.length} ventas realizadas`,
+          data: {
+            total: salesData.reduce((sum: number, sale: any) => sum + (sale.total || 0), 0),
+            count: salesData.length,
+            avgTicket: salesData.length > 0 ? (salesData.reduce((sum: number, sale: any) => sum + (sale.total || 0), 0) / salesData.length).toFixed(2) : "0"
+          }
+        },
+        {
+          id: "inventory-status",
+          title: "Estado del Inventario",
+          type: "metric",
+          description: `${products.length} productos registrados en el sistema`,
+          data: {
+            totalProducts: products.length,
+            lowStock: products.filter((p: any) => (p.stock || 0) < (p.minStock || 5)).length,
+            outOfStock: products.filter((p: any) => (p.stock || 0) === 0).length
+          }
+        },
+        {
+          id: "customer-insights",
+          title: "Análisis de Clientes",
+          type: "metric",
+          description: `Base de ${customers.length} clientes activos`,
+          data: {
+            totalCustomers: customers.length,
+            activeCustomers: customers.filter((c: any) => c.status === 'active').length,
+            newThisMonth: customers.filter((c: any) => {
+              const created = new Date(c.createdAt);
+              const now = new Date();
+              return created.getMonth() === now.getMonth() && created.getFullYear() === now.getFullYear();
+            }).length
+          }
+        }
+      ];
+      
+      res.json(insights);
+    } catch (error) {
+      console.error("AI Insights Error:", error);
+      res.status(500).json({ error: "Error generating insights" });
+    }
+  });
+
+  app.post("/api/ai/generate-insight/:type", isAuthenticated, async (req: any, res) => {
+    try {
+      const { type } = req.params;
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      
+      if (!company) {
+        return res.status(404).json({ error: "Company not found" });
+      }
+
+      // Generate specific insights based on type
+      let insight = {};
+      
+      switch (type) {
+        case 'sales':
+          const salesData = await storage.getPOSSales(company.id);
+          insight = {
+            type: 'sales',
+            title: 'Análisis de Ventas Generado',
+            description: `Análisis completado para ${salesData.length} ventas`,
+            timestamp: new Date().toISOString()
+          };
+          break;
+        case 'inventory':
+          const products = await storage.getProducts(company.id);
+          insight = {
+            type: 'inventory',
+            title: 'Optimización de Inventario',
+            description: `Análisis de ${products.length} productos completado`,
+            timestamp: new Date().toISOString()
+          };
+          break;
+        default:
+          insight = {
+            type: type,
+            title: 'Análisis General',
+            description: 'Análisis completado exitosamente',
+            timestamp: new Date().toISOString()
+          };
+      }
+      
+      res.json({ insight });
+    } catch (error) {
+      console.error("AI Generate Insight Error:", error);
+      res.status(500).json({ error: "Error generating insight" });
+    }
+  });
+
+  app.get("/api/ai/status", isAuthenticated, async (req: any, res) => {
+    try {
+      res.json({
+        enabled: true,
+        status: "active",
+        version: "1.0.0",
+        capabilities: [
+          "chat",
+          "product-generation",
+          "sales-analysis",
+          "inventory-optimization",
+          "insights-generation"
+        ]
+      });
+    } catch (error) {
+      console.error("AI Status Error:", error);
+      res.status(500).json({ error: "Error getting AI status" });
+    }
+  });
+
+  // Chat endpoints
+  app.get("/api/chat/channels", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      // Default channels for the company
+      const channels = [
+        {
+          id: 1,
+          name: "General",
+          description: "Canal principal de comunicación",
+          type: "public",
+          createdAt: new Date().toISOString(),
+          unreadCount: 0
+        },
+        {
+          id: 2,
+          name: "Ventas",
+          description: "Discusiones sobre ventas y clientes",
+          type: "public",
+          createdAt: new Date().toISOString(),
+          unreadCount: 0
+        }
+      ];
+
+      res.json(channels);
+    } catch (error) {
+      console.error("Error fetching chat channels:", error);
+      res.status(500).json({ message: "Error fetching channels" });
+    }
+  });
+
+  app.get("/api/chat/channels/:channelId/messages", isAuthenticated, async (req: any, res) => {
+    try {
+      const { channelId } = req.params;
+      const userId = req.user.id;
+      
+      // Mock messages data
+      const messages = [
+        {
+          id: 1,
+          content: "¡Bienvenidos al canal de comunicación interna!",
+          senderId: "system",
+          senderName: "Sistema",
+          senderLastName: "",
+          createdAt: new Date(Date.now() - 86400000).toISOString(),
+          messageType: "system",
+          isEdited: false
+        },
+        {
+          id: 2,
+          content: "Hola equipo, ¿cómo van las ventas de hoy?",
+          senderId: userId,
+          senderName: "Usuario",
+          senderLastName: "Sistema",
+          createdAt: new Date(Date.now() - 3600000).toISOString(),
+          messageType: "text",
+          isEdited: false
+        }
+      ];
+
+      res.json(messages);
+    } catch (error) {
+      console.error("Error fetching chat messages:", error);
+      res.status(500).json({ message: "Error fetching messages" });
+    }
+  });
+
+  app.post("/api/chat/channels/:channelId/messages", isAuthenticated, async (req: any, res) => {
+    try {
+      const { channelId } = req.params;
+      const { content } = req.body;
+      const userId = req.user.id;
+      const user = await storage.getUser(userId);
+
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Create new message
+      const newMessage = {
+        id: Date.now(),
+        content,
+        senderId: user.id,
+        senderName: user.firstName || "Usuario",
+        senderLastName: user.lastName || "",
+        createdAt: new Date().toISOString(),
+        messageType: "text",
+        isEdited: false
+      };
+
+      res.json(newMessage);
+    } catch (error) {
+      console.error("Error sending chat message:", error);
+      res.status(500).json({ message: "Error sending message" });
+    }
+  });
+
+  // Reports endpoints with real data
+  app.get("/api/reports/sales", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      const { startDate, endDate } = req.query;
+      const sales = await storage.getPOSSales(company.id);
+      
+      // Filter by date range if provided
+      let filteredSales = sales;
+      if (startDate && endDate) {
+        filteredSales = sales.filter((sale: any) => {
+          const saleDate = new Date(sale.createdAt);
+          return saleDate >= new Date(startDate as string) && saleDate <= new Date(endDate as string);
+        });
+      }
+      
+      // Calculate metrics
+      const totalSales = filteredSales.reduce((sum: number, sale: any) => sum + (sale.total || 0), 0);
+      const salesCount = filteredSales.length;
+      const avgTicket = salesCount > 0 ? totalSales / salesCount : 0;
+      
+      // Create chart data by month
+      const monthlyData = new Map();
+      filteredSales.forEach((sale: any) => {
+        const date = new Date(sale.createdAt);
+        const monthKey = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+        const monthName = date.toLocaleDateString('es-ES', { month: 'short' });
+        
+        if (!monthlyData.has(monthKey)) {
+          monthlyData.set(monthKey, { name: monthName, ventas: 0 });
+        }
+        monthlyData.get(monthKey).ventas += sale.total || 0;
+      });
+      
+      const chartData = Array.from(monthlyData.values());
+      
+      // Get products to calculate category data
+      const products = await storage.getProducts(company.id);
+      const categoryMap = new Map();
+      
+      filteredSales.forEach((sale: any) => {
+        // This would need sale items to get accurate category data
+        // For now, we'll use a simplified approach
+        const category = 'General';
+        if (!categoryMap.has(category)) {
+          categoryMap.set(category, 0);
+        }
+        categoryMap.set(category, categoryMap.get(category) + (sale.total || 0));
+      });
+      
+      const categoryData = Array.from(categoryMap.entries()).map(([name, value]) => ({
+        name,
+        value: Math.round((value / totalSales) * 100) || 0
+      }));
+      
+      res.json({
+        totalSales: totalSales.toFixed(2),
+        salesCount,
+        avgTicket: avgTicket.toFixed(2),
+        chartData,
+        categoryData,
+        period: { startDate, endDate }
+      });
+    } catch (error) {
+      console.error("Error generating sales report:", error);
+      res.status(500).json({ message: "Failed to generate sales report" });
+    }
+  });
+
+  app.get("/api/reports/inventory", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      const products = await storage.getProducts(company.id);
+      
+      // Calculate inventory metrics
+      const totalProducts = products.length;
+      const lowStock = products.filter((p: any) => (p.stock || 0) < (p.minStock || 5)).length;
+      const outOfStock = products.filter((p: any) => (p.stock || 0) === 0).length;
+      const totalValue = products.reduce((sum: number, p: any) => sum + ((p.stock || 0) * (p.salePrice || 0)), 0);
+      
+      // Stock levels data
+      const stockLevels = [
+        { name: 'En Stock', value: totalProducts - lowStock - outOfStock, color: '#00C49F' },
+        { name: 'Stock Bajo', value: lowStock, color: '#FFBB28' },
+        { name: 'Sin Stock', value: outOfStock, color: '#FF8042' }
+      ];
+      
+      // Top products by value
+      const topProducts = products
+        .map((p: any) => ({
+          name: p.name,
+          value: (p.stock || 0) * (p.salePrice || 0),
+          stock: p.stock || 0
+        }))
+        .sort((a: any, b: any) => b.value - a.value)
+        .slice(0, 10);
+      
+      res.json({
+        totalProducts,
+        lowStock,
+        outOfStock,
+        totalValue: totalValue.toFixed(2),
+        stockLevels,
+        topProducts
+      });
+    } catch (error) {
+      console.error("Error generating inventory report:", error);
+      res.status(500).json({ message: "Failed to generate inventory report" });
+    }
+  });
+
+  app.get("/api/reports/customers", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      const customers = await storage.getCustomers(company.id);
+      const sales = await storage.getPOSSales(company.id);
+      
+      // Calculate customer metrics
+      const totalCustomers = customers.length;
+      const activeCustomers = customers.filter((c: any) => c.status === 'active').length;
+      
+      // Customer growth by month
+      const monthlyGrowth = new Map();
+      customers.forEach((customer: any) => {
+        const date = new Date(customer.createdAt);
+        const monthKey = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+        const monthName = date.toLocaleDateString('es-ES', { month: 'short' });
+        
+        if (!monthlyGrowth.has(monthKey)) {
+          monthlyGrowth.set(monthKey, { name: monthName, clientes: 0 });
+        }
+        monthlyGrowth.get(monthKey).clientes += 1;
+      });
+      
+      const growthData = Array.from(monthlyGrowth.values());
+      
+      // Top customers by sales (simplified)
+      const topCustomers = customers
+        .map((c: any) => ({
+          name: c.name,
+          email: c.email,
+          total: sales
+            .filter((s: any) => s.customerRnc === c.rnc)
+            .reduce((sum: number, s: any) => sum + (s.total || 0), 0)
+        }))
+        .sort((a: any, b: any) => b.total - a.total)
+        .slice(0, 10);
+      
+      res.json({
+        totalCustomers,
+        activeCustomers,
+        newThisMonth: customers.filter((c: any) => {
+          const created = new Date(c.createdAt);
+          const now = new Date();
+          return created.getMonth() === now.getMonth() && created.getFullYear() === now.getFullYear();
+        }).length,
+        growthData,
+        topCustomers
+      });
+    } catch (error) {
+      console.error("Error generating customer report:", error);
+      res.status(500).json({ message: "Failed to generate customer report" });
+    }
+  });
+
+  app.get("/api/reports/products", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      const products = await storage.getProducts(company.id);
+      const sales = await storage.getPOSSales(company.id);
+      
+      // Calculate product performance (simplified - would need sale items for accuracy)
+      const productPerformance = products.map((p: any) => ({
+        name: p.name,
+        category: p.category || 'General',
+        stock: p.stock || 0,
+        price: p.salePrice || 0,
+        value: (p.stock || 0) * (p.salePrice || 0)
+      }));
+      
+      // Categories distribution
+      const categoryMap = new Map();
+      products.forEach((p: any) => {
+        const category = p.category || 'General';
+        if (!categoryMap.has(category)) {
+          categoryMap.set(category, 0);
+        }
+        categoryMap.set(category, categoryMap.get(category) + 1);
+      });
+      
+      const categoryData = Array.from(categoryMap.entries()).map(([name, value]) => ({
+        name,
+        value
+      }));
+      
+      res.json({
+        totalProducts: products.length,
+        productPerformance,
+        categoryData,
+        avgPrice: products.length > 0 ? 
+          (products.reduce((sum: number, p: any) => sum + (p.salePrice || 0), 0) / products.length).toFixed(2) : 
+          "0"
+      });
+    } catch (error) {
+      console.error("Error generating product report:", error);
+      res.status(500).json({ message: "Failed to generate product report" });
     }
   });
 

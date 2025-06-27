@@ -80,21 +80,12 @@ export default function Reports() {
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
 
   const renderSalesReport = () => {
-    const salesChartData = [
-      { name: 'Ene', ventas: 45000 },
-      { name: 'Feb', ventas: 52000 },
-      { name: 'Mar', ventas: 48000 },
-      { name: 'Abr', ventas: 61000 },
-      { name: 'May', ventas: 55000 },
-      { name: 'Jun', ventas: 67000 },
-    ];
-
-    const salesByCategory = [
-      { name: 'Electrónica', value: 35 },
-      { name: 'Servicios', value: 25 },
-      { name: 'Accesorios', value: 20 },
-      { name: 'Software', value: 20 },
-    ];
+    // Use real sales data from API
+    const salesChartData = salesData?.chartData || [];
+    const salesByCategory = salesData?.categoryData || [];
+    const totalSales = salesData?.totalSales || 0;
+    const salesCount = salesData?.salesCount || 0;
+    const avgTicket = salesData?.avgTicket || 0;
 
     return (
       <div className="space-y-6">
