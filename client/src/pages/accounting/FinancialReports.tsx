@@ -28,7 +28,8 @@ import {
   DollarSign,
   PieChart,
   BarChart3,
-  FileText
+  FileText,
+  Building2
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -65,143 +66,103 @@ export default function FinancialReports() {
     }).format(amount);
   };
 
-  const exportReport = (format: 'pdf' | 'excel') => {
+  const exportReport = (format: string) => {
     // Implementar exportación
     console.log(`Exportando reporte ${selectedReport} en formato ${format}`);
   };
 
   const renderBalanceSheet = () => {
-    if (isLoadingBalance) return <div className="text-center py-4">Cargando balance general...</div>;
+    if (isLoadingBalance) return (
+      <div className="text-center py-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+        <p className="mt-2 text-muted-foreground">Generando balance general...</p>
+      </div>
+    );
+    
+    if (!balanceSheet) return (
+      <div className="text-center py-8 text-muted-foreground">
+        <Building2 className="h-12 w-12 mx-auto mb-4 opacity-20" />
+        <p>No hay datos de balance general disponibles</p>
+      </div>
+    );
     
     return (
-      <div className="space-y-6">
-        <div className="grid grid-cols-2 gap-6">
-          {/* Activos */}
-          <Card>
-            <CardHeader className="bg-blue-50 dark:bg-blue-900/20">
-              <CardTitle className="text-blue-700 dark:text-blue-300">Activos</CardTitle>
-            </CardHeader>
-            <CardContent className="pt-4">
-              <div className="space-y-4">
-                <div>
-                  <h4 className="font-semibold mb-2">Activos Corrientes</h4>
-                  <div className="space-y-2 pl-4">
-                    <div className="flex justify-between">
-                      <span className="text-sm">Efectivo y Bancos</span>
-                      <span className="font-mono">$125,450.00</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm">Cuentas por Cobrar</span>
-                      <span className="font-mono">$45,200.00</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm">Inventarios</span>
-                      <span className="font-mono">$78,900.00</span>
-                    </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Balance General</CardTitle>
+          <p className="text-sm text-muted-foreground">Al {format(new Date(endDate), "dd/MM/yyyy")}</p>
+        </CardHeader>
+        <CardContent className="max-h-[600px] overflow-y-auto">
+          <div className="space-y-6">
+            <div className="grid grid-cols-2 gap-6">
+              {/* Activos */}
+              <Card>
+                <CardHeader className="bg-blue-50 dark:bg-blue-900/20">
+                  <CardTitle className="text-blue-700 dark:text-blue-300">Activos</CardTitle>
+                </CardHeader>
+                <CardContent className="pt-4">
+                  <div className="space-y-4">
+                    {balanceSheet.assets?.map((asset: any) => (
+                      <div key={asset.code} className="flex justify-between">
+                        <span className="text-sm">{asset.name}</span>
+                        <span className="font-mono">{formatCurrency(asset.amount)}</span>
+                      </div>
+                    ))}
                     <div className="flex justify-between font-semibold border-t pt-2">
-                      <span>Total Activos Corrientes</span>
-                      <span className="font-mono">$249,550.00</span>
+                      <span>Total Activos</span>
+                      <span className="font-mono">{formatCurrency(balanceSheet.totals?.totalAssets || 0)}</span>
                     </div>
                   </div>
-                </div>
+                </CardContent>
+              </Card>
 
-                <div>
-                  <h4 className="font-semibold mb-2">Activos No Corrientes</h4>
-                  <div className="space-y-2 pl-4">
-                    <div className="flex justify-between">
-                      <span className="text-sm">Propiedad, Planta y Equipo</span>
-                      <span className="font-mono">$350,000.00</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm">Depreciación Acumulada</span>
-                      <span className="font-mono text-red-600">($45,000.00)</span>
-                    </div>
+              {/* Pasivos y Patrimonio */}
+              <Card>
+                <CardHeader className="bg-red-50 dark:bg-red-900/20">
+                  <CardTitle className="text-red-700 dark:text-red-300">Pasivos y Patrimonio</CardTitle>
+                </CardHeader>
+                <CardContent className="pt-4">
+                  <div className="space-y-4">
+                    {balanceSheet.liabilities?.map((liability: any) => (
+                      <div key={liability.code} className="flex justify-between">
+                        <span className="text-sm">{liability.name}</span>
+                        <span className="font-mono">{formatCurrency(liability.amount)}</span>
+                      </div>
+                    ))}
+                    {balanceSheet.equity?.map((equity: any) => (
+                      <div key={equity.code} className="flex justify-between">
+                        <span className="text-sm">{equity.name}</span>
+                        <span className="font-mono">{formatCurrency(equity.amount)}</span>
+                      </div>
+                    ))}
                     <div className="flex justify-between font-semibold border-t pt-2">
-                      <span>Total Activos No Corrientes</span>
-                      <span className="font-mono">$305,000.00</span>
+                      <span>Total Pasivos + Patrimonio</span>
+                      <span className="font-mono">{formatCurrency(balanceSheet.totals?.totalLiabilitiesEquity || 0)}</span>
                     </div>
                   </div>
-                </div>
-
-                <div className="flex justify-between font-bold text-lg border-t-2 pt-4">
-                  <span>TOTAL ACTIVOS</span>
-                  <span className="font-mono">$554,550.00</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Pasivos y Patrimonio */}
-          <Card>
-            <CardHeader className="bg-red-50 dark:bg-red-900/20">
-              <CardTitle className="text-red-700 dark:text-red-300">Pasivos y Patrimonio</CardTitle>
-            </CardHeader>
-            <CardContent className="pt-4">
-              <div className="space-y-4">
-                <div>
-                  <h4 className="font-semibold mb-2">Pasivos Corrientes</h4>
-                  <div className="space-y-2 pl-4">
-                    <div className="flex justify-between">
-                      <span className="text-sm">Cuentas por Pagar</span>
-                      <span className="font-mono">$32,100.00</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm">Impuestos por Pagar</span>
-                      <span className="font-mono">$8,500.00</span>
-                    </div>
-                    <div className="flex justify-between font-semibold border-t pt-2">
-                      <span>Total Pasivos Corrientes</span>
-                      <span className="font-mono">$40,600.00</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <h4 className="font-semibold mb-2">Pasivos No Corrientes</h4>
-                  <div className="space-y-2 pl-4">
-                    <div className="flex justify-between">
-                      <span className="text-sm">Préstamos a Largo Plazo</span>
-                      <span className="font-mono">$150,000.00</span>
-                    </div>
-                    <div className="flex justify-between font-semibold border-t pt-2">
-                      <span>Total Pasivos No Corrientes</span>
-                      <span className="font-mono">$150,000.00</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <h4 className="font-semibold mb-2">Patrimonio</h4>
-                  <div className="space-y-2 pl-4">
-                    <div className="flex justify-between">
-                      <span className="text-sm">Capital Social</span>
-                      <span className="font-mono">$300,000.00</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm">Utilidades Retenidas</span>
-                      <span className="font-mono">$63,950.00</span>
-                    </div>
-                    <div className="flex justify-between font-semibold border-t pt-2">
-                      <span>Total Patrimonio</span>
-                      <span className="font-mono">$363,950.00</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex justify-between font-bold text-lg border-t-2 pt-4">
-                  <span>TOTAL PASIVOS Y PATRIMONIO</span>
-                  <span className="font-mono">$554,550.00</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     );
   };
 
   const renderIncomeStatement = () => {
-    if (isLoadingIncome) return <div className="text-center py-4">Cargando estado de resultados...</div>;
+    if (isLoadingIncome) return (
+      <div className="text-center py-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+        <p className="mt-2 text-muted-foreground">Generando estado de resultados...</p>
+      </div>
+    );
+    
+    if (!incomeStatement) return (
+      <div className="text-center py-8 text-muted-foreground">
+        <TrendingUp className="h-12 w-12 mx-auto mb-4 opacity-20" />
+        <p>No hay datos de estado de resultados disponibles</p>
+      </div>
+    );
     
     return (
       <Card>
@@ -211,79 +172,49 @@ export default function FinancialReports() {
             Del {format(new Date(startDate), "dd/MM/yyyy")} al {format(new Date(endDate), "dd/MM/yyyy")}
           </p>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <div className="flex justify-between font-semibold">
-                <span>Ingresos por Ventas</span>
-                <span className="font-mono">$450,000.00</span>
-              </div>
-              <div className="flex justify-between pl-4">
-                <span className="text-sm text-muted-foreground">Ventas de Productos</span>
-                <span className="font-mono text-sm">$380,000.00</span>
-              </div>
-              <div className="flex justify-between pl-4">
-                <span className="text-sm text-muted-foreground">Ventas de Servicios</span>
-                <span className="font-mono text-sm">$70,000.00</span>
-              </div>
-            </div>
-
-            <div className="space-y-2 border-t pt-2">
-              <div className="flex justify-between">
-                <span>Costo de Ventas</span>
-                <span className="font-mono text-red-600">($270,000.00)</span>
-              </div>
-              <div className="flex justify-between font-semibold">
-                <span>Utilidad Bruta</span>
-                <span className="font-mono">$180,000.00</span>
+        <CardContent className="max-h-[600px] overflow-y-auto">
+          <div className="space-y-6">
+            {/* Ingresos */}
+            <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
+              <h4 className="font-semibold text-green-700 dark:text-green-300 mb-3">Ingresos</h4>
+              <div className="space-y-2">
+                {incomeStatement.revenues?.map((revenue: any) => (
+                  <div key={revenue.code} className="flex justify-between">
+                    <span className="text-sm">{revenue.name}</span>
+                    <span className="font-mono">{formatCurrency(revenue.amount)}</span>
+                  </div>
+                ))}
+                <div className="flex justify-between font-semibold border-t pt-2">
+                  <span>Total Ingresos</span>
+                  <span className="font-mono">{formatCurrency(incomeStatement.totals?.totalRevenues || 0)}</span>
+                </div>
               </div>
             </div>
 
-            <div className="space-y-2 border-t pt-2">
-              <div className="flex justify-between">
-                <span>Gastos Operativos</span>
-                <span className="font-mono text-red-600">($120,000.00)</span>
-              </div>
-              <div className="flex justify-between pl-4">
-                <span className="text-sm text-muted-foreground">Gastos de Administración</span>
-                <span className="font-mono text-sm text-red-600">($50,000.00)</span>
-              </div>
-              <div className="flex justify-between pl-4">
-                <span className="text-sm text-muted-foreground">Gastos de Ventas</span>
-                <span className="font-mono text-sm text-red-600">($40,000.00)</span>
-              </div>
-              <div className="flex justify-between pl-4">
-                <span className="text-sm text-muted-foreground">Otros Gastos Operativos</span>
-                <span className="font-mono text-sm text-red-600">($30,000.00)</span>
+            {/* Gastos */}
+            <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-lg">
+              <h4 className="font-semibold text-red-700 dark:text-red-300 mb-3">Gastos</h4>
+              <div className="space-y-2">
+                {incomeStatement.expenses?.map((expense: any) => (
+                  <div key={expense.code} className="flex justify-between">
+                    <span className="text-sm">{expense.name}</span>
+                    <span className="font-mono">{formatCurrency(expense.amount)}</span>
+                  </div>
+                ))}
+                <div className="flex justify-between font-semibold border-t pt-2">
+                  <span>Total Gastos</span>
+                  <span className="font-mono">{formatCurrency(incomeStatement.totals?.totalExpenses || 0)}</span>
+                </div>
               </div>
             </div>
 
-            <div className="space-y-2 border-t pt-2">
-              <div className="flex justify-between font-semibold">
-                <span>Utilidad Operativa</span>
-                <span className="font-mono">$60,000.00</span>
-              </div>
-            </div>
-
-            <div className="space-y-2 border-t pt-2">
-              <div className="flex justify-between">
-                <span>Gastos Financieros</span>
-                <span className="font-mono text-red-600">($8,000.00)</span>
-              </div>
-              <div className="flex justify-between font-semibold">
-                <span>Utilidad Antes de Impuestos</span>
-                <span className="font-mono">$52,000.00</span>
-              </div>
-            </div>
-
-            <div className="space-y-2 border-t pt-2">
-              <div className="flex justify-between">
-                <span>Impuesto Sobre la Renta (27%)</span>
-                <span className="font-mono text-red-600">($14,040.00)</span>
-              </div>
-              <div className="flex justify-between font-bold text-lg border-t-2 pt-2">
-                <span>UTILIDAD NETA</span>
-                <span className="font-mono text-green-600">$37,960.00</span>
+            {/* Utilidad Neta */}
+            <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
+              <div className="flex justify-between font-bold text-lg">
+                <span>Utilidad Neta</span>
+                <span className={`font-mono ${(incomeStatement.totals?.netIncome || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {formatCurrency(incomeStatement.totals?.netIncome || 0)}
+                </span>
               </div>
             </div>
           </div>
@@ -314,14 +245,14 @@ export default function FinancialReports() {
             <CardTitle>Configuración de Reportes</CardTitle>
             <div className="flex gap-4">
               <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-muted-foreground" />
+                <Calendar className="h-4 w-4" />
                 <Input
                   type="date"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
                   className="w-40"
                 />
-                <span className="text-muted-foreground">hasta</span>
+                <span className="text-sm text-muted-foreground">a</span>
                 <Input
                   type="date"
                   value={endDate}
@@ -337,7 +268,7 @@ export default function FinancialReports() {
       <Tabs value={selectedReport} onValueChange={setSelectedReport}>
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="balance-sheet" className="flex items-center gap-2">
-            <PieChart className="h-4 w-4" />
+            <Building2 className="h-4 w-4" />
             Balance General
           </TabsTrigger>
           <TabsTrigger value="income-statement" className="flex items-center gap-2">
@@ -377,8 +308,8 @@ export default function FinancialReports() {
               ) : trialBalance ? (
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <Badge variant={trialBalance.totals?.isBalanced ? "default" : "destructive"}>
-                      {trialBalance.totals?.isBalanced ? "Balanceada" : "Desbalanceada"}
+                    <Badge variant={(trialBalance as any).totals?.isBalanced ? "default" : "destructive"}>
+                      {(trialBalance as any).totals?.isBalanced ? "Balanceada" : "Desbalanceada"}
                     </Badge>
                   </div>
                   
@@ -393,7 +324,7 @@ export default function FinancialReports() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {trialBalance.accounts?.map((account: any) => (
+                      {(trialBalance as any).accounts?.map((account: any) => (
                         <TableRow key={account.accountCode}>
                           <TableCell className="font-medium">{account.accountCode}</TableCell>
                           <TableCell>{account.accountName}</TableCell>
@@ -416,11 +347,11 @@ export default function FinancialReports() {
                   <div className="flex justify-end space-x-8 bg-muted p-4 rounded">
                     <div className="text-right">
                       <p className="font-semibold">Total Débitos:</p>
-                      <p className="text-lg font-bold">{formatCurrency(trialBalance.totals?.totalDebits || 0)}</p>
+                      <p className="text-lg font-bold">{formatCurrency((trialBalance as any).totals?.totalDebits || 0)}</p>
                     </div>
                     <div className="text-right">
                       <p className="font-semibold">Total Créditos:</p>
-                      <p className="text-lg font-bold">{formatCurrency(trialBalance.totals?.totalCredits || 0)}</p>
+                      <p className="text-lg font-bold">{formatCurrency((trialBalance as any).totals?.totalCredits || 0)}</p>
                     </div>
                   </div>
                 </div>
@@ -448,83 +379,60 @@ export default function FinancialReports() {
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
                   <p className="mt-2 text-muted-foreground">Generando libro mayor...</p>
                 </div>
-              ) : generalLedger?.accounts ? (
+              ) : generalLedger ? (
                 <div className="space-y-6">
-                  {generalLedger.accounts.map((account: any) => (
-                    <div key={account.accountCode} className="border rounded-lg p-4">
-                      <div className="flex items-center justify-between mb-4">
-                        <div>
-                          <h3 className="font-semibold text-lg">
-                            {account.accountCode} - {account.accountName}
-                          </h3>
-                          <Badge variant="outline" className="mt-1">
-                            {account.accountType}
+                  {(generalLedger as any).accounts?.map((account: any) => (
+                    <Card key={account.accountCode}>
+                      <CardHeader className="pb-2">
+                        <div className="flex justify-between items-center">
+                          <div>
+                            <h4 className="font-semibold">{account.accountCode} - {account.accountName}</h4>
+                            <p className="text-sm text-muted-foreground">{account.accountType}</p>
+                          </div>
+                          <Badge variant="outline">
+                            Saldo: {formatCurrency(account.balance)}
                           </Badge>
                         </div>
-                        <div className="text-right">
-                          <p className="text-sm text-muted-foreground">Saldo Final</p>
-                          <p className="font-bold text-lg">
-                            {formatCurrency(account.balance)}
-                          </p>
-                        </div>
-                      </div>
-                      
-                      {account.transactions && account.transactions.length > 0 ? (
+                      </CardHeader>
+                      <CardContent>
                         <Table>
                           <TableHeader>
                             <TableRow>
                               <TableHead>Fecha</TableHead>
-                              <TableHead>Asiento</TableHead>
+                              <TableHead>Referencia</TableHead>
                               <TableHead>Descripción</TableHead>
                               <TableHead className="text-right">Débito</TableHead>
                               <TableHead className="text-right">Crédito</TableHead>
+                              <TableHead className="text-right">Saldo</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
-                            {account.transactions.map((transaction: any, index: number) => (
-                              <TableRow key={`${account.accountCode}-${index}`}>
-                                <TableCell>
-                                  {format(new Date(transaction.date), "dd/MM/yyyy")}
-                                </TableCell>
-                                <TableCell className="font-medium">
-                                  {transaction.entryNumber}
-                                </TableCell>
-                                <TableCell>{transaction.description}</TableCell>
+                            {account.entries?.map((entry: any, index: number) => (
+                              <TableRow key={index}>
+                                <TableCell>{format(new Date(entry.date), "dd/MM/yyyy")}</TableCell>
+                                <TableCell>{entry.reference}</TableCell>
+                                <TableCell>{entry.description}</TableCell>
                                 <TableCell className="text-right">
-                                  {transaction.debit > 0 ? formatCurrency(transaction.debit) : "-"}
+                                  {entry.debitAmount > 0 ? formatCurrency(entry.debitAmount) : "-"}
                                 </TableCell>
                                 <TableCell className="text-right">
-                                  {transaction.credit > 0 ? formatCurrency(transaction.credit) : "-"}
+                                  {entry.creditAmount > 0 ? formatCurrency(entry.creditAmount) : "-"}
+                                </TableCell>
+                                <TableCell className="text-right font-mono">
+                                  {formatCurrency(entry.runningBalance)}
                                 </TableCell>
                               </TableRow>
                             ))}
                           </TableBody>
                         </Table>
-                      ) : (
-                        <p className="text-muted-foreground text-center py-4">
-                          No hay movimientos en el período seleccionado
-                        </p>
-                      )}
-                      
-                      <Separator className="my-4" />
-                      
-                      <div className="flex justify-end space-x-8 text-sm">
-                        <div className="text-right">
-                          <p className="font-medium">Total Débitos:</p>
-                          <p>{formatCurrency(account.totalDebit)}</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-medium">Total Créditos:</p>
-                          <p>{formatCurrency(account.totalCredit)}</p>
-                        </div>
-                      </div>
-                    </div>
+                      </CardContent>
+                    </Card>
                   ))}
                 </div>
               ) : (
                 <div className="text-center py-8 text-muted-foreground">
                   <FileText className="h-12 w-12 mx-auto mb-4 opacity-20" />
-                  <p>No hay datos de libro mayor disponibles</p>
+                  <p>No hay datos del libro mayor disponibles</p>
                 </div>
               )}
             </CardContent>
