@@ -285,10 +285,20 @@ export const suppliers = pgTable("suppliers", {
 // Warehouses
 export const warehouses = pgTable("warehouses", {
   id: serial("id").primaryKey(),
+  code: varchar("code", { length: 50 }).notNull(),
   name: varchar("name", { length: 255 }).notNull(),
   location: varchar("location", { length: 255 }),
+  type: varchar("type", { length: 50 }).notNull().default("main"), // main, regional, temporary, finished_goods, raw_materials, assets
   manager: varchar("manager", { length: 255 }),
+  maxCapacity: decimal("max_capacity", { precision: 15, scale: 2 }),
   isActive: boolean("is_active").notNull().default(true),
+  address: text("address"),
+  phone: varchar("phone", { length: 20 }),
+  email: varchar("email", { length: 255 }),
+  temperatureControlled: boolean("temperature_controlled").notNull().default(false),
+  minTemperature: decimal("min_temperature", { precision: 5, scale: 2 }),
+  maxTemperature: decimal("max_temperature", { precision: 5, scale: 2 }),
+  notes: text("notes"),
   companyId: integer("company_id").notNull().references(() => companies.id),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),

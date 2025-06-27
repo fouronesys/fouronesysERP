@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Building2, Users, BarChart3, Settings } from "lucide-react";
+import { Cpu, Zap, Lock, Puzzle } from "lucide-react";
 
 interface FourOneLoginAnimationProps {
   isVisible: boolean;
@@ -13,10 +13,10 @@ export default function FourOneLoginAnimation({ isVisible, onComplete }: FourOne
 
   // Icons representing the four "1"s of Four One Solutions
   const fourOnes = [
-    { icon: Building2, label: "Gestión", color: "text-cyan-400" },
-    { icon: Users, label: "Equipos", color: "text-emerald-400" },
-    { icon: BarChart3, label: "Analytics", color: "text-violet-400" },
-    { icon: Settings, label: "Control", color: "text-amber-400" }
+    { icon: Cpu, label: "Tecnología", color: "text-blue-600" },
+    { icon: Zap, label: "Rapidez", color: "text-yellow-500" },
+    { icon: Lock, label: "Seguridad", color: "text-green-600" },
+    { icon: Puzzle, label: "Integración", color: "text-orange-500" }
   ];
 
   useEffect(() => {
@@ -48,7 +48,7 @@ export default function FourOneLoginAnimation({ isVisible, onComplete }: FourOne
         <div className="absolute top-3/4 left-1/3 w-16 h-16 bg-cyan-400 rounded-full blur-lg animate-pulse delay-700 opacity-15"></div>
         <div className="absolute top-1/6 right-1/2 w-28 h-28 bg-violet-500 rounded-full blur-2xl animate-pulse delay-300 opacity-25"></div>
       </div>
-      
+
       {/* Geometric Background Pattern */}
       <div className="absolute inset-0 opacity-10">
         <div className="absolute inset-0" style={{
@@ -86,11 +86,11 @@ export default function FourOneLoginAnimation({ isVisible, onComplete }: FourOne
 
       <div className="relative flex flex-col items-center space-y-8 z-10">
         {/* Four "1"s Animation */}
-        <div className="flex items-center justify-center space-x-4">
+        <div className="flex items-center justify-center space-x-8">
           {fourOnes.map((item, index) => {
             const IconComponent = item.icon;
             const isActive = currentStep > index;
-            
+
             return (
               <motion.div
                 key={index}
@@ -106,7 +106,7 @@ export default function FourOneLoginAnimation({ isVisible, onComplete }: FourOne
                   delay: index * 0.2,
                   rotate: { delay: index * 0.2 + 0.3, duration: 0.4 }
                 }}
-                className="relative"
+                className="flex flex-col items-center"
               >
                 {/* Enhanced Glow Effects */}
                 <motion.div
@@ -133,7 +133,7 @@ export default function FourOneLoginAnimation({ isVisible, onComplete }: FourOne
                     delay: index * 0.2 + 0.3
                   }}
                 />
-                
+
                 {/* Icon Container */}
                 <motion.div 
                   className="relative w-20 h-20 bg-gradient-to-br from-white/25 to-white/5 backdrop-blur-lg rounded-full flex items-center justify-center border border-white/40 shadow-2xl"
@@ -163,7 +163,7 @@ export default function FourOneLoginAnimation({ isVisible, onComplete }: FourOne
                   >
                     <IconComponent className={`w-10 h-10 ${item.color} drop-shadow-lg`} />
                   </motion.div>
-                  
+
                   {/* Inner glow ring */}
                   <motion.div
                     className={`absolute inset-2 rounded-full border-2 ${item.color} opacity-40`}
@@ -178,15 +178,15 @@ export default function FourOneLoginAnimation({ isVisible, onComplete }: FourOne
                     }}
                   />
                 </motion.div>
-                
-                {/* Centered Label */}
+
+                {/* Centered Label Below Icon */}
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: isActive ? 1 : 0, y: isActive ? 0 : 10 }}
                   transition={{ delay: index * 0.2 + 0.3 }}
-                  className="absolute -bottom-10 left-1/2 transform -translate-x-1/2 text-center"
+                  className="mt-4 w-full text-center"
                 >
-                  <span className={`text-sm font-semibold ${item.color} drop-shadow-lg whitespace-nowrap`}>
+                  <span className={`text-sm font-medium ${item.color} drop-shadow-lg whitespace-nowrap`}>
                     {item.label}
                   </span>
                 </motion.div>
@@ -194,24 +194,7 @@ export default function FourOneLoginAnimation({ isVisible, onComplete }: FourOne
             );
           })}
         </div>
-        {/* Connecting Lines
-        <motion.div
-          className="flex items-center justify-center space-x-2 mt-4"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: currentStep >= fourOnes.length ? 4 : 2 }}
-          transition={{ delay: 2.5 }}
-        >
-          {[0, 1, 2].map((_, index) => (
-            <motion.div
-              key={index}
-              className="w-8 h-0.5 bg-gradient-to-r from-blue-400 to-indigo-400"
-              initial={{ scaleX: 0 }}
-              animate={{ scaleX: currentStep >= fourOnes.length ? 1 : 0 }}
-              transition={{ delay: 2.5 + index * 0.1, duration: 0.3 }}
-            />
-          ))}
-        </motion.div>
-          */}
+
         {/* Four One Solutions Logo Text */}
         <AnimatePresence>
           {showLogo && (
@@ -244,7 +227,7 @@ export default function FourOneLoginAnimation({ isVisible, onComplete }: FourOne
                   Four One
                 </span>
               </motion.h1>
-              
+
               {/* Subtitle with Glow */}
               <motion.p
                 className="text-2xl md:text-3xl font-semibold mb-2"
@@ -267,7 +250,7 @@ export default function FourOneLoginAnimation({ isVisible, onComplete }: FourOne
                   Solutions
                 </span>
               </motion.p>
-              
+
               {/* Tagline */}
               <motion.p
                 className="text-sm text-blue-300 mt-4 font-light"
