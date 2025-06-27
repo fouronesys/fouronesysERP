@@ -4078,8 +4078,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const { query, category } = req.query;
-      const { enhancedAccountingService } = await import('./enhanced-accounting-service');
-      const accounts = await enhancedAccountingService.searchAccounts(company.id, query || "", category);
+      const accounts = await storage.searchChartOfAccounts(company.id, query || "", category);
       
       res.json(accounts);
     } catch (error) {
@@ -4125,8 +4124,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Company not found" });
       }
 
-      const { enhancedAccountingService } = await import('./enhanced-accounting-service');
-      const entries = await enhancedAccountingService.getJournalEntriesWithDocuments(company.id);
+      const entries = await storage.getJournalEntries(company.id);
       
       res.json(entries);
     } catch (error) {

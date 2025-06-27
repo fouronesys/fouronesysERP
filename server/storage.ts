@@ -5051,6 +5051,96 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  // Enhanced Accounting Methods
+  async getChartOfAccounts(companyId: number): Promise<any[]> {
+    try {
+      const accounts = await db.execute(sql`
+        SELECT * FROM chart_of_accounts 
+        WHERE company_id = ${companyId} 
+        ORDER BY code
+      `);
+      return accounts.rows;
+    } catch (error) {
+      console.error("Error fetching chart of accounts:", error);
+      return [];
+    }
+  }
+
+  async searchChartOfAccounts(companyId: number, query: string, category?: string): Promise<any[]> {
+    try {
+      let queryConditions = sql`company_id = ${companyId}`;
+      
+      if (query) {
+        queryConditions = sql`${queryConditions} AND (
+          LOWER(name) LIKE LOWER(${`%${query}%`}) OR
+          LOWER(code) LIKE LOWER(${`%${query}%`}) OR
+          LOWER(description) LIKE LOWER(${`%${query}%`})
+        )`;
+      }
+      
+      if (category) {
+        queryConditions = sql`${queryConditions} AND category = ${category}`;
+      }
+
+      const accounts = await db.execute(sql`
+        SELECT * FROM chart_of_accounts 
+        WHERE ${queryConditions}
+        ORDER BY code
+      `);
+      return accounts.rows;
+    } catch (error) {
+      console.error("Error searching chart of accounts:", error);
+      return [];
+    }
+  }
+
+  async getJournalEntries(companyId: number): Promise<any[]> {
+    try {
+      const entries = await db.execute(sql`
+        SELECT * FROM journal_entries 
+        WHERE company_id = ${companyId} 
+        ORDER BY date DESC, id DESC
+      `);
+      return entries.rows;
+    } catch (error) {
+      console.error("Error fetching journal entries:", error);
+      return [];
+    }
+  }
+
+  async getFinancialReports(companyId: number): Promise<any[]> {
+    try {
+      const reports = await db.execute(sql`
+        SELECT * FROM financial_reports 
+        WHERE company_id = ${companyId} 
+        ORDER BY generated_date DESC
+      `);
+      return reports.rows;
+    } catch (error) {
+      console.error("Error fetching financial reports:", error);
+      return [];
+    }
+  }
+
+  async saveFinancialReport(report: any): Promise<any> {
+    try {
+      const result = await db.execute(sql`
+        INSERT INTO financial_reports (
+          company_id, report_type, report_name, period_start, period_end,
+          generated_by, report_data, status
+        ) VALUES (
+          ${report.companyId}, ${report.reportType}, ${report.reportName},
+          ${report.periodStart}, ${report.periodEnd}, ${report.generatedBy},
+          ${JSON.stringify(report.reportData)}, ${report.status || 'GENERATED'}
+        ) RETURNING *
+      `);
+      return result.rows[0];
+    } catch (error) {
+      console.error("Error saving financial report:", error);
+      throw error;
+    }
+  }
+
 }
 
 export const storage = new DatabaseStorage();
