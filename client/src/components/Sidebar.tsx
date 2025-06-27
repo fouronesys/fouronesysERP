@@ -382,7 +382,7 @@ export function Sidebar() {
               transition={{ delay: 0.4 }}
             >
               <Link
-                href="/admin/companies"
+                href="/company-management"
                 className={cn(
                   "flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-300",
                   "bg-gradient-to-r from-purple-600/10 to-pink-600/10 dark:from-purple-500/20 dark:to-pink-500/20",

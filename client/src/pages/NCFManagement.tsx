@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { apiRequest } from "@/lib/queryClient";
@@ -183,28 +183,32 @@ export default function NCFManagement() {
 
   const selectedNCFType = ncfTypes.find(t => t.codigo === form.watch('tipo'));
 
-  const handlePreviewNCF = () => {
-    const formData = form.getValues();
-    const tipo = formData.tipo;
-    const inicio = formData.inicio;
-    const fin = formData.fin;
-    
-    const preview = [];
-    for (let i = 0; i < 3 && inicio + i <= fin; i++) {
-      const consecutivo = (inicio + i).toString().padStart(11, '0');
-      preview.push(`${tipo}${consecutivo}`);
-    }
-    
-    if (fin > inicio + 5) {
-      preview.push('...');
-      for (let i = 2; i >= 0; i--) {
-        const consecutivo = (fin - i).toString().padStart(11, '0');
-        preview.push(`${tipo}${consecutivo}`);
+  // Watch form values for auto-preview
+  const watchedTipo = form.watch('tipo');
+  const watchedInicio = form.watch('inicio');
+  const watchedFin = form.watch('fin');
+
+  useEffect(() => {
+    if (watchedTipo && watchedInicio && watchedFin && watchedInicio <= watchedFin) {
+      const preview = [];
+      for (let i = 0; i < 3 && watchedInicio + i <= watchedFin; i++) {
+        const consecutivo = (watchedInicio + i).toString().padStart(8, '0');
+        preview.push(`${watchedTipo}${consecutivo}`);
       }
+      
+      if (watchedFin > watchedInicio + 5) {
+        preview.push('...');
+        for (let i = 2; i >= 0; i--) {
+          const consecutivo = (watchedFin - i).toString().padStart(8, '0');
+          preview.push(`${watchedTipo}${consecutivo}`);
+        }
+      }
+      
+      setPreviewNCFs(preview);
+    } else {
+      setPreviewNCFs([]);
     }
-    
-    setPreviewNCFs(preview);
-  };
+  }, [watchedTipo, watchedInicio, watchedFin]);
 
   const getStatusBadge = (batch: NCFBatch) => {
     const now = new Date();
@@ -440,7 +444,6 @@ export default function NCFManagement() {
                                 {...field}
                                 onChange={(e) => {
                                   field.onChange(parseInt(e.target.value) || 0);
-                                  handlePreviewNCF();
                                 }}
                               />
                             </FormControl>
@@ -462,7 +465,6 @@ export default function NCFManagement() {
                                 {...field}
                                 onChange={(e) => {
                                   field.onChange(parseInt(e.target.value) || 0);
-                                  handlePreviewNCF();
                                 }}
                               />
                             </FormControl>
