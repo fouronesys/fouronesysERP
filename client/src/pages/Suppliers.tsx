@@ -20,6 +20,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { apiRequest } from "@/lib/queryClient";
+import { insertSupplierSchema } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { 
   Building, Plus, Search, Edit, Eye, Download, Send, Printer, 
@@ -135,19 +136,19 @@ const Suppliers = () => {
   const queryClient = useQueryClient();
 
   // Data queries
-  const { data: suppliers, isLoading: isLoadingSuppliers } = useQuery({
+  const { data: suppliers = [], isLoading: isLoadingSuppliers } = useQuery({
     queryKey: ['/api/suppliers'],
   });
 
-  const { data: supplierStats } = useQuery({
+  const { data: supplierStats = { total: 0, expiringCertificates: [] } } = useQuery({
     queryKey: ['/api/suppliers/statistics'],
   });
 
-  const { data: purchaseOrders } = useQuery({
+  const { data: purchaseOrders = [] } = useQuery({
     queryKey: ['/api/purchase-orders'],
   });
 
-  const { data: supplierPerformance } = useQuery({
+  const { data: supplierPerformance = [] } = useQuery({
     queryKey: ['/api/suppliers/performance'],
   });
 
@@ -1824,8 +1825,329 @@ const Suppliers = () => {
                   )}
                 </div>
 
-                {/* Rest of the form continues... */}
-                {/* This is a simplified version - the full form would include all fields */}
+                {/* RNC/Cédula Field */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {supplierForm.watch("supplierType") === "business" ? (
+                    <FormField
+                      control={supplierForm.control}
+                      name="rnc"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>RNC</FormLabel>
+                          <FormControl>
+                            <Input {...field} placeholder="RNC del proveedor" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  ) : (
+                    <FormField
+                      control={supplierForm.control}
+                      name="cedula"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Cédula</FormLabel>
+                          <FormControl>
+                            <Input {...field} placeholder="Cédula del proveedor" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
+
+                  <FormField
+                    control={supplierForm.control}
+                    name="supplierCategory"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Categoría</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="materials">Materiales</SelectItem>
+                            <SelectItem value="services">Servicios</SelectItem>
+                            <SelectItem value="equipment">Equipos</SelectItem>
+                            <SelectItem value="utilities">Utilidades</SelectItem>
+                            <SelectItem value="other">Otros</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                {/* Contact Information */}
+                <Separator />
+                <h3 className="text-lg font-semibold">Información de Contacto</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <FormField
+                    control={supplierForm.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="email" placeholder="email@proveedor.com" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={supplierForm.control}
+                    name="phone"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Teléfono</FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="(809) 123-4567" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={supplierForm.control}
+                    name="mobile"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Móvil</FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="(829) 123-4567" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <FormField
+                  control={supplierForm.control}
+                  name="website"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Sitio Web</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="https://www.proveedor.com" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Address Information */}
+                <Separator />
+                <h3 className="text-lg font-semibold">Dirección</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={supplierForm.control}
+                    name="address"
+                    render={({ field }) => (
+                      <FormItem className="md:col-span-2">
+                        <FormLabel>Dirección</FormLabel>
+                        <FormControl>
+                          <Textarea {...field} placeholder="Dirección completa del proveedor" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={supplierForm.control}
+                    name="neighborhood"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Sector/Barrio</FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="Sector o barrio" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={supplierForm.control}
+                    name="city"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Ciudad</FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="Ciudad" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={supplierForm.control}
+                    name="province"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Provincia</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Seleccione provincia" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="Distrito Nacional">Distrito Nacional</SelectItem>
+                            <SelectItem value="Santo Domingo">Santo Domingo</SelectItem>
+                            <SelectItem value="Santiago">Santiago</SelectItem>
+                            <SelectItem value="La Altagracia">La Altagracia</SelectItem>
+                            <SelectItem value="Puerto Plata">Puerto Plata</SelectItem>
+                            <SelectItem value="La Romana">La Romana</SelectItem>
+                            <SelectItem value="San Cristóbal">San Cristóbal</SelectItem>
+                            <SelectItem value="Duarte">Duarte</SelectItem>
+                            <SelectItem value="La Vega">La Vega</SelectItem>
+                            <SelectItem value="Azua">Azua</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={supplierForm.control}
+                    name="postalCode"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Código Postal</FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="Código postal" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                {/* Business Terms */}
+                <Separator />
+                <h3 className="text-lg font-semibold">Términos Comerciales</h3>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <FormField
+                    control={supplierForm.control}
+                    name="paymentTerms"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Términos de Pago (días)</FormLabel>
+                        <FormControl>
+                          <Input 
+                            {...field} 
+                            type="number" 
+                            min="0"
+                            onChange={e => field.onChange(parseInt(e.target.value) || 0)}
+                            placeholder="30" 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={supplierForm.control}
+                    name="creditLimit"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Límite de Crédito</FormLabel>
+                        <FormControl>
+                          <Input 
+                            {...field} 
+                            type="number" 
+                            min="0"
+                            step="0.01"
+                            onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
+                            placeholder="0.00" 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={supplierForm.control}
+                    name="currency"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Moneda</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="DOP">Peso Dominicano (DOP)</SelectItem>
+                            <SelectItem value="USD">Dólar Americano (USD)</SelectItem>
+                            <SelectItem value="EUR">Euro (EUR)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={supplierForm.control}
+                    name="priority"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Prioridad</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="high">Alta</SelectItem>
+                            <SelectItem value="medium">Media</SelectItem>
+                            <SelectItem value="low">Baja</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <FormField
+                    control={supplierForm.control}
+                    name="taxWithholding"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                        <div className="space-y-1 leading-none">
+                          <FormLabel>
+                            Aplica retención de impuestos
+                          </FormLabel>
+                        </div>
+                      </FormItem>
+                    )}
+                  />
+                </div>
 
                 <div className="flex justify-end gap-3">
                   <Button 

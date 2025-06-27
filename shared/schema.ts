@@ -217,16 +217,20 @@ export const suppliers = pgTable("suppliers", {
   contactPersonPhone: varchar("contact_person_phone", { length: 20 }),
   contactPersonEmail: varchar("contact_person_email", { length: 255 }),
   
+  // Additional identification for individuals
+  cedula: varchar("cedula", { length: 20 }),
+  
   // Address Information
   address: text("address"),
+  neighborhood: varchar("neighborhood", { length: 100 }),
   city: varchar("city", { length: 100 }),
-  state: varchar("state", { length: 100 }),
+  province: varchar("province", { length: 100 }),
   country: varchar("country", { length: 100 }).default("República Dominicana"),
   postalCode: varchar("postal_code", { length: 20 }),
   
   // Business Information
-  supplierType: varchar("supplier_type", { length: 50 }).default("goods"), // goods, services, both
-  category: varchar("category", { length: 100 }), // Materials, Services, Equipment, etc.
+  supplierType: varchar("supplier_type", { length: 50 }).default("business"), // business, individual
+  supplierCategory: varchar("supplier_category", { length: 100 }).default("materials"), // materials, services, equipment, utilities, other
   industry: varchar("industry", { length: 100 }),
   taxRegime: varchar("tax_regime", { length: 50 }),
   
@@ -258,8 +262,11 @@ export const suppliers = pgTable("suppliers", {
   qualityRating: decimal("quality_rating", { precision: 3, scale: 2 }), // 0-5
   onTimeDeliveryRate: decimal("on_time_delivery_rate", { precision: 5, scale: 2 }), // percentage
   
+  // Tax Compliance
+  taxWithholding: boolean("tax_withholding").default(false),
+  
   // Status and Control
-  status: varchar("status", { length: 20 }).default("active"), // active, inactive, blocked, suspended
+  status: varchar("status", { length: 20 }).default("active"), // active, inactive, suspended, blacklisted
   isVerified: boolean("is_verified").default(false),
   verificationDate: timestamp("verification_date"),
   blockedReason: text("blocked_reason"),

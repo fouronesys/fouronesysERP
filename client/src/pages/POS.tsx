@@ -443,8 +443,8 @@ export default function POS() {
         </div>
       )}
       
-      <div className="p-2 sm:p-4 lg:p-6 w-full max-w-screen-2xl mx-auto">
-        <div className="grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-4 lg:gap-6 h-[calc(100vh-160px)] overflow-hidden">
+      <div className="p-1 sm:p-2 md:p-4 lg:p-6 w-full max-w-screen-2xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-2 sm:gap-3 md:gap-4 lg:gap-6 h-[calc(100vh-120px)] sm:h-[calc(100vh-140px)] lg:h-[calc(100vh-160px)] overflow-hidden">
           
           {/* Sección de Productos */}
           <div className="2xl:col-span-3 xl:col-span-2 lg:col-span-2 space-y-4 h-full overflow-hidden flex flex-col">

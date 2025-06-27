@@ -2558,7 +2558,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // DGII RNC verification endpoint
-  app.post("/api/dgii/validate-rnc", async (req, res) => {
+  app.post("/api/dgii/validate-rnc", isAuthenticated, async (req, res) => {
     try {
       console.log("DGII validate-rnc request body:", req.body);
       const { rnc } = req.body;
