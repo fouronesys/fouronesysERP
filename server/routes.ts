@@ -2715,7 +2715,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Company not found" });
       }
 
-      const { type, series, rangeStart, rangeEnd, expirationDate, description } = req.body;
+      const { type, series, rangeStart, rangeEnd, expirationDate, description, isActive } = req.body;
 
       // Validate required fields
       if (!type || !rangeStart || !rangeEnd) {
@@ -2731,10 +2731,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const updateData = {
         ncfType: String(type).trim(),
-        series: series ? String(series).trim() : '001',
         maxSequence: parsedRangeEnd,
         description: description ? String(description).trim() : '',
         expirationDate: expirationDate ? new Date(expirationDate) : null,
+        isActive: typeof isActive === 'boolean' ? isActive : true,
         updatedAt: new Date(),
       };
 

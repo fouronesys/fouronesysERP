@@ -150,9 +150,13 @@ function EditNCFForm({ batch, onSuccess, onCancel }: {
   const editMutation = useMutation({
     mutationFn: (updates: EditNCFBatchFormData) => {
       const transformedData = {
-        maxSequence: updates.maxSequence,
-        isActive: updates.isActive,
+        type: batch.tipo,
+        series: batch.prefijo || '001',
+        rangeStart: batch.inicio,
+        rangeEnd: updates.maxSequence,
         expirationDate: updates.vencimiento || null,
+        description: `Secuencia ${batch.tipo} del ${batch.inicio} al ${updates.maxSequence}`,
+        isActive: updates.isActive,
       };
       
       return apiRequest(`/api/fiscal/ncf-sequences/${batch.id}`, {
