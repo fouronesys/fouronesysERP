@@ -798,7 +798,13 @@ const WarehouseManagement = () => {
                     <div>
                       <p className="text-sm font-medium text-gray-600">Alertas de Stock</p>
                       <p className="text-2xl font-bold">
-                        {products?.filter((p: any) => (p.stock || 0) <= (p.minStock || 0)).length || 0}
+                        {products?.filter((p: any) => {
+                          // Skip stock alerts for services and non-inventoriable products
+                          const isStockless = p.productType === 'service' || 
+                                             p.productType === 'non_inventoriable' || 
+                                             p.trackInventory === false;
+                          return !isStockless && (p.stock || 0) <= (p.minStock || 0);
+                        }).length || 0}
                       </p>
                     </div>
                     <AlertTriangle className="h-8 w-8 text-orange-600" />

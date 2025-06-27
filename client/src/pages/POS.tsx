@@ -250,17 +250,24 @@ export default function POS() {
 
   // Cart functions using mutations
   const addToCart = async (product: Product) => {
-    const currentStock = parseInt(product.stock?.toString() || "0");
-    const existingItem = cart.find(item => item.product.id === product.id);
-    const currentCartQuantity = existingItem ? existingItem.quantity : 0;
+    // Skip stock validation for services and non-inventoriable products
+    const isStockless = product.productType === 'service' || 
+                       product.productType === 'non_inventoriable' || 
+                       product.trackInventory === false;
     
-    if (currentCartQuantity >= currentStock) {
-      toast({
-        title: "Stock insuficiente",
-        description: `Solo hay ${currentStock} unidades disponibles de ${product.name}`,
-        variant: "destructive",
-      });
-      return;
+    if (!isStockless) {
+      const currentStock = parseInt(product.stock?.toString() || "0");
+      const existingItem = cart.find(item => item.product.id === product.id);
+      const currentCartQuantity = existingItem ? existingItem.quantity : 0;
+      
+      if (currentCartQuantity >= currentStock) {
+        toast({
+          title: "Stock insuficiente",
+          description: `Solo hay ${currentStock} unidades disponibles de ${product.name}`,
+          variant: "destructive",
+        });
+        return;
+      }
     }
 
     addToCartMutation.mutate(product);

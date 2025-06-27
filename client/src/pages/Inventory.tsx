@@ -110,8 +110,20 @@ export default function Inventory() {
     return matchesSearch;
   });
 
-  const lowStockProducts = products.filter(p => p.stock <= (p.minStock || 0) && p.stock > 0);
-  const outOfStockProducts = products.filter(p => p.stock === 0);
+  const lowStockProducts = products.filter(p => {
+    // Skip stock alerts for services and non-inventoriable products
+    const isStockless = p.productType === 'service' || 
+                       p.productType === 'non_inventoriable' || 
+                       p.trackInventory === false;
+    return !isStockless && p.stock <= (p.minStock || 0) && p.stock > 0;
+  });
+  const outOfStockProducts = products.filter(p => {
+    // Skip stock alerts for services and non-inventoriable products
+    const isStockless = p.productType === 'service' || 
+                       p.productType === 'non_inventoriable' || 
+                       p.trackInventory === false;
+    return !isStockless && p.stock === 0;
+  });
   const totalValue = products.reduce((sum, p) => sum + (p.stock * Number(p.cost || p.price)), 0);
 
   const getStockStatus = (product: Product) => {

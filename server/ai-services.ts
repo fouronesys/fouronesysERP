@@ -124,10 +124,20 @@ Responde en formato JSON:
     recommendations: string[];
   }> {
     try {
+      // Filter out services and non-inventoriable products for inventory analysis
+      const trackableProducts = products.filter(p => {
+        const isStockless = p.productType === 'service' || 
+                           p.productType === 'non_inventoriable' || 
+                           p.trackInventory === false;
+        return !isStockless;
+      });
+
       const prompt = `Analiza este inventario y historial de ventas:
 
-Productos: ${JSON.stringify(products.slice(0, 5))}
+Productos con seguimiento de inventario: ${JSON.stringify(trackableProducts.slice(0, 5))}
 Ventas: ${JSON.stringify(salesHistory.slice(0, 5))}
+
+Nota: Los servicios y productos no inventariables están excluidos del análisis de stock.
 
 Proporciona recomendaciones de inventario en JSON:
 {

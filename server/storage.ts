@@ -1192,9 +1192,16 @@ export class DatabaseStorage implements IStorage {
     const quantity = parseInt(itemData.quantity);
     
     if (currentProduct && quantity > 0) {
-      // Handle manufactured/consumable products
-      if (currentProduct.isManufactured && currentProduct.isConsumable) {
-        // Process material deduction for manufactured products
+      // Skip stock tracking for services and non-inventoriable products
+      const isStockless = currentProduct.productType === 'service' || 
+                         currentProduct.productType === 'non_inventoriable' || 
+                         currentProduct.trackInventory === false;
+
+      if (isStockless) {
+        // For services and non-inventoriable products, just log the sale without stock deduction
+        console.log(`Service/Non-inventoriable product sold: ${currentProduct.name} (${currentProduct.productType})`);
+      } else if (currentProduct.isManufactured && currentProduct.isConsumable) {
+        // Handle manufactured/consumable products
         await this.processManufacturedProductSale(
           itemData.productId, 
           quantity, 
