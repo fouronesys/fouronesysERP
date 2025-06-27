@@ -87,6 +87,39 @@ export default function InventoryMovements() {
     queryKey: ["/api/products"],
   });
 
+  // Query for warehouse stock data
+  const { data: warehouseStock } = useQuery<any[]>({
+    queryKey: ["/api/warehouse-stock"],
+  });
+
+  // Helper functions for stock management
+  const getWarehouseStock = (warehouseId: number) => {
+    if (!warehouseStock) return [];
+    return warehouseStock.filter(item => item.warehouseId === warehouseId);
+  };
+
+  const getFilteredStockData = () => {
+    if (!warehouseStock) return [];
+    
+    let filtered = warehouseStock;
+    
+    // Filter by warehouse
+    if (filterWarehouse !== "all") {
+      filtered = filtered.filter(item => item.warehouseId === parseInt(filterWarehouse));
+    }
+    
+    // Filter by search term
+    if (searchTerm) {
+      filtered = filtered.filter(item => {
+        const product = products?.find(p => p.id === item.productId);
+        return product?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+               product?.code?.toLowerCase().includes(searchTerm.toLowerCase());
+      });
+    }
+    
+    return filtered;
+  };
+
   // Create movement mutation
   const createMovementMutation = useMutation({
     mutationFn: async (data: MovementFormData) => {
@@ -248,9 +281,8 @@ export default function InventoryMovements() {
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="movements" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="movements">Movimientos</TabsTrigger>
-            <TabsTrigger value="warehouses">Bodegas</TabsTrigger>
             <TabsTrigger value="stock">Stock por Bodega</TabsTrigger>
           </TabsList>
 
@@ -373,26 +405,174 @@ export default function InventoryMovements() {
             </Card>
           </TabsContent>
 
-          {/* Warehouses Tab */}
-          <TabsContent value="warehouses">
-            <Card>
-              <CardHeader>
-                <CardTitle>Gestión de Bodegas</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-500">Configuración de bodegas y ubicaciones</p>
-              </CardContent>
-            </Card>
-          </TabsContent>
+
 
           {/* Stock by Warehouse Tab */}
-          <TabsContent value="stock">
+          <TabsContent value="stock" className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {warehouses?.map((warehouse) => {
+                const warehouseProducts = getWarehouseStock(warehouse.id);
+                const totalValue = warehouseProducts.reduce((sum, item) => sum + (item.quantity * (item.avgCost || 0)), 0);
+                
+                return (
+                  <Card key={warehouse.id} className="hover:shadow-md transition-shadow">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-lg flex items-center justify-between">
+                        <span>{warehouse.name}</span>
+                        <Badge variant={warehouse.isActive ? "default" : "secondary"}>
+                          {warehouse.isActive ? "Activo" : "Inactivo"}
+                        </Badge>
+                      </CardTitle>
+                      <p className="text-sm text-gray-500">{warehouse.location}</p>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2 mb-4">
+                        <div className="flex justify-between text-sm">
+                          <span>Productos únicos:</span>
+                          <span className="font-medium">{warehouseProducts.length}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span>Unidades totales:</span>
+                          <span className="font-medium">
+                            {warehouseProducts.reduce((sum, item) => sum + item.quantity, 0)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span>Valor estimado:</span>
+                          <span className="font-medium">
+                            {new Intl.NumberFormat('es-DO', {
+                              style: 'currency',
+                              currency: 'DOP'
+                            }).format(totalValue)}
+                          </span>
+                        </div>
+                      </div>
+                      
+                      {warehouseProducts.length > 0 ? (
+                        <div className="space-y-2">
+                          <h4 className="font-medium text-sm">Top productos:</h4>
+                          {warehouseProducts.slice(0, 3).map((item) => {
+                            const product = products?.find(p => p.id === item.productId);
+                            return (
+                              <div key={item.productId} className="flex justify-between text-xs bg-gray-50 p-2 rounded">
+                                <span className="truncate flex-1">
+                                  {product?.name || `Producto ${item.productId}`}
+                                </span>
+                                <span className="font-medium ml-2">
+                                  {item.quantity} unid.
+                                </span>
+                              </div>
+                            );
+                          })}
+                          {warehouseProducts.length > 3 && (
+                            <div className="text-xs text-gray-500 text-center pt-1">
+                              +{warehouseProducts.length - 3} productos más
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="text-xs text-gray-500 text-center py-4">
+                          Sin inventario
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+
+            {/* Detailed Stock Table */}
             <Card>
               <CardHeader>
-                <CardTitle>Stock por Bodega</CardTitle>
+                <CardTitle>Stock Detallado por Bodega</CardTitle>
+                <div className="flex gap-4">
+                  <Select value={filterWarehouse} onValueChange={setFilterWarehouse}>
+                    <SelectTrigger className="w-48">
+                      <SelectValue placeholder="Filtrar por bodega" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todas las bodegas</SelectItem>
+                      {warehouses?.map((warehouse) => (
+                        <SelectItem key={warehouse.id} value={warehouse.id.toString()}>
+                          {warehouse.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  
+                  <div className="relative flex-1 max-w-sm">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                    <Input
+                      placeholder="Buscar producto..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-500">Vista de inventario distribuido por bodega</p>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Producto</TableHead>
+                      <TableHead>Código</TableHead>
+                      <TableHead>Bodega</TableHead>
+                      <TableHead className="text-right">Stock</TableHead>
+                      <TableHead className="text-right">Costo Promedio</TableHead>
+                      <TableHead className="text-right">Valor Total</TableHead>
+                      <TableHead>Estado</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {getFilteredStockData().map((item, index) => {
+                      const product = products?.find(p => p.id === item.productId);
+                      const warehouse = warehouses?.find(w => w.id === item.warehouseId);
+                      const totalValue = item.quantity * (item.avgCost || 0);
+                      
+                      return (
+                        <TableRow key={`${item.productId}-${item.warehouseId}-${index}`}>
+                          <TableCell className="font-medium">
+                            {product?.name || `Producto ${item.productId}`}
+                          </TableCell>
+                          <TableCell>{product?.code || 'N/A'}</TableCell>
+                          <TableCell>{warehouse?.name || 'N/A'}</TableCell>
+                          <TableCell className="text-right">
+                            <Badge variant={item.quantity > 0 ? "default" : "destructive"}>
+                              {item.quantity} {product?.unit || 'unid'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {item.avgCost ? new Intl.NumberFormat('es-DO', {
+                              style: 'currency',
+                              currency: 'DOP'
+                            }).format(item.avgCost) : 'N/A'}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {new Intl.NumberFormat('es-DO', {
+                              style: 'currency',
+                              currency: 'DOP'
+                            }).format(totalValue)}
+                          </TableCell>
+                          <TableCell>
+                            <Badge 
+                              variant={item.quantity > 0 ? "default" : "destructive"}
+                              className="text-xs"
+                            >
+                              {item.quantity > 0 ? "Disponible" : "Agotado"}
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+                
+                {getFilteredStockData().length === 0 && (
+                  <div className="text-center py-8 text-gray-500">
+                    No se encontraron productos con stock en las bodegas seleccionadas
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
