@@ -338,8 +338,10 @@ export interface IStorage {
   // NCF Sequence operations for Fiscal Receipts
   getNextNCF(companyId: number, ncfType: string): Promise<string | null>;
   getNCFSequences(companyId: number): Promise<NCFSequence[]>;
+  getNCFSequenceById(id: number): Promise<NCFSequence | undefined>;
   createNCFSequence(ncfData: InsertNCFSequence): Promise<NCFSequence>;
-  updateNCFSequence(id: number, updateData: Partial<InsertNCFSequence>, companyId: number): Promise<NCFSequence | undefined>;
+  updateNCFSequence(id: number, updateData: Partial<InsertNCFSequence>): Promise<NCFSequence | undefined>;
+  deleteNCFSequence(id: number): Promise<void>;
   incrementNCFSequence(companyId: number, ncfType: string): Promise<void>;
 
   // POS Multi-Station operations
@@ -444,7 +446,9 @@ export interface IStorage {
   incrementNCFSequence(companyId: number, ncfType: string): Promise<void>;
   createNCFSequence(sequenceData: any): Promise<any>;
   getNCFSequences(companyId: number): Promise<any[]>;
-  updateNCFSequence(id: number, updateData: any, companyId: number): Promise<any>;
+  getNCFSequenceById(id: number): Promise<any>;
+  updateNCFSequence(id: number, updateData: any): Promise<any>;
+  deleteNCFSequence(id: number): Promise<void>;
 
   // POS Cart operations
   clearPOSCart(companyId: number, userId: string): Promise<void>;
@@ -4609,7 +4613,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async updateNCFSequence(id: number, updateData: any, companyId: number): Promise<any> {
+  async updateNCFSequence(id: number, updateData: any): Promise<any> {
     try {
       const [updated] = await db
         .update(ncfSequences)
@@ -4617,11 +4621,35 @@ export class DatabaseStorage implements IStorage {
           ...updateData,
           updatedAt: new Date()
         })
-        .where(and(eq(ncfSequences.id, id), eq(ncfSequences.companyId, companyId)))
+        .where(eq(ncfSequences.id, id))
         .returning();
       return updated;
     } catch (error) {
       console.error("Error updating NCF sequence:", error);
+      throw error;
+    }
+  }
+
+  async getNCFSequenceById(id: number): Promise<any> {
+    try {
+      const [sequence] = await db
+        .select()
+        .from(ncfSequences)
+        .where(eq(ncfSequences.id, id));
+      return sequence;
+    } catch (error) {
+      console.error("Error getting NCF sequence by ID:", error);
+      throw error;
+    }
+  }
+
+  async deleteNCFSequence(id: number): Promise<void> {
+    try {
+      await db
+        .delete(ncfSequences)
+        .where(eq(ncfSequences.id, id));
+    } catch (error) {
+      console.error("Error deleting NCF sequence:", error);
       throw error;
     }
   }

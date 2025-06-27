@@ -2695,6 +2695,99 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update NCF sequence endpoint
+  app.put("/api/fiscal/ncf-sequences/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      console.log("[DEBUG] PUT /api/fiscal/ncf-sequences/:id - Body:", req.body);
+      
+      const sequenceId = parseInt(req.params.id);
+      if (isNaN(sequenceId)) {
+        return res.status(400).json({ message: "Invalid sequence ID" });
+      }
+
+      const user = await storage.getUser(req.user.id);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      const company = await storage.getCompanyByUserId(user.id);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      const { type, series, rangeStart, rangeEnd, expirationDate, description } = req.body;
+
+      // Validate required fields
+      if (!type || !rangeStart || !rangeEnd) {
+        return res.status(400).json({ message: "Missing required fields: type, rangeStart, rangeEnd" });
+      }
+
+      const parsedRangeStart = parseInt(rangeStart);
+      const parsedRangeEnd = parseInt(rangeEnd);
+
+      if (isNaN(parsedRangeStart) || isNaN(parsedRangeEnd)) {
+        return res.status(400).json({ message: "rangeStart and rangeEnd must be valid numbers" });
+      }
+
+      const updateData = {
+        ncfType: String(type).trim(),
+        series: series ? String(series).trim() : '001',
+        maxSequence: parsedRangeEnd,
+        description: description ? String(description).trim() : '',
+        expirationDate: expirationDate ? new Date(expirationDate) : null,
+        updatedAt: new Date(),
+      };
+
+      const updatedSequence = await storage.updateNCFSequence(sequenceId, updateData);
+      res.json(updatedSequence);
+      
+    } catch (error: any) {
+      console.error("[ERROR] Exception in PUT /api/fiscal/ncf-sequences/:id:", error);
+      res.status(500).json({ 
+        message: "Failed to update NCF sequence", 
+        error: error?.message || "Unknown error" 
+      });
+    }
+  });
+
+  // Delete NCF sequence endpoint
+  app.delete("/api/fiscal/ncf-sequences/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      console.log("[DEBUG] DELETE /api/fiscal/ncf-sequences/:id - ID:", req.params.id);
+      
+      const sequenceId = parseInt(req.params.id);
+      if (isNaN(sequenceId)) {
+        return res.status(400).json({ message: "Invalid sequence ID" });
+      }
+
+      const user = await storage.getUser(req.user.id);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      const company = await storage.getCompanyByUserId(user.id);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      // Check if the sequence exists and belongs to the company
+      const sequence = await storage.getNCFSequenceById(sequenceId);
+      if (!sequence || sequence.companyId !== company.id) {
+        return res.status(404).json({ message: "NCF sequence not found" });
+      }
+
+      await storage.deleteNCFSequence(sequenceId);
+      res.json({ message: "NCF sequence deleted successfully" });
+      
+    } catch (error: any) {
+      console.error("[ERROR] Exception in DELETE /api/fiscal/ncf-sequences/:id:", error);
+      res.status(500).json({ 
+        message: "Failed to delete NCF sequence", 
+        error: error?.message || "Unknown error" 
+      });
+    }
+  });
+
   // Get used NCFs endpoint
   app.get("/api/fiscal/ncf-used", isAuthenticated, async (req: any, res) => {
     try {
