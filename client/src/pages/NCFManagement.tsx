@@ -33,7 +33,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { toast } from "@/hooks/use-toast";
-import { Plus, FileText, AlertTriangle, CheckCircle, Download, Search, Eye, Edit, Trash2 } from "lucide-react";
+import { Plus, FileText, AlertTriangle, CheckCircle, Download, Search, Eye, Edit, Trash2, Save } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -69,6 +69,18 @@ const ncfBatchSchema = z.object({
 });
 
 type NCFBatchFormData = z.infer<typeof ncfBatchSchema>;
+
+// Schema for editing existing NCF batches
+const editNCFBatchSchema = z.object({
+  maxSequence: z.number().min(1),
+  isActive: z.boolean(),
+  vencimiento: z.string().optional(),
+}).refine(data => {
+  // Validation logic will be handled in the form component
+  return true;
+});
+
+type EditNCFBatchFormData = z.infer<typeof editNCFBatchSchema>;
 
 interface NCFType {
   codigo: string;
@@ -120,6 +132,190 @@ const ncfTypes: NCFType[] = [
   { codigo: 'E45', descripcion: 'Comprobantes de Anulación', aplicaCredito: false, aplicaConsumidor: false }
 ];
 
+// Edit NCF Form Component
+function EditNCFForm({ batch, onSuccess, onCancel }: {
+  batch: NCFBatch;
+  onSuccess: () => void;
+  onCancel: () => void;
+}) {
+  const editForm = useForm<EditNCFBatchFormData>({
+    resolver: zodResolver(editNCFBatchSchema),
+    defaultValues: {
+      maxSequence: batch.fin,
+      isActive: batch.estado === 'active',
+      vencimiento: batch.vencimiento || '',
+    },
+  });
+
+  const editMutation = useMutation({
+    mutationFn: (updates: EditNCFBatchFormData) => {
+      const transformedData = {
+        maxSequence: updates.maxSequence,
+        isActive: updates.isActive,
+        expirationDate: updates.vencimiento || null,
+      };
+      
+      return apiRequest(`/api/fiscal/ncf-sequences/${batch.id}`, {
+        method: "PUT",
+        body: transformedData,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/fiscal/ncf-sequences"] });
+      toast({
+        title: "Éxito",
+        description: "Lote de NCF actualizado correctamente",
+      });
+      onSuccess();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Error al actualizar el lote de NCF",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const onSubmit = (data: EditNCFBatchFormData) => {
+    editMutation.mutate(data);
+  };
+
+  // Check if this NCF type requires expiration date
+  const typesRequiringExpiration = ['B01', 'B14', 'B15'];
+  const requiresExpiration = typesRequiringExpiration.includes(batch.tipo);
+
+  return (
+    <Form {...editForm}>
+      <form onSubmit={editForm.handleSubmit(onSubmit)} className="space-y-4">
+        {/* Read-only information */}
+        <div className="grid grid-cols-2 gap-4 p-4 bg-muted rounded-lg">
+          <div>
+            <Label className="text-sm font-medium">Tipo de NCF</Label>
+            <p className="text-sm">{batch.tipo} - {ncfTypes.find(t => t.codigo === batch.tipo)?.descripcion}</p>
+          </div>
+          <div>
+            <Label className="text-sm font-medium">Rango Inicial</Label>
+            <p className="text-sm">{batch.inicio} - {batch.ultimo_usado > 0 ? batch.ultimo_usado : 'Sin usar'}</p>
+          </div>
+          <div>
+            <Label className="text-sm font-medium">NCFs Usados</Label>
+            <p className="text-sm">{batch.usados} de {batch.fin - batch.inicio + 1}</p>
+          </div>
+          <div>
+            <Label className="text-sm font-medium">Porcentaje de Uso</Label>
+            <p className="text-sm">{batch.porcentajeUso}%</p>
+          </div>
+        </div>
+
+        {/* Editable fields */}
+        <FormField
+          control={editForm.control}
+          name="maxSequence"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Número Final del Rango</FormLabel>
+              <FormControl>
+                <Input
+                  type="number"
+                  min={Math.max(batch.ultimo_usado + 1, batch.inicio)}
+                  {...field}
+                  onChange={(e) => field.onChange(parseInt(e.target.value))}
+                />
+              </FormControl>
+              <FormDescription>
+                Debe ser mayor que el último NCF usado ({batch.ultimo_usado})
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {requiresExpiration && (
+          <FormField
+            control={editForm.control}
+            name="vencimiento"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Fecha de Vencimiento</FormLabel>
+                <FormControl>
+                  <Input
+                    type="date"
+                    {...field}
+                    min={new Date().toISOString().split('T')[0]}
+                  />
+                </FormControl>
+                <FormDescription>
+                  Los NCF tipo {batch.tipo} requieren fecha de vencimiento
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
+
+        <FormField
+          control={editForm.control}
+          name="isActive"
+          render={({ field }) => (
+            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+              <div className="space-y-0.5">
+                <FormLabel>Estado del Lote</FormLabel>
+                <FormDescription>
+                  Desactivar impedirá el uso de este lote para nuevas facturas
+                </FormDescription>
+              </div>
+              <FormControl>
+                <input
+                  type="checkbox"
+                  checked={field.value}
+                  onChange={field.onChange}
+                  className="h-4 w-4"
+                />
+              </FormControl>
+            </FormItem>
+          )}
+        />
+
+        <Alert>
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Advertencia Fiscal</AlertTitle>
+          <AlertDescription>
+            La modificación de lotes NCF activos puede afectar la secuencia fiscal. 
+            Solo proceda si tiene autorización de DGII y comprende las implicaciones.
+          </AlertDescription>
+        </Alert>
+
+        <div className="flex gap-2 pt-4">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onCancel}
+            className="flex-1"
+            disabled={editMutation.isPending}
+          >
+            Cancelar
+          </Button>
+          <Button
+            type="submit"
+            className="flex-1"
+            disabled={editMutation.isPending}
+          >
+            {editMutation.isPending ? (
+              <>Guardando...</>
+            ) : (
+              <>
+                <Save className="h-4 w-4 mr-2" />
+                Guardar Cambios
+              </>
+            )}
+          </Button>
+        </div>
+      </form>
+    </Form>
+  );
+}
+
 export default function NCFManagement() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -168,41 +364,6 @@ export default function NCFManagement() {
       toast({
         title: "Error",
         description: error.message || "Error al crear el lote de NCF",
-        variant: "destructive",
-      });
-    },
-  });
-
-  // Mutation for editing NCF batches
-  const editMutation = useMutation({
-    mutationFn: (data: { id: number; updates: Partial<NCFBatchFormData> }) => {
-      const transformedData = {
-        type: data.updates.tipo,
-        series: '001',
-        rangeStart: data.updates.inicio,
-        rangeEnd: data.updates.fin,
-        expirationDate: data.updates.vencimiento || null,
-        description: `Secuencia ${data.updates.tipo} del ${data.updates.inicio} al ${data.updates.fin}`
-      };
-      
-      return apiRequest(`/api/fiscal/ncf-sequences/${data.id}`, {
-        method: "PUT",
-        body: transformedData,
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/fiscal/ncf-sequences"] });
-      setIsEditOpen(false);
-      setEditingBatch(null);
-      toast({
-        title: "Éxito",
-        description: "Lote de NCF actualizado correctamente",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Error al actualizar el lote de NCF",
         variant: "destructive",
       });
     },
@@ -884,7 +1045,7 @@ export default function NCFManagement() {
 
       {/* Edit NCF Dialog */}
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>Editar Lote NCF</DialogTitle>
             <DialogDescription>
@@ -893,58 +1054,17 @@ export default function NCFManagement() {
           </DialogHeader>
           
           {editingBatch && (
-            <div className="space-y-4">
-              <div>
-                <Label>Tipo de NCF</Label>
-                <p className="text-sm font-medium">{editingBatch.tipo} - {ncfTypes.find(t => t.codigo === editingBatch.tipo)?.descripcion}</p>
-              </div>
-              
-              <div>
-                <Label>Rango Actual</Label>
-                <p className="text-sm">{editingBatch.inicio} - {editingBatch.fin}</p>
-              </div>
-              
-              <div>
-                <Label>NCFs Usados</Label>
-                <p className="text-sm">{editingBatch.usados} de {editingBatch.fin - editingBatch.inicio + 1}</p>
-              </div>
-              
-              <Alert>
-                <AlertTriangle className="h-4 w-4" />
-                <AlertTitle>Atención</AlertTitle>
-                <AlertDescription>
-                  La edición de lotes NCF activos puede afectar la secuencia fiscal. Solo modifique si es absolutamente necesario y tiene autorización de DGII.
-                </AlertDescription>
-              </Alert>
-              
-              <div className="flex gap-2 pt-4">
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setIsEditOpen(false);
-                    setEditingBatch(null);
-                  }}
-                  className="flex-1"
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  onClick={() => {
-                    // For now, just close the dialog
-                    // Future implementation could include an edit form
-                    setIsEditOpen(false);
-                    setEditingBatch(null);
-                    toast({
-                      title: "Función en desarrollo",
-                      description: "La edición de lotes NCF estará disponible próximamente",
-                    });
-                  }}
-                  className="flex-1"
-                >
-                  Confirmar Edición
-                </Button>
-              </div>
-            </div>
+            <EditNCFForm 
+              batch={editingBatch} 
+              onSuccess={() => {
+                setIsEditOpen(false);
+                setEditingBatch(null);
+              }}
+              onCancel={() => {
+                setIsEditOpen(false);
+                setEditingBatch(null);
+              }}
+            />
           )}
         </DialogContent>
       </Dialog>
