@@ -1109,6 +1109,57 @@ export default function POS() {
                       </Button>
                     </div>
 
+                    {/* Fiscal Receipt Options for Mobile */}
+                    <div className="space-y-3 border-t pt-3">
+                      <div className="flex items-center space-x-2">
+                        <input
+                          id="useFiscalReceiptMobile"
+                          type="checkbox"
+                          checked={useFiscalReceipt}
+                          onChange={(e) => setUseFiscalReceipt(e.target.checked)}
+                          className="rounded"
+                        />
+                        <label htmlFor="useFiscalReceiptMobile" className="text-sm font-medium">
+                          Generar Comprobante Fiscal
+                        </label>
+                      </div>
+
+                      {useFiscalReceipt && (
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium mb-1 block">Tipo de NCF</label>
+                          <Select value={selectedNCFType} onValueChange={setSelectedNCFType}>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="B01">B01 - Crédito Fiscal</SelectItem>
+                              <SelectItem value="B02">B02 - Consumidor Final</SelectItem>
+                              <SelectItem value="B03">B03 - Nota de Débito</SelectItem>
+                              <SelectItem value="B04">B04 - Nota de Crédito</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          
+                          {/* Additional customer fields for fiscal receipt */}
+                          <div className="space-y-2 mt-3">
+                            <Input
+                              placeholder="RNC/Cédula del cliente *"
+                              value={customerRnc}
+                              onChange={(e) => setCustomerRnc(e.target.value)}
+                              className={!customerRnc ? "border-red-300" : ""}
+                              size="sm"
+                            />
+                            <Input
+                              placeholder="Dirección del cliente *"
+                              value={customerAddress}
+                              onChange={(e) => setCustomerAddress(e.target.value)}
+                              className={!customerAddress ? "border-red-300" : ""}
+                              size="sm"
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
                     {paymentMethod === "cash" && (
                       <Input
                         type="number"
