@@ -2573,12 +2573,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post("/api/fiscal/ncf-sequences", isAuthenticated, async (req: any, res) => {
+    console.log("[DEBUG] POST /api/fiscal/ncf-sequences - Starting request");
+    
     try {
-      console.log("[DEBUG] POST /api/fiscal/ncf-sequences - Starting");
-      console.log("[DEBUG] POST /api/fiscal/ncf-sequences - Raw Body:", req.body);
+      console.log("[DEBUG] Request headers:", JSON.stringify(req.headers, null, 2));
+      console.log("[DEBUG] Request body type:", typeof req.body);
+      console.log("[DEBUG] Request body:", JSON.stringify(req.body, null, 2));
       
       const userId = req.user.id;
-      console.log("[DEBUG] User ID:", userId);
+      console.log("[DEBUG] Authenticated user ID:", userId);
       
       const company = await storage.getCompanyByUserId(userId);
       if (!company) {
@@ -2586,42 +2589,93 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Company not found" });
       }
 
-      console.log("[DEBUG] Company found:", company.id);
+      console.log("[DEBUG] Company found - ID:", company.id, "Name:", company.name);
 
-      // Map frontend field names to database field names
+      // Validate request body exists
+      if (!req.body || Object.keys(req.body).length === 0) {
+        console.log("[DEBUG] Empty request body");
+        return res.status(400).json({ message: "Request body is required" });
+      }
+
+      // Extract and validate fields
       const { type, series, rangeStart, rangeEnd, currentNumber, expirationDate, isActive, description } = req.body;
       
-      console.log("[DEBUG] Extracted fields:", { type, series, rangeStart, rangeEnd, currentNumber, expirationDate, isActive, description });
+      console.log("[DEBUG] Field extraction:", {
+        type: typeof type + " = " + type,
+        series: typeof series + " = " + series,
+        rangeStart: typeof rangeStart + " = " + rangeStart,
+        rangeEnd: typeof rangeEnd + " = " + rangeEnd,
+        currentNumber: typeof currentNumber + " = " + currentNumber,
+        expirationDate: typeof expirationDate + " = " + expirationDate,
+        isActive: typeof isActive + " = " + isActive,
+        description: typeof description + " = " + description
+      });
       
-      // Validate required fields
-      if (!type || rangeStart === undefined || rangeEnd === undefined) {
-        console.log("[DEBUG] Missing required fields");
-        return res.status(400).json({ message: "Missing required fields: type, rangeStart, rangeEnd" });
+      // Strict field validation
+      if (!type) {
+        console.log("[DEBUG] Missing 'type' field");
+        return res.status(400).json({ message: "Field 'type' is required" });
+      }
+      
+      if (rangeStart === undefined || rangeStart === null) {
+        console.log("[DEBUG] Missing 'rangeStart' field");
+        return res.status(400).json({ message: "Field 'rangeStart' is required" });
+      }
+      
+      if (rangeEnd === undefined || rangeEnd === null) {
+        console.log("[DEBUG] Missing 'rangeEnd' field");
+        return res.status(400).json({ message: "Field 'rangeEnd' is required" });
+      }
+      
+      // Parse numeric values safely
+      const parsedRangeStart = parseInt(String(rangeStart));
+      const parsedRangeEnd = parseInt(String(rangeEnd));
+      const parsedCurrentNumber = currentNumber ? parseInt(String(currentNumber)) : null;
+      
+      if (isNaN(parsedRangeStart)) {
+        console.log("[DEBUG] Invalid rangeStart:", rangeStart);
+        return res.status(400).json({ message: "Field 'rangeStart' must be a valid number" });
+      }
+      
+      if (isNaN(parsedRangeEnd)) {
+        console.log("[DEBUG] Invalid rangeEnd:", rangeEnd);
+        return res.status(400).json({ message: "Field 'rangeEnd' must be a valid number" });
       }
       
       const sequenceData = {
         companyId: company.id,
-        ncfType: type,
-        series: series || '001',
-        currentSequence: parseInt(rangeStart) || parseInt(currentNumber) || 1,
-        maxSequence: parseInt(rangeEnd) || 50000000,
-        isActive: isActive !== false,
-        description: description || '',
+        ncfType: String(type).trim(),
+        series: series ? String(series).trim() : '001',
+        currentSequence: parsedCurrentNumber || parsedRangeStart,
+        maxSequence: parsedRangeEnd,
+        isActive: isActive !== false && isActive !== 'false',
+        description: description ? String(description).trim() : '',
         expirationDate: expirationDate ? new Date(expirationDate) : null,
         createdAt: new Date(),
         updatedAt: new Date()
       };
 
-      console.log("[DEBUG] Sequence data prepared:", sequenceData);
+      console.log("[DEBUG] Final sequence data:", JSON.stringify(sequenceData, null, 2));
 
+      console.log("[DEBUG] Calling storage.createNCFSequence...");
       const sequence = await storage.createNCFSequence(sequenceData);
-      console.log("[DEBUG] Sequence created successfully:", sequence);
+      console.log("[DEBUG] Storage call successful, result:", JSON.stringify(sequence, null, 2));
       
       res.status(201).json(sequence);
-    } catch (error) {
-      console.error("[ERROR] Error creating NCF sequence:", error);
-      console.error("[ERROR] Error stack:", error.stack);
-      res.status(500).json({ message: "Failed to create NCF sequence", error: error.message });
+      console.log("[DEBUG] Response sent successfully");
+      
+    } catch (error: any) {
+      console.error("[ERROR] Exception in POST /api/fiscal/ncf-sequences:");
+      console.error("[ERROR] Error message:", error?.message);
+      console.error("[ERROR] Error name:", error?.name);
+      console.error("[ERROR] Error stack:", error?.stack);
+      
+      // Return safe error response
+      res.status(500).json({ 
+        message: "Failed to create NCF sequence", 
+        error: error?.message || "Unknown error",
+        timestamp: new Date().toISOString()
+      });
     }
   });
 

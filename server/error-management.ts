@@ -195,15 +195,9 @@ Responde en español con formato JSON:
     const type = this.determineErrorType(error, context);
 
     try {
-      // Get AI analysis for high and critical errors
-      let aiAnalysis = '';
-      let suggestedFix = '';
-
-      if (severity === 'high' || severity === 'critical') {
-        const analysis = await this.analyzeErrorWithAI(error, context);
-        aiAnalysis = analysis.analysis;
-        suggestedFix = analysis.suggestedFix;
-      }
+      // Disable AI analysis temporarily due to API key issues
+      let aiAnalysis = 'AI analysis disabled - no API key configured';
+      let suggestedFix = 'Check system logs for detailed error information';
 
       // Save to database
       await db.insert(errorLogs).values({
