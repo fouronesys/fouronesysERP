@@ -454,7 +454,7 @@ export default function InventoryMovements() {
                             const product = products?.find(p => p.id === item.productId);
                             return (
                               <div key={item.productId} className="flex justify-between text-xs bg-gray-50 p-2 rounded">
-                                <span className="truncate flex-1 text-[#09090b]">
+                                <span className="truncate flex-1 text-[#09090b] text-[13px] font-normal">
                                   {product?.name || `Producto ${item.productId}`}
                                 </span>
                                 <span className="font-medium ml-2 text-[#a60808]">
