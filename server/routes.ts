@@ -4553,11 +4553,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Company not found" });
       }
 
-      const employees = await storage.getEmployees(company.id);
+      const employees = await storage.getEmployeesWithUsers(company.id);
       res.json(employees);
     } catch (error) {
       console.error("Error fetching employees:", error);
       res.status(500).json({ message: "Failed to fetch employees" });
+    }
+  });
+
+  // Get company users for employee assignment
+  app.get("/api/company-users", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      const users = await storage.getCompanyUsers(company.id);
+      res.json(users);
+    } catch (error) {
+      console.error("Error fetching company users:", error);
+      res.status(500).json({ message: "Failed to fetch company users" });
+    }
+  });
+
+  // Create user directly from employee form
+  app.post("/api/employees/create-user", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      const { email, firstName, lastName, password, role } = req.body;
+
+      // Check if user already exists
+      const existingUser = await storage.getUserByEmail(email);
+      if (existingUser) {
+        return res.status(400).json({ message: "User with this email already exists" });
+      }
+
+      // Create new user
+      const userData = {
+        email,
+        firstName,
+        lastName,
+        password,
+        role: role || "employee",
+        isActive: true,
+        companyId: company.id
+      };
+
+      const newUser = await storage.createUser(userData);
+      res.status(201).json(newUser);
+    } catch (error) {
+      console.error("Error creating user for employee:", error);
+      res.status(500).json({ message: "Failed to create user" });
     }
   });
 
@@ -4583,24 +4636,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/employees", isAuthenticated, async (req: any, res) => {
     try {
+      console.log("[DEBUG] POST /api/employees - Body:", JSON.stringify(req.body, null, 2));
+      
       const userId = req.user.id;
       const company = await storage.getCompanyByUserId(userId);
       if (!company) {
         return res.status(404).json({ message: "Company not found" });
       }
 
+      // Validate and convert hireDate
+      const hireDateValue = req.body.hireDate ? new Date(req.body.hireDate) : new Date();
+      if (isNaN(hireDateValue.getTime())) {
+        return res.status(400).json({ message: "Invalid hire date" });
+      }
+
       const employeeData = {
         ...req.body,
         companyId: company.id,
+        hireDate: hireDateValue,
+        salary: req.body.salary ? String(req.body.salary) : "0",
         createdAt: new Date(),
         updatedAt: new Date()
       };
+
+      console.log("[DEBUG] Employee data to insert:", JSON.stringify(employeeData, null, 2));
 
       const employee = await storage.createEmployee(employeeData);
       res.status(201).json(employee);
     } catch (error) {
       console.error("Error creating employee:", error);
-      res.status(500).json({ message: "Failed to create employee" });
+      console.error("Error stack:", error.stack);
+      res.status(500).json({ message: "Failed to create employee", error: error.message });
     }
   });
 

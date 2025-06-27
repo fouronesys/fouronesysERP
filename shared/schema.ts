@@ -1073,6 +1073,7 @@ export const insertPOSCustomerSchema = createInsertSchema(posCustomers).omit({
 export const employees = pgTable("employees", {
   id: serial("id").primaryKey(),
   companyId: integer("company_id").notNull().references(() => companies.id, { onDelete: "cascade" }),
+  userId: varchar("user_id", { length: 255 }).references(() => users.id, { onDelete: "set null" }), // User assigned to this employee
   employeeId: varchar("employee_id", { length: 50 }).notNull(),
   firstName: varchar("first_name", { length: 100 }).notNull(),
   lastName: varchar("last_name", { length: 100 }).notNull(),

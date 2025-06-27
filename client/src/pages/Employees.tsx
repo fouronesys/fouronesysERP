@@ -26,6 +26,10 @@ export default function Employees() {
     queryKey: ["/api/employees"],
   });
 
+  const { data: companyUsers = [] } = useQuery({
+    queryKey: ["/api/company-users"],
+  });
+
   const createEmployeeMutation = useMutation({
     mutationFn: (data: any) => apiRequest("/api/employees", {
       method: "POST",
@@ -121,6 +125,7 @@ export default function Employees() {
       tss: formData.get("tss"),
       bankAccount: formData.get("bankAccount"),
       bankName: formData.get("bankName"),
+      userId: formData.get("userId") || null,
     };
 
     if (editingEmployee) {
@@ -369,6 +374,49 @@ export default function Employees() {
                       name="bankName"
                       defaultValue={editingEmployee?.bankName || ""}
                     />
+                  </div>
+                </div>
+
+                {/* User Assignment Section */}
+                <div className="border-t pt-4 space-y-4">
+                  <h3 className="text-lg font-semibold">Asignación de Usuario</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Asigna un usuario del sistema para que este empleado pueda acceder a la aplicación
+                  </p>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="userId">Usuario Asignado</Label>
+                    <Select name="userId" defaultValue={editingEmployee?.userId || ""}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleccionar usuario (opcional)" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">Sin asignar</SelectItem>
+                        {(companyUsers as any[]).map((user: any) => (
+                          <SelectItem key={user.id} value={user.id}>
+                            {user.firstName} {user.lastName} ({user.email}) - {user.role}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="text-sm text-muted-foreground">
+                    ¿No encuentras el usuario? 
+                    <Button 
+                      type="button" 
+                      variant="link" 
+                      className="p-0 h-auto font-normal underline ml-1"
+                      onClick={() => {
+                        // TODO: Implementar modal de creación de usuario
+                        toast({
+                          title: "Función próximamente",
+                          description: "La creación de usuarios desde aquí estará disponible pronto",
+                        });
+                      }}
+                    >
+                      Crear nuevo usuario
+                    </Button>
                   </div>
                 </div>
 

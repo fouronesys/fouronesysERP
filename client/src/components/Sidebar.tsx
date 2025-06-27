@@ -131,7 +131,7 @@ const navigation = [
     feature: "hr",
     children: [
       { name: "Empleados", href: "/employees", icon: Users, feature: "hr.employees" },
-      { name: "Control de Tiempo", href: "/time-tracking", icon: Activity, feature: "hr.time" },
+
       { name: "Solicitud de Vacaciones", href: "/leave-requests", icon: FileText, feature: "hr.leaves" }
     ]
   },

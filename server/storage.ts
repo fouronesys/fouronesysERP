@@ -286,10 +286,15 @@ export interface IStorage {
   
   // Employee operations
   getEmployees(companyId: number): Promise<Employee[]>;
+  getEmployeesWithUsers(companyId: number): Promise<any[]>;
   getEmployee(id: number, companyId: number): Promise<Employee | undefined>;
   createEmployee(employee: InsertEmployee): Promise<Employee>;
   updateEmployee(id: number, employee: Partial<InsertEmployee>, companyId: number): Promise<Employee | undefined>;
   deleteEmployee(id: number, companyId: number): Promise<void>;
+  
+  // Company User operations  
+  getCompanyUsers(companyId: number): Promise<any[]>;
+  getUserByEmail(email: string): Promise<any | undefined>;
   
   // Payroll Period operations
   getPayrollPeriods(companyId: number): Promise<PayrollPeriod[]>;
@@ -1456,6 +1461,68 @@ export class DatabaseStorage implements IStorage {
       .where(eq(employees.companyId, companyId))
       .orderBy(employees.firstName, employees.lastName);
     return employeeList;
+  }
+
+  async getEmployeesWithUsers(companyId: number): Promise<any[]> {
+    return await db
+      .select({
+        id: employees.id,
+        employeeId: employees.employeeId,
+        firstName: employees.firstName,
+        lastName: employees.lastName,
+        email: employees.email,
+        phone: employees.phone,
+        address: employees.address,
+        position: employees.position,
+        department: employees.department,
+        hireDate: employees.hireDate,
+        salary: employees.salary,
+        salaryType: employees.salaryType,
+        status: employees.status,
+        cedula: employees.cedula,
+        tss: employees.tss,
+        bankAccount: employees.bankAccount,
+        bankName: employees.bankName,
+        userId: employees.userId,
+        createdAt: employees.createdAt,
+        updatedAt: employees.updatedAt,
+        user: {
+          id: users.id,
+          email: users.email,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          role: users.role,
+          isActive: users.isActive
+        }
+      })
+      .from(employees)
+      .leftJoin(users, eq(employees.userId, users.id))
+      .where(eq(employees.companyId, companyId))
+      .orderBy(employees.firstName, employees.lastName);
+  }
+
+  async getCompanyUsers(companyId: number): Promise<any[]> {
+    return await db
+      .select({
+        id: users.id,
+        email: users.email,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        role: users.role,
+        isActive: users.isActive,
+        companyId: users.companyId
+      })
+      .from(users)
+      .where(eq(users.companyId, companyId))
+      .orderBy(users.firstName, users.lastName);
+  }
+
+  async getUserByEmail(email: string): Promise<any | undefined> {
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.email, email));
+    return user;
   }
 
   async getEmployee(id: number, companyId: number): Promise<Employee | undefined> {
