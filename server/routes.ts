@@ -2852,13 +2852,122 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/fiscal/reports", isAuthenticated, async (req: any, res) => {
+  app.get("/api/dgii/reports", isAuthenticated, async (req: any, res) => {
     try {
-      // Return empty reports for now
-      res.json([]);
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      // Get DGII reports for this company
+      const reports = await storage.getDGIIReports(company.id);
+      res.json(reports || []);
     } catch (error) {
-      console.error("Error fetching fiscal reports:", error);
-      res.status(500).json({ message: "Failed to fetch fiscal reports" });
+      console.error("Error fetching DGII reports:", error);
+      res.status(500).json({ message: "Failed to fetch DGII reports" });
+    }
+  });
+
+  app.get("/api/dgii/summaries", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      // Generate report summaries
+      const currentYear = new Date().getFullYear();
+      const summaries = [
+        {
+          tipo: "606",
+          ultimoPeriodo: `${currentYear}-${String(new Date().getMonth()).padStart(2, '0')}`,
+          proximoVencimiento: "10 días",
+          registrosPendientes: 0,
+          montoTotal: "0.00"
+        },
+        {
+          tipo: "607", 
+          ultimoPeriodo: `${currentYear}-${String(new Date().getMonth()).padStart(2, '0')}`,
+          proximoVencimiento: "10 días",
+          registrosPendientes: 0,
+          montoTotal: "0.00"
+        }
+      ];
+      
+      res.json(summaries);
+    } catch (error) {
+      console.error("Error fetching DGII summaries:", error);
+      res.status(500).json({ message: "Failed to fetch DGII summaries" });
+    }
+  });
+
+  app.post("/api/dgii/reports/generate", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const company = await storage.getCompanyByUserId(userId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      const { tipo, year, month } = req.body;
+      
+      if (!tipo || !year || !month) {
+        return res.status(400).json({ message: "Missing required fields: tipo, year, month" });
+      }
+
+      // Generate the report based on type
+      let reportData;
+      const periodo = `${year}-${String(month).padStart(2, '0')}`;
+      const fechaInicio = `${year}-${String(month).padStart(2, '0')}-01`;
+      const fechaFin = new Date(parseInt(year), parseInt(month), 0).toISOString().split('T')[0];
+
+      if (tipo === '606') {
+        // Sales report - get all POS sales for the period
+        const sales = await storage.getPOSSalesByPeriod(company.id, fechaInicio, fechaFin);
+        const totalAmount = sales.reduce((sum, sale) => sum + parseFloat(sale.total || '0'), 0);
+        const totalItbis = sales.reduce((sum, sale) => sum + parseFloat(sale.itbis || '0'), 0);
+        
+        reportData = {
+          companyId: company.id,
+          tipo: '606',
+          periodo,
+          fechaInicio,
+          fechaFin,
+          numeroRegistros: sales.length,
+          montoTotal: totalAmount.toFixed(2),
+          itbisTotal: totalItbis.toFixed(2),
+          estado: 'generated',
+          generatedAt: new Date(),
+          checksum: `CHK${Date.now()}`
+        };
+      } else if (tipo === '607') {
+        // Purchases report - for now return empty
+        reportData = {
+          companyId: company.id,
+          tipo: '607',
+          periodo,
+          fechaInicio,
+          fechaFin,
+          numeroRegistros: 0,
+          montoTotal: '0.00',
+          itbisTotal: '0.00',
+          estado: 'generated',
+          generatedAt: new Date(),
+          checksum: `CHK${Date.now()}`
+        };
+      } else {
+        return res.status(400).json({ message: "Invalid report type" });
+      }
+
+      // Save the report
+      const savedReport = await storage.createDGIIReport(reportData);
+      res.json(savedReport);
+
+    } catch (error) {
+      console.error("Error generating DGII report:", error);
+      res.status(500).json({ message: "Failed to generate DGII report", error: error.message });
     }
   });
 

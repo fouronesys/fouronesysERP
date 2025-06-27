@@ -79,7 +79,7 @@ export default function DGIIReports() {
     mutationFn: (data: { tipo: string; year: string; month: string }) => 
       apiRequest("/api/dgii/reports/generate", {
         method: "POST",
-        body: JSON.stringify(data),
+        body: data,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/dgii/reports"] });

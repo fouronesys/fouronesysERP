@@ -1452,6 +1452,26 @@ export const rncRegistry = pgTable("rnc_registry", {
   lastUpdated: timestamp("last_updated").defaultNow(),
 });
 
+export const dgiiReports = pgTable("dgii_reports", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull().references(() => companies.id),
+  tipo: varchar("tipo", { length: 10 }).notNull(), // 606, 607, T-REGISTRO
+  periodo: varchar("periodo", { length: 7 }).notNull(), // YYYY-MM
+  fechaInicio: date("fecha_inicio").notNull(),
+  fechaFin: date("fecha_fin").notNull(),
+  numeroRegistros: integer("numero_registros").default(0),
+  montoTotal: decimal("monto_total", { precision: 12, scale: 2 }).default("0.00"),
+  itbisTotal: decimal("itbis_total", { precision: 12, scale: 2 }).default("0.00"),
+  estado: varchar("estado", { length: 20 }).default("pending"), // pending, generated, submitted, accepted, rejected
+  checksum: varchar("checksum", { length: 100 }),
+  generatedAt: timestamp("generated_at").defaultNow(),
+  submittedAt: timestamp("submitted_at"),
+  fileName: varchar("file_name", { length: 255 }),
+  filePath: varchar("file_path", { length: 500 }),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // API Developer Insert Schemas
 export const insertApiDeveloperSchema = createInsertSchema(apiDevelopers).omit({
   id: true,

@@ -33,6 +33,7 @@ import {
   comprobantes605,
   comprobantes606,
   rncRegistry,
+  dgiiReports,
   passwordResetTokens,
   apiDevelopers,
   apiRequests,
@@ -4984,6 +4985,69 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error("Error getting role:", error);
       throw error;
+    }
+  }
+
+  // DGII Reports methods
+  async getDGIIReports(companyId: number): Promise<any[]> {
+    try {
+      const results = await db
+        .select()
+        .from(dgiiReports)
+        .where(eq(dgiiReports.companyId, companyId))
+        .orderBy(desc(dgiiReports.generatedAt));
+      
+      return results;
+    } catch (error) {
+      console.error("Error getting DGII reports:", error);
+      return [];
+    }
+  }
+
+  async createDGIIReport(reportData: any): Promise<any> {
+    try {
+      const [report] = await db
+        .insert(dgiiReports)
+        .values({
+          companyId: reportData.companyId,
+          tipo: reportData.tipo,
+          periodo: reportData.periodo,
+          fechaInicio: new Date(reportData.fechaInicio),
+          fechaFin: new Date(reportData.fechaFin),
+          numeroRegistros: reportData.numeroRegistros,
+          montoTotal: reportData.montoTotal,
+          itbisTotal: reportData.itbisTotal,
+          estado: reportData.estado,
+          checksum: reportData.checksum,
+          generatedAt: reportData.generatedAt,
+        })
+        .returning();
+
+      return report;
+    } catch (error) {
+      console.error("Error creating DGII report:", error);
+      throw error;
+    }
+  }
+
+  async getPOSSalesByPeriod(companyId: number, startDate: string, endDate: string): Promise<any[]> {
+    try {
+      const results = await db
+        .select()
+        .from(posSales)
+        .where(
+          and(
+            eq(posSales.companyId, companyId),
+            gte(posSales.createdAt, new Date(startDate)),
+            lte(posSales.createdAt, new Date(endDate))
+          )
+        )
+        .orderBy(desc(posSales.createdAt));
+      
+      return results;
+    } catch (error) {
+      console.error("Error getting POS sales by period:", error);
+      return [];
     }
   }
 
